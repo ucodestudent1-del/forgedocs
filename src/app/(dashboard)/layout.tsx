@@ -23,7 +23,7 @@ const NAV_ITEMS = [
   { href: "/billing", label: "Billing", icon: Settings },
 ]
 
-export default function DashboardLayout({
+export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode
@@ -35,7 +35,7 @@ export default function DashboardLayout({
     { cookies: () => cookieStore }
   )
 
-  const { data: { user } } = supabase.auth.getUser()
+  const { data: { user } } = await supabase.auth.getUser()
 
   const getPageTitle = (pathname: string) => {
     if (pathname === "/dashboard") return "Dashboard"
