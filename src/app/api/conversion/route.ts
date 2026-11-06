@@ -22,6 +22,13 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
+  const { searchParams } = new URL(req.url)
+  const formats = searchParams.get("formats")
+
+  if (formats === "true") {
+    return NextResponse.json({ formats: supportedFormats })
+  }
+
   const { data: jobs, error } = await (supabase as any)
     .from("conversion_jobs")
     .select("*")
@@ -111,8 +118,4 @@ export async function POST(req: Request) {
   })
 
   return NextResponse.json({ job }, { status: 201 })
-}
-
-export async function GET_FORMATS() {
-  return NextResponse.json({ formats: supportedFormats })
 }
