@@ -3,7 +3,7 @@ import { NextResponse } from "next/server"
 
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const supabase = createRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -12,10 +12,12 @@ export async function GET(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
+  const { id } = await params
+
   const { data: template, error } = await supabase
     .from("templates")
     .select("*")
-    .eq("id", params.id)
+    .eq("id", id)
     .single()
 
   if (error || !template) {
@@ -27,7 +29,7 @@ export async function GET(
 
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const supabase = createRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -36,10 +38,12 @@ export async function DELETE(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
+  const { id } = await params
+
   const { error } = await supabase
     .from("templates")
     .delete()
-    .eq("id", params.id)
+    .eq("id", id)
     .eq("user_id", user.id)
 
   if (error) {

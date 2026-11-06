@@ -3,7 +3,7 @@ import { NextResponse } from "next/server"
 
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const supabase = createRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -12,10 +12,12 @@ export async function GET(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
+  const { id } = await params
+
   const { data: doc, error } = await supabase
     .from("documents")
     .select("*, templates ( * )")
-    .eq("id", params.id)
+    .eq("id", id)
     .eq("user_id", user.id)
     .single()
 
@@ -28,7 +30,7 @@ export async function GET(
 
 export async function PATCH(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const supabase = createRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -43,7 +45,7 @@ export async function PATCH(
   const { data, error } = await (supabase as any)
     .from("documents")
     .update({ title, description, is_pinned, is_archived })
-    .eq("id", params.id)
+    .eq("id", id)
     .eq("user_id", user.id)
     .select()
     .single()
@@ -57,7 +59,7 @@ export async function PATCH(
 
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const supabase = createRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -66,10 +68,12 @@ export async function DELETE(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
+  const { id } = await params
+
   const { error } = await supabase
     .from("documents")
     .delete()
-    .eq("id", params.id)
+    .eq("id", id)
     .eq("user_id", user.id)
 
   if (error) {

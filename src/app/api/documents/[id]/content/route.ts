@@ -3,7 +3,7 @@ import { NextResponse } from "next/server"
 
 export async function PUT(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const supabase = createRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -15,11 +15,13 @@ export async function PUT(
   const body = await req.json()
   const { content } = body
 
+  const { id } = await params
+
   // Get current version
   const { data: currentDoc } = await supabase
     .from("documents")
     .select("version, content")
-    .eq("id", params.id)
+    .eq("id", id)
     .eq("user_id", user.id)
     .single()
 
@@ -29,7 +31,7 @@ export async function PUT(
 
   // Create version snapshot
   await (supabase as any).from("document_versions").insert({
-    document_id: params.id,
+    document_id: id,
     version: (currentDoc as any).version,
     content: (currentDoc as any).content,
     created_by: user.id,
@@ -39,7 +41,7 @@ export async function PUT(
   const { data, error } = await (supabase as any)
     .from("documents")
     .update({ content, version: (currentDoc as any).version + 1 })
-    .eq("id", params.id)
+    .eq("id", id)
     .eq("user_id", user.id)
     .select()
     .single()
@@ -53,7 +55,7 @@ export async function PUT(
 
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const supabase = createRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -62,10 +64,12 @@ export async function GET(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
+  const { id } = await params
+
   const { data: versions, error } = await supabase
     .from("document_versions")
     .select("*")
-    .eq("document_id", params.id)
+    .eq("document_id", id)
     .order("version", { ascending: false })
 
   if (error) {
