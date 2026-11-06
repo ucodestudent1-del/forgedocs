@@ -21,7 +21,8 @@ export async function POST(req: Request) {
 
   let stripe
   try {
-    stripe = (await import("stripe")).default(process.env.STRIPE_SECRET_KEY)
+    const Stripe = (await import("stripe")).default
+    stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
   } catch {
     // Stripe not installed — return placeholder for development
     return NextResponse.json({ received: true }, { status: 200 })
