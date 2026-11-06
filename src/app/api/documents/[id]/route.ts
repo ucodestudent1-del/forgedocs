@@ -41,6 +41,7 @@ export async function PATCH(
 
   const body = await req.json()
   const { title, description, is_pinned, is_archived } = body
+  const { id } = await params
 
   const { data, error } = await (supabase as any)
     .from("documents")
