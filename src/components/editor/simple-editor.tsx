@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { Button } from "@/components/ui/button"
-import { FileText, Save, Undo, Redo, Bold, Italic, Underline, List, ListOrdered, Image, Link, Maximize, MoreHorizontal } from "lucide.react"
+import { FileText, Save, Undo, Redo, Bold, Italic, Underline, List, ListOrdered, Image, Link, Maximize, MoreHorizontal } from "lucide-react"
 
 interface SimpleEditorProps {
   documentId: string | null

@@ -1,3 +1,5 @@
+"use client"
+
 export default function Error({ error }: { error: Error }) {
   return (
     <div className="flex h-screen flex-col items-center justify-center text-center">
