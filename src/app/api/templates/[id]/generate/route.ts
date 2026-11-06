@@ -10,7 +10,7 @@ const generateSchema = z.object({
 
 export async function POST(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const supabase = createRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -19,11 +19,13 @@ export async function POST(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
+  const { id } = await params
+
   // Fetch template
   const { data: template, error: templateError } = await (supabase as any)
     .from("templates")
     .select("*")
-    .eq("id", params.id)
+    .eq("id", id)
     .single()
 
   if (templateError || !template) {
@@ -81,7 +83,7 @@ export async function POST(
     .from("documents")
     .insert({
       user_id: user.id,
-      template_id: params.id,
+      template_id: id,
       title: `Generated: ${template.name}`,
       description: `Generated from template on ${new Date().toISOString()}`,
       content: documentContent,
