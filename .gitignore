@@ -1,0 +1,10 @@
+node_modules/
+.next/
+.env
+*.log
+tsconfig.tsbuildinfo
+.supabase/
+.coverage/
+e2e/report/
+playwright-report/
+test-results/
