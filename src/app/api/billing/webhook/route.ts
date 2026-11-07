@@ -1,8 +1,6 @@
+import { createRouteClient } from "@/lib/supabase"
 import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
-import { headers } from "next/headers"
-import { createRouteClient } from "@/lib/supabase"
-import { createRouteClient } from "@/lib/supabase"
 
 export const dynamic = "force-dynamic"
 
