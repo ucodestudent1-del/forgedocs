@@ -32,7 +32,7 @@ const auditSchema = z.object({
 })
 
 export async function POST(req: Request) {
-  const supabase = createRouteClient()
+  const supabase = await createRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
@@ -65,7 +65,7 @@ export async function POST(req: Request) {
 }
 
 export async function GET(req: Request) {
-  const supabase = createRouteClient()
+  const supabase = await createRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
@@ -88,3 +88,4 @@ export async function GET(req: Request) {
 
   return NextResponse.json({ logs })
 }
+

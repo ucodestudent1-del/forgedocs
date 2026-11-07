@@ -15,7 +15,7 @@ const supportedFormats = [
 const VALID_FORMATS = ["pdf", "docx", "xlsx", "csv", "pptx", "txt", "html"]
 
 export async function GET(req: Request) {
-  const supabase = createRouteClient()
+  const supabase = await createRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
@@ -51,7 +51,7 @@ const createJobSchema = z.object({
 })
 
 export async function POST(req: Request) {
-  const supabase = createRouteClient()
+  const supabase = await createRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
@@ -119,3 +119,4 @@ export async function POST(req: Request) {
 
   return NextResponse.json({ job }, { status: 201 })
 }
+

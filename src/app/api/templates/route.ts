@@ -3,7 +3,7 @@ import { NextResponse } from "next/server"
 import { z } from "zod"
 
 export async function GET(req: Request) {
-  const supabase = createRouteClient()
+  const supabase = await createRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
@@ -40,7 +40,7 @@ const createTemplateSchema = z.object({
 })
 
 export async function POST(req: Request) {
-  const supabase = createRouteClient()
+  const supabase = await createRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
@@ -72,3 +72,4 @@ export async function POST(req: Request) {
 
   return NextResponse.json({ template: data }, { status: 201 })
 }
+
