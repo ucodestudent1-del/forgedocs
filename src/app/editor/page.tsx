@@ -8,7 +8,7 @@ import { FileText, Save, Undo, Redo, Plus } from "lucide-react"
 
 export default function EditorPage() {
   const [documentId, setDocumentId] = React.useState<string | null>(null)
-  const [content, setContent] = React.useState<string | null>(null)
+  const [content, setContent] = React.useState<string>("")
   const [loading, setLoading] = React.useState(true)
 
   React.useEffect(() => {
