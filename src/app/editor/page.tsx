@@ -49,7 +49,7 @@ export default function EditorPage() {
             </CardHeader>
             <CardContent className="min-h-[600px] flex flex-col">
               {documentId ? (
-                <SimpleEditor documentId={documentId ?? undefined} content={content} onChange={setContent} />
+                <SimpleEditor documentId={documentId as string} content={content} onChange={setContent} />
               ) : (
                 <div className="flex flex-col items-center justify-center h-full text-muted-foreground py-20">
                   <FileText className="h-16 w-16 mb-2 opacity-50" />
