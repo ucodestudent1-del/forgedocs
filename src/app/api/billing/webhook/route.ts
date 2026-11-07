@@ -1,34 +1,12 @@
-import { createServerClient } from "@supabase/ssr"
-import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
+import { cookies } from "next/headers"
+import { headers } from "next/headers"
+import { createRouteClient } from "@/lib/supabase"
+import { createRouteClient } from "@/lib/supabase"
 
 export const dynamic = "force-dynamic"
 
 export async function POST(req: Request) {
-  const cookieStore = await cookies()
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll()
-        },
-        setAll(cookiesToSet) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            )
-          } catch {
-            // The `set` method was called from a Server Component.
-            // This can be ignored if you have middleware refreshing
-            // user sessions.
-          }
-        },
-      },
-    }
-  )
-
   const body = await req.text()
   const signature = req.headers.get("stripe-signature")
 
@@ -41,8 +19,7 @@ export async function POST(req: Request) {
     const Stripe = (await import("stripe")).default
     stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
   } catch {
-    // Stripe not installed — return placeholder for development
-    return NextResponse.json({ received: true }, { status: 200 })
+    return NextResponse.json({ error: "Payment processor unavailable" }, { status: 503 })
   }
 
   let event
@@ -53,8 +30,33 @@ export async function POST(req: Request) {
       process.env.STRIPE_WEBHOOK_SECRET!
     )
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 400 })
+    console.error("Stripe webhook signature verification failed:", err.message)
+    return NextResponse.json({ error: "Invalid signature" }, { status: 400 })
   }
+
+  // Use service role client for webhook operations
+  const cookieStore = await cookies()
+  const supabase = createRouteClient()
+
+  // Idempotency check
+  const eventId = `stripe_${event.id}`
+  const { data: existingEvent } = await (supabase as any)
+    .from("webhook_events")
+    .select("id")
+    .eq("event_id", eventId)
+    .single()
+
+  if (existingEvent) {
+    console.log(`Duplicate webhook event ignored: ${eventId}`)
+    return NextResponse.json({ received: true })
+  }
+
+  // Record webhook event for idempotency
+  await (supabase as any).from("webhook_events").insert({
+    event_id: `stripe_${event.id}`,
+    event_type: event.type,
+    processed_at: new Date().toISOString(),
+  })
 
   // Handle checkout.session.completed
   if (event.type === "checkout.session.completed") {
@@ -62,7 +64,7 @@ export async function POST(req: Request) {
     const userId = session.metadata?.userId
 
     if (userId) {
-      await (supabase as any).from("subscriptions").upsert({
+      const { error } = await (supabase as any).from("subscriptions").upsert({
         user_id: userId,
         stripe_customer_id: session.customer,
         stripe_subscription_id: session.subscription,
@@ -73,6 +75,10 @@ export async function POST(req: Request) {
           session.created * 1000 + 30 * 24 * 60 * 60 * 1000
         ).toISOString(),
       })
+
+      if (error) {
+        console.error("Failed to upsert subscription:", error)
+      }
     }
   }
 
@@ -92,9 +98,7 @@ export async function POST(req: Request) {
         .from("subscriptions")
         .update({
           status: "active",
-          current_period_end: new Date(
-            invoice.period_end * 1000
-          ).toISOString(),
+          current_period_end: new Date(invoice.period_end * 1000).toISOString(),
         })
         .eq("id", sub.id)
     }
@@ -106,6 +110,19 @@ export async function POST(req: Request) {
     await (supabase as any)
       .from("subscriptions")
       .update({ status: "canceled", tier: "free" })
+      .eq("stripe_subscription_id", subscription.id)
+  }
+
+  // Handle subscription updated (downgrades, etc.)
+  if (event.type === "customer.subscription.updated") {
+    const subscription = event.data.object as any
+    await (supabase as any)
+      .from("subscriptions")
+      .update({
+        status: subscription.status,
+        cancel_at_period_end: subscription.cancel_at_period_end,
+        current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+      })
       .eq("stripe_subscription_id", subscription.id)
   }
 
