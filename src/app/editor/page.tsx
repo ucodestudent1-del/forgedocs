@@ -3,8 +3,8 @@
 import * as React from "react"
 import { SimpleEditor } from "@/components/editor/simple-editor"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { FileText, Save, Undo, Redo, Plus } from "lucide-react"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { FileText, Plus } from "lucide-react"
 
 export default function EditorPage() {
   const [documentId, setDocumentId] = React.useState<string | null>(null)
