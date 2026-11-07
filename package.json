@@ -5,8 +5,13 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
-    "lint": "next lint"
+    "start": "node .next/standalone/server.js",
+    "lint": "next lint",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "db:migrate": "supabase db push",
+    "db:reset": "supabase db reset",
+    "worker": "node src/worker/index.js"
   },
   "dependencies": {
     "next": "15.2.8",
