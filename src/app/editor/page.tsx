@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { FileText, Plus } from "lucide-react"
 
 export default function EditorPage() {
-  const [documentId, setDocumentId] = React.useState<string | null>(null)
+  const [documentId, setDocumentId] = React.useState<string | undefined>(undefined)
   const [content, setContent] = React.useState<string>("")
   const [loading, setLoading] = React.useState(true)
 
