@@ -3,14 +3,14 @@ import { cookies } from "next/headers"
 import { Database } from "@/types/database"
 
 // Client-side Supabase client
-export function createClient() {
+export async function createClient() {
   if (isBrowser()) {
     return createBrowserClient<Database>(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     )
   }
-  const cookieStore = cookies()
+  const cookieStore = await cookies()
   return createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
