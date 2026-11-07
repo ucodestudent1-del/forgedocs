@@ -18,7 +18,7 @@ export function createClient() {
 }
 
 // Server-side Supabase client for API routes
-export function createRouteClient() {
+export async function createRouteClient() {
   const cookieStore = await cookies()
   return createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -45,7 +45,7 @@ export function createRouteClient() {
 }
 
 // Server-side Supabase client with service role (for admin operations)
-export function createServiceClient() {
+export async function createServiceClient() {
   const cookieStore = await cookies()
   return createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
