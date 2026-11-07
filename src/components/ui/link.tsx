@@ -9,7 +9,7 @@ const LinkComponent = React.forwardRef<HTMLAnchorElement, LinkProps>(
   ({ className, asChild = false, ...props }, ref) => {
     const Comp = asChild ? React.Fragment : Link
     return (
-      <Comp ref={ref} href={props.href as string} {...props} />
+      <Comp ref={ref as React.Ref<any>} href={props.href as string} {...props} />
     )
   }
 )
