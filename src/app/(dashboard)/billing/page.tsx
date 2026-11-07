@@ -38,9 +38,9 @@ export default function BillingPage() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <UsageStat title="Documents Created" value="0/100" icon={CreditCard} />
-            <UsageStat title="Conversions" value="0/50" icon={DollarSign} />
-            <UsageStat title="Storage Used" value="0 MB / 1 GB" icon={Users} />
+            <UsageStat title="Documents Created" value="0/500" icon={CreditCard} />
+            <UsageStat title="Conversions" value="0/100" icon={DollarSign} />
+            <UsageStat title="Storage Used" value="0 MB / 5 GB" icon={Users} />
           </div>
         </CardContent>
       </Card>
@@ -51,10 +51,9 @@ export default function BillingPage() {
           <CardTitle>Choose a Plan</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <PlanCard name="Free" price="$0" description="For individuals getting started" features={["100 documents/month", "50 conversions/month", "1 GB storage", "Community support"]} popular={false} />
-            <PlanCard name="Pro" price="$15" description="For power users" features={["Unlimited documents", "Unlimited conversions", "10 GB storage", "Priority support", "Advanced templates"]} popular={true} />
-            <PlanCard name="Business" price="$49" description="For teams and organizations" features={["Everything in Pro", "Team collaboration", "100 GB storage", "SSO / SAML", "Audit logs", "SLA"]} popular={false} />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <PlanCard name="Free" price="$0" description="For individuals and small teams" features={["500 documents/month", "100 conversions/month", "5 GB storage", "Community support", "Team collaboration"]} popular={false} />
+            <PlanCard name="Pro" price="$15" description="For power users and growing teams" features={["Unlimited documents", "Unlimited conversions", "100 GB storage", "Priority support", "Advanced templates", "Audit logs"]} popular={true} />
           </div>
         </CardContent>
       </Card>
