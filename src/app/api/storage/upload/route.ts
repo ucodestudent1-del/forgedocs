@@ -33,7 +33,8 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  const { searchParams } = new URL(req.url).searchParams
+  const url = new URL(req.url)
+  const { searchParams } = url
   const bucket = searchParams.get("bucket") || "documents"
   const path = searchParams.get("path")
 

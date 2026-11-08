@@ -4,7 +4,7 @@ import { validateCSRF } from "@/lib/csrf"
 import { z } from "zod"
 
 export async function GET(req: Request) {
-  const supabase = getRouteClient()
+  const supabase = await getRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
@@ -53,10 +53,10 @@ const createDocSchema = z.object({
 })
 
 export async function POST(req: Request) {
-  const csrfError = validateCSRF(req)
+  const csrfError = await validateCSRF(req)
   if (csrfError) return csrfError
 
-  const supabase = getRouteClient()
+  const supabase = await getRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {

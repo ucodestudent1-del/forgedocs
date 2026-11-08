@@ -3,7 +3,7 @@ import { NextResponse } from "next/server"
 import { z } from "zod"
 
 export async function GET(req: Request) {
-  const supabase = getRouteClient()
+  const supabase = await getRouteClient()
   const { data: { user }, error } = await supabase.auth.getUser()
 
   if (error || !user) {
@@ -30,7 +30,7 @@ const signupSchema = z.object({
 })
 
 export async function POST(req: Request) {
-  const supabase = getRouteClient()
+  const supabase = await getRouteClient()
   const body = await req.json()
 
   const { email, password, full_name } = signupSchema.parse(body)

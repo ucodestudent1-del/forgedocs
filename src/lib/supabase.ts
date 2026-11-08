@@ -3,7 +3,7 @@ import { cookies } from "next/headers"
 
 let cachedClient: ReturnType<typeof createServerClient> | null = null
 
-export async function getRouteClient() {
+export async function createRouteClient() {
   if (!cachedClient) {
     const cookieStore = await cookies()
     cachedClient = createServerClient(
@@ -26,8 +26,12 @@ export async function getRouteClient() {
             }
           },
         },
-      }
-    }
+      },
+    )
   }
   return cachedClient
+}
+
+export async function getRouteClient() {
+  return createRouteClient()
 }
