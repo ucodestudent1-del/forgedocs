@@ -18,7 +18,7 @@ jest.mock('@/lib/supabase', () => ({
       range: jest.fn().mockReturnThis(),
     }))
   }))
-)
+})
 
 describe('Supabase Client', () => {
   it('should create client successfully', () => {

@@ -20,11 +20,11 @@ jest.mock('next/navigation', () => ({
 
 jest.mock('next/image', () => ({
   __esModule: true,
-  default: ({ src, alt, ...props }) => <img src={src} alt={alt} {...props} />,
+  default: ({ src, alt, ...props }: { src: string; alt: string }) => React.createElement('img', { src, alt, ...props }),
 }))
 
-jest.mock('next/link', ({ children, href, ...props }) => (
-  <a href={href} {...props}>{children}</a>
+jest.mock('next/link', ({ children, href, ...props }: { children: React.ReactNode; href: string }) => (
+  React.createElement('a', { href, ...props }, children)
 ))
 
 // Mock Supabase
@@ -42,22 +42,23 @@ jest.mock('@supabase/ssr', () => ({
       delete: jest.fn().mockReturnThis(),
       order: jest.fn().mockReturnThis(),
       range: jest.fn().mockReturnThis(),
-    })),
-    createRouteClient: jest.fn(() => ({
-      auth: {
-        getUser: jest.fn().mockResolvedValue({ data: { user: null }, error: null }),
-      },
-      from: jest.fn(() => ({
-        select: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockReturnThis(),
-        single: jest.fn().mockResolvedValue({ data: null, error: null }),
-        insert: jest.fn().mockReturnThis(),
-        update: jest.fn().mockReturnThis(),
-        delete: jest.fn().mockReturnThis(),
-        order: jest.fn().mockReturnThis(),
-        range: jest.fn().mockReturnThis(),
-      })),
-    }),
+    }))
+  }),
+  createRouteClient: jest.fn(() => ({
+    auth: {
+      getUser: jest.fn().mockResolvedValue({ data: { user: null }, error: null }),
+    },
+    from: jest.fn(() => ({
+      select: jest.fn().mockReturnThis(),
+      eq: jest.fn().mockReturnThis(),
+      single: jest.fn().mockResolvedValue({ data: null, error: null }),
+      insert: jest.fn().mockReturnThis(),
+      update: jest.fn().mockReturnThis(),
+      delete: jest.fn().mockReturnThis(),
+      order: jest.fn().mockReturnThis(),
+      range: jest.fn().mockReturnThis(),
+    }))
+  }),
   createBrowserClient: jest.fn(() => ({
     auth: {
       getUser: jest.fn().mockResolvedValue({ data: { user: null }, error: null }),
@@ -71,8 +72,8 @@ jest.mock('@supabase/ssr', () => ({
       delete: jest.fn().mockReturnThis(),
       order: jest.fn().mockReturnThis(),
       range: jest.fn().mockReturnThis(),
-    })),
-  }))
+    }))
+  }),
 }))
 
 jest.mock('@supabase/supabase-js', () => ({
@@ -95,8 +96,7 @@ jest.mock('@supabase/supabase-js', () => ({
         upload: jest.fn().mockResolvedValue({ data: null, error: null }),
         getPublicUrl: jest.fn(() => ({ data: { publicUrl: 'https://example.com/file' } })),
       })),
-    },
-  }))
+  })
 }))
 
 jest.mock('next/headers', () => ({

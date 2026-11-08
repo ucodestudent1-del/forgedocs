@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { CreditCard, DollarSign, Clock, Users } from "lucide-react"
@@ -100,6 +100,7 @@ export default async function BillingPage() {
               description="For individuals and small teams"
               features={["500 documents/month", "100 conversions/month", "5 GB storage", "Community support", "Team collaboration"]}
               popular={false}
+              currentTier={tier}
             />
             <PlanCard
               name="Pro"
@@ -107,6 +108,7 @@ export default async function BillingPage() {
               description="For power users and growing teams"
               features={["Unlimited documents", "Unlimited conversions", "100 GB storage", "Priority support", "Advanced templates", "Audit logs"]}
               popular={true}
+              currentTier={tier}
             />
           </div>
         </CardContent>
@@ -127,7 +129,7 @@ function UsageStat({ title, value, icon: Icon }: { title: string; value: string;
   )
 }
 
-function PlanCard({ name, price, description, features, popular }: { name: string; price: string; description: string; features: string[]; popular: boolean }) {
+function PlanCard({ name, price, description, features, popular, currentTier }: { name: string; price: string; description: string; features: string[]; popular: boolean; currentTier: string }) {
   return (
     <Card className={`relative flex flex-col ${popular ? "border-primary ring-1 ring-primary" : ""}`}>
       {popular && (

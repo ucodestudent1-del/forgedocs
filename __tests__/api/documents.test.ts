@@ -1,5 +1,6 @@
 import { GET, POST } from '@/app/api/documents/route'
 import { NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 
 // Mock the dependencies
 jest.mock('@/lib/supabase', () => ({
@@ -14,6 +15,7 @@ jest.mock('@/lib/supabase', () => ({
       range: jest.fn().mockResolvedValue({ data: [], error: null, count: 0 }),
     }))
   }))
+})
 
 jest.mock('@/lib/csrf', () => ({
   validateCSRF: jest.fn().mockReturnValue(null)

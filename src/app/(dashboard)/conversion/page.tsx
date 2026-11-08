@@ -1,21 +1,22 @@
 "use client"
 
+import React from "react"
 import { useEffect, useState, useCallback } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { FileText, FileSpreadsheet, FileImage, FilePdf, RefreshCw, Upload, Download, ArrowRight } from "lucide-react"
+import { FileText, FileSpreadsheet, FileImage, RefreshCw, Upload, Download, ArrowRight } from "lucide-react"
 import { documentRateLimit } from "@/lib/rate-limit"
 import { validateCSRF } from "@/lib/csrf"
 import { Search } from "lucide-react"
 
 const CONVERSION_PAIRS = [
   { source: "DOCX", target: "PDF", icon: FileText, color: "bg-blue-500/10 text-blue-600" },
-  { source: "PDF", target: "DOCX", icon: FilePdf, color: "bg-red-500/10 text-red-600" },
+  { source: "PDF", target: "DOCX", icon: FileText, color: "bg-red-500/10 text-red-600" },
   { source: "XLSX", target: "CSV", icon: FileSpreadsheet, color: "bg-green-500/10 text-green-600" },
   { source: "CSV", target: "XLSX", icon: FileSpreadsheet, color: "bg-green-500/10 text-green-600" },
   { source: "PPTX", target: "PDF", icon: FileImage, color: "bg-orange-500/10 text-orange-600" },
-  { source: "PDF", target: "TXT", icon: FilePdf, color: "bg-red-500/10 text-red-600" },
+  { source: "PDF", target: "TXT", icon: FileText, color: "bg-red-500/10 text-red-600" },
   { source: "DOCX", target: "TXT", icon: FileText, color: "bg-blue-500/10 text-blue-600" },
   { source: "XLSX", target: "PDF", icon: FileSpreadsheet, color: "bg-green-500/10 text-green-600" },
 ]
