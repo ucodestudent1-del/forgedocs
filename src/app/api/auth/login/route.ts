@@ -12,7 +12,7 @@ export async function POST(req: Request): Promise<NextResponse> {
     validateCSRF(req)
 
     const identifier = getClientIdentifier(req)
-    const attemptCheck = checkLoginAttempts(identifier)
+    const attemptCheck = await checkLoginAttempts(identifier)
     if (!attemptCheck.allowed) {
       return NextResponse.json(
         { error: `Account locked. Try again in ${Math.ceil(attemptCheck.remainingMs! / 1000 / 60)} minute(s).` },
@@ -35,11 +35,11 @@ export async function POST(req: Request): Promise<NextResponse> {
     })
 
     if (error) {
-      recordFailedAttempt(identifier)
+      await recordFailedAttempt(identifier)
       return NextResponse.json({ error: "Invalid email or password" }, { status: 400 })
     }
 
-    clearFailedAttempts(identifier)
+    await clearFailedAttempts(identifier)
     return NextResponse.json({ success: true })
   } catch (error) {
     if (error instanceof Error && error.name === "CSRFError") {

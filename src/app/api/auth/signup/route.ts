@@ -45,7 +45,10 @@ export async function POST(req: Request) {
       }
     }
 
-    return NextResponse.json({ user: data.user }, { status: 201 })
+    return NextResponse.json(
+      { user: data.user, message: "Please check your email to verify your account" },
+      { status: 201 }
+    )
   } catch (error) {
     if (error instanceof CSRFError) {
       return NextResponse.json({ error: error.message }, { status: 403 })

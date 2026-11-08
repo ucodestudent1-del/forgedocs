@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
-import { getRedisClient } from "@/lib/cache"
+import { getRedisClient } from "@/lib/cache.js"
 import Stripe from "stripe"
 
 export async function GET() {
@@ -52,7 +52,7 @@ export async function GET() {
     if (!stripeSecretKey || stripeSecretKey.startsWith("sk_test_placeholder")) {
       checks.stripe = { status: "unhealthy", error: "Stripe secret key not configured" }
     } else {
-      const stripe = new Stripe(stripeSecretKey, { apiVersion: "2024-12-18.acacia" })
+      const stripe = new Stripe(stripeSecretKey, { apiVersion: "2023-10-16" })
       await stripe.balance.retrieve()
       const stripeLatency = Date.now() - stripeStart
       checks.stripe = { status: "healthy", latency: stripeLatency }

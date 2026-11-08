@@ -1,11 +1,16 @@
 import { getRouteClient } from "@/lib/supabase"
 import { NextResponse } from "next/server"
 import { z } from "zod"
+import { cacheGet, cacheSet, cacheDel } from "@/lib/cache.js"
 
-// Account lockout tracking (in-memory, use Redis in production)
-const failedLoginAttempts = new Map<string, { count: number; lockoutUntil: number }>()
 const LOCKOUT_THRESHOLD = 5
 const LOCKOUT_DURATION_MS = 15 * 60 * 1000 // 15 minutes
+const LOCKOUT_TTL_SECONDS = Math.ceil(LOCKOUT_DURATION_MS / 1000)
+
+interface LockoutEntry {
+  count: number
+  lockoutUntil: number
+}
 
 function getClientIdentifier(req: Request): string {
   const forwarded = req.headers.get("x-forwarded-for")
@@ -13,29 +18,37 @@ function getClientIdentifier(req: Request): string {
   return ip
 }
 
-export function checkLoginAttempts(identifier: string): { allowed: boolean; remainingMs?: number } {
-  const entry = failedLoginAttempts.get(identifier)
+function getLockoutKey(identifier: string): string {
+  return `lockout:${identifier}`
+}
+
+export async function checkLoginAttempts(identifier: string): Promise<{ allowed: boolean; remainingMs?: number }> {
+  const entry = await cacheGet<LockoutEntry>(getLockoutKey(identifier))
   if (!entry) return { allowed: true }
 
-  if (now() > entry.lockoutUntil) {
-    failedLoginAttempts.delete(identifier)
+  const now = Date.now()
+  if (now > entry.lockoutUntil) {
+    await cacheDel(getLockoutKey(identifier))
     return { allowed: true }
   }
 
-  return { allowed: false, remainingMs: entry.lockoutUntil - now() }
+  return { allowed: false, remainingMs: entry.lockoutUntil - now }
 }
 
-export function recordFailedAttempt(identifier: string): void {
-  const entry = failedLoginAttempts.get(identifier) || { count: 0, lockoutUntil: 0 }
+export async function recordFailedAttempt(identifier: string): Promise<void> {
+  const key = getLockoutKey(identifier)
+  const entry = (await cacheGet<LockoutEntry>(key)) || { count: 0, lockoutUntil: 0 }
+  
   entry.count++
   if (entry.count >= LOCKOUT_THRESHOLD) {
-    entry.lockoutUntil = now() + LOCKOUT_DURATION_MS
+    entry.lockoutUntil = Date.now() + LOCKOUT_DURATION_MS
   }
-  failedLoginAttempts.set(identifier, entry)
+  
+  await cacheSet(key, entry, LOCKOUT_TTL_SECONDS)
 }
 
-export function clearFailedAttempts(identifier: string): void {
-  failedLoginAttempts.delete(identifier)
+export async function clearFailedAttempts(identifier: string): Promise<void> {
+  await cacheDel(getLockoutKey(identifier))
 }
 
 function now(): number {

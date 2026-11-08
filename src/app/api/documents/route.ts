@@ -4,7 +4,7 @@ import { validateCSRF } from "@/lib/csrf"
 import { documentRateLimit } from "@/lib/rate-limit"
 import { z } from "zod"
 import { MAX_PAGE_SIZE, DEFAULT_PAGE_SIZE, parsePagination } from "@/lib/pagination"
-import { cacheGet, cacheSet, cacheDel } from "@/lib/cache"
+import { cacheGet, cacheSet, cacheDel } from "@/lib/cache.js"
 
 export async function GET(req: Request) {
   const rateLimitError = await documentRateLimit(req)

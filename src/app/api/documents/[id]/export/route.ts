@@ -1,5 +1,6 @@
 import { getRouteClient } from "@/lib/supabase"
 import { NextResponse } from "next/server"
+import { sanitizeForExport } from "@/lib/sanitize"
 
 export async function GET(
   req: Request,
@@ -28,8 +29,11 @@ export async function GET(
   // Sanitize filename to prevent header injection
   const safeTitle = (doc.title || "document").replace(/["\r\n]/g, "_").slice(0, 100)
 
+  // Sanitize content for export
+  const sanitizedContent = sanitizeForExport(doc.content || "")
+
   // Return document content
-  return new Response(doc.content, {
+  return new Response(sanitizedContent, {
     headers: {
       "Content-Type": doc.mime_type || "text/plain",
       "Content-Disposition": `attachment; filename="${safeTitle}.txt"`,

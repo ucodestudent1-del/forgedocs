@@ -3,6 +3,7 @@ import { NextResponse } from "next/server"
 import { validateCSRF } from "@/lib/csrf"
 import { documentRateLimit } from "@/lib/rate-limit"
 import { z } from "zod"
+import { sanitizeHtml } from "@/lib/sanitize"
 
 export async function GET(
   req: Request,
@@ -31,7 +32,7 @@ export async function GET(
     return NextResponse.json({ error: "Document not found" }, { status: 404 })
   }
 
-  return NextResponse.json({ document: doc })
+  return NextResponse.json({ document: { ...doc, content: sanitizeHtml(doc.content || "") } })
 }
 
 const updateContentSchema = z.object({
@@ -64,6 +65,7 @@ export async function PUT(
 
     const body = await req.json()
     const { content } = updateContentSchema.parse(body)
+    const sanitizedContent = sanitizeHtml(content)
 
     const { id } = await params
 
@@ -87,7 +89,7 @@ export async function PUT(
 
     const { data, error } = await (supabase as any)
       .from("documents")
-      .update({ content, version: (currentDoc as any).version + 1 })
+      .update({ content: sanitizedContent, version: (currentDoc as any).version + 1 })
       .eq("id", id)
       .eq("user_id", user.id)
       .select()
