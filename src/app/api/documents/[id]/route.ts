@@ -8,7 +8,7 @@ export async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> {
-  const rateLimitError = documentRateLimit(req)
+  const rateLimitError = await documentRateLimit(req)
   if (rateLimitError) return rateLimitError
 
   const supabase = await createRouteClient()
@@ -45,7 +45,7 @@ export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> {
-  const rateLimitError = documentRateLimit(req)
+  const rateLimitError = await documentRateLimit(req)
   if (rateLimitError) return rateLimitError
 
   try {
@@ -87,7 +87,7 @@ export async function DELETE(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> {
-  const rateLimitError = documentRateLimit(req)
+  const rateLimitError = await documentRateLimit(req)
   if (rateLimitError) return rateLimitError
 
   try {

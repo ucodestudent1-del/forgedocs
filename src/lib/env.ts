@@ -3,6 +3,8 @@ const requiredEnvVars = [
   "NEXT_PUBLIC_SUPABASE_ANON_KEY",
   "STRIPE_SECRET_KEY",
   "STRIPE_WEBHOOK_SECRET",
+  "SENTRY_ORG",
+  "SENTRY_PROJECT",
 ] as const
 
 export function validateEnv() {
@@ -35,4 +37,6 @@ export const env = {
   NEXT_PUBLIC_SUPABASE_ANON_KEY: getEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY"),
   STRIPE_SECRET_KEY: getEnv("STRIPE_SECRET_KEY"),
   STRIPE_WEBHOOK_SECRET: getEnv("STRIPE_WEBHOOK_SECRET"),
+  SENTRY_ORG: getEnv("SENTRY_ORG"),
+  SENTRY_PROJECT: getEnv("SENTRY_PROJECT"),
 }

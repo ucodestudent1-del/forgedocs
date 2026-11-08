@@ -8,7 +8,7 @@ export async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> {
-  const rateLimitError = documentRateLimit(req)
+  const rateLimitError = await documentRateLimit(req)
   if (rateLimitError) return rateLimitError
 
   const supabase = await getRouteClient()
@@ -43,7 +43,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> {
   try {
-    const rateLimitError = documentRateLimit(req)
+    const rateLimitError = await documentRateLimit(req)
     if (rateLimitError) return rateLimitError
 
     try {

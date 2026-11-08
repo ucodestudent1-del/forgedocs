@@ -217,4 +217,20 @@ worker.on("failed", (job, err) => {
   console.error(`Job ${job.id} failed:`, err.message)
 })
 
+async function gracefulShutdown(signal) {
+  console.log(`Received ${signal}, shutting down worker gracefully...`)
+  try {
+    await worker.close()
+    await conversionQueue.close()
+    console.log("Worker shutdown complete")
+    process.exit(0)
+  } catch (err) {
+    console.error("Worker shutdown error:", err.message)
+    process.exit(1)
+  }
+}
+
+process.on("SIGTERM", () => gracefulShutdown("SIGTERM"))
+process.on("SIGINT", () => gracefulShutdown("SIGINT"))
+
 module.exports = { conversionQueue }

@@ -23,7 +23,7 @@ const createTemplateSchema = z.object({
 })
 
 export async function GET(req: Request): Promise<NextResponse> {
-  const rateLimitError = documentRateLimit(req)
+  const rateLimitError = await documentRateLimit(req)
   if (rateLimitError) return rateLimitError
 
   const supabase = await getRouteClient()
@@ -69,7 +69,7 @@ export async function GET(req: Request): Promise<NextResponse> {
 
 export async function POST(req: Request): Promise<NextResponse> {
   try {
-    const rateLimitError = documentRateLimit(req)
+    const rateLimitError = await documentRateLimit(req)
     if (rateLimitError) return rateLimitError
 
     await validateCSRF(req)

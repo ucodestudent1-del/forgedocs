@@ -4,8 +4,11 @@ import '@testing-library/jest-dom'
 process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co'
 process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key'
 process.env.STRIPE_SECRET_KEY = 'sk_test_123'
+process.env.STRIPE_WEBHOOK_SECRET = 'whsec_test'
 process.env.REDIS_URL = 'redis://localhost:6379'
 process.env.NODE_ENV = 'test'
+process.env.SENTRY_ORG = 'test-org'
+process.env.SENTRY_PROJECT = 'test-project'
 
 // Mock Next.js modules
 jest.mock('next/navigation', () => ({
@@ -43,7 +46,7 @@ jest.mock('@supabase/ssr', () => ({
       order: jest.fn().mockReturnThis(),
       range: jest.fn().mockReturnThis(),
     }))
-  }),
+  }))
   createRouteClient: jest.fn(() => ({
     auth: {
       getUser: jest.fn().mockResolvedValue({ data: { user: null }, error: null }),
@@ -58,7 +61,7 @@ jest.mock('@supabase/ssr', () => ({
       order: jest.fn().mockReturnThis(),
       range: jest.fn().mockReturnThis(),
     }))
-  }),
+  }))
   createBrowserClient: jest.fn(() => ({
     auth: {
       getUser: jest.fn().mockResolvedValue({ data: { user: null }, error: null }),
@@ -73,7 +76,7 @@ jest.mock('@supabase/ssr', () => ({
       order: jest.fn().mockReturnThis(),
       range: jest.fn().mockReturnThis(),
     }))
-  }),
+  }))
 }))
 
 jest.mock('@supabase/supabase-js', () => ({

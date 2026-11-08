@@ -5,7 +5,7 @@ import { authRateLimit } from "@/lib/rate-limit"
 import { z } from "zod"
 
 export async function GET(req: Request): Promise<NextResponse> {
-  const rateLimitError = authRateLimit(req)
+  const rateLimitError = await authRateLimit(req)
   if (rateLimitError) return rateLimitError
 
   const supabase = await getRouteClient()
@@ -42,7 +42,7 @@ const signupSchema = z.object({
 
 export async function POST(req: Request): Promise<NextResponse> {
   try {
-    const rateLimitError = authRateLimit(req)
+    const rateLimitError = await authRateLimit(req)
     if (rateLimitError) return rateLimitError
 
     await validateCSRF(req)

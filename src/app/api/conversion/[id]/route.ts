@@ -7,7 +7,7 @@ export async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const rateLimitError = documentRateLimit(req)
+  const rateLimitError = await documentRateLimit(req)
   if (rateLimitError) return rateLimitError
 
   const supabase = await getRouteClient()
@@ -38,7 +38,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const rateLimitError = documentRateLimit(req)
+    const rateLimitError = await documentRateLimit(req)
     if (rateLimitError) return rateLimitError
 
     await validateCSRF(req)

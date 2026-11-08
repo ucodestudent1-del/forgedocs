@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { getRedisClient, cacheGet, cacheSet } from "@/lib/cache"
 
 interface RateLimitEntry {
   count: number
@@ -10,6 +11,7 @@ interface RateLimitConfig {
   maxRequests: number
 }
 
+// In-memory fallback store (used when Redis is unavailable)
 const rateLimitStore = new Map<string, RateLimitEntry>()
 
 function getClientIdentifier(req: Request): string {
@@ -19,10 +21,57 @@ function getClientIdentifier(req: Request): string {
   return `${ip}:${userAgent}`
 }
 
+function rateLimitKey(identifier: string, config: RateLimitConfig): string {
+  return `ratelimit:${config.windowMs}:${config.maxRequests}:${identifier}`
+}
+
+async function getRedisRateLimit(identifier: string, config: RateLimitConfig): Promise<RateLimitEntry | null> {
+  try {
+    const value = await cacheGet<RateLimitEntry>(rateLimitKey(identifier, config))
+    return value
+  } catch {
+    return null
+  }
+}
+
+async function setRedisRateLimit(identifier: string, config: RateLimitConfig, entry: RateLimitEntry): Promise<void> {
+  try {
+    const ttlSeconds = Math.ceil(config.windowMs / 1000)
+    await cacheSet(rateLimitKey(identifier, config), entry, ttlSeconds)
+  } catch {
+    // Cache failure is non-fatal; fall back to in-memory
+  }
+}
+
 export function rateLimit(config: RateLimitConfig) {
-  return (req: Request): NextResponse | null => {
+  return async (req: Request): Promise<NextResponse | null> => {
     const now = Date.now()
     const identifier = getClientIdentifier(req)
+
+    // Try Redis first (shared across replicas)
+    const redisEntry = await getRedisRateLimit(identifier, config)
+
+    if (redisEntry) {
+      if (now > redisEntry.resetTime) {
+        // Window expired, reset
+        await setRedisRateLimit(identifier, config, { count: 1, resetTime: now + config.windowMs })
+        return null
+      }
+
+      redisEntry.count++
+      await setRedisRateLimit(identifier, config, redisEntry)
+
+      if (redisEntry.count > config.maxRequests) {
+        return NextResponse.json(
+          { error: "Too many requests", retryAfter: Math.ceil((redisEntry.resetTime - now) / 1000) },
+          { status: 429, headers: { "Retry-After": Math.ceil((redisEntry.resetTime - now) / 1000).toString() } }
+        )
+      }
+
+      return null
+    }
+
+    // Fall back to in-memory store
     const entry = rateLimitStore.get(identifier)
 
     if (!entry || now > entry.resetTime) {
@@ -58,7 +107,7 @@ export const documentRateLimit = rateLimit({
   maxRequests: 30, // 30 requests per minute
 })
 
-// Cleanup old entries every 5 minutes
+// Cleanup old in-memory entries every 5 minutes
 setInterval(() => {
   const now = Date.now()
   for (const [key, entry] of rateLimitStore.entries()) {

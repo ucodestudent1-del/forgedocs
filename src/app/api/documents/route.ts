@@ -7,7 +7,7 @@ import { MAX_PAGE_SIZE, DEFAULT_PAGE_SIZE, parsePagination } from "@/lib/paginat
 import { cacheGet, cacheSet, cacheDel } from "@/lib/cache"
 
 export async function GET(req: Request) {
-  const rateLimitError = documentRateLimit(req)
+  const rateLimitError = await documentRateLimit(req)
   if (rateLimitError) return rateLimitError
 
   const supabase = await getRouteClient()
@@ -68,7 +68,7 @@ const createDocSchema = z.object({
 
 export async function POST(req: Request) {
   try {
-    const rateLimitError = documentRateLimit(req)
+    const rateLimitError = await documentRateLimit(req)
     if (rateLimitError) return rateLimitError
 
     try {

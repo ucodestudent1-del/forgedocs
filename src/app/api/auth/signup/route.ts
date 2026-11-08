@@ -12,7 +12,7 @@ const signupSchema = z.object({
 
 export async function POST(req: Request) {
   try {
-    const rateLimitError = authRateLimit(req)
+    const rateLimitError = await authRateLimit(req)
     if (rateLimitError) return rateLimitError
 
     await validateCSRF(req)

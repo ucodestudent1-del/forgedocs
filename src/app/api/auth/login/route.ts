@@ -6,7 +6,7 @@ import { checkLoginAttempts, recordFailedAttempt, clearFailedAttempts, validateP
 
 export async function POST(req: Request): Promise<NextResponse> {
   try {
-    const rateLimitError = authRateLimit(req)
+    const rateLimitError = await authRateLimit(req)
     if (rateLimitError) return rateLimitError
 
     validateCSRF(req)
@@ -51,7 +51,7 @@ export async function POST(req: Request): Promise<NextResponse> {
 
 export async function DELETE(req: Request): Promise<NextResponse> {
   try {
-    const rateLimitError = authRateLimit(req)
+    const rateLimitError = await authRateLimit(req)
     if (rateLimitError) return rateLimitError
 
     await validateCSRF(req)

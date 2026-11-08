@@ -1,4 +1,5 @@
 import Redis from "ioredis"
+import { registerShutdown } from "@/lib/shutdown"
 
 let redisClient: Redis | null = null
 
@@ -7,13 +8,23 @@ export function getRedisClient(): Redis {
     redisClient = new Redis(process.env.REDIS_URL || "redis://localhost:6379", {
       maxRetriesPerRequest: 3,
       retryStrategy: (times) => {
-        if (times > 3) return null // Stop retrying
+        if (times > 3) return null
         return Math.min(times * 200, 2000)
       },
       lazyConnect: true,
     })
     redisClient.on("error", (err) => console.error("Redis Client Error", err))
+
+    registerShutdown(async () => {
+      try {
+        await redisClient?.quit()
+      } catch {
+        // ignore
+      }
+    })
   }
+  return redisClient
+}
   return redisClient
 }
 

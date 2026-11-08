@@ -27,7 +27,7 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  const rateLimitError = authRateLimit(req)
+  const rateLimitError = await authRateLimit(req)
   if (rateLimitError) return rateLimitError
 
   await validateCSRF(req)
