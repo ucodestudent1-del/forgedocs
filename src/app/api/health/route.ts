@@ -5,7 +5,6 @@ import { NextResponse } from "next/server"
 export async function GET() {
   const checks: Record<string, { status: string; latency?: number; error?: string }> = {}
 
-  // Database health check
   const dbStart = Date.now()
   try {
     const supabase = createServerClient(
@@ -23,7 +22,6 @@ export async function GET() {
     checks.database = { status: "unhealthy", latency: dbLatency, error: String(err) }
   }
 
-  // Overall status
   const allHealthy = Object.values(checks).every((c) => c.status === "healthy")
   const status = allHealthy ? "healthy" : "degraded"
 
