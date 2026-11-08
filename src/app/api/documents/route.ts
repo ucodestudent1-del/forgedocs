@@ -67,67 +67,73 @@ const createDocSchema = z.object({
 })
 
 export async function POST(req: Request) {
-  const rateLimitError = documentRateLimit(req)
-  if (rateLimitError) return rateLimitError
+  try {
+    const rateLimitError = documentRateLimit(req)
+    if (rateLimitError) return rateLimitError
 
-  const csrfError = validateCSRF(req)
-  if (csrfError) return csrfError
+    validateCSRF(req)
 
-  const supabase = getRouteClient()
-  const { data: { user } } = await supabase.auth.getUser()
+    const supabase = getRouteClient()
+    const { data: { user } } = await supabase.auth.getUser()
 
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  }
-
-  const body = await req.json()
-  const { title, description, template_id } = createDocSchema.parse(body)
-
-  let content = ""
-  let content_type = "text/plain"
-
-  // If template_id provided, fetch template and use its content as starting point
-  if (template_id) {
-    const { data: template, error: templateError } = await supabase
-      .from("templates")
-      .select("*")
-      .eq("id", template_id)
-      .eq("user_id", user.id)
-      .single()
-
-    if (templateError || !template) {
-      return NextResponse.json({ error: "Template not found" }, { status: 404 })
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    content = template.placeholder_schema
-      ? JSON.stringify(template.placeholder_schema, null, 2)
-      : ""
-    content_type = "application/vnd.forgedocs.document+json"
+    const body = await req.json()
+    const { title, description, template_id } = createDocSchema.parse(body)
+
+    let content = ""
+    let content_type = "text/plain"
+
+    // If template_id provided, fetch template and use its content as starting point
+    if (template_id) {
+      const { data: template, error: templateError } = await supabase
+        .from("templates")
+        .select("*")
+        .eq("id", template_id)
+        .eq("user_id", user.id)
+        .single()
+
+      if (templateError || !template) {
+        return NextResponse.json({ error: "Template not found" }, { status: 404 })
+      }
+
+      content = template.placeholder_schema
+        ? JSON.stringify(template.placeholder_schema, null, 2)
+        : ""
+      content_type = "application/vnd.forgedocs.document+json"
+    }
+
+    const storagePath = `documents/${user.id}/${crypto.randomUUID()}.json`
+
+    const { data: doc, error } = await (supabase as any)
+      .from("documents")
+      .insert({
+        user_id: user.id,
+        title,
+        description,
+        content,
+        storage_path: storagePath,
+        mime_type: content_type,
+        file_size: Buffer.byteLength(content),
+        version: 1,
+      })
+      .select()
+      .single()
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    // Invalidate document list cache
+    await cacheDel(`documents:${user.id}:*`)
+
+    return NextResponse.json({ document: doc }, { status: 201 })
+  } catch (error) {
+    if (error instanceof Error && error.name === "CSRFError") {
+      return NextResponse.json({ error: "Invalid CSRF token" }, { status: 403 })
+    }
+    throw error
   }
-
-  const storagePath = `documents/${user.id}/${crypto.randomUUID()}.json`
-
-  const { data: doc, error } = await (supabase as any)
-    .from("documents")
-    .insert({
-      user_id: user.id,
-      title,
-      description,
-      content,
-      storage_path: storagePath,
-      mime_type: content_type,
-      file_size: Buffer.byteLength(content),
-      version: 1,
-    })
-    .select()
-    .single()
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
-  }
-
-  // Invalidate document list cache
-  await cacheDel(`documents:${user.id}:*`)
-
-  return NextResponse.json({ document: doc }, { status: 201 })
 }

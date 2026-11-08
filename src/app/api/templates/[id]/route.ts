@@ -1,12 +1,16 @@
-import { createRouteClient } from "@/lib/supabase"
+import { getRouteClient } from "@/lib/supabase"
 import { NextResponse } from "next/server"
-import { z } from "zod"
+import { validateCSRF } from "@/lib/csrf"
+import { documentRateLimit } from "@/lib/rate-limit"
 
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const supabase = createRouteClient()
+  const rateLimitError = documentRateLimit(req)
+  if (rateLimitError) return rateLimitError
+
+  const supabase = getRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
@@ -33,24 +37,36 @@ export async function DELETE(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const supabase = createRouteClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  try {
+    const rateLimitError = documentRateLimit(req)
+    if (rateLimitError) return rateLimitError
 
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    validateCSRF(req)
+
+    const supabase = getRouteClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const { id } = await params
+
+    const { error } = await supabase
+      .from("templates")
+      .delete()
+      .eq("id", id)
+      .eq("user_id", user.id)
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    if (error instanceof Error && error.name === "CSRFError") {
+      return NextResponse.json({ error: "Invalid CSRF token" }, { status: 403 })
+    }
+    throw error
   }
-
-  const { id } = await params
-
-  const { error } = await supabase
-    .from("templates")
-    .delete()
-    .eq("id", id)
-    .eq("user_id", user.id)
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
-  }
-
-  return NextResponse.json({ success: true })
 }

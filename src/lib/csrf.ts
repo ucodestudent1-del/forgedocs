@@ -1,15 +1,21 @@
 import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
 
-export async function validateCSRF(req: Request) {
+export class CSRFError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = "CSRFError"
+  }
+}
+
+export async function validateCSRF(req: Request): Promise<void> {
   const token = req.headers.get("x-csrf-token")
   const cookieStore = await cookies()
   const cookieToken = cookieStore.get("csrf_token")?.value
 
   if (!token || !cookieToken || token !== cookieToken) {
-    return NextResponse.json({ error: "Invalid CSRF token" }, { status: 403 })
+    throw new CSRFError("Invalid CSRF token")
   }
-  return null
 }
 
 export function generateCSRFToken() {

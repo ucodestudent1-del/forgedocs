@@ -2,7 +2,6 @@ import { getRouteClient } from "@/lib/supabase"
 import { NextResponse } from "next/server"
 import { validateCSRF } from "@/lib/csrf"
 import { authRateLimit } from "@/lib/rate-limit"
-import { validatePassword } from "@/lib/auth"
 import { z } from "zod"
 
 export async function GET(req: Request) {
@@ -42,26 +41,32 @@ const signupSchema = z.object({
 })
 
 export async function POST(req: Request) {
-  const rateLimitError = authRateLimit(req)
-  if (rateLimitError) return rateLimitError
+  try {
+    const rateLimitError = authRateLimit(req)
+    if (rateLimitError) return rateLimitError
 
-  const csrfError = validateCSRF(req)
-  if (csrfError) return csrfError
+    validateCSRF(req)
 
-  const supabase = getRouteClient()
-  const body = await req.json()
+    const supabase = getRouteClient()
+    const body = await req.json()
 
-  const { email, password, full_name } = signupSchema.parse(body)
+    const { email, password, full_name } = signupSchema.parse(body)
 
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: { data: { full_name } },
-  })
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { full_name } },
+    })
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 400 })
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 400 })
+    }
+
+    return NextResponse.json({ user: data.user })
+  } catch (error) {
+    if (error instanceof Error && error.name === "CSRFError") {
+      return NextResponse.json({ error: "Invalid CSRF token" }, { status: 403 })
+    }
+    throw error
   }
-
-  return NextResponse.json({ user: data.user })
 }

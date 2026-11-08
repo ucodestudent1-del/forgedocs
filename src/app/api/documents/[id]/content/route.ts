@@ -42,53 +42,59 @@ export async function PUT(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const rateLimitError = documentRateLimit(req)
-  if (rateLimitError) return rateLimitError
+  try {
+    const rateLimitError = documentRateLimit(req)
+    if (rateLimitError) return rateLimitError
 
-  const csrfError = validateCSRF(req)
-  if (csrfError) return csrfError
+    validateCSRF(req)
 
-  const supabase = getRouteClient()
-  const { data: { user } } = await supabase.auth.getUser()
+    const supabase = getRouteClient()
+    const { data: { user } } = await supabase.auth.getUser()
 
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const body = await req.json()
+    const { content } = updateContentSchema.parse(body)
+
+    const { id } = await params
+
+    const { data: currentDoc } = await supabase
+      .from("documents")
+      .select("version, content")
+      .eq("id", id)
+      .eq("user_id", user.id)
+      .single()
+
+    if (!currentDoc) {
+      return NextResponse.json({ error: "Document not found" }, { status: 404 })
+    }
+
+    await (supabase as any).from("document_versions").insert({
+      document_id: id,
+      version: (currentDoc as any).version,
+      content: (currentDoc as any).content,
+      created_by: user.id,
+    })
+
+    const { data, error } = await (supabase as any)
+      .from("documents")
+      .update({ content, version: (currentDoc as any).version + 1 })
+      .eq("id", id)
+      .eq("user_id", user.id)
+      .select()
+      .single()
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    return NextResponse.json({ document: data })
+  } catch (error) {
+    if (error instanceof Error && error.name === "CSRFError") {
+      return NextResponse.json({ error: "Invalid CSRF token" }, { status: 403 })
+    }
+    throw error
   }
-
-  const body = await req.json()
-  const { content } = updateContentSchema.parse(body)
-
-  const { id } = await params
-
-  const { data: currentDoc } = await supabase
-    .from("documents")
-    .select("version, content")
-    .eq("id", id)
-    .eq("user_id", user.id)
-    .single()
-
-  if (!currentDoc) {
-    return NextResponse.json({ error: "Document not found" }, { status: 404 })
-  }
-
-  await (supabase as any).from("document_versions").insert({
-    document_id: id,
-    version: (currentDoc as any).version,
-    content: (currentDoc as any).content,
-    created_by: user.id,
-  })
-
-  const { data, error } = await (supabase as any)
-    .from("documents")
-    .update({ content, version: (currentDoc as any).version + 1 })
-    .eq("id", id)
-    .eq("user_id", user.id)
-    .select()
-    .single()
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
-  }
-
-  return NextResponse.json({ document: data })
 }

@@ -68,41 +68,47 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const rateLimitError = documentRateLimit(req)
-  if (rateLimitError) return rateLimitError
+  try {
+    const rateLimitError = documentRateLimit(req)
+    if (rateLimitError) return rateLimitError
 
-  const csrfError = validateCSRF(req)
-  if (csrfError) return csrfError
+    validateCSRF(req)
 
-  const supabase = getRouteClient()
-  const { data: { user } } = await supabase.auth.getUser()
+    const supabase = getRouteClient()
+    const { data: { user } } = await supabase.auth.getUser()
 
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const body = await req.json()
+    const { name, description, category, source_url, placeholder_schema, preview_url, tags, is_public } = createTemplateSchema.parse(body)
+
+    const { data, error } = await (supabase as any)
+      .from("templates")
+      .insert({
+        user_id: user.id,
+        name,
+        description,
+        category,
+        source_url,
+        placeholder_schema,
+        preview_url,
+        tags,
+        is_public,
+      })
+      .select()
+      .single()
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    return NextResponse.json({ template: data }, { status: 201 })
+  } catch (error) {
+    if (error instanceof Error && error.name === "CSRFError") {
+      return NextResponse.json({ error: "Invalid CSRF token" }, { status: 403 })
+    }
+    throw error
   }
-
-  const body = await req.json()
-  const { name, description, category, source_url, placeholder_schema, preview_url, tags, is_public } = createTemplateSchema.parse(body)
-
-  const { data, error } = await (supabase as any)
-    .from("templates")
-    .insert({
-      user_id: user.id,
-      name,
-      description,
-      category,
-      source_url,
-      placeholder_schema,
-      preview_url,
-      tags,
-      is_public,
-    })
-    .select()
-    .single()
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
-  }
-
-  return NextResponse.json({ template: data }, { status: 201 })
 }
