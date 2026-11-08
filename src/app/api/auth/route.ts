@@ -1,9 +1,13 @@
 import { getRouteClient } from "@/lib/supabase"
 import { NextResponse } from "next/server"
 import { validateCSRF } from "@/lib/csrf"
+import { authRateLimit } from "@/lib/rate-limit"
 import { z } from "zod"
 
 export async function GET(req: Request) {
+  const rateLimitError = authRateLimit(req)
+  if (rateLimitError) return rateLimitError
+
   const supabase = getRouteClient()
   const { data: { user }, error } = await supabase.auth.getUser()
 
@@ -31,6 +35,9 @@ const signupSchema = z.object({
 })
 
 export async function POST(req: Request) {
+  const rateLimitError = authRateLimit(req)
+  if (rateLimitError) return rateLimitError
+
   const csrfError = validateCSRF(req)
   if (csrfError) return csrfError
 

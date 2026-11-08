@@ -1,8 +1,12 @@
 import { getRouteClient } from "@/lib/supabase"
 import { NextResponse } from "next/server"
 import { validateCSRF } from "@/lib/csrf"
+import { authRateLimit } from "@/lib/rate-limit"
 
 export async function POST(req: Request) {
+  const rateLimitError = authRateLimit(req)
+  if (rateLimitError) return rateLimitError
+
   const csrfError = validateCSRF(req)
   if (csrfError) return csrfError
 
@@ -22,6 +26,9 @@ export async function POST(req: Request) {
 }
 
 export async function DELETE(req: Request) {
+  const rateLimitError = authRateLimit(req)
+  if (rateLimitError) return rateLimitError
+
   const csrfError = validateCSRF(req)
   if (csrfError) return csrfError
 

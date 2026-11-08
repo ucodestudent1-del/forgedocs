@@ -1,12 +1,16 @@
 import { getRouteClient } from "@/lib/supabase"
 import { NextResponse } from "next/server"
 import { validateCSRF } from "@/lib/csrf"
+import { documentRateLimit } from "@/lib/rate-limit"
 
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const supabase = await getRouteClient()
+  const rateLimitError = documentRateLimit(req)
+  if (rateLimitError) return rateLimitError
+
+  const supabase = getRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
@@ -33,10 +37,13 @@ export async function DELETE(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const csrfError = await validateCSRF(req)
+  const rateLimitError = documentRateLimit(req)
+  if (rateLimitError) return rateLimitError
+
+  const csrfError = validateCSRF(req)
   if (csrfError) return csrfError
 
-  const supabase = await getRouteClient()
+  const supabase = getRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
