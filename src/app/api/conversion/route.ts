@@ -3,6 +3,7 @@ import { NextResponse } from "next/server"
 import { validateCSRF } from "@/lib/csrf"
 import { documentRateLimit } from "@/lib/rate-limit"
 import { parsePagination } from "@/lib/pagination"
+import { checkTierLimit, trackUsage } from "@/lib/tierLimits"
 import {
   conversionJobSchema,
   FORMAT_REGISTRY,
@@ -179,38 +180,13 @@ export async function POST(req: Request): Promise<NextResponse> {
     return NextResponse.json({ error: `Conversion from ${source_format} to ${target_format} is not supported` }, { status: 400 })
   }
 
-  // Check tier limits
-  const { data: subscription } = await (supabase as any)
-    .from("subscriptions")
-    .select("tier, status")
-    .eq("user_id", user.id)
-    .eq("status", "active")
-    .single()
-
-  const tier = subscription?.tier || "free"
-  const tierLimits = {
-    free: { daily_conversions: 5 },
-    pro: { daily_conversions: 100 },
-    business: { daily_conversions: 1000 },
-    enterprise: { daily_conversions: -1 },
-  }
-
-  const limit = tierLimits[tier as keyof typeof tierLimits]?.daily_conversions || 5
-  if (limit >= 0) {
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    const { count } = await (supabase as any)
-      .from("conversion_jobs")
-      .select("*", { head: true })
-      .eq("user_id", user.id)
-      .gte("created_at", today.toISOString())
-
-    if (count >= limit) {
-      return NextResponse.json(
-        { error: `Daily conversion limit (${limit}) reached for ${tier} tier` },
-        { status: 403 }
-      )
-    }
+  // Check tier limits using centralized utility
+  const limitCheck = await checkTierLimit(user.id, "conversions", 1)
+  if (!limitCheck.allowed) {
+    return NextResponse.json(
+      { error: `Monthly conversion limit reached (${limitCheck.current}/${limitCheck.limit}). Upgrade your plan to continue.` },
+      { status: 403 }
+    )
   }
 
   // Verify source document if provided
@@ -247,11 +223,7 @@ export async function POST(req: Request): Promise<NextResponse> {
   }
 
   // Track usage
-  await (supabase as any).from("usage_records").insert({
-    user_id: user.id,
-    metric: "conversions",
-    quantity: 1,
-  })
+  await trackUsage(user.id, "conversions", 1)
 
   return NextResponse.json({ job }, { status: 201 })
 }

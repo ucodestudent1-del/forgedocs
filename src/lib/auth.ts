@@ -1,7 +1,7 @@
 import { getRouteClient } from "@/lib/supabase"
 import { NextResponse } from "next/server"
 import { z } from "zod"
-import { cacheGet, cacheSet, cacheDel } from "@/lib/cache.js"
+import { cacheGet, cacheSet, cacheDel } from "@/lib/cache"
 
 const LOCKOUT_THRESHOLD = 5
 const LOCKOUT_DURATION_MS = 15 * 60 * 1000 // 15 minutes

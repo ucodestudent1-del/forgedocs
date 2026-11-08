@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
-import { getRedisClient } from "@/lib/cache.js"
+import { getRedisClient } from "@/lib/cache"
 import Stripe from "stripe"
 
 export async function GET() {

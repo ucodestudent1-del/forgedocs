@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { getRedisClient, cacheGet, cacheSet } from "@/lib/cache.js"
+import { getRedisClient, cacheGet, cacheSet } from "@/lib/cache"
 
 interface RateLimitEntry {
   count: number
