@@ -1,14 +1,18 @@
-import { createClient } from "redis"
+import Redis from "ioredis"
 
-let redisClient: ReturnType<typeof createClient> | null = null
+let redisClient: Redis | null = null
 
-export function getRedisClient() {
+export function getRedisClient(): Redis {
   if (!redisClient) {
-    redisClient = createClient({
-      url: process.env.REDIS_URL,
+    redisClient = new Redis(process.env.REDIS_URL || "redis://localhost:6379", {
+      maxRetriesPerRequest: 3,
+      retryStrategy: (times) => {
+        if (times > 3) return null // Stop retrying
+        return Math.min(times * 200, 2000)
+      },
+      lazyConnect: true,
     })
     redisClient.on("error", (err) => console.error("Redis Client Error", err))
-    redisClient.connect().catch(console.error)
   }
   return redisClient
 }
@@ -16,6 +20,7 @@ export function getRedisClient() {
 export async function cacheGet<T>(key: string): Promise<T | null> {
   try {
     const client = getRedisClient()
+    await client.connect()
     const value = await client.get(key)
     if (value === null) return null
     return JSON.parse(value) as T
@@ -27,7 +32,8 @@ export async function cacheGet<T>(key: string): Promise<T | null> {
 export async function cacheSet<T>(key: string, value: T, ttlSeconds: number = 300): Promise<void> {
   try {
     const client = getRedisClient()
-    await client.set(key, JSON.stringify(value), { EX: ttlSeconds })
+    await client.connect()
+    await client.set(key, JSON.stringify(value), "EX", ttlSeconds)
   } catch {
     // Cache failure is non-fatal
   }
@@ -36,6 +42,7 @@ export async function cacheSet<T>(key: string, value: T, ttlSeconds: number = 30
 export async function cacheDel(key: string): Promise<void> {
   try {
     const client = getRedisClient()
+    await client.connect()
     await client.del(key)
   } catch {
     // Cache failure is non-fatal

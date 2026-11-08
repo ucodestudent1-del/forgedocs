@@ -253,12 +253,12 @@ export default function ConversionPage() {
                   <RefreshCw className="h-4 w-4 animate-spin mr-2" />
                   Converting...
                 </>
-                : (
-                  <>
-                    <ArrowRight className="h-4 w-4 mr-2" />
-                    Convert Document
-                  </>
-                )}
+              ) : (
+                <>
+                  <ArrowRight className="h-4 w-4 mr-2" />
+                  Convert Document
+                </>
+              )}
               </Button>
             </div>
           </div>
