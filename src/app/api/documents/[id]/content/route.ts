@@ -1,17 +1,12 @@
-import { getRouteClient } from "@/lib/supabase"
+import { createRouteClient } from "@/lib/supabase"
 import { NextResponse } from "next/server"
-import { validateCSRF } from "@/lib/csrf"
-import { documentRateLimit } from "@/lib/rate-limit"
 import { z } from "zod"
 
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const rateLimitError = documentRateLimit(req)
-  if (rateLimitError) return rateLimitError
-
-  const supabase = getRouteClient()
+  const supabase = createRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
@@ -34,17 +29,15 @@ export async function GET(
   return NextResponse.json({ versions })
 }
 
+const updateContentSchema = z.object({
+  content: z.string().max(1000000), // max 1MB content
+})
+
 export async function PUT(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const rateLimitError = documentRateLimit(req)
-  if (rateLimitError) return rateLimitError
-
-  const csrfError = validateCSRF(req)
-  if (csrfError) return csrfError
-
-  const supabase = getRouteClient()
+  const supabase = createRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
@@ -52,7 +45,7 @@ export async function PUT(
   }
 
   const body = await req.json()
-  const { content } = body
+  const { content } = updateContentSchema.parse(body)
 
   const { id } = await params
 

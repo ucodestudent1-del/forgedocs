@@ -1,16 +1,12 @@
-import { getRouteClient } from "@/lib/supabase"
+import { createRouteClient } from "@/lib/supabase"
 import { NextResponse } from "next/server"
-import { validateCSRF } from "@/lib/csrf"
-import { documentRateLimit } from "@/lib/rate-limit"
+import { z } from "zod"
 
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const rateLimitError = documentRateLimit(req)
-  if (rateLimitError) return rateLimitError
-
-  const supabase = getRouteClient()
+  const supabase = createRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
@@ -33,17 +29,18 @@ export async function GET(
   return NextResponse.json({ document: doc })
 }
 
+const updateDocSchema = z.object({
+  title: z.string().min(1).max(200).optional(),
+  description: z.string().optional(),
+  is_pinned: z.boolean().optional(),
+  is_archived: z.boolean().optional(),
+})
+
 export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const rateLimitError = documentRateLimit(req)
-  if (rateLimitError) return rateLimitError
-
-  const csrfError = validateCSRF(req)
-  if (csrfError) return csrfError
-
-  const supabase = getRouteClient()
+  const supabase = createRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
@@ -51,7 +48,7 @@ export async function PATCH(
   }
 
   const body = await req.json()
-  const { title, description, is_pinned, is_archived } = body
+  const { title, description, is_pinned, is_archived } = updateDocSchema.parse(body)
   const { id } = await params
 
   const { data, error } = await (supabase as any)
@@ -73,13 +70,7 @@ export async function DELETE(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const rateLimitError = documentRateLimit(req)
-  if (rateLimitError) return rateLimitError
-
-  const csrfError = validateCSRF(req)
-  if (csrfError) return csrfError
-
-  const supabase = getRouteClient()
+  const supabase = createRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {

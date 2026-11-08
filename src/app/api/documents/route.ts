@@ -1,21 +1,16 @@
-import { getRouteClient } from "@/lib/supabase"
+import { createRouteClient } from "@/lib/supabase"
 import { NextResponse } from "next/server"
-import { validateCSRF } from "@/lib/csrf"
-import { documentRateLimit } from "@/lib/rate-limit"
 import { z } from "zod"
 
 export async function GET(req: Request) {
-  const rateLimitError = documentRateLimit(req)
-  if (rateLimitError) return rateLimitError
-
-  const supabase = getRouteClient()
+  const supabase = createRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  const searchParams = new URL(req.url)
+  const { searchParams } = new URL(req.url)
   const page = parseInt(searchParams.get("page") || "1")
   const limit = parseInt(searchParams.get("limit") || "20")
   const archived = searchParams.get("archived") === "true"
@@ -57,13 +52,7 @@ const createDocSchema = z.object({
 })
 
 export async function POST(req: Request) {
-  const rateLimitError = documentRateLimit(req)
-  if (rateLimitError) return rateLimitError
-
-  const csrfError = validateCSRF(req)
-  if (csrfError) return csrfError
-
-  const supabase = getRouteClient()
+  const supabase = await createRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
