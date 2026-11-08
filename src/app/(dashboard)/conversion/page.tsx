@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { FileText, FileSpreadsheet, FileImage, FilePdf, RefreshCw, Upload, Download, ArrowRight } from "lucide-react"
 import { documentRateLimit } from "@/lib/rate-limit"
 import { validateCSRF } from "@/lib/csrf"
+import { Search } from "lucide-react"
 
 const CONVERSION_PAIRS = [
   { source: "DOCX", target: "PDF", icon: FileText, color: "bg-blue-500/10 text-blue-600" },
@@ -27,9 +28,9 @@ export default function ConversionPage() {
   const [selectedSourceUrl, setSelectedSourceUrl] = useState("")
   const [selectedTargetFormat, setSelectedTargetFormat] = useState("")
   const [uploadProgress, setUploadProgress] = useState(0)
-  const [activeTab, setActiveTab] = useState("upload" | "url" | "history")("upload")
-
+  const [activeTab, setActiveTab] = useState<"upload" | "url" | "history">("upload")
   const [sourceFile, setSourceFile] = useState<File | null>(null)
+  const [search, setSearch] = useState("")
 
   async function fetchJobs() {
     try {
@@ -259,8 +260,7 @@ export default function ConversionPage() {
                   Convert Document
                 </>
               )}
-              </Button>
-            </div>
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -326,7 +326,7 @@ export default function ConversionPage() {
                       </button>
                     )}
                   </div>
-                ))}
+                ))
               )}
             </div>
           </div>
@@ -335,5 +335,3 @@ export default function ConversionPage() {
     </div>
   )
 }
-
-import { Search } from "lucide-react"
