@@ -1,11 +1,51 @@
-"use client"
-
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { createServerClient } from "@supabase/ssr"
+import { cookies } from "next/headers"
+import { redirect } from "next/navigation"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { CreditCard, DollarSign, Clock, Users } from "lucide-react"
 
-export default function BillingPage() {
+export default async function BillingPage() {
+  const cookieStore = cookies()
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { cookies: () => cookieStore }
+  )
+
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) {
+    redirect("/auth/login")
+  }
+
+  const { data: subscription } = await supabase
+    .from("subscriptions")
+    .select("*")
+    .eq("user_id", user.id)
+    .eq("status", "active")
+    .single()
+
+  const tier = subscription?.tier || "free"
+  const tierInfo = {
+    free: {
+      name: "Free",
+      price: "$0",
+      description: "For individuals and small teams",
+      features: ["500 documents/month", "100 conversions/month", "5 GB storage", "Community support", "Team collaboration"],
+      limits: { documents: 500, conversions: 100, storage: "5 GB" },
+    },
+    pro: {
+      name: "Pro",
+      price: "$15",
+      description: "For power users and growing teams",
+      features: ["Unlimited documents", "Unlimited conversions", "100 GB storage", "Priority support", "Advanced templates", "Audit logs"],
+      limits: { documents: null, conversions: null, storage: "100 GB" },
+    },
+  }
+
+  const currentTier = tierInfo[tier as keyof typeof tierInfo] || tierInfo.free
+
   return (
     <div className="space-y-6">
       <div>
@@ -20,14 +60,16 @@ export default function BillingPage() {
         </CardHeader>
         <CardContent className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
           <div>
-            <h2 className="text-lg font-semibold">Free</h2>
-            <p className="text-muted-foreground text-sm">Perfect for getting started</p>
+            <h2 className="text-lg font-semibold">{currentTier.name}</h2>
+            <p className="text-muted-foreground text-sm">{currentTier.description}</p>
           </div>
           <div className="flex items-center gap-4">
-            <span className="text-2xl font-bold">$0</span>
+            <span className="text-2xl font-bold">{currentTier.price}</span>
             <span className="text-muted-foreground text-sm">/month</span>
           </div>
-          <Button className="w-full lg:w-auto">Upgrade</Button>
+          <Button className="w-full lg:w-auto" disabled={tier === "pro"}>
+            {tier === "pro" ? "Current Plan" : "Upgrade to Pro"}
+          </Button>
         </CardContent>
       </Card>
 
@@ -52,8 +94,20 @@ export default function BillingPage() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <PlanCard name="Free" price="$0" description="For individuals and small teams" features={["500 documents/month", "100 conversions/month", "5 GB storage", "Community support", "Team collaboration"]} popular={false} />
-            <PlanCard name="Pro" price="$15" description="For power users and growing teams" features={["Unlimited documents", "Unlimited conversions", "100 GB storage", "Priority support", "Advanced templates", "Audit logs"]} popular={true} />
+            <PlanCard
+              name="Free"
+              price="$0"
+              description="For individuals and small teams"
+              features={["500 documents/month", "100 conversions/month", "5 GB storage", "Community support", "Team collaboration"]}
+              popular={false}
+            />
+            <PlanCard
+              name="Pro"
+              price="$15"
+              description="For power users and growing teams"
+              features={["Unlimited documents", "Unlimited conversions", "100 GB storage", "Priority support", "Advanced templates", "Audit logs"]}
+              popular={true}
+            />
           </div>
         </CardContent>
       </Card>
@@ -97,8 +151,8 @@ function PlanCard({ name, price, description, features, popular }: { name: strin
         </ul>
       </CardContent>
       <CardFooter className="pt-4">
-        <Button className="w-full" variant={popular ? "default" : "outline"}>
-          {popular ? "Get Started" : "Choose Plan"}
+        <Button className="w-full" variant={popular ? "default" : "outline"} disabled={tier === name.toLowerCase()}>
+          {tier === name.toLowerCase() ? "Current Plan" : popular ? "Get Started" : "Choose Plan"}
         </Button>
       </CardFooter>
     </Card>

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { RefreshCw, File, FileSpreadsheet, Search, Upload } from "lucide-react"
+import { RefreshCw, File, FileSpreadsheet, Search, Upload, Download } from "lucide-react"
 
 const CONVERSIONS = [
   { source: "DOCX", target: "PDF", icon: File },
@@ -18,20 +18,44 @@ export default function ConversionPage() {
   const [jobs, setJobs] = useState<any[]>([])
   const [search, setSearch] = useState("")
   const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    fetchJobs()
-  }, [])
+  const [converting, setConverting] = useState(false)
 
   async function fetchJobs() {
     try {
-      const res = await fetch("/api/conversion/jobs")
+      const res = await fetch("/api/conversion")
       const data = await res.json()
       setJobs(data.jobs || [])
     } catch (e) {
       console.error(e)
     } finally {
       setLoading(false)
+    }
+  }
+
+  React.useEffect(() => {
+    fetchJobs()
+  }, [])
+
+  async function handleConvert(source: string, target: string) {
+    setConverting(true)
+    try {
+      const res = await fetch("/api/conversion", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ source_url: "", target_format: target }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setJobs([data.job, ...(jobs || [])])
+      } else {
+        const err = await res.json()
+        alert(err.error || "Conversion failed")
+      }
+    } catch (e) {
+      console.error(e)
+      alert("Conversion failed")
+    } finally {
+      setConverting(false)
     }
   }
 
@@ -42,13 +66,12 @@ export default function ConversionPage() {
           <h1 className="text-2xl font-bold tracking-tight">Conversion</h1>
           <p className="text-muted-foreground">Convert documents between formats</p>
         </div>
-        <Button className="flex items-center gap-2">
+        <Button className="flex items-center gap-2" disabled={converting}>
           <Upload className="h-4 w-4" />
           Upload & Convert
         </Button>
       </div>
 
-      {/* Quick conversion grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
         {CONVERSIONS.map((c) => (
           <Card key={`${c.source}-${c.target}`} className="cursor-pointer hover:border-primary/50 transition-colors">
@@ -59,12 +82,12 @@ export default function ConversionPage() {
                 </div>
                 <div className="flex flex-col">
                   <span className="text-xs font-medium text-foreground">{c.source} → {c.target}</span>
-                  <span className="text-xs text-muted-foreground">One-click conversion</span>
+                  <span className="text-xs text-muted-foreground">Convert document</span>
                 </div>
               </div>
             </CardHeader>
             <CardContent className="pt-0">
-              <Button size="sm" className="w-full">
+              <Button size="sm" className="w-full" onClick={() => handleConvert(c.source, c.target)} disabled={converting}>
                 Convert
               </Button>
             </CardContent>
@@ -72,7 +95,6 @@ export default function ConversionPage() {
         ))}
       </div>
 
-      {/* Jobs list */}
       <Card>
         <CardHeader>
           <CardTitle>Conversion Jobs</CardTitle>
@@ -108,11 +130,15 @@ export default function ConversionPage() {
                   <p>No conversion jobs</p>
                 </div>
               ) : (
-                jobs.map((job) => (
+                jobs.filter((job) =>
+                  (job.source_url || "").toLowerCase().includes(search.toLowerCase()) ||
+                  job.target_format.toLowerCase().includes(search.toLowerCase()) ||
+                  job.status.toLowerCase().includes(search.toLowerCase())
+                ).map((job) => (
                   <div key={job.id} className="flex items-center justify-between px-3 py-2 text-sm">
                     <div className="flex items-center gap-3 w-1/3">
                       <File className="h-4 w-4 text-muted-foreground" />
-                      <span>{job.source_url.split("/").pop() || "document"}</span>
+                      <span>{job.source_url?.split("/").pop() || "document"}</span>
                     </div>
                     <div className="w-1/3 text-muted-foreground">{job.target_format.toUpperCase()}</div>
                     <div className="w-1/3">

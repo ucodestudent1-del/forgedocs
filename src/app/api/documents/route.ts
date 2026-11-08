@@ -4,7 +4,7 @@ import { validateCSRF } from "@/lib/csrf"
 import { documentRateLimit } from "@/lib/rate-limit"
 import { z } from "zod"
 import { MAX_PAGE_SIZE, DEFAULT_PAGE_SIZE, parsePagination } from "@/lib/pagination"
-import { cacheGet, cacheSet } from "@/lib/cache"
+import { cacheGet, cacheSet, cacheDel } from "@/lib/cache"
 
 export async function GET(req: Request) {
   const rateLimitError = documentRateLimit(req)
@@ -34,7 +34,7 @@ export async function GET(req: Request) {
     .select(`
       *,
       templates ( id, name, category )
-    `)
+    `, { count: "exact" })
     .eq("user_id", user.id)
     .eq("is_archived", archived)
 
@@ -54,7 +54,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  const response = { documents: data, count, page, limit }
+  const response = { documents: data, count: count ?? 0, page, limit }
   await cacheSet(cacheKey, response, 300)
 
   return NextResponse.json(response)
@@ -83,6 +83,28 @@ export async function POST(req: Request) {
   const body = await req.json()
   const { title, description, template_id } = createDocSchema.parse(body)
 
+  let content = ""
+  let content_type = "text/plain"
+
+  // If template_id provided, fetch template and use its content as starting point
+  if (template_id) {
+    const { data: template, error: templateError } = await supabase
+      .from("templates")
+      .select("*")
+      .eq("id", template_id)
+      .eq("user_id", user.id)
+      .single()
+
+    if (templateError || !template) {
+      return NextResponse.json({ error: "Template not found" }, { status: 404 })
+    }
+
+    content = template.placeholder_schema
+      ? JSON.stringify(template.placeholder_schema, null, 2)
+      : ""
+    content_type = "application/vnd.forgedocs.document+json"
+  }
+
   const storagePath = `documents/${user.id}/${crypto.randomUUID()}.json`
 
   const { data: doc, error } = await (supabase as any)
@@ -91,10 +113,10 @@ export async function POST(req: Request) {
       user_id: user.id,
       title,
       description,
-      content: null,
+      content,
       storage_path: storagePath,
-      mime_type: "application/vnd.forgedocs.document+json",
-      file_size: 0,
+      mime_type: content_type,
+      file_size: Buffer.byteLength(content),
       version: 1,
     })
     .select()
@@ -103,6 +125,9 @@ export async function POST(req: Request) {
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
+
+  // Invalidate document list cache
+  await cacheDel(`documents:${user.id}:*`)
 
   return NextResponse.json({ document: doc }, { status: 201 })
 }

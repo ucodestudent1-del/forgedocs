@@ -11,13 +11,10 @@ export default function DocumentsPage() {
   const [search, setSearch] = useState("")
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    fetchDocuments()
-  }, [])
-
   async function fetchDocuments() {
     try {
-      const res = await fetch(`/api/documents?search=${encodeURIComponent(search)}&limit=50`)
+      const params = new URLSearchParams({ search, limit: "50" })
+      const res = await fetch(`/api/documents?${params}`)
       const data = await res.json()
       setDocuments(data.documents || [])
     } catch (e) {
@@ -26,6 +23,10 @@ export default function DocumentsPage() {
       setLoading(false)
     }
   }
+
+  React.useEffect(() => {
+    fetchDocuments()
+  }, [search])
 
   const filtered = documents.filter((d) =>
     d.title.toLowerCase().includes(search.toLowerCase())
@@ -38,13 +39,12 @@ export default function DocumentsPage() {
           <h1 className="text-2xl font-bold tracking-tight">Documents</h1>
           <p className="text-muted-foreground">All your documents</p>
         </div>
-        <Button className="flex items-center gap-2">
+        <Button className="flex items-center gap-2" disabled>
           <Plus className="h-4 w-4" />
           New Document
         </Button>
       </div>
 
-      {/* Search bar */}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <input
@@ -56,7 +56,6 @@ export default function DocumentsPage() {
         />
       </div>
 
-      {/* Documents list */}
       <div className="overflow-hidden rounded-lg border">
         <div className="bg-muted px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
           <div className="grid grid-cols-12">
@@ -80,7 +79,9 @@ export default function DocumentsPage() {
             </div>
           ) : (
             filtered.map((doc) => (
-              <div key={doc.id} className="grid grid-cols-12 items-center px-4 py-3 hover:bg-accent/50 transition-colors group">
+              <div key={doc.id} className="grid grid-cols-12 items-center px-4 py-3 hover:bg-accent/50 transition-colors group cursor-pointer" onClick={() => {
+                window.location.href = `/editor?id=${doc.id}`
+              }}>
                 <div className="col-span-6">
                   <div className="flex items-center gap-3">
                     <div className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center text-muted-foreground">

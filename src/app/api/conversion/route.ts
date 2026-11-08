@@ -1,7 +1,7 @@
-export const dynamic = "force-dynamic"
-
-import { createRouteClient } from "@/lib/supabase"
+import { getRouteClient } from "@/lib/supabase"
 import { NextResponse } from "next/server"
+import { validateCSRF } from "@/lib/csrf"
+import { documentRateLimit } from "@/lib/rate-limit"
 import { z } from "zod"
 
 const supportedFormats = [
@@ -14,8 +14,19 @@ const supportedFormats = [
 
 const VALID_FORMATS = ["pdf", "docx", "xlsx", "csv", "pptx", "txt", "html"]
 
+const createJobSchema = z.object({
+  source_document_id: z.string().uuid().optional(),
+  source_url: z.string().url().optional(),
+  target_format: z.string().refine((f) => VALID_FORMATS.includes(f), {
+    message: "Unsupported target format",
+  }),
+})
+
 export async function GET(req: Request) {
-  const supabase = await createRouteClient()
+  const rateLimitError = documentRateLimit(req)
+  if (rateLimitError) return rateLimitError
+
+  const supabase = getRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
@@ -30,29 +41,35 @@ export async function GET(req: Request) {
     return NextResponse.json({ formats: supportedFormats })
   }
 
-  const { data: jobs, error } = await (supabase as any)
+  const { page, limit, offset } = parsePagination(searchParams)
+
+  const { data: jobs, error, count } = await (supabase as any)
     .from("conversion_jobs")
-    .select("*")
+    .select("*, source_document:documents(title)", { count: "exact" })
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
+    .range(offset, offset + limit - 1)
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  return NextResponse.json({ jobs })
+  return NextResponse.json({
+    jobs: jobs || [],
+    count: count ?? 0,
+    page,
+    limit,
+  })
 }
 
-const createJobSchema = z.object({
-  source_document_id: z.string().uuid().optional(),
-  source_url: z.string(),
-  target_format: z.string().refine((f) => VALID_FORMATS.includes(f), {
-    message: "Unsupported target format",
-  }),
-})
-
 export async function POST(req: Request) {
-  const supabase = await createRouteClient()
+  const rateLimitError = documentRateLimit(req)
+  if (rateLimitError) return rateLimitError
+
+  const csrfError = validateCSRF(req)
+  if (csrfError) return csrfError
+
+  const supabase = getRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
@@ -62,11 +79,26 @@ export async function POST(req: Request) {
   const body = await req.json()
   const { source_document_id, source_url, target_format } = createJobSchema.parse(body)
 
+  // Verify source document exists and belongs to user
+  if (source_document_id) {
+    const { data: sourceDoc, error: docError } = await supabase
+      .from("documents")
+      .select("id, storage_path, mime_type")
+      .eq("id", source_document_id)
+      .eq("user_id", user.id)
+      .single()
+
+    if (docError || !sourceDoc) {
+      return NextResponse.json({ error: "Source document not found" }, { status: 404 })
+    }
+  }
+
   // Check tier limits
   const { data: subscription } = await (supabase as any)
     .from("subscriptions")
     .select("tier, status")
     .eq("user_id", user.id)
+    .eq("status", "active")
     .single()
 
   const tier = subscription?.tier || "free"
@@ -120,4 +152,3 @@ export async function POST(req: Request) {
 
   return NextResponse.json({ job }, { status: 201 })
 }
-

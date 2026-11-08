@@ -1,12 +1,17 @@
-import { createRouteClient } from "@/lib/supabase"
+import { getRouteClient } from "@/lib/supabase"
 import { NextResponse } from "next/server"
+import { validateCSRF } from "@/lib/csrf"
+import { documentRateLimit } from "@/lib/rate-limit"
 import { z } from "zod"
 
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const supabase = createRouteClient()
+  const rateLimitError = documentRateLimit(req)
+  if (rateLimitError) return rateLimitError
+
+  const supabase = getRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
@@ -15,29 +20,35 @@ export async function GET(
 
   const { id } = await params
 
-  const { data: versions, error } = await supabase
-    .from("document_versions")
-    .select("*")
-    .eq("document_id", id)
+  const { data: doc, error } = await supabase
+    .from("documents")
+    .select("content, title, version")
+    .eq("id", id)
     .eq("user_id", user.id)
-    .order("version", { ascending: false })
+    .single()
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error || !doc) {
+    return NextResponse.json({ error: "Document not found" }, { status: 404 })
   }
 
-  return NextResponse.json({ versions })
+  return NextResponse.json({ document: doc })
 }
 
 const updateContentSchema = z.object({
-  content: z.string().max(1000000), // max 1MB content
+  content: z.string().max(1000000),
 })
 
 export async function PUT(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const supabase = createRouteClient()
+  const rateLimitError = documentRateLimit(req)
+  if (rateLimitError) return rateLimitError
+
+  const csrfError = validateCSRF(req)
+  if (csrfError) return csrfError
+
+  const supabase = getRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
