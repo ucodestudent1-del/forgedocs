@@ -6,6 +6,43 @@ import { z } from "zod"
 import { MAX_PAGE_SIZE, DEFAULT_PAGE_SIZE, parsePagination } from "@/lib/pagination"
 import { cacheGet, cacheSet, cacheDel } from "@/lib/cache.js"
 
+const TIER_LIMITS = {
+  free: { documents: 500 },
+  pro: { documents: -1 }, // unlimited
+  business: { documents: -1 },
+  enterprise: { documents: -1 },
+} as const
+
+async function checkDocumentLimit(supabase: any, userId: string): Promise<{ allowed: boolean; limit: number; current: number }> {
+  const { data: subscription } = await supabase
+    .from("subscriptions")
+    .select("tier")
+    .eq("user_id", userId)
+    .eq("status", "active")
+    .single()
+
+  const tier = subscription?.tier || "free"
+  const limit = TIER_LIMITS[tier as keyof typeof TIER_LIMITS]?.documents ?? 500
+
+  if (limit < 0) {
+    return { allowed: true, limit: -1, current: 0 }
+  }
+
+  // Count documents created this month
+  const startOfMonth = new Date()
+  startOfMonth.setDate(1)
+  startOfMonth.setHours(0, 0, 0, 0)
+
+  const { count } = await supabase
+    .from("documents")
+    .select("*", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .gte("created_at", startOfMonth.toISOString())
+
+  const current = count ?? 0
+  return { allowed: current < limit, limit, current }
+}
+
 export async function GET(req: Request) {
   const rateLimitError = await documentRateLimit(req)
   if (rateLimitError) return rateLimitError
@@ -87,6 +124,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    // Check document limit
+    const limitCheck = await checkDocumentLimit(supabase, user.id)
+    if (!limitCheck.allowed) {
+      return NextResponse.json(
+        { error: `Document limit reached (${limitCheck.current}/${limitCheck.limit}). Upgrade your plan to create more documents.` },
+        { status: 403 }
+      )
+    }
+
     const body = await req.json()
     const { title, description, template_id } = createDocSchema.parse(body)
 
@@ -132,6 +178,13 @@ export async function POST(req: Request) {
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
+
+    // Track usage
+    await (supabase as any).from("usage_records").insert({
+      user_id: user.id,
+      metric: "documents_created",
+      quantity: 1,
+    })
 
     // Invalidate document list cache
     await cacheDel(`documents:${user.id}:*`)

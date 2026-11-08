@@ -1,3 +1,4 @@
+import React from 'react'
 import '@testing-library/jest-dom'
 
 // Mock environment variables
@@ -30,76 +31,41 @@ jest.mock('next/link', ({ children, href, ...props }: { children: React.ReactNod
   React.createElement('a', { href, ...props }, children)
 ))
 
-// Mock Supabase
+// Mock Supabase SSR
+const createMockClient = () => ({
+  auth: {
+    getUser: jest.fn().mockResolvedValue({ data: { user: null }, error: null }),
+  },
+  from: jest.fn(() => ({
+    select: jest.fn().mockReturnThis(),
+    eq: jest.fn().mockReturnThis(),
+    single: jest.fn().mockResolvedValue({ data: null, error: null }),
+    insert: jest.fn().mockReturnThis(),
+    update: jest.fn().mockReturnThis(),
+    delete: jest.fn().mockReturnThis(),
+    order: jest.fn().mockReturnThis(),
+    range: jest.fn().mockReturnThis(),
+  }))
+})
+
 jest.mock('@supabase/ssr', () => ({
-  createServerClient: jest.fn(() => ({
-    auth: {
-      getUser: jest.fn().mockResolvedValue({ data: { user: null }, error: null }),
-    },
-    from: jest.fn(() => ({
-      select: jest.fn().mockReturnThis(),
-      eq: jest.fn().mockReturnThis(),
-      single: jest.fn().mockResolvedValue({ data: null, error: null }),
-      insert: jest.fn().mockReturnThis(),
-      update: jest.fn().mockReturnThis(),
-      delete: jest.fn().mockReturnThis(),
-      order: jest.fn().mockReturnThis(),
-      range: jest.fn().mockReturnThis(),
-    }))
-  }))
-  createRouteClient: jest.fn(() => ({
-    auth: {
-      getUser: jest.fn().mockResolvedValue({ data: { user: null }, error: null }),
-    },
-    from: jest.fn(() => ({
-      select: jest.fn().mockReturnThis(),
-      eq: jest.fn().mockReturnThis(),
-      single: jest.fn().mockResolvedValue({ data: null, error: null }),
-      insert: jest.fn().mockReturnThis(),
-      update: jest.fn().mockReturnThis(),
-      delete: jest.fn().mockReturnThis(),
-      order: jest.fn().mockReturnThis(),
-      range: jest.fn().mockReturnThis(),
-    }))
-  }))
-  createBrowserClient: jest.fn(() => ({
-    auth: {
-      getUser: jest.fn().mockResolvedValue({ data: { user: null }, error: null }),
-    },
-    from: jest.fn(() => ({
-      select: jest.fn().mockReturnThis(),
-      eq: jest.fn().mockReturnThis(),
-      single: jest.fn().mockResolvedValue({ data: null, error: null }),
-      insert: jest.fn().mockReturnThis(),
-      update: jest.fn().mockReturnThis(),
-      delete: jest.fn().mockReturnThis(),
-      order: jest.fn().mockReturnThis(),
-      range: jest.fn().mockReturnThis(),
-    }))
-  }))
+  createServerClient: jest.fn(createMockClient),
+  createRouteClient: jest.fn(createMockClient),
+  createBrowserClient: jest.fn(createMockClient),
 }))
 
+// Mock Supabase JS
 jest.mock('@supabase/supabase-js', () => ({
   createClient: jest.fn(() => ({
-    auth: {
-      getUser: jest.fn().mockResolvedValue({ data: { user: null }, error: null }),
-    },
-    from: jest.fn(() => ({
-      select: jest.fn().mockReturnThis(),
-      eq: jest.fn().mockReturnThis(),
-      single: jest.fn().mockResolvedValue({ data: null, error: null }),
-      insert: jest.fn().mockReturnThis(),
-      update: jest.fn().mockReturnThis(),
-      delete: jest.fn().mockReturnThis(),
-      order: jest.fn().mockReturnThis(),
-      range: jest.fn().mockReturnThis(),
-    })),
+    ...createMockClient(),
     storage: {
       from: jest.fn(() => ({
         upload: jest.fn().mockResolvedValue({ data: null, error: null }),
         getPublicUrl: jest.fn(() => ({ data: { publicUrl: 'https://example.com/file' } })),
+        createSignedUrl: jest.fn().mockResolvedValue({ data: { signedUrl: 'https://example.com/signed' }, error: null }),
       })),
-  })
+    },
+  })),
 }))
 
 jest.mock('next/headers', () => ({
@@ -107,6 +73,7 @@ jest.mock('next/headers', () => ({
     get: jest.fn(),
     set: jest.fn(),
     delete: jest.fn(),
+    getAll: jest.fn(() => []),
   }),
 }))
 

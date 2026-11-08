@@ -4,7 +4,7 @@ import { redirect } from "next/navigation"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { CreditCard, DollarSign, Clock, Users } from "lucide-react"
+import { CreditCard, DollarSign, Clock, Users, Settings } from "lucide-react"
 
 export default async function BillingPage() {
   const cookieStore = await cookies()
@@ -73,9 +73,17 @@ export default async function BillingPage() {
             <span className="text-2xl font-bold">{currentTier.price}</span>
             <span className="text-muted-foreground text-sm">/month</span>
           </div>
-          <Button className="w-full lg:w-auto" disabled={tier === "pro"}>
-            {tier === "pro" ? "Current Plan" : "Upgrade to Pro"}
-          </Button>
+          <div className="flex items-center gap-3 w-full lg:w-auto">
+            <Button className="w-full lg:w-auto" disabled={tier === "pro"}>
+              {tier === "pro" ? "Current Plan" : "Upgrade to Pro"}
+            </Button>
+            {subscription?.stripe_customer_id && tier !== "free" && (
+              <Button variant="outline" onClick={() => window.location.href = "/api/billing/portal"}>
+                <Settings className="h-4 w-4 mr-2" />
+                Manage Billing
+              </Button>
+            )}
+          </div>
         </CardContent>
       </Card>
 

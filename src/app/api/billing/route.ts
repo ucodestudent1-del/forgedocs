@@ -40,13 +40,14 @@ export async function POST(req: Request) {
   }
 
   const body = await req.json()
-  const { priceId } = body
+  const { priceId, trialDays } = body
 
   // Create Stripe checkout session
   try {
-    const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY)
+    const Stripe = (await import("stripe")).default
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
 
-    const session = await stripe.checkout.sessions.create({
+    const sessionParams: any = {
       customer_email: user.email,
       line_items: [
         {
@@ -60,7 +61,16 @@ export async function POST(req: Request) {
       metadata: {
         userId: user.id,
       },
-    })
+    }
+
+    // Add trial period if specified (max 30 days for Stripe)
+    if (trialDays && trialDays > 0 && trialDays <= 30) {
+      sessionParams.subscription_data = {
+        trial_period_days: trialDays,
+      }
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionParams)
 
     return NextResponse.json({ checkoutUrl: session.url })
   } catch (err: any) {

@@ -21,11 +21,19 @@ export function SimpleEditor({
 }: SimpleEditorProps) {
   const [editorContent, setEditorContent] = useState(content)
   const [saving, setSaving] = useState(false)
+  const [csrfToken, setCsrfToken] = useState<string | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
     setEditorContent(content)
   }, [content])
+
+  useEffect(() => {
+    fetch("/api/csrf")
+      .then((res) => res.json())
+      .then((data) => setCsrfToken(data.csrf_token))
+      .catch(() => {})
+  }, [])
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setEditorContent(e.target.value)
@@ -38,7 +46,10 @@ export function SimpleEditor({
     try {
       await fetch(`/api/documents/${documentId}/content`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          ...(csrfToken ? { "X-CSRF-Token": csrfToken } : {}),
+        },
         body: JSON.stringify({ content: editorContent }),
       })
     } catch (e) {

@@ -74,10 +74,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  const { data: urlData } = supabase.storage.from("documents").getPublicUrl(fileName)
+  // Generate signed URL (valid for 1 hour)
+  const { data: signedUrlData } = await supabase.storage
+    .from("documents")
+    .createSignedUrl(fileName, 3600)
 
   return NextResponse.json({
-    url: urlData.publicUrl,
+    url: signedUrlData?.signedUrl,
     path: fileName,
     name: file.name,
     size: file.size,

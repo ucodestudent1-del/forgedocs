@@ -101,6 +101,11 @@ export default function LoginPage() {
               Create an account
             </Button>
           </Link>
+          <Link asChild href="/auth/forgot-password">
+            <Button variant="ghost" className="w-full text-sm">
+              Forgot password?
+            </Button>
+          </Link>
         </CardFooter>
       </Card>
     </div>
