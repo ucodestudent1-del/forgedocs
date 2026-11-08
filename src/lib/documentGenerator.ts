@@ -295,7 +295,7 @@ export class DocumentGenerator {
     return `
       <h2>Table of Contents</h2>
       <ul>
-        ${template.sections.map((s: any) => `<li>${s.label}</li>`).join('')}
+        ${this.template.sections.map((s: any) => `<li>${s.label}</li>`).join('')}
       </ul>
       <div class="page-break"></div>
     `;

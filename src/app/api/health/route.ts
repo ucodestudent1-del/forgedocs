@@ -7,11 +7,18 @@ export async function GET() {
 
   const dbStart = Date.now()
   try {
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      { cookies: () => cookies() },
-    )
+  const cookieStore = await cookies()
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll()
+        },
+      },
+    },
+  )
     const { error } = await supabase.from("documents").select("id").limit(1)
     const dbLatency = Date.now() - dbStart
     checks.database = error

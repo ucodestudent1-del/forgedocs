@@ -10,18 +10,18 @@ export async function GET(req: Request) {
   const rateLimitError = documentRateLimit(req)
   if (rateLimitError) return rateLimitError
 
-  const supabase = getRouteClient()
+  const supabase = await getRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  const searchParams = new URL(req.url)
-  const { page, limit, offset } = parsePagination(searchParams)
-  const archived = searchParams.get("archived") === "true"
-  const pinned = searchParams.get("pinned") === "true"
-  const search = searchParams.get("search") || ""
+  const url = new URL(req.url)
+  const { page, limit, offset } = parsePagination(url.searchParams)
+  const archived = url.searchParams.get("archived") === "true"
+  const pinned = url.searchParams.get("pinned") === "true"
+  const search = url.searchParams.get("search") || ""
 
   const cacheKey = `documents:${user.id}:${page}:${limit}:${archived}:${pinned}:${search || ""}`
   const cached = await cacheGet<{ documents: any[]; count: number; page: number; limit: number }>(cacheKey)
@@ -71,9 +71,16 @@ export async function POST(req: Request) {
     const rateLimitError = documentRateLimit(req)
     if (rateLimitError) return rateLimitError
 
-    validateCSRF(req)
+    try {
+      await validateCSRF(req)
+    } catch (error) {
+      if (error instanceof Error && error.name === "CSRFError") {
+        return NextResponse.json({ error: "Invalid CSRF token" }, { status: 403 })
+      }
+      throw error
+    }
 
-    const supabase = getRouteClient()
+    const supabase = await getRouteClient()
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {

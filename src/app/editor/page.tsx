@@ -1,17 +1,18 @@
-import * as React from "react"
+"use client"
+
+import { useState, useEffect } from "react"
 import { SimpleEditor } from "@/components/editor/simple-editor"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { FileText, Plus, Download, Share2 } from "lucide-react"
-import { useState } from "react"
 
 export default function EditorPage() {
-  const [documentId, setDocumentId] = React.useState<string | null>(null)
-  const [content, setContent] = React.useState<string>("")
-  const [loading, setLoading] = React.useState(true)
-  const [downloading, setDownloading] = React.useState(false)
+  const [documentId, setDocumentId] = useState<string | null>(null)
+  const [content, setContent] = useState<string>("")
+  const [loading, setLoading] = useState(true)
+  const [downloading, setDownloading] = useState(false)
 
-  React.useEffect(() => {
+  useEffect(() => {
     const params = new URLSearchParams(typeof window !== "undefined" ? window.location.search : "")
     const id = params.get("id")
     if (id) {

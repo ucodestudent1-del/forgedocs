@@ -1,6 +1,7 @@
-import { createLogger } from "pino"
+import { randomUUID } from "crypto"
+import pino from "pino"
 
-const logger = createLogger({
+const logger = pino({
   level: process.env.LOG_LEVEL || "info",
   transport: {
     target: "pino-pretty",
@@ -14,7 +15,7 @@ export { logger }
 
 export function withRequestId(handler: (req: Request, requestId: string) => Promise<Response>) {
   return async (req: Request): Promise<Response> => {
-    const requestId = req.headers.get("x-request-id") || crypto.randomUUID()
+    const requestId = req.headers.get("x-request-id") || randomUUID()
     const start = Date.now()
 
     logger.info({ requestId, method: req.method, path: req.url }, "request started")
@@ -34,7 +35,7 @@ export function withRequestId(handler: (req: Request, requestId: string) => Prom
         requestId,
         method: req.method,
         path: req.url,
-        error: error.message,
+        error: error instanceof Error ? error.message : String(error),
         durationMs: Date.now() - start,
       }, "request failed")
       throw error

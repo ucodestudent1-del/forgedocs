@@ -11,7 +11,7 @@ export async function GET(
   const rateLimitError = documentRateLimit(req)
   if (rateLimitError) return rateLimitError
 
-  const supabase = getRouteClient()
+  const supabase = await getRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
@@ -46,9 +46,16 @@ export async function PUT(
     const rateLimitError = documentRateLimit(req)
     if (rateLimitError) return rateLimitError
 
-    validateCSRF(req)
+    try {
+      await validateCSRF(req)
+    } catch (error) {
+      if (error instanceof Error && error.name === "CSRFError") {
+        return NextResponse.json({ error: "Invalid CSRF token" }, { status: 403 })
+      }
+      throw error
+    }
 
-    const supabase = getRouteClient()
+    const supabase = await getRouteClient()
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {

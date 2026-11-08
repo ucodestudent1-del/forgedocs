@@ -7,7 +7,7 @@ import { createRouteClient } from "@/lib/supabase"
  * This is called via a cron job or webhook from the conversion service
  */
 export async function processConversionJob(jobId: string) {
-  const supabase = createRouteClient()
+  const supabase = await createRouteClient()
 
   // Fetch the job
   const { data: job, error: jobError } = await supabase
@@ -73,7 +73,7 @@ export async function processConversionJob(jobId: string) {
       .from("conversion_jobs")
       .update({
         status: "failed",
-        error_message: err.message,
+        error_message: err instanceof Error ? err.message : String(err),
         completed_at: new Date().toISOString(),
       })
       .eq("id", jobId)

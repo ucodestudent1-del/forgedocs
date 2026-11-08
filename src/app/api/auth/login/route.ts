@@ -20,7 +20,7 @@ export async function POST(req: Request): Promise<NextResponse> {
       )
     }
 
-    const supabase = getRouteClient()
+    const supabase = await getRouteClient()
     const { email, password } = await req.json()
 
     // Validate password format
@@ -54,9 +54,9 @@ export async function DELETE(req: Request): Promise<NextResponse> {
     const rateLimitError = authRateLimit(req)
     if (rateLimitError) return rateLimitError
 
-    validateCSRF(req)
+    await validateCSRF(req)
 
-    const supabase = getRouteClient()
+    const supabase = await getRouteClient()
     const { error } = await supabase.auth.signOut()
 
     if (error) {

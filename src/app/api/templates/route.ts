@@ -26,17 +26,17 @@ export async function GET(req: Request): Promise<NextResponse> {
   const rateLimitError = documentRateLimit(req)
   if (rateLimitError) return rateLimitError
 
-  const supabase = getRouteClient()
+  const supabase = await getRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  const searchParams = new URL(req.url)
-  const { page, limit, offset } = parsePagination(searchParams)
-  const search = searchParams.get("search") || ""
-  const category = searchParams.get("category") || ""
+  const url = new URL(req.url)
+  const { page, limit, offset } = parsePagination(url.searchParams)
+  const search = url.searchParams.get("search") || ""
+  const category = url.searchParams.get("category") || ""
 
   let query = supabase
     .from("templates")
@@ -72,9 +72,9 @@ export async function POST(req: Request): Promise<NextResponse> {
     const rateLimitError = documentRateLimit(req)
     if (rateLimitError) return rateLimitError
 
-    validateCSRF(req)
+    await validateCSRF(req)
 
-    const supabase = getRouteClient()
+    const supabase = await getRouteClient()
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {

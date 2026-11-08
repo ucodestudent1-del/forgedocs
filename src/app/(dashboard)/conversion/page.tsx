@@ -2,7 +2,7 @@
 
 import React from "react"
 import { useEffect, useState, useCallback } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { FileText, FileSpreadsheet, FileImage, RefreshCw, Upload, Download, ArrowRight } from "lucide-react"
@@ -128,7 +128,7 @@ export default function ConversionPage() {
       setConverting(false)
     } catch (e) {
       console.error(e)
-      alert(e.message || "Conversion failed")
+      alert(e instanceof Error ? e.message : "Conversion failed")
       setConverting(false)
     }
   }

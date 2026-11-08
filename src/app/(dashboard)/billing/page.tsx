@@ -7,11 +7,17 @@ import { Badge } from "@/components/ui/badge"
 import { CreditCard, DollarSign, Clock, Users } from "lucide-react"
 
 export default async function BillingPage() {
-  const cookieStore = cookies()
+  const cookieStore = await cookies()
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { cookies: () => cookieStore }
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll()
+        },
+      },
+    },
   )
 
   const { data: { user } } = await supabase.auth.getUser()
@@ -153,8 +159,8 @@ function PlanCard({ name, price, description, features, popular, currentTier }: 
         </ul>
       </CardContent>
       <CardFooter className="pt-4">
-        <Button className="w-full" variant={popular ? "default" : "outline"} disabled={tier === name.toLowerCase()}>
-          {tier === name.toLowerCase() ? "Current Plan" : popular ? "Get Started" : "Choose Plan"}
+          <Button className="w-full" variant={popular ? "default" : "outline"} disabled={currentTier === name.toLowerCase()}>
+            {currentTier === name.toLowerCase() ? "Current Plan" : popular ? "Get Started" : "Choose Plan"}
         </Button>
       </CardFooter>
     </Card>

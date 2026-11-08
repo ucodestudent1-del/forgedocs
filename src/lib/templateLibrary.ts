@@ -241,6 +241,6 @@ export const TEMPLATE_CATEGORIES = {
   hr: 'Human Resources'
 };
 
-export const getTemplateById = (id) => TEMPLATE_LIBRARY[id];
-export const getTemplatesByCategory = (category) => Object.values(TEMPLATE_LIBRARY).filter(t => t.category === category);
+export const getTemplateById = (id: string) => (TEMPLATE_LIBRARY as Record<string, any>)[id];
+export const getTemplatesByCategory = (category: string) => Object.values(TEMPLATE_LIBRARY).filter((t: any) => t.category === category);
 export const getAllTemplates = () => Object.values(TEMPLATE_LIBRARY);

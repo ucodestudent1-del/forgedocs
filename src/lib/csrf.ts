@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server"
+import { randomUUID } from "crypto"
 import { cookies } from "next/headers"
 
 export class CSRFError extends Error {
@@ -19,5 +19,5 @@ export async function validateCSRF(req: Request): Promise<void> {
 }
 
 export function generateCSRFToken() {
-  return crypto.randomUUID()
+  return randomUUID()
 }

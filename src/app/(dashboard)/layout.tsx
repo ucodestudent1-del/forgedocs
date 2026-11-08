@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
+import { SignOutButton } from "@/components/SignOutButton"
 import {
   LayoutDashboard,
   FileText,
@@ -8,7 +9,6 @@ import {
   FileSpreadsheet,
   RefreshCw,
   Settings,
-  LogOut,
   Search,
   Bell,
   User,
@@ -102,15 +102,7 @@ export default async function DashboardLayout({
               <p className="text-xs text-muted-foreground truncate">Signed in</p>
             </div>
           </div>
-          <button
-            className="w-full flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors"
-            onClick={() => {
-              // Sign out handled by middleware/redirect
-            }}
-          >
-            <LogOut className="h-4 w-4" />
-            Sign out
-          </button>
+          <SignOutButton />
         </div>
       </aside>
 

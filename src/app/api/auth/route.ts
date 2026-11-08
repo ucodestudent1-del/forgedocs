@@ -8,7 +8,7 @@ export async function GET(req: Request): Promise<NextResponse> {
   const rateLimitError = authRateLimit(req)
   if (rateLimitError) return rateLimitError
 
-  const supabase = getRouteClient()
+  const supabase = await getRouteClient()
   const { data: { user }, error } = await supabase.auth.getUser()
 
   if (error || !user) {
@@ -45,9 +45,9 @@ export async function POST(req: Request): Promise<NextResponse> {
     const rateLimitError = authRateLimit(req)
     if (rateLimitError) return rateLimitError
 
-    validateCSRF(req)
+    await validateCSRF(req)
 
-    const supabase = getRouteClient()
+    const supabase = await getRouteClient()
     const body = await req.json()
 
     const { email, password, full_name } = signupSchema.parse(body)

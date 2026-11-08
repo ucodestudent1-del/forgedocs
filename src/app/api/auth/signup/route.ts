@@ -1,6 +1,8 @@
 import { createRouteClient } from "@/lib/supabase"
 import { NextResponse } from "next/server"
 import { z } from "zod"
+import { validateCSRF, CSRFError } from "@/lib/csrf"
+import { authRateLimit } from "@/lib/rate-limit"
 
 const signupSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -9,33 +11,45 @@ const signupSchema = z.object({
 })
 
 export async function POST(req: Request) {
-  const supabase = await createRouteClient()
-  const body = await req.json()
+  try {
+    const rateLimitError = authRateLimit(req)
+    if (rateLimitError) return rateLimitError
 
-  const { email, password, full_name } = signupSchema.parse(body)
+    await validateCSRF(req)
 
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: { data: { full_name } },
-  })
+    const supabase = await createRouteClient()
+    const body = await req.json()
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 400 })
-  }
+    const { email, password, full_name } = signupSchema.parse(body)
 
-  // Create user profile if signup successful
-  if (data.user) {
-    const { error: profileError } = await (supabase as any).from("profiles").insert({
-      id: data.user.id,
-      email: data.user.email,
-      full_name: data.user.user_metadata?.full_name || null,
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { full_name } },
     })
 
-    if (profileError) {
-      console.error("Failed to create profile:", profileError)
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 400 })
     }
-  }
 
-  return NextResponse.json({ user: data.user }, { status: 201 })
+    // Create user profile if signup successful
+    if (data.user) {
+      const { error: profileError } = await (supabase as any).from("profiles").insert({
+        id: data.user.id,
+        email: data.user.email,
+        full_name: data.user.user_metadata?.full_name || null,
+      })
+
+      if (profileError) {
+        console.error("Failed to create profile:", profileError)
+      }
+    }
+
+    return NextResponse.json({ user: data.user }, { status: 201 })
+  } catch (error) {
+    if (error instanceof CSRFError) {
+      return NextResponse.json({ error: error.message }, { status: 403 })
+    }
+    throw error
+  }
 }

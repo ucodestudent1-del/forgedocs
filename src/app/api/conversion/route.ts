@@ -2,6 +2,7 @@ import { getRouteClient } from "@/lib/supabase"
 import { NextResponse } from "next/server"
 import { validateCSRF } from "@/lib/csrf"
 import { documentRateLimit } from "@/lib/rate-limit"
+import { parsePagination } from "@/lib/pagination"
 import { z } from "zod"
 
 const supportedFormats = [
@@ -26,7 +27,7 @@ export async function GET(req: Request): Promise<NextResponse> {
   const rateLimitError = documentRateLimit(req)
   if (rateLimitError) return rateLimitError
 
-  const supabase = getRouteClient()
+  const supabase = await getRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
@@ -66,10 +67,16 @@ export async function POST(req: Request): Promise<NextResponse> {
   const rateLimitError = documentRateLimit(req)
   if (rateLimitError) return rateLimitError
 
-  const csrfError = validateCSRF(req)
-  if (csrfError) return csrfError
+  try {
+    await validateCSRF(req)
+  } catch (error) {
+    if (error instanceof Error && error.name === "CSRFError") {
+      return NextResponse.json({ error: "Invalid CSRF token" }, { status: 403 })
+    }
+    throw error
+  }
 
-  const supabase = getRouteClient()
+  const supabase = await getRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {

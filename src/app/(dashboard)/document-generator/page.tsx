@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { FileText, Save, Download, Plus, FileText as FileTextIcon } from "lucide-react"
 import { TEMPLATE_LIBRARY, getTemplateById } from "@/lib/templateLibrary"
@@ -38,7 +38,7 @@ export default function DocumentGeneratorPage() {
       URL.revokeObjectURL(url)
     } catch (e) {
       console.error("Generation failed:", e)
-      alert("Failed to generate document: " + e.message)
+      alert("Failed to generate document: " + (e instanceof Error ? e.message : String(e)))
     } finally {
       setIsGenerating(false)
     }
@@ -153,7 +153,7 @@ export default function DocumentGeneratorPage() {
               <CardContent>
                 <form onSubmit={(e) => e.preventDefault()}>
                   <div className="space-y-4">
-                    {templateData && Object.entries(TEMPLATE_LIBRARY[selectedTemplateId!].fields).map(([fieldName, field]) => (
+                    {templateData && Object.entries((TEMPLATE_LIBRARY as Record<string, { fields: { name: string; label: string; required: boolean; type: string; placeholder?: string }[] }>)[selectedTemplateId!].fields).map(([fieldName, field]) => (
                       <div key={fieldName} className="space-y-1">
                         <label className="text-sm font-medium text-muted-foreground block">
                           {field.label}

@@ -1,13 +1,20 @@
 import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
-import { crypto } from "crypto"
+import { randomUUID } from "crypto"
 
 export async function GET(req: Request) {
+  const cookieStore = await cookies()
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { cookies: () => cookies() },
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll()
+        },
+      },
+    },
   )
 
   const { data: { user } } = await supabase.auth.getUser()
@@ -16,7 +23,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  const token = crypto.randomUUID()
+  const token = randomUUID()
 
   const response = NextResponse.json({ csrf_token: token })
   response.cookies.set("csrf_token", token, {

@@ -2,6 +2,8 @@ export const dynamic = "force-dynamic"
 
 import { createRouteClient } from "@/lib/supabase"
 import { NextResponse } from "next/server"
+import { validateCSRF } from "@/lib/csrf"
+import { authRateLimit } from "@/lib/rate-limit"
 
 export async function GET() {
   const supabase = await createRouteClient()
@@ -25,6 +27,11 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+  const rateLimitError = authRateLimit(req)
+  if (rateLimitError) return rateLimitError
+
+  await validateCSRF(req)
+
   const supabase = await createRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -60,4 +67,3 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: err.message }, { status: 500 })
   }
 }
-

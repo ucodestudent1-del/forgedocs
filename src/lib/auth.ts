@@ -22,7 +22,7 @@ export function checkLoginAttempts(identifier: string): { allowed: boolean; rema
     return { allowed: true }
   }
 
-  return { allowed: false, remainingMs: entry.lockoutUntil - now }
+  return { allowed: false, remainingMs: entry.lockoutUntil - now() }
 }
 
 export function recordFailedAttempt(identifier: string): void {
@@ -58,5 +58,5 @@ export function validatePassword(password: string): { valid: boolean; errors: st
   if (result.success) {
     return { valid: true, errors: [] }
   }
-  return { valid: false, errors: result.error.errors.map((e) => e.message) }
+  return { valid: false, errors: result.error.issues.map((e) => e.message) }
 }

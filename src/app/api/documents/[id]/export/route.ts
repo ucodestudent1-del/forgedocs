@@ -5,7 +5,7 @@ export async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const supabase = getRouteClient()
+  const supabase = await getRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
@@ -25,11 +25,14 @@ export async function GET(
     return NextResponse.json({ error: "Document not found" }, { status: 404 })
   }
 
-  // Return document content as text/HTML
+  // Sanitize filename to prevent header injection
+  const safeTitle = (doc.title || "document").replace(/["\r\n]/g, "_").slice(0, 100)
+
+  // Return document content
   return new Response(doc.content, {
     headers: {
       "Content-Type": doc.mime_type || "text/plain",
-      "Content-Disposition": `attachment; filename="${doc.title || 'document'}.txt"`,
+      "Content-Disposition": `attachment; filename="${safeTitle}.txt"`,
     },
   })
 }

@@ -1,41 +1,59 @@
-import { createServerClient } from "@supabase/ssr"
-import { cookies } from "next/headers"
-import { redirect } from "next/navigation"
+"use client"
+
+import React, { useState } from "react"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Link } from "@/components/ui/link"
-import { Mail, Lock, Loader2 } from "lucide-react"
+import { Mail, Lock } from "lucide-react"
 
-export default async function LoginPage() {
-  const cookieStore = await cookies()
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll()
+export default function LoginPage() {
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [csrfToken, setCsrfToken] = useState<string | null>(null)
+  const router = useRouter()
+
+  // Fetch CSRF token on mount
+  React.useEffect(() => {
+    fetch("/api/csrf")
+      .then((res) => res.json())
+      .then((data) => setCsrfToken(data.csrf_token))
+      .catch(() => {})
+  }, [])
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    setLoading(true)
+    setError(null)
+
+    const formData = new FormData(e.currentTarget)
+    const email = formData.get("email") as string
+    const password = formData.get("password") as string
+
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(csrfToken ? { "X-CSRF-Token": csrfToken } : {}),
         },
-        setAll(cookiesToSet) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            )
-          } catch {
-            // The `set` method was called from a Server Component.
-            // This can be ignored if you have middleware refreshing
-            // user sessions.
-          }
-        },
-      },
+        body: JSON.stringify({ email, password }),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        setError(data.error || "Login failed")
+        setLoading(false)
+        return
+      }
+
+      router.push("/dashboard")
+    } catch {
+      setError("Login failed. Please try again.")
+      setLoading(false)
     }
-  )
-
-  // Check if already signed in
-  const { data: { user } } = await supabase.auth.getUser()
-  if (user) {
-    redirect("/dashboard")
   }
 
   return (
@@ -46,7 +64,12 @@ export default async function LoginPage() {
           <CardDescription>Access your documents and templates</CardDescription>
         </CardHeader>
         <CardContent>
-          <form action="/api/auth/login" method="POST" className="space-y-4">
+          {error && (
+            <div className="mb-4 p-3 rounded bg-destructive/10 border border-destructive/20 text-destructive text-sm">
+              {error}
+            </div>
+          )}
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">Email</label>
               <Input
@@ -67,8 +90,8 @@ export default async function LoginPage() {
                 className="w-full"
               />
             </div>
-            <Button type="submit" className="w-full">
-              Sign in
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? "Signing in..." : "Sign in"}
             </Button>
           </form>
         </CardContent>

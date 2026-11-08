@@ -6,11 +6,17 @@ import { validateCSRF } from "@/lib/csrf"
 import { documentRateLimit } from "@/lib/rate-limit"
 import { z } from "zod"
 
+const generateSchema = z.object({
+  document_id: z.string().uuid().optional(),
+  template_id: z.string().uuid().optional(),
+  template_data: z.record(z.string(), z.unknown()).optional(),
+})
+
 export async function GET(req: Request) {
   const rateLimitError = documentRateLimit(req)
   if (rateLimitError) return rateLimitError
 
-  const supabase = getRouteClient()
+  const supabase = await getRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
@@ -34,10 +40,16 @@ export async function POST(req: Request) {
   const rateLimitError = documentRateLimit(req)
   if (rateLimitError) return rateLimitError
 
-  const csrfError = validateCSRF(req)
-  if (csrfError) return csrfError
+  try {
+    await validateCSRF(req)
+  } catch (error) {
+    if (error instanceof Error && error.name === "CSRFError") {
+      return NextResponse.json({ error: "Invalid CSRF token" }, { status: 403 })
+    }
+    throw error
+  }
 
-  const supabase = getRouteClient()
+  const supabase = await getRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
@@ -45,14 +57,13 @@ export async function POST(req: Request) {
   }
 
   const body = await req.json()
-  const { document_id, template_id, template_data } = body
+  const { document_id, template_id, template_data } = generateSchema.parse(body)
 
   if (!document_id && !template_id) {
     return NextResponse.json({ error: "Either document_id or template_id is required" }, { status: 400 })
   }
 
   if (document_id) {
-    // Generate document from existing document
     const { data: doc, error } = await supabase
       .from("documents")
       .select("*")
@@ -69,27 +80,35 @@ export async function POST(req: Request) {
       title: doc.title,
       content: doc.content,
       version: doc.version,
-      created_at: doc.created_at
+      created_at: doc.created_at,
     })
   }
 
   if (template_id) {
-    // Generate document from template
     const { data: template, error: templateError } = await supabase
       .from("templates")
       .select("*")
       .eq("id", template_id)
+      .eq("user_id", user.id)
       .single()
 
     if (templateError || !template) {
       return NextResponse.json({ error: "Template not found" }, { status: 404 })
     }
 
-    // Apply template data to template content
+    // Apply template data to template content with ReDoS protection
     let content = template.content || ""
-    Object.entries(template_data || {}).forEach(([key, value]) => {
-      content = content.replace(new RegExp(`\\[${key}\\]`, 'g'), String(value))
-    })
+    const templateData = template_data || {}
+    const keys = Object.keys(templateData)
+
+    // Escape regex special characters in keys to prevent ReDoS
+    const escapedKeys = keys.map((k) => k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+
+    for (let i = 0; i < keys.length; i++) {
+      const key = keys[i]
+      const value = String(templateData[key] ?? "")
+      content = content.replace(new RegExp(`\\[${escapedKeys[i]}\\]`, "g"), value)
+    }
 
     const storagePath = `documents/${user.id}/${crypto.randomUUID()}.json`
 
@@ -103,7 +122,7 @@ export async function POST(req: Request) {
         mime_type: "application/vnd.forgedocs.document+json",
         file_size: Buffer.byteLength(content),
         version: 1,
-        template_id: template_id
+        template_id: template_id,
       })
       .select()
       .single()

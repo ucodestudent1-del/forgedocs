@@ -1,6 +1,6 @@
 "use client"
 
-import * as React from "react"
+import React, { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { FileText, Save, Undo, Redo, Bold, Italic, Underline, List, ListOrdered, Image, Link, Maximize, MoreHorizontal } from "lucide-react"
 
@@ -19,11 +19,11 @@ export function SimpleEditor({
   readOnly = false,
   placeholder = "Start typing...",
 }: SimpleEditorProps) {
-  const [editorContent, setEditorContent] = React.useState(content)
-  const [saving, setSaving] = React.useState(false)
-  const textareaRef = React.useRef<HTMLTextAreaElement>(null)
+  const [editorContent, setEditorContent] = useState(content)
+  const [saving, setSaving] = useState(false)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
 
-  React.useEffect(() => {
+  useEffect(() => {
     setEditorContent(content)
   }, [content])
 

@@ -10,7 +10,7 @@ export async function GET(
   const rateLimitError = documentRateLimit(req)
   if (rateLimitError) return rateLimitError
 
-  const supabase = getRouteClient()
+  const supabase = await getRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
@@ -41,9 +41,9 @@ export async function DELETE(
     const rateLimitError = documentRateLimit(req)
     if (rateLimitError) return rateLimitError
 
-    validateCSRF(req)
+    await validateCSRF(req)
 
-    const supabase = getRouteClient()
+    const supabase = await getRouteClient()
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
