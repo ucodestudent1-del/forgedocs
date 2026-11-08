@@ -1,6 +1,8 @@
 import { createRouteClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
 
+export { createRouteClient }
+
 let cachedClient: ReturnType<typeof createRouteClient> | null = null
 
 export function getRouteClient() {
