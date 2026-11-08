@@ -1,23 +1,34 @@
+import { createServerClient } from "@supabase/ssr"
+import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
-import { getRouteClient } from "@/lib/supabase"
 
 export async function GET() {
+  const checks: Record<string, { status: string; latency?: number; error?: string }> = {}
+
+  // Database health check
+  const dbStart = Date.now()
   try {
-    const supabase = getRouteClient()
-    const { error } = await supabase.from("documents").select("id").limit(1)
-
-    if (error) {
-      return NextResponse.json(
-        { status: "degraded", database: "unavailable", error: error.message },
-        { status: 503 }
-      )
-    }
-
-    return NextResponse.json({ status: "healthy", database: "connected" })
-  } catch (error) {
-    return NextResponse.json(
-      { status: "degraded", database: "unavailable", error: String(error) },
-      { status: 503 }
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      { cookies: () => cookies() },
     )
+    const { error } = await supabase.from("documents").select("id").limit(1)
+    const dbLatency = Date.now() - dbStart
+    checks.database = error
+      ? { status: "unhealthy", latency: dbLatency, error: error.message }
+      : { status: "healthy", latency: dbLatency }
+  } catch (err) {
+    const dbLatency = Date.now() - dbStart
+    checks.database = { status: "unhealthy", latency: dbLatency, error: String(err) }
   }
+
+  // Overall status
+  const allHealthy = Object.values(checks).every((c) => c.status === "healthy")
+  const status = allHealthy ? "healthy" : "degraded"
+
+  return NextResponse.json(
+    { status, checks, timestamp: new Date().toISOString() },
+    { status: allHealthy ? 200 : 503 }
+  )
 }
