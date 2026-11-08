@@ -1,13 +1,13 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Loader2, Shield, AlertCircle, RefreshCw } from "lucide-react"
 
-export default function MfaVerifyPage() {
+function MfaVerifyContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [token, setToken] = useState<string>("")
@@ -137,5 +137,13 @@ export default function MfaVerifyPage() {
         </CardContent>
       </Card>
     </div>
+  )
+}
+
+export default function MfaVerifyPage() {
+  return (
+    <Suspense fallback={<div className="flex min-h-screen items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+      <MfaVerifyContent />
+    </Suspense>
   )
 }

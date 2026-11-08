@@ -1,6 +1,17 @@
 import { Resend } from "resend"
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+let resendInstance: Resend | null = null
+
+function getResend(): Resend {
+  if (!resendInstance) {
+    const apiKey = process.env.RESEND_API_KEY
+    if (!apiKey) {
+      throw new Error("RESEND_API_KEY not configured")
+    }
+    resendInstance = new Resend(apiKey)
+  }
+  return resendInstance
+}
 
 export interface EmailTemplate {
   to: string
@@ -16,6 +27,7 @@ export async function sendEmail(template: EmailTemplate): Promise<{ success: boo
   }
 
   try {
+    const resend = getResend()
     const result = await resend.emails.send({
       from: process.env.EMAIL_FROM || "ForgeDocs <noreply@forgedocs.com>",
       to: template.to,

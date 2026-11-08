@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { createBrowserSupabaseClient } from "@/lib/supabase-browser"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Link } from "@/components/ui/link"
 import { Lock, Loader2, AlertCircle } from "lucide-react"
 
-export default function ResetPasswordPage() {
+function ResetPasswordContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [loading, setLoading] = useState(false)
@@ -129,5 +129,13 @@ export default function ResetPasswordPage() {
         </CardFooter>
       </Card>
     </div>
+  )
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={<div className="flex min-h-screen items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+      <ResetPasswordContent />
+    </Suspense>
   )
 }
