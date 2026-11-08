@@ -9,15 +9,19 @@ export async function middleware(request: NextRequest) {
     },
   })
 
-  const cookieStore = await cookies()
-
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        getAll() {
-          return cookieStore.getAll()
+        get(name: string) {
+          return cookies().get(name)?.value
+        },
+        set(name: string, value: string, options: any) {
+          cookies().set({ name, value, ...options, httpOnly: true, secure: true, sameSite: "lax" })
+        },
+        remove(name: string, options: any) {
+          cookies().set({ name, value: "", ...options, httpOnly: true, secure: true, sameSite: "lax" })
         },
       },
     },
