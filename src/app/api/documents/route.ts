@@ -1,18 +1,17 @@
-export const dynamic = "force-dynamic"
-
-import { createRouteClient } from "@/lib/supabase"
+import { getRouteClient } from "@/lib/supabase"
 import { NextResponse } from "next/server"
+import { validateCSRF } from "@/lib/csrf"
 import { z } from "zod"
 
 export async function GET(req: Request) {
-  const supabase = await createRouteClient()
+  const supabase = getRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  const { searchParams } = new URL(req.url)
+  const searchParams = new URL(req.url)
   const page = parseInt(searchParams.get("page") || "1")
   const limit = parseInt(searchParams.get("limit") || "20")
   const archived = searchParams.get("archived") === "true"
@@ -54,7 +53,10 @@ const createDocSchema = z.object({
 })
 
 export async function POST(req: Request) {
-  const supabase = await createRouteClient()
+  const csrfError = validateCSRF(req)
+  if (csrfError) return csrfError
+
+  const supabase = getRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {

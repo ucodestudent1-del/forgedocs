@@ -1,9 +1,9 @@
-import { createRouteClient } from "@/lib/supabase"
+import { getRouteClient } from "@/lib/supabase"
 import { NextResponse } from "next/server"
 import { z } from "zod"
 
 export async function GET(req: Request) {
-  const supabase = await createRouteClient()
+  const supabase = getRouteClient()
   const { data: { user }, error } = await supabase.auth.getUser()
 
   if (error || !user) {
@@ -13,7 +13,7 @@ export async function GET(req: Request) {
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
     .select("*")
-    .filter("id", "eq", user.id)
+    .eq("id", user.id)
     .single()
 
   if (profileError) {
@@ -30,7 +30,7 @@ const signupSchema = z.object({
 })
 
 export async function POST(req: Request) {
-  const supabase = await createRouteClient()
+  const supabase = getRouteClient()
   const body = await req.json()
 
   const { email, password, full_name } = signupSchema.parse(body)
@@ -47,4 +47,3 @@ export async function POST(req: Request) {
 
   return NextResponse.json({ user: data.user })
 }
-

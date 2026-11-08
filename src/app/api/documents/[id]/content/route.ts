@@ -1,11 +1,43 @@
-import { createRouteClient } from "@/lib/supabase"
+import { getRouteClient } from "@/lib/supabase"
 import { NextResponse } from "next/server"
+import { validateCSRF } from "@/lib/csrf"
+import { z } from "zod"
+
+export async function GET(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const supabase = getRouteClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
+  const { id } = await params
+
+  const { data: versions, error } = await supabase
+    .from("document_versions")
+    .select("*")
+    .eq("document_id", id)
+    .eq("user_id", user.id)
+    .order("version", { ascending: false })
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+
+  return NextResponse.json({ versions })
+}
 
 export async function PUT(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const supabase = await createRouteClient()
+  const csrfError = validateCSRF(req)
+  if (csrfError) return csrfError
+
+  const supabase = getRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
@@ -17,7 +49,6 @@ export async function PUT(
 
   const { id } = await params
 
-  // Get current version
   const { data: currentDoc } = await supabase
     .from("documents")
     .select("version, content")
@@ -29,7 +60,6 @@ export async function PUT(
     return NextResponse.json({ error: "Document not found" }, { status: 404 })
   }
 
-  // Create version snapshot
   await (supabase as any).from("document_versions").insert({
     document_id: id,
     version: (currentDoc as any).version,
@@ -37,7 +67,6 @@ export async function PUT(
     created_by: user.id,
   })
 
-  // Update document
   const { data, error } = await (supabase as any)
     .from("documents")
     .update({ content, version: (currentDoc as any).version + 1 })
@@ -51,30 +80,4 @@ export async function PUT(
   }
 
   return NextResponse.json({ document: data })
-}
-
-export async function GET(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const supabase = await createRouteClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  }
-
-  const { id } = await params
-
-  const { data: versions, error } = await supabase
-    .from("document_versions")
-    .select("*")
-    .eq("document_id", id)
-    .order("version", { ascending: false })
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
-  }
-
-  return NextResponse.json({ versions })
 }
