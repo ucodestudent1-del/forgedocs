@@ -7,7 +7,7 @@ import { z } from "zod"
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
-) {
+): Promise<NextResponse> {
   const rateLimitError = documentRateLimit(req)
   if (rateLimitError) return rateLimitError
 
@@ -41,7 +41,7 @@ const updateContentSchema = z.object({
 export async function PUT(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
-) {
+): Promise<NextResponse> {
   try {
     const rateLimitError = documentRateLimit(req)
     if (rateLimitError) return rateLimitError

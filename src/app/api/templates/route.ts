@@ -22,7 +22,7 @@ const createTemplateSchema = z.object({
   is_public: z.boolean().default(false),
 })
 
-export async function GET(req: Request) {
+export async function GET(req: Request): Promise<NextResponse> {
   const rateLimitError = documentRateLimit(req)
   if (rateLimitError) return rateLimitError
 
@@ -67,7 +67,7 @@ export async function GET(req: Request) {
   })
 }
 
-export async function POST(req: Request) {
+export async function POST(req: Request): Promise<NextResponse> {
   try {
     const rateLimitError = documentRateLimit(req)
     if (rateLimitError) return rateLimitError

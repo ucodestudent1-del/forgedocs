@@ -5,7 +5,7 @@ import { z } from "zod"
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
-) {
+): Promise<NextResponse> {
   const supabase = createRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -39,7 +39,7 @@ const updateDocSchema = z.object({
 export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
-) {
+): Promise<NextResponse> {
   const supabase = createRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -69,7 +69,7 @@ export async function PATCH(
 export async function DELETE(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
-) {
+): Promise<NextResponse> {
   const supabase = createRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
 

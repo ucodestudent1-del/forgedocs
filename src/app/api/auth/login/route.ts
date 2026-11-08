@@ -4,7 +4,7 @@ import { validateCSRF } from "@/lib/csrf"
 import { authRateLimit } from "@/lib/rate-limit"
 import { checkLoginAttempts, recordFailedAttempt, clearFailedAttempts, validatePassword } from "@/lib/auth"
 
-export async function POST(req: Request) {
+export async function POST(req: Request): Promise<NextResponse> {
   try {
     const rateLimitError = authRateLimit(req)
     if (rateLimitError) return rateLimitError
@@ -49,7 +49,7 @@ export async function POST(req: Request) {
   }
 }
 
-export async function DELETE(req: Request) {
+export async function DELETE(req: Request): Promise<NextResponse> {
   try {
     const rateLimitError = authRateLimit(req)
     if (rateLimitError) return rateLimitError
