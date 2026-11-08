@@ -14,10 +14,22 @@ export async function GET(
 
   const { id } = await params
 
-  // For converted documents, we serve from storage or regenerate
-  // For now, return a redirect to the document editor
-  return NextResponse.json({
-    download_url: `/editor?id=${id}`,
-    message: "Use the editor to view and export documents",
+  const { data: doc, error } = await supabase
+    .from("documents")
+    .select("content, title, mime_type, version")
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .single()
+
+  if (error || !doc) {
+    return NextResponse.json({ error: "Document not found" }, { status: 404 })
+  }
+
+  // Return document content as text/HTML
+  return new Response(doc.content, {
+    headers: {
+      "Content-Type": doc.mime_type || "text/plain",
+      "Content-Disposition": `attachment; filename="${doc.title || 'document'}.txt"`,
+    },
   })
 }

@@ -1,12 +1,11 @@
-import { createRouteClient } from "@/lib/supabase"
+import { getRouteClient } from "@/lib/supabase"
 import { NextResponse } from "next/server"
-import { z } from "zod"
 
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const supabase = createRouteClient()
+  const supabase = getRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
@@ -33,7 +32,7 @@ export async function DELETE(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const supabase = createRouteClient()
+  const supabase = getRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
@@ -42,7 +41,7 @@ export async function DELETE(
 
   const { id } = await params
 
-  const { error } = await (supabase as any)
+  const { error } = await supabase
     .from("conversion_jobs")
     .update({ status: "cancelled" })
     .eq("id", id)

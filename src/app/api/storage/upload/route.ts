@@ -1,53 +1,49 @@
-import { createRouteClient } from "@/lib/supabase"
+import { createServerClient } from "@supabase/ssr"
+import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
 
 export async function POST(req: Request) {
-  const supabase = await createRouteClient()
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { cookies: () => cookies() },
+  )
+
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  const body = await req.json()
-  const { bucket, path: filePath, contentType } = body
+  const formData = await req.formData()
+  const file = formData.get("file") as File
 
-  const { data, error } = await (supabase as any).storage
-    .from(bucket)
-    .createSignedUploadUrl(filePath, {
-      upsert: true,
-    })
+  if (!file) {
+    return NextResponse.json({ error: "No file provided" }, { status: 400 })
+  }
+
+  // Validate file size (max 10MB)
+  if (file.size > 10 * 1024 * 1024) {
+    return NextResponse.json({ error: "File too large (max 10MB)" }, { status: 400 })
+  }
+
+  const fileName = `${user.id}/${crypto.randomUUID()}-${file.name}`
+
+  const { data, error } = await supabase.storage
+    .from("documents")
+    .upload(fileName, file)
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  return NextResponse.json({ uploadUrl: data.signedUrl, path: filePath })
+  const { data: urlData } = supabase.storage.from("documents").getPublicUrl(fileName)
+
+  return NextResponse.json({
+    url: urlData.publicUrl,
+    path: fileName,
+    name: file.name,
+    size: file.size,
+    type: file.type,
+  })
 }
-
-export async function GET(req: Request) {
-  const supabase = await createRouteClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  }
-
-  const url = new URL(req.url)
-  const { searchParams } = url
-  const bucket = searchParams.get("bucket") || "documents"
-  const path = searchParams.get("path")
-
-  if (!path) {
-    return NextResponse.json({ error: "Path required" }, { status: 400 })
-  }
-
-  const { data, error } = await supabase.storage.from(bucket).createSignedUrl(path, 900)
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
-  }
-
-  return NextResponse.json({ downloadUrl: data.signedUrl })
-}
-
