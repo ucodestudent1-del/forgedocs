@@ -36,10 +36,14 @@ export async function GET() {
   const redisStart = Date.now()
   try {
     const redis = getRedisClient()
-    await redis.connect()
-    await redis.ping()
-    const redisLatency = Date.now() - redisStart
-    checks.redis = { status: "healthy", latency: redisLatency }
+    if (!redis) {
+      checks.redis = { status: "unhealthy", error: "Redis not configured" }
+    } else {
+      await redis.connect()
+      await redis.ping()
+      const redisLatency = Date.now() - redisStart
+      checks.redis = { status: "healthy", latency: redisLatency }
+    }
   } catch (err) {
     const redisLatency = Date.now() - redisStart
     checks.redis = { status: "unhealthy", latency: redisLatency, error: String(err) }

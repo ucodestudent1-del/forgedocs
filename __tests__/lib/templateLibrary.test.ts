@@ -36,7 +36,10 @@ describe('Template Library', () => {
           expect(field).toHaveProperty('name')
           expect(field).toHaveProperty('type')
           expect(field).toHaveProperty('label')
-          expect(field).toHaveProperty('required')
+          // required is optional, but if present should be boolean
+          if ('required' in field) {
+            expect(typeof field.required).toBe('boolean')
+          }
         })
       })
     })

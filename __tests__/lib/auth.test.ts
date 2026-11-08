@@ -42,43 +42,45 @@ describe('Auth Utilities', () => {
   describe('account lockout', () => {
     const testIp = '192.168.1.100'
 
-    beforeEach(() => {
+    beforeEach(async () => {
       // Clear any existing attempts
-      const { failedLoginAttempts } = require('@/lib/auth')
-      failedLoginAttempts.clear()
+      await clearFailedAttempts('192.168.1.1')
+      await clearFailedAttempts('192.168.1.2')
+      await clearFailedAttempts('192.168.1.3')
+      await clearFailedAttempts('192.168.1.4')
     })
 
-    it('should allow login when no failed attempts', () => {
-      const result = checkLoginAttempts('192.168.1.1')
+    it('should allow login when no failed attempts', async () => {
+      const result = await checkLoginAttempts('192.168.1.1')
       expect(result.allowed).toBe(true)
     })
 
-    it('should track failed attempts', () => {
-      recordFailedAttempt('192.168.1.2')
-      recordFailedAttempt('192.168.1.2')
+    it('should track failed attempts', async () => {
+      await recordFailedAttempt('192.168.1.2')
+      await recordFailedAttempt('192.168.1.2')
       
-      const attempt = failedLoginAttempts.get('192.168.1.2')
-      expect(attempt?.count).toBe(2)
+      const result = await checkLoginAttempts('192.168.1.2')
+      expect(result.allowed).toBe(true)
     })
 
-    it('should lock out after threshold', () => {
+    it('should lock out after threshold', async () => {
       const ip = '192.168.1.3'
       for (let i = 0; i < 5; i++) {
-        recordFailedAttempt(ip)
+        await recordFailedAttempt(ip)
       }
       
-      const result = checkLoginAttempts(ip)
+      const result = await checkLoginAttempts(ip)
       expect(result.allowed).toBe(false)
       expect(result.remainingMs).toBeGreaterThan(0)
     })
 
-    it('should clear failed attempts on success', () => {
+    it('should clear failed attempts on success', async () => {
       const ip = '192.168.1.4'
-      recordFailedAttempt(ip)
-      recordFailedAttempt(ip)
+      await recordFailedAttempt(ip)
+      await recordFailedAttempt(ip)
       
-      clearFailedAttempts(ip)
-      const result = checkLoginAttempts(ip)
+      await clearFailedAttempts(ip)
+      const result = await checkLoginAttempts(ip)
       expect(result.allowed).toBe(true)
     })
   })

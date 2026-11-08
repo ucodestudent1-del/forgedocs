@@ -12,7 +12,7 @@ interface RateLimitConfig {
 }
 
 // In-memory fallback store (used when Redis is unavailable)
-const rateLimitStore = new Map<string, RateLimitEntry>()
+export const rateLimitStore = new Map<string, RateLimitEntry>()
 
 function getClientIdentifier(req: Request): string {
   const forwarded = req.headers.get("x-forwarded-for")

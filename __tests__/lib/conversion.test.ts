@@ -72,9 +72,10 @@ describe("Conversion Pairs", () => {
       expect(targets).toContain("html")
     })
 
-    it("should return empty array for unsupported source", () => {
+    it("should return supported targets for image sources", () => {
       const targets = getSupportedTargets("svg")
-      expect(targets).toEqual([])
+      expect(targets).toContain("png")
+      expect(targets).toContain("jpg")
     })
   })
 

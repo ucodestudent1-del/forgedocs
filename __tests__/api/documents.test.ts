@@ -1,55 +1,82 @@
 import { GET, POST } from '@/app/api/documents/route'
-import { NextResponse } from 'next/server'
-import { NextRequest } from 'next/server'
+
+// Mock next/server
+jest.mock('next/server', () => ({
+  NextRequest: class MockRequest {
+    url: string
+    headers: Map<string, string>
+    
+    constructor(url: string, options: { headers?: Record<string, string> } = {}) {
+      this.url = url
+      this.headers = new Map(Object.entries(options.headers || {}))
+    }
+    
+    get(name: string): string | null {
+      return this.headers.get(name.toLowerCase()) || null
+    }
+  },
+  NextResponse: {
+    json: jest.fn((body, init) => ({
+      ...body,
+      status: init?.status || 200,
+      headers: new Map(Object.entries(init?.headers || {})),
+      json: async () => body,
+    })),
+  },
+}))
 
 // Mock the dependencies
 jest.mock('@/lib/supabase', () => ({
   getRouteClient: jest.fn(() => ({
     auth: {
-      getUser: jest.fn().mockResolvedValue({ data: { user: { id: 'user-123' } }, error: null })
-    }),
+      getUser: jest.fn().mockResolvedValue({ data: { user: { id: 'user-123' } }, error: null }),
+    },
     from: jest.fn(() => ({
       select: jest.fn().mockReturnThis(),
       eq: jest.fn().mockReturnThis(),
       order: jest.fn().mockReturnThis(),
       range: jest.fn().mockResolvedValue({ data: [], error: null, count: 0 }),
-    }))
-  }))
-})
+      insert: jest.fn().mockReturnThis(),
+      single: jest.fn().mockResolvedValue({ data: { id: 'doc-1' }, error: null }),
+    })),
+  })),
+}))
 
 jest.mock('@/lib/csrf', () => ({
-  validateCSRF: jest.fn().mockReturnValue(null)
+  validateCSRF: jest.fn().mockResolvedValue(undefined),
 }))
 
 jest.mock('@/lib/rate-limit', () => ({
-  documentRateLimit: jest.fn().mockReturnValue(null)
+  documentRateLimit: jest.fn().mockResolvedValue(null),
 }))
 
 jest.mock('@/lib/pagination', () => ({
   parsePagination: jest.fn(() => ({ page: 1, limit: 20, offset: 0 })),
   MAX_PAGE_SIZE: 100,
-  DEFAULT_PAGE_SIZE: 20
+  DEFAULT_PAGE_SIZE: 20,
 }))
 
 jest.mock('@/lib/cache', () => ({
   cacheGet: jest.fn().mockResolvedValue(null),
-  cacheSet: jest.fn().mockResolvedValue(undefined)
+  cacheSet: jest.fn().mockResolvedValue(undefined),
+  cacheDel: jest.fn().mockResolvedValue(undefined),
 }))
 
-import { GET, POST } from '@/app/api/documents/route'
-import { NextRequest } from 'next/server'
+jest.mock('@/lib/tierLimits', () => ({
+  checkTierLimit: jest.fn().mockResolvedValue({ allowed: true, limit: 500, current: 0, remaining: 500 }),
+  trackUsage: jest.fn().mockResolvedValue(undefined),
+}))
 
 describe('Documents API', () => {
   describe('GET', () => {
     it('should return 401 when not authenticated', async () => {
-      // Mock unauthenticated user
       const { getRouteClient } = require('@/lib/supabase')
       getRouteClient.mockReturnValue({
-        auth: { getUser: jest.fn().mockResolvedValue({ data: { user: null }, error: null }) }
+        auth: { getUser: jest.fn().mockResolvedValue({ data: { user: null }, error: null }) },
       })
 
       const req = new Request('http://localhost/api/documents')
-      const response = await GET(req as unknown as NextRequest)
+      const response = await GET(req)
       const data = await response.json()
 
       expect(response.status).toBe(401)
@@ -62,12 +89,11 @@ describe('Documents API', () => {
       const req = new Request('http://localhost/api/documents', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: '' }) // Invalid - title required
+        body: JSON.stringify({ title: '' }), // Invalid - title required
       })
 
-      // We can't easily test the full POST without more mocking
-      // This is a placeholder to show the structure
-      expect(true).toBe(true)
+      const response = await POST(req)
+      expect(response.status).toBeGreaterThanOrEqual(400)
     })
   })
 })

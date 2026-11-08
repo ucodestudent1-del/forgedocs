@@ -103,6 +103,21 @@ global.IntersectionObserver = jest.fn().mockImplementation(() => ({
   disconnect: jest.fn(),
 }))
 
+// Mock Request for Jest environment
+global.Request = class MockRequest {
+  url: string
+  headers: Map<string, string>
+  
+  constructor(url: string, options: { headers?: Record<string, string> } = {}) {
+    this.url = url
+    this.headers = new Map(Object.entries(options.headers || {}))
+  }
+  
+  get(name: string): string | null {
+    return this.headers.get(name.toLowerCase()) || null
+  }
+} as any
+
 // Suppress console.error in tests unless explicitly testing errors
 const originalError = console.error
 beforeAll(() => {

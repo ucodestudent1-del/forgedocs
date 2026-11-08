@@ -1,11 +1,10 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals'
 import { getRouteClient } from '@/lib/supabase'
 
-// Mock Supabase client
 jest.mock('@/lib/supabase', () => ({
   getRouteClient: jest.fn(() => ({
     auth: {
-      getUser: jest.fn().mockResolvedValue({ data: { user: null }, error: null })
+      getUser: jest.fn().mockResolvedValue({ data: { user: null }, error: null }),
     },
     from: jest.fn(() => ({
       select: jest.fn().mockReturnThis(),
@@ -16,9 +15,9 @@ jest.mock('@/lib/supabase', () => ({
       delete: jest.fn().mockReturnThis(),
       order: jest.fn().mockReturnThis(),
       range: jest.fn().mockReturnThis(),
-    }))
-  }))
-})
+    })),
+  })),
+}))
 
 describe('Supabase Client', () => {
   it('should create client successfully', () => {
