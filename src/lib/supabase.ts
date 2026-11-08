@@ -1,17 +1,33 @@
-import { createRouteClient } from "@supabase/ssr"
+import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
 
-export { createRouteClient }
+let cachedClient: ReturnType<typeof createServerClient> | null = null
 
-let cachedClient: ReturnType<typeof createRouteClient> | null = null
-
-export function getRouteClient() {
+export async function getRouteClient() {
   if (!cachedClient) {
-    cachedClient = createRouteClient(
+    const cookieStore = await cookies()
+    cachedClient = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      { cookies: () => cookies() },
-    )
+      {
+        cookies: {
+          getAll() {
+            return cookieStore.getAll()
+          },
+          setAll(cookiesToSet) {
+            try {
+              cookiesToSet.forEach(({ name, value, options }) =>
+                cookieStore.set(name, value, options)
+              )
+            } catch {
+              // The `set` method was called from a Server Component.
+              // This can be ignored if you have middleware refreshing
+              // user sessions.
+            }
+          },
+        },
+      }
+    }
   }
   return cachedClient
 }
