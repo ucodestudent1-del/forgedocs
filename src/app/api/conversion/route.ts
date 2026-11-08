@@ -3,25 +3,22 @@ import { NextResponse } from "next/server"
 import { validateCSRF } from "@/lib/csrf"
 import { documentRateLimit } from "@/lib/rate-limit"
 import { parsePagination } from "@/lib/pagination"
-import { z } from "zod"
+import {
+  conversionJobSchema,
+  FORMAT_REGISTRY,
+  getAllConversionPairs,
+  getFormat,
+  getSupportedTargets,
+  getUnitCategories,
+  getUnitPairs,
+  convertUnit,
+  isPairSupported,
+  transformMetadata,
+  convertDocumentServer,
+  type ConversionType,
+} from "@/lib/conversion"
 
-const supportedFormats = [
-  { source: "docx", targets: ["pdf", "txt", "html"] },
-  { source: "pdf", targets: ["docx", "txt"] },
-  { source: "xlsx", targets: ["csv", "pdf"] },
-  { source: "csv", targets: ["xlsx", "pdf"] },
-  { source: "pptx", targets: ["pdf"] },
-]
-
-const VALID_FORMATS = ["pdf", "docx", "xlsx", "csv", "pptx", "txt", "html"]
-
-const createJobSchema = z.object({
-  source_document_id: z.string().uuid().optional(),
-  source_url: z.string().url().optional(),
-  target_format: z.string().refine((f) => VALID_FORMATS.includes(f), {
-    message: "Unsupported target format",
-  }),
-})
+const VALID_FORMATS = Object.keys(FORMAT_REGISTRY)
 
 export async function GET(req: Request): Promise<NextResponse> {
   const rateLimitError = documentRateLimit(req)
@@ -37,9 +34,31 @@ export async function GET(req: Request): Promise<NextResponse> {
   const url = new URL(req.url)
   const { searchParams } = url
   const formats = searchParams.get("formats")
+  const type = searchParams.get("type") as ConversionType | null
+  const category = searchParams.get("category")
 
   if (formats === "true") {
-    return NextResponse.json({ formats: supportedFormats })
+    const pairs = getAllConversionPairs()
+    if (type) {
+      return NextResponse.json({
+        formats: Object.values(FORMAT_REGISTRY),
+        pairs: pairs.filter((p) => {
+          const sf = getFormat(p.source)
+          const tf = getFormat(p.target)
+          return sf?.category === type && tf?.category === type
+        }),
+      })
+    }
+    return NextResponse.json({ formats: Object.values(FORMAT_REGISTRY), pairs })
+  }
+
+  if (category) {
+    const pairs = getUnitPairs(category)
+    return NextResponse.json({ category, pairs })
+  }
+
+  if (searchParams.get("unit-categories") === "true") {
+    return NextResponse.json({ categories: getUnitCategories() })
   }
 
   const { page, limit, offset } = parsePagination(searchParams)
@@ -84,20 +103,80 @@ export async function POST(req: Request): Promise<NextResponse> {
   }
 
   const body = await req.json()
-  const { source_document_id, source_url, target_format } = createJobSchema.parse(body)
+  const parsed = conversionJobSchema.safeParse(body)
 
-  // Verify source document exists and belongs to user
-  if (source_document_id) {
-    const { data: sourceDoc, error: docError } = await supabase
-      .from("documents")
-      .select("id, storage_path, mime_type")
-      .eq("id", source_document_id)
-      .eq("user_id", user.id)
-      .single()
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.flatten().fieldErrors }, { status: 400 })
+  }
 
-    if (docError || !sourceDoc) {
-      return NextResponse.json({ error: "Source document not found" }, { status: 404 })
+  const { type, source_format, target_format, source_url, value, options } = parsed.data
+
+  // Validate formats exist
+  const sourceFmt = getFormat(source_format)
+  const targetFmt = getFormat(target_format)
+  if (!sourceFmt || !targetFmt) {
+    return NextResponse.json({ error: "Invalid source or target format" }, { status: 400 })
+  }
+
+  // Handle unit conversion (synchronous, no job needed)
+  if (type === "unit") {
+    if (!value) {
+      return NextResponse.json({ error: "Value is required for unit conversion" }, { status: 400 })
     }
+    const numValue = parseFloat(value)
+    if (isNaN(numValue)) {
+      return NextResponse.json({ error: "Invalid numeric value" }, { status: 400 })
+    }
+    // Determine category from format IDs
+    const sourceFmtObj = Object.values(FORMAT_REGISTRY).find((f) => f.id === source_format)
+    const category = sourceFmtObj?.category
+    if (!category || category !== "unit") {
+      return NextResponse.json({ error: "Source format must be a unit type" }, { status: 400 })
+    }
+    try {
+      const result = convertUnit(numValue, source_format, source_format, target_format)
+      return NextResponse.json({
+        type: "unit",
+        source_format,
+        target_format,
+        value: numValue,
+        result,
+        converted_at: new Date().toISOString(),
+      })
+    } catch (err) {
+      return NextResponse.json({ error: err instanceof Error ? err.message : "Unit conversion failed" }, { status: 400 })
+    }
+  }
+
+  // Handle metadata transformation (synchronous)
+  if (type === "metadata") {
+    if (!value) {
+      return NextResponse.json({ error: "Value (metadata JSON) is required for metadata conversion" }, { status: 400 })
+    }
+    let data: Record<string, unknown>
+    try {
+      data = JSON.parse(value)
+    } catch {
+      return NextResponse.json({ error: "Invalid JSON metadata" }, { status: 400 })
+    }
+    try {
+      const output = transformMetadata({ sourceFormat: source_format as any, targetFormat: target_format as any, data, options })
+      return NextResponse.json({
+        type: "metadata",
+        source_format,
+        target_format,
+        output,
+        converted_at: new Date().toISOString(),
+      })
+    } catch (err) {
+      return NextResponse.json({ error: err instanceof Error ? err.message : "Metadata transformation failed" }, { status: 400 })
+    }
+  }
+
+  // Document conversion - create a job
+  // Validate pair support
+  if (!isPairSupported(source_format, target_format) && source_format !== target_format) {
+    return NextResponse.json({ error: `Conversion from ${source_format} to ${target_format} is not supported` }, { status: 400 })
   }
 
   // Check tier limits
@@ -134,13 +213,30 @@ export async function POST(req: Request): Promise<NextResponse> {
     }
   }
 
+  // Verify source document if provided
+  let source_document_id = body.source_document_id
+  if (source_document_id) {
+    const { data: sourceDoc, error: docError } = await supabase
+      .from("documents")
+      .select("id, storage_path, mime_type")
+      .eq("id", source_document_id)
+      .eq("user_id", user.id)
+      .single()
+
+    if (docError || !sourceDoc) {
+      return NextResponse.json({ error: "Source document not found" }, { status: 404 })
+    }
+  }
+
   const { data: job, error } = await (supabase as any)
     .from("conversion_jobs")
     .insert({
       user_id: user.id,
       source_document_id,
-      source_url,
+      source_url: source_url || null,
+      source_format,
       target_format,
+      options: options || {},
       status: "pending",
     })
     .select()

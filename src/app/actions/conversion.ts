@@ -1,6 +1,7 @@
 "use server"
 
 import { createRouteClient } from "@/lib/supabase"
+import { convertDocumentServer, FORMAT_REGISTRY, type ConvertDocumentResult } from "@/lib/conversion"
 
 /**
  * Conversion worker - processes pending conversion jobs
@@ -31,9 +32,9 @@ export async function processConversionJob(jobId: string) {
     .eq("id", jobId)
 
   try {
-    // Fetch source document if available
     let sourceContent = ""
     let sourceMimeType = "application/octet-stream"
+    let sourceFormat = "txt"
 
     if (job.source_document_id) {
       const { data: doc } = await supabase
@@ -45,14 +46,16 @@ export async function processConversionJob(jobId: string) {
       if (doc) {
         sourceContent = doc.content || ""
         sourceMimeType = doc.mime_type || "application/octet-stream"
+        sourceFormat = Object.values(FORMAT_REGISTRY).find((f) => f.mimeType === sourceMimeType)?.id || "txt"
       }
     }
 
-    // Perform conversion based on target format
-    const result = await convertDocument(
+    // Perform conversion using the conversion engine
+    const result = await convertDocumentServer(
       sourceContent,
       sourceMimeType,
-      job.target_format
+      job.target_format,
+      job.options || {}
     )
 
     // Update job with result
@@ -79,30 +82,5 @@ export async function processConversionJob(jobId: string) {
       .eq("id", jobId)
 
     throw err
-  }
-}
-
-async function convertDocument(
-  content: string,
-  sourceMimeType: string,
-  targetFormat: string
-): Promise<{ outputUrl: string; mimeType: string }> {
-  // This is a placeholder for actual conversion logic
-  // In production, this would use libraries like:
-  // - libreoffice for office document conversion
-  // - pdf-lib for PDF manipulation
-  // - mammoth for DOCX to HTML
-  // - sharp for image conversion
-  // - pandoc for general document conversion
-
-  const outputContent = `# Converted Document\n\nSource: ${sourceMimeType}\nTarget: ${targetFormat}\n\nContent:\n${content}`
-
-  // For now, store the converted content as a new document
-  // In production, this would upload to S3/R2 and return a URL
-  const outputUrl = `/api/documents/export/${crypto.randomUUID()}.${targetFormat}`
-
-  return {
-    outputUrl,
-    mimeType: `application/${targetFormat}`,
   }
 }

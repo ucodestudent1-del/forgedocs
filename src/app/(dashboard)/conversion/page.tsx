@@ -1,16 +1,29 @@
 "use client"
 
-import React from "react"
-import { useEffect, useState, useCallback } from "react"
+import React, { useEffect, useState, useCallback } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { FileText, FileSpreadsheet, FileImage, RefreshCw, Upload, Download, ArrowRight } from "lucide-react"
+import {
+  FileText,
+  FileSpreadsheet,
+  FileImage,
+  RefreshCw,
+  Upload,
+  Download,
+  ArrowRight,
+  Search,
+  Settings,
+  BarChart3,
+  Layout,
+  RefreshCw as RefreshIcon,
+} from "lucide-react"
 import { documentRateLimit } from "@/lib/rate-limit"
 import { validateCSRF } from "@/lib/csrf"
-import { Search } from "lucide-react"
 
-const CONVERSION_PAIRS = [
+type Tab = "document" | "unit" | "metadata"
+
+const DOCUMENT_PAIRS = [
   { source: "DOCX", target: "PDF", icon: FileText, color: "bg-blue-500/10 text-blue-600" },
   { source: "PDF", target: "DOCX", icon: FileText, color: "bg-red-500/10 text-red-600" },
   { source: "XLSX", target: "CSV", icon: FileSpreadsheet, color: "bg-green-500/10 text-green-600" },
@@ -21,19 +34,46 @@ const CONVERSION_PAIRS = [
   { source: "XLSX", target: "PDF", icon: FileSpreadsheet, color: "bg-green-500/10 text-green-600" },
 ]
 
+const UNIT_CATEGORIES = [
+  { id: "length", name: "Length", icon: Layout },
+  { id: "mass", name: "Mass / Weight", icon: BarChart3 },
+  { id: "temperature", name: "Temperature", icon: Settings },
+  { id: "volume", name: "Volume", icon: BarChart3 },
+  { id: "area", name: "Area", icon: Layout },
+  { id: "speed", name: "Speed", icon: RefreshIcon },
+  { id: "data-size", name: "Data Size", icon: BarChart3 },
+  { id: "angle", name: "Angle", icon: Layout },
+  { id: "energy", name: "Energy", icon: BarChart3 },
+  { id: "pressure", name: "Pressure", icon: Settings },
+  { id: "time", name: "Time", icon: RefreshIcon },
+]
+
 export default function ConversionPage() {
   const [jobs, setJobs] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [converting, setConverting] = useState(false)
-  const [selectedSourceFile, setSelectedSourceFile] = useState<File | null>(null)
+  const [activeTab, setActiveTab] = useState<Tab>("document")
+
+  // Document tab state
+  const [sourceFile, setSourceFile] = useState<File | null>(null)
   const [selectedSourceUrl, setSelectedSourceUrl] = useState("")
   const [selectedTargetFormat, setSelectedTargetFormat] = useState("")
   const [uploadProgress, setUploadProgress] = useState(0)
-  const [activeTab, setActiveTab] = useState<"upload" | "url" | "history">("upload")
-  const [sourceFile, setSourceFile] = useState<File | null>(null)
   const [search, setSearch] = useState("")
 
-  async function fetchJobs() {
+  // Unit tab state
+  const [unitCategory, setUnitCategory] = useState<string | null>(null)
+  const [unitFrom, setUnitFrom] = useState("")
+  const [unitTo, setUnitTo] = useState("")
+   const [unitValue, setUnitValue] = useState("")
+
+  // Metadata tab state
+  const [metaSourceFormat, setMetaSourceFormat] = useState("json")
+  const [metaTargetFormat, setMetaTargetFormat] = useState("yaml")
+  const [metaValue, setMetaValue] = useState(JSON.stringify({ name: "Example", version: 1 }, null, 2))
+  const [metaResult, setMetaResult] = useState("")
+
+  const fetchJobs = useCallback(async () => {
     try {
       const res = await fetch("/api/conversion")
       const data = await res.json()
@@ -43,12 +83,13 @@ export default function ConversionPage() {
     } finally {
       setLoading(false)
     }
-  }
-
-  React.useEffect(() => {
-    fetchJobs()
   }, [])
 
+  useEffect(() => {
+    fetchJobs()
+  }, [fetchJobs])
+
+  // ---- Document handlers ----
   async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
@@ -57,6 +98,16 @@ export default function ConversionPage() {
   }
 
   async function handleConvert() {
+    if (activeTab === "document") {
+      await handleDocumentConvert()
+    } else if (activeTab === "unit") {
+      await handleUnitConvert()
+    } else if (activeTab === "metadata") {
+      await handleMetadataConvert()
+    }
+  }
+
+  async function handleDocumentConvert() {
     if (!sourceFile && !selectedSourceUrl) {
       alert("Please select a file or enter a URL")
       return
@@ -65,63 +116,53 @@ export default function ConversionPage() {
       alert("Please select a target format")
       return
     }
-
     setConverting(true)
-
     try {
       if (sourceFile) {
-        // Upload file first
         const formData = new FormData()
         formData.append("file", sourceFile)
-
         const uploadRes = await fetch("/api/storage/upload", {
           method: "POST",
           body: formData,
         })
-
-        if (!uploadRes.ok) {
-          throw new Error("File upload failed")
-        }
-
+        if (!uploadRes.ok) throw new Error("File upload failed")
         const uploadData = await uploadRes.json()
         const sourceUrl = uploadData.url || uploadData.path
-
-        // Create conversion job
         const res = await fetch("/api/conversion", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            source_url: sourceUrl,
+            type: "document",
+            source_format: sourceFile.name.split(".").pop() || "txt",
             target_format: selectedTargetFormat,
+            source_url: sourceUrl,
           }),
         })
-
         if (!res.ok) {
           const err = await res.json()
           throw new Error(err.error || "Conversion failed")
         }
-
         const data = await res.json()
         setJobs([data.job, ...jobs])
       } else if (selectedSourceUrl) {
+        const ext = selectedSourceUrl.split(".").pop() || "txt"
         const res = await fetch("/api/conversion", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            source_url: selectedSourceUrl,
+            type: "document",
+            source_format: ext,
             target_format: selectedTargetFormat,
+            source_url: selectedSourceUrl,
           }),
         })
-
         if (!res.ok) {
           const err = await res.json()
           throw new Error(err.error || "Conversion failed")
         }
-
         const data = await res.json()
         setJobs([data.job, ...jobs])
       }
-
       setSourceFile(null)
       setSelectedSourceUrl("")
       setSelectedTargetFormat("")
@@ -129,6 +170,64 @@ export default function ConversionPage() {
     } catch (e) {
       console.error(e)
       alert(e instanceof Error ? e.message : "Conversion failed")
+      setConverting(false)
+    }
+  }
+
+  async function handleUnitConvert() {
+    if (!unitCategory || !unitFrom || !unitTo || !unitValue) {
+      alert("Please fill all unit conversion fields")
+      return
+    }
+    setConverting(true)
+    try {
+      const res = await fetch("/api/conversion", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "unit",
+          source_format: unitFrom,
+          target_format: unitTo,
+          value: unitValue,
+        }),
+      })
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.error || "Unit conversion failed")
+      }
+      const data = await res.json()
+      alert(`${unitValue} ${unitFrom} = ${data.result} ${unitTo}`)
+    } catch (e) {
+      console.error(e)
+      alert(e instanceof Error ? e.message : "Unit conversion failed")
+    } finally {
+      setConverting(false)
+    }
+  }
+
+  async function handleMetadataConvert() {
+    setConverting(true)
+    try {
+      const res = await fetch("/api/conversion", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "metadata",
+          source_format: metaSourceFormat,
+          target_format: metaTargetFormat,
+          value: metaValue,
+        }),
+      })
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.error || "Metadata conversion failed")
+      }
+      const data = await res.json()
+      setMetaResult(data.output)
+    } catch (e) {
+      console.error(e)
+      alert(e instanceof Error ? e.message : "Metadata conversion failed")
+    } finally {
       setConverting(false)
     }
   }
@@ -154,117 +253,300 @@ export default function ConversionPage() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Document Conversion</h1>
-          <p className="text-muted-foreground">Convert documents between formats</p>
+          <h1 className="text-2xl font-bold tracking-tight">Universal Converter</h1>
+          <p className="text-muted-foreground">Convert documents, units, and metadata across formats</p>
         </div>
-        <Button className="flex items-center gap-2" disabled={converting}>
+        <Button className="flex items-center gap-2" disabled={converting} onClick={fetchJobs}>
           <RefreshCw className="h-4 w-4" />
           Refresh
         </Button>
       </div>
 
-      {/* Conversion Form */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Convert Document</CardTitle>
-          <CardDescription>Upload a document or provide a URL to convert</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-6">
-            {/* Source Selection */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex flex-col gap-2">
-                <label className="text-sm font-medium text-foreground">Source</label>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => document.getElementById("file-input")?.click()}
-                    className={`flex-1 flex flex-col items-center justify-center p-3 rounded-lg border-2 border-dashed ${
-                      sourceFile ? "bg-blue-50 border-blue-500" : "border-input hover:border-primary/50"
-                    }`}
-                  >
-                    <Upload className="h-5 w-5 mb-2 text-primary" />
-                    <span className="text-sm">Upload File</span>
-                    <input
-                      id="file-input"
-                      type="file"
-                      className="hidden"
-                      onChange={handleFileSelect}
-                      accept=".docx,.pdf,.xlsx,.csv,.pptx,.txt,.html"
-                    />
-                  </button>
-                  <button
-                    onClick={() => setSourceFile(null)}
-                    className="w-full flex items-center justify-center py-2 rounded-md text-sm text-red-500 hover:bg-red-50"
-                    disabled={!sourceFile}
-                  >
-                    Remove File
-                  </button>
-                </div>
-                {sourceFile && (
-                  <div className="mt-2 p-2 rounded-md bg-blue-50 text-sm text-blue-700 border border-blue-100">
-                    <FileText className="h-4 w-4 mr-2" />
-                    {sourceFile.name} ({Math.round(sourceFile.size / 1024)} KB)
+      {/* Tabs */}
+      <div className="flex border-b border-input">
+        {[
+          { key: "document" as Tab, label: "Document" },
+          { key: "unit" as Tab, label: "Unit" },
+          { key: "metadata" as Tab, label: "Metadata" },
+        ].map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
+            className={`-mb-px border-b-2 px-4 py-2 text-sm font-medium transition-colors ${
+              activeTab === tab.key
+                ? "border-primary text-primary"
+                : "border-transparent text-muted-foreground hover:text-muted-foreground"
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Document Converter Tab */}
+      {activeTab === "document" && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Document Conversion</CardTitle>
+            <CardDescription>Convert documents between formats</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-medium text-foreground">Source</label>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => document.getElementById("file-input")?.click()}
+                      className={`flex-1 flex flex-col items-center justify-center p-3 rounded-lg border-2 border-dashed ${
+                        sourceFile ? "bg-blue-50 border-blue-500" : "border-input hover:border-primary/50"
+                      }`}
+                    >
+                      <Upload className="h-5 w-5 mb-2 text-primary" />
+                      <span className="text-sm">Upload File</span>
+                      <input
+                        id="file-input"
+                        type="file"
+                        className="hidden"
+                        onChange={handleFileSelect}
+                        accept=".docx,.pdf,.xlsx,.csv,.pptx,.txt,.html,.md,.epub,.jpg,.png,.webp,.svg,.tiff,.bmp,.gif,.odt,.ods,.odp,.rtf"
+                      />
+                    </button>
+                    <button
+                      onClick={() => setSourceFile(null)}
+                      className="w-full flex items-center justify-center py-2 rounded-md text-sm text-red-500 hover:bg-red-50"
+                      disabled={!sourceFile}
+                    >
+                      Remove File
+                    </button>
                   </div>
-                )}
+                  {sourceFile && (
+                    <div className="mt-2 p-2 rounded-md bg-blue-50 text-sm text-blue-700 border border-blue-100">
+                      <FileText className="h-4 w-4 mr-2" />
+                      {sourceFile.name} ({Math.round(sourceFile.size / 1024)} KB)
+                    </div>
+                  )}
+                </div>
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-medium text-foreground">Or URL</label>
+                  <input
+                    type="text"
+                    placeholder="https://example.com/document.pdf"
+                    value={selectedSourceUrl}
+                    onChange={(e) => {
+                      setSelectedSourceUrl(e.target.value)
+                      setSourceFile(null)
+                    }}
+                    className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                </div>
               </div>
+
               <div className="flex flex-col gap-2">
-                <label className="text-sm font-medium text-foreground">Or URL</label>
-                <input
-                  type="text"
-                  placeholder="https://example.com/document.pdf"
-                  value={selectedSourceUrl}
-                  onChange={(e) => {
-                    setSelectedSourceUrl(e.target.value)
-                    setSourceFile(null)
-                  }}
-                  className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                />
+                <label className="text-sm font-medium text-foreground">Target Format</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {DOCUMENT_PAIRS.map((pair) => (
+                    <button
+                      key={`${pair.source}-${pair.target}`}
+                      onClick={() => setSelectedTargetFormat(pair.target)}
+                      className={`flex flex-col items-center gap-2 p-3 rounded-lg border-2 ${
+                        selectedTargetFormat === pair.target
+                          ? "bg-blue-50 border-blue-500 text-blue-600"
+                          : "border-input hover:border-primary/50"
+                      }`}
+                    >
+                      <pair.icon className={`h-5 w-5 ${pair.color}`} />
+                      <span className="text-xs font-medium">{pair.source} → {pair.target}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
 
-            {/* Target Format */}
-            <div className="flex flex-col gap-2">
-              <label className="text-sm font-medium text-foreground">Target Format</label>
-              <div className="grid grid-cols-3 gap-2">
-                {CONVERSION_PAIRS.map((pair) => (
-                  <button
-                    key={`${pair.source}-${pair.target}`}
-                    onClick={() => setSelectedTargetFormat(pair.target)}
-                    className={`flex flex-col items-center gap-2 p-3 rounded-lg border-2 ${
-                      selectedTargetFormat === pair.target
-                        ? "bg-blue-50 border-blue-500 text-blue-600"
-                        : "border-input hover:border-primary/50"
-                    }`}
+              <Button
+                onClick={handleConvert}
+                disabled={!sourceFile && !selectedSourceUrl || !selectedTargetFormat || converting}
+                className="w-full"
+                size="lg"
+              >
+                {converting ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 animate-spin mr-2" />
+                    Converting...
+                  </>
+                ) : (
+                  <>
+                    <ArrowRight className="h-4 w-4 mr-2" />
+                    Convert Document
+                  </>
+                )}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Unit Converter Tab */}
+      {activeTab === "unit" && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Unit Conversion</CardTitle>
+            <CardDescription>Convert between measurement units</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-6">
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-medium text-foreground">Category</label>
+                <div className="flex flex-wrap gap-2">
+                  {UNIT_CATEGORIES.map((cat) => (
+                    <button
+                      key={cat.id}
+                      onClick={() => {
+                        setUnitCategory(cat.id)
+                        setUnitFrom("")
+                        setUnitTo("")
+                      }}
+                      className={`px-3 py-1.5 rounded-md text-sm border transition-colors ${
+                        unitCategory === cat.id
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "border-input bg-background text-muted-foreground hover:border-primary/50"
+                      }`}
+                    >
+                      {cat.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {unitCategory && (
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="flex flex-col gap-2">
+                      <label className="text-sm font-medium text-foreground">From</label>
+                      <select
+                        value={unitFrom}
+                        onChange={(e) => setUnitFrom(e.target.value)}
+                        className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                      >
+                        <option value="">Select unit</option>
+                      </select>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <label className="text-sm font-medium text-foreground">To</label>
+                      <select
+                        value={unitTo}
+                        onChange={(e) => setUnitTo(e.target.value)}
+                        className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                      >
+                        <option value="">Select unit</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <label className="text-sm font-medium text-foreground">Value</label>
+                    <input
+                      type="number"
+                      step="any"
+                      placeholder="Enter value"
+                      value={unitValue}
+                      onChange={(e) => setUnitValue(e.target.value)}
+                      className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                  </div>
+                  <Button
+                    onClick={handleConvert}
+                    disabled={!unitCategory || !unitFrom || !unitTo || !unitValue || converting}
+                    className="w-full"
                   >
-                    <pair.icon className={`h-5 w-5 ${pair.color}`} />
-                    <span className="text-xs font-medium">{pair.source} → {pair.target}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Convert Button */}
-            <Button
-              onClick={handleConvert}
-              disabled={!sourceFile && !selectedSourceUrl || !selectedTargetFormat || converting}
-              className="w-full"
-              size="lg"
-            >
-              {converting ? (
-                <>
-                  <RefreshCw className="h-4 w-4 animate-spin mr-2" />
-                  Converting...
-                </>
-              ) : (
-                <>
-                  <ArrowRight className="h-4 w-4 mr-2" />
-                  Convert Document
+                    {converting ? "Converting..." : "Convert Unit"}
+                  </Button>
                 </>
               )}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Metadata Converter Tab */}
+      {activeTab === "metadata" && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Metadata Transformation</CardTitle>
+            <CardDescription>Transform metadata between JSON, XML, YAML, and CSV</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-medium text-foreground">Source Format</label>
+                  <select
+                    value={metaSourceFormat}
+                    onChange={(e) => setMetaSourceFormat(e.target.value as any)}
+                    className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  >
+                    <option value="json">JSON</option>
+                    <option value="xml">XML</option>
+                    <option value="yaml">YAML</option>
+                    <option value="csv_meta">CSV</option>
+                  </select>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-medium text-foreground">Target Format</label>
+                  <select
+                    value={metaTargetFormat}
+                    onChange={(e) => setMetaTargetFormat(e.target.value as any)}
+                    className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  >
+                    <option value="yaml">YAML</option>
+                    <option value="json">JSON</option>
+                    <option value="xml">XML</option>
+                    <option value="csv_meta">CSV</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-medium text-foreground">Source Metadata</label>
+                <textarea
+                  value={metaValue}
+                  onChange={(e) => setMetaValue(e.target.value)}
+                  className="w-full h-48 border border-input bg-background px-3 py-2 rounded-md text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary"
+                  placeholder='{"key": "value"}'
+                />
+              </div>
+
+              <Button
+                onClick={handleConvert}
+                disabled={converting}
+                className="w-full"
+              >
+                {converting ? "Transforming..." : "Transform Metadata"}
+              </Button>
+
+              {metaResult && (
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-medium text-foreground">Result</label>
+                  <div className="relative">
+                    <textarea
+                      value={metaResult}
+                      readOnly
+                      className="w-full h-48 border border-input bg-background px-3 py-2 rounded-md text-sm font-mono focus:outline-none"
+                    />
+                    <Button
+                      onClick={() => {
+                        navigator.clipboard.writeText(metaResult)
+                      }}
+                      className="absolute right-2 top-2 text-xs"
+                      size="sm"
+                    >
+                      Copy
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Conversion Jobs */}
       <Card>
