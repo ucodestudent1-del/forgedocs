@@ -9,6 +9,6 @@ FROM node:24-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3000
-COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/.next/standalone ./
 EXPOSE 3000
-CMD ["next", "start"]
+CMD ["node", "server.js"]
