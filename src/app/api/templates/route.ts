@@ -1,9 +1,10 @@
-import { createRouteClient } from "@/lib/supabase"
+import { getRouteClient } from "@/lib/supabase"
 import { NextResponse } from "next/server"
+import { validateCSRF } from "@/lib/csrf"
 import { z } from "zod"
 
 export async function GET(req: Request) {
-  const supabase = await createRouteClient()
+  const supabase = getRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
@@ -40,7 +41,10 @@ const createTemplateSchema = z.object({
 })
 
 export async function POST(req: Request) {
-  const supabase = await createRouteClient()
+  const csrfError = validateCSRF(req)
+  if (csrfError) return csrfError
+
+  const supabase = getRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
@@ -72,4 +76,3 @@ export async function POST(req: Request) {
 
   return NextResponse.json({ template: data }, { status: 201 })
 }
-
