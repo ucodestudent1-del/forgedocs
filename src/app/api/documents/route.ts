@@ -11,7 +11,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  const searchParams = new URL(req.url)
+  const searchParams = new URL(req.url).searchParams
   const page = parseInt(searchParams.get("page") || "1")
   const limit = parseInt(searchParams.get("limit") || "20")
   const archived = searchParams.get("archived") === "true"
