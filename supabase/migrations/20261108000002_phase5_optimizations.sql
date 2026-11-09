@@ -139,8 +139,7 @@ INSERT INTO tier_limits (tier, documents_per_month, conversions_per_month, stora
 VALUES
   ('free', 500, 100, 5, 10, 30, FALSE, FALSE, FALSE),
   ('pro', -1, -1, 100, 50, 100, TRUE, TRUE, TRUE),
-  ('business', -1, -1, 500, 100, 500, TRUE, TRUE, TRUE),
-  ('enterprise', -1, -1, -1, 500, 1000, TRUE, TRUE, TRUE)
+  ('business', -1, -1, 500, 100, 500, TRUE, TRUE, TRUE)
 ON CONFLICT (tier) DO UPDATE SET
   documents_per_month = EXCLUDED.documents_per_month,
   conversions_per_month = EXCLUDED.conversions_per_month,

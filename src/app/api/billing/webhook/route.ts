@@ -246,7 +246,6 @@ export async function POST(req: Request) {
         // Map price IDs to tiers - in production, store this mapping in DB
         if (priceId.includes("pro")) tier = "pro"
         else if (priceId.includes("business")) tier = "business"
-        else if (priceId.includes("enterprise")) tier = "enterprise"
       }
 
       await (supabase as any)

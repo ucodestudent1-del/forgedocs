@@ -27,7 +27,7 @@ CREATE TABLE subscriptions (
   stripe_customer_id TEXT UNIQUE,
   stripe_subscription_id TEXT UNIQUE,
   status TEXT DEFAULT 'inactive' CHECK (status IN ('active', 'past_due', 'canceled', 'incomplete', 'trialing')),
-  tier TEXT DEFAULT 'free' CHECK (tier IN ('free', 'pro', 'business', 'enterprise')),
+  tier TEXT DEFAULT 'free' CHECK (tier IN ('free', 'pro', 'business')),
   current_period_start TIMESTAMPTZ,
   current_period_end TIMESTAMPTZ,
   cancel_at_period_end BOOLEAN DEFAULT FALSE,

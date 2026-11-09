@@ -45,16 +45,6 @@ const TIER_LIMITS: Record<string, TierLimits> = {
     has_audit_logs: true,
     has_advanced_templates: true,
   },
-  enterprise: {
-    documents_per_month: -1,
-    conversions_per_month: -1,
-    storage_gb: -1,
-    max_file_size_mb: 500,
-    api_requests_per_minute: 1000,
-    has_priority_support: true,
-    has_audit_logs: true,
-    has_advanced_templates: true,
-  },
 }
 
 export async function getUserTier(userId: string): Promise<string> {

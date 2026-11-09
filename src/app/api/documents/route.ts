@@ -10,7 +10,6 @@ const TIER_LIMITS = {
   free: { documents: 500 },
   pro: { documents: -1 }, // unlimited
   business: { documents: -1 },
-  enterprise: { documents: -1 },
 } as const
 
 async function checkDocumentLimit(supabase: any, userId: string): Promise<{ allowed: boolean; limit: number; current: number }> {

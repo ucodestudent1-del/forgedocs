@@ -93,7 +93,6 @@ export function SubscriptionTable() {
           <option value="free">Free</option>
           <option value="pro">Pro</option>
           <option value="business">Business</option>
-          <option value="enterprise">Enterprise</option>
         </select>
         <select
           value={statusFilter}
