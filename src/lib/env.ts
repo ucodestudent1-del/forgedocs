@@ -3,8 +3,12 @@ const requiredEnvVars = [
   "NEXT_PUBLIC_SUPABASE_ANON_KEY",
   "STRIPE_SECRET_KEY",
   "STRIPE_WEBHOOK_SECRET",
+] as const
+
+const optionalEnvVars = [
   "SENTRY_ORG",
   "SENTRY_PROJECT",
+  "SENTRY_DSN",
 ] as const
 
 export function validateEnv() {
@@ -24,7 +28,11 @@ export function validateEnv() {
   }
 }
 
-export function getEnv(key: typeof requiredEnvVars[number]): string {
+export function getEnv(key: typeof requiredEnvVars[number] | typeof optionalEnvVars[number]): string | undefined {
+  return process.env[key]
+}
+
+export function getRequiredEnv(key: typeof requiredEnvVars[number]): string {
   const value = process.env[key]
   if (!value) {
     throw new Error(`Missing required environment variable: ${key}`)
@@ -33,10 +41,11 @@ export function getEnv(key: typeof requiredEnvVars[number]): string {
 }
 
 export const env = {
-  NEXT_PUBLIC_SUPABASE_URL: getEnv("NEXT_PUBLIC_SUPABASE_URL"),
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: getEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY"),
-  STRIPE_SECRET_KEY: getEnv("STRIPE_SECRET_KEY"),
-  STRIPE_WEBHOOK_SECRET: getEnv("STRIPE_WEBHOOK_SECRET"),
+  NEXT_PUBLIC_SUPABASE_URL: getRequiredEnv("NEXT_PUBLIC_SUPABASE_URL"),
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: getRequiredEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY"),
+  STRIPE_SECRET_KEY: getRequiredEnv("STRIPE_SECRET_KEY"),
+  STRIPE_WEBHOOK_SECRET: getRequiredEnv("STRIPE_WEBHOOK_SECRET"),
   SENTRY_ORG: getEnv("SENTRY_ORG"),
   SENTRY_PROJECT: getEnv("SENTRY_PROJECT"),
+  SENTRY_DSN: getEnv("SENTRY_DSN"),
 }
