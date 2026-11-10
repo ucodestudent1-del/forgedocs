@@ -54,11 +54,10 @@ RUN adduser --system --uid 1001 nodejs
 
 USER nodejs
 
-# Copy built application from builder
-COPY --from=builder /app/package.json ./package.json
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/.next ./.next
+# Copy built application from builder (standalone output)
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
 
 EXPOSE 3000
-CMD ["node_modules/.bin/next", "start"]
+CMD ["node", "server.js"]

@@ -3,6 +3,7 @@ const path = require("path")
 const { sentryWebpackPlugin } = require("@sentry/webpack-plugin")
 
 const nextConfig = {
+  output: 'standalone',
   outputFileTracingRoot: __dirname,
   outputFileTracingIncludes: {
     "/": [".env.local", ".next/static/**/*"],
