@@ -38,6 +38,9 @@ RUN npm install
 COPY . ./
 RUN npm run build
 
+# Verify CSS assets were generated
+RUN ls -la .next/static/css/ || echo "WARNING: No CSS files found in .next/static/css/"
+
 # Runner stage
 FROM node:24-alpine AS runner
 WORKDIR /app
@@ -52,7 +55,8 @@ RUN adduser --system --uid 1001 nodejs
 USER nodejs
 
 COPY --from=builder /app/package.json ./package.json
-COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
 
 EXPOSE 3000

@@ -6,8 +6,8 @@ const nextConfig = {
   output: 'standalone',
   outputFileTracingRoot: __dirname,
   outputFileTracingIncludes: {
-    "/": [".env.local"],
-    "/app/**": [".env.local"],
+    "/": [".env.local", ".next/static/**/*"],
+    "/app/**": [".env.local", ".next/static/**/*"],
   },
   webpack: (config, { dev, isServer }) => {
     if (!dev && process.env.NODE_ENV === "production" && !isServer && process.env.SENTRY_ORG && process.env.SENTRY_PROJECT) {
