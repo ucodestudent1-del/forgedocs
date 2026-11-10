@@ -38,8 +38,8 @@ RUN npm install
 COPY . ./
 RUN npm run build
 
-# Verify build output
-RUN ls -la .next/ | head -5
+# Verify standalone output exists
+RUN test -f /app/.next/standalone/server.js || (echo "STANDALONE BUILD FAILED" && exit 1)
 
 # Runner stage
 FROM node:24-alpine AS runner
@@ -60,4 +60,4 @@ COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
 
 EXPOSE 3000
-CMD ["node", "server.js"]
+CMD ["node", "start.js"]
