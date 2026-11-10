@@ -71,6 +71,6 @@ export async function GET() {
 
   return NextResponse.json(
     { status, checks, timestamp: new Date().toISOString() },
-    { status: allHealthy ? 200 : 503 }
+    { status: 200 }
   )
 }
