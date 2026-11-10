@@ -59,5 +59,8 @@ COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
 
+# Copy start script (always fresh)
+COPY start.js ./start.js
+
 EXPOSE 3000
 CMD ["node", "start.js"]

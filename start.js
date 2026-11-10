@@ -4,20 +4,15 @@ const path = require('path');
 
 const standalonePath = path.join(__dirname, '.next', 'standalone', 'server.js');
 
-if (!fs.existsSync(standalonePath)) {
-  console.log('Standalone server not found. Building Next.js app...');
+if (fs.existsSync(standalonePath)) {
+  console.log('Starting Next.js standalone server...');
+  execSync('node server.js', { stdio: 'inherit' });
+} else {
+  console.log('Standalone server not found. Falling back to next start...');
   try {
-    execSync('next build', { stdio: 'inherit' });
+    execSync('node_modules/.bin/next', ['start'], { stdio: 'inherit' });
   } catch (err) {
-    console.error('Build failed:', err.message);
+    console.error('next start failed:', err.message);
     process.exit(1);
   }
 }
-
-if (!fs.existsSync(standalonePath)) {
-  console.error('Standalone server still missing after build. Check next.config.js has output: "standalone".');
-  process.exit(1);
-}
-
-console.log('Starting Next.js standalone server...');
-execSync('node server.js', { stdio: 'inherit' });
