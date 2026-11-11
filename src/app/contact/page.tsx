@@ -82,12 +82,12 @@ export default function ContactPage() {
           <h2 className="text-3xl font-bold tracking-tight text-foreground mb-6">Prefer to self-serve?</h2>
           <p className="text-muted-foreground mb-8">Check out our documentation and FAQ for quick answers.</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <a href="/faq" className="px-6 py-3 border border-input bg-background hover:bg-accent text-foreground font-medium rounded-lg transition-colors">
+            <Link href="/faq" className="px-6 py-3 border border-input bg-background hover:bg-accent text-foreground font-medium rounded-lg transition-colors">
               View FAQ
-            </a>
-            <a href="/features" className="px-6 py-3 bg-primary text-primary-foreground font-medium rounded-lg hover:bg-primary/90 transition-colors">
+            </Link>
+            <Link href="/features" className="px-6 py-3 bg-primary text-primary-foreground font-medium rounded-lg hover:bg-primary/90 transition-colors">
               Explore features
-            </a>
+            </Link>
           </div>
         </div>
       </section>

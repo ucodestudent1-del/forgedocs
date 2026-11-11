@@ -157,9 +157,9 @@ export default function PricingPage() {
           <div className="rounded-2xl bg-primary p-8 sm:p-12 text-primary-foreground text-center">
             <h2 className="text-3xl font-bold mb-4">Still have questions?</h2>
             <p className="text-primary-foreground/90 mb-8">Contact our sales team for a custom quote or demo.</p>
-            <a href="/contact" className="inline-block px-8 py-4 bg-background text-primary font-semibold rounded-lg hover:bg-primary/90 transition-colors shadow-lg shadow-primary/30">
+            <Link href="/contact" className="inline-block px-8 py-4 bg-background text-primary font-semibold rounded-lg hover:bg-primary/90 transition-colors shadow-lg shadow-primary/30">
               Contact sales
-            </a>
+            </Link>
           </div>
         </div>
       </section>
