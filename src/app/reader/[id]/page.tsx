@@ -1,4 +1,5 @@
 import { createRouteClient } from "@/lib/supabase"
+import { redirect } from "next/navigation"
 import ReaderPage from "@/components/reader/ReaderPage"
 
 export const dynamic = "force-dynamic"
@@ -12,6 +13,9 @@ export default async function ReaderPageRoute({
 
   const supabase = await createRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
+  if (!user) {
+    return redirect("/auth/login")
+  }
 
   const { data: doc, error } = await supabase
     .from("documents")

@@ -77,6 +77,7 @@ export async function middleware(request: NextRequest) {
     "/conversion",
     "/billing",
     "/editor",
+    "/reader",
   ]
   const isProtectedRoute = protectedRoutes.some((path) =>
     request.nextUrl.pathname.startsWith(path),
@@ -91,7 +92,10 @@ export async function middleware(request: NextRequest) {
 
   // Redirect authenticated users from auth pages (except verify, forgot-password, reset-password)
   const authOnlyRoutes = ["/auth/login", "/auth/signup"]
-  if (authOnlyRoutes.includes(request.nextUrl.pathname) && user) {
+  const isAuthOnlyRoute = authOnlyRoutes.some((path) =>
+    request.nextUrl.pathname.startsWith(path),
+  )
+  if (isAuthOnlyRoute && user) {
     return NextResponse.redirect(new URL("/dashboard", request.url))
   }
 

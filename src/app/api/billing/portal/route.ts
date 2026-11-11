@@ -32,7 +32,7 @@ export async function POST(req: Request): Promise<NextResponse> {
 
     const session = await stripe.billingPortal.sessions.create({
       customer: subscription.stripe_customer_id,
-      return_url: `${process.env.NEXT_PUBLIC_APP_URL}/billing`,
+      return_url: `${process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"}/billing`,
     })
 
     return NextResponse.json({ portal_url: session.url })

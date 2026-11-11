@@ -602,7 +602,13 @@ export default function ConversionPage() {
                     </div>
                     {job.status === "completed" && (
                       <button
-                        onClick={() => handleDownload(`/api/documents/${job.id}/export`)}
+                        onClick={() => {
+                          const downloadUrl =
+                            job.download_url ||
+                            job.output_url ||
+                            `/api/conversion/${job.id}`
+                          handleDownload(downloadUrl)
+                        }}
                         className="ml-4 text-sm text-primary hover:underline"
                       >
                         Download

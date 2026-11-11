@@ -85,9 +85,7 @@ export default function EditorPage() {
                       </Button>
                       <Button
                         onClick={() => {
-                          const url = new URL(window.location.href)
-                          url.searchParams.set("id", "")
-                          window.location.href = url.toString()
+                          window.location.href = "/document-generator"
                         }}
                         variant="outline"
                         size="sm"
