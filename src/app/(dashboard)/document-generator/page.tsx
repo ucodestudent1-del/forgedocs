@@ -1,19 +1,32 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { FileText, Save, Download, Plus, FileText as FileTextIcon } from "lucide-react"
 import { TEMPLATE_LIBRARY, getTemplateById } from "@/lib/templateLibrary"
 import { DocumentGenerator } from "@/lib/documentGenerator"
+import { useRouter, useSearchParams } from "next/navigation"
 
 export default function DocumentGeneratorPage() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null)
   const [templateData, setTemplateData] = useState<Record<string, string>>({})
   const [generatedDocument, setGeneratedDocument] = useState<string | null>(null)
   const [isGenerating, setIsGenerating] = useState(false)
 
   const templates = Object.values(TEMPLATE_LIBRARY)
+
+  useEffect(() => {
+    const templateParam = searchParams.get("template")
+    if (templateParam && !selectedTemplateId) {
+      const template = getTemplateById(templateParam)
+      if (template) {
+        setSelectedTemplateId(template.id)
+      }
+    }
+  }, [searchParams, selectedTemplateId])
 
   const handleGenerate = async () => {
     if (!selectedTemplateId) return
