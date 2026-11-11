@@ -311,6 +311,60 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Testimonials Section */}
+      <section id="testimonials" className="py-24 px-4 sm:px-6 lg:px-8 bg-muted/50">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <div className="flex items-center justify-center gap-2">
+              <span className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">
+                03
+              </span>
+            </div>
+            <h2 className="text-3xl font-bold tracking-tight text-foreground mb-4">Trusted by teams everywhere</h2>
+            <p className="text-lg text-muted-foreground max-w-[65ch] mx-auto">Join thousands of teams streamlining their document workflow with ForgeDocs.</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <TestimonialCard
+              name="Sarah Chen"
+              role="Legal Counsel, Acme Corp"
+              company="Acme Corp"
+              rating={5}
+              content="ForgeDocs has completely transformed how we handle contracts. The version control and audit trails give us the compliance confidence we need, and the template library saves us hours every week."
+            />
+            <TestimonialCard
+              name="Marcus Rivera"
+              role="Finance Director, Globex Inc"
+              company="Globex Inc"
+              rating={5}
+              content="Generating invoices and financial reports used to take all afternoon. Now it's a one-click process. The format conversion is flawless and the collaboration features keep our team in sync."
+            />
+            <TestimonialCard
+              name="Elena Park"
+              role="Operations Lead, Hooli LLC"
+              company="Hooli LLC"
+              rating={4}
+              content="The HR templates are a game-changer for onboarding. Offer letters and employment agreements are generated in minutes, not days. Highly recommend for any growing team."
+            />
+          </div>
+
+          <div className="mt-16 flex flex-wrap items-center justify-center gap-8 md:gap-16 opacity-50 text-sm font-medium uppercase tracking-tighter text-muted-foreground">
+            <span className="flex items-center gap-1">
+              <CheckCircle2 className="h-4 w-4 text-green-500" />
+              10,000+ teams
+            </span>
+            <span className="flex items-center gap-1">
+              <BarChart3 className="h-4 w-4 text-primary" />
+              99.9% uptime
+            </span>
+            <span className="flex items-center gap-1">
+              <GlobeIcon className="h-4 w-4 text-primary" />
+              50+ countries
+            </span>
+          </div>
+        </div>
+      </section>
+
       {/* Pricing Section */}
       <section id="pricing" className="py-24 px-4 sm:px-6 lg:px-8 bg-muted/50">
         <div className="max-w-7xl mx-auto">
@@ -482,6 +536,42 @@ function TrustCard({ icon, title, description }: { icon: React.ReactNode; title:
       <div>
         <h3 className="text-lg font-bold text-foreground mb-1">{title}</h3>
         <p className="text-sm text-muted-foreground leading-relaxed">{description}</p>
+      </div>
+    </div>
+  )
+}
+
+function TestimonialCard({
+  name,
+  role,
+  company,
+  rating,
+  content,
+}: {
+  name: string
+  role: string
+  company: string
+  rating: number
+  content: string
+}) {
+  return (
+    <div className="rounded-xl border border-input bg-background p-6">
+      <div className="flex items-center gap-1 mb-4">
+        {[1, 2, 3, 4, 5].map((i) => (
+          <span key={i} className="text-yellow-400 text-xs">
+            {i <= rating ? "★" : "☆"}
+          </span>
+        ))}
+      </div>
+      <p className="text-sm text-muted-foreground leading-relaxed mb-4">"{content}"</p>
+      <div className="flex items-center gap-3">
+        <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center text-xs font-medium text-foreground">
+          {name.charAt(0)}
+        </div>
+        <div>
+          <p className="text-sm font-semibold text-foreground">{name}</p>
+          <p className="text-xs text-muted-foreground">{role}, {company}</p>
+        </div>
       </div>
     </div>
   )
