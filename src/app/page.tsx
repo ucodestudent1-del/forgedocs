@@ -40,18 +40,18 @@ export default function LandingPage() {
               </Link>
             </div>
             <div className="hidden sm:flex items-center gap-6">
-              <Link href="#features" className="text-sm font-medium text-[#64748B] hover:text-[#2563EB] transition-colors">
+              <a href="#features" className="text-sm font-medium text-[#64748B] hover:text-[#2563EB] transition-colors">
                 Features
-              </Link>
-              <Link href="#solutions" className="text-sm font-medium text-[#64748B] hover:text-[#2563EB] transition-colors">
+              </a>
+              <a href="#solutions" className="text-sm font-medium text-[#64748B] hover:text-[#2563EB] transition-colors">
                 Solutions
-              </Link>
-              <Link href="#pricing" className="text-sm font-medium text-[#64748B] hover:text-[#2563EB] transition-colors">
+              </a>
+              <a href="#pricing" className="text-sm font-medium text-[#64748B] hover:text-[#2563EB] transition-colors">
                 Pricing
-              </Link>
-              <Link href="#faq" className="text-sm font-medium text-[#64748B] hover:text-[#2563EB] transition-colors">
+              </a>
+              <a href="#faq" className="text-sm font-medium text-[#64748B] hover:text-[#2563EB] transition-colors">
                 FAQ
-              </Link>
+              </a>
               <Link href="/auth/signup" className="px-4 py-2 text-sm font-medium rounded-md bg-[#2563EB] text-white hover:bg-[#1D4ED8] transition-colors">
                 Get started
               </Link>
@@ -73,16 +73,16 @@ export default function LandingPage() {
             <X className="h-6 w-6" />
           </button>
         </div>
-        <nav className="mt-6 space-y-4">
-          <Link href="#features" className="text-lg font-medium text-white hover:text-[#94A3B8] transition-colors">
-            Features
-          </Link>
-          <Link href="#solutions" className="text-lg font-medium text-white hover:text-[#94A3B8] transition-colors">
-            Solutions
-          </Link>
-          <Link href="#pricing" className="text-lg font-medium text-white hover:text-[#94A3B8] transition-colors">
-            Pricing
-          </Link>
+          <nav className="mt-6 space-y-4">
+            <a href="#features" className="text-lg font-medium text-white hover:text-[#94A3B8] transition-colors">
+              Features
+            </a>
+            <a href="#solutions" className="text-lg font-medium text-white hover:text-[#94A3B8] transition-colors">
+              Solutions
+            </a>
+            <a href="#pricing" className="text-lg font-medium text-white hover:text-[#94A3B8] transition-colors">
+              Pricing
+            </a>
           <Link href="/auth/signup" className="mt-4 block px-6 py-2 text-center font-medium text-white bg-[#2563EB] rounded-lg hover:bg-[#1D4ED8] transition-colors">
             Get started
           </Link>
