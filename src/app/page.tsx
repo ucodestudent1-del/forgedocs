@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import {
   FileText,
   Zap,
@@ -14,10 +15,13 @@ import {
   BarChart3,
   Plus,
   Rocket,
+  ChevronDown,
 } from "lucide-react"
 import { Navbar } from "@/components/ui/navbar"
 
 export default function LandingPage() {
+  const [openFaq, setOpenFaq] = useState<number | null>(null)
+
   return (
     <div className="flex flex-col [scroll-behavior:smooth] [scroll-padding-top:80px]">
       <Navbar />
@@ -51,7 +55,7 @@ export default function LandingPage() {
                 Start building
               </a>
               <a
-                href="#features"
+                href="/templates"
                 className="px-8 py-4 bg-background text-foreground font-medium rounded-lg border border-input hover:bg-accent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               >
                 Browse templates
@@ -102,9 +106,12 @@ export default function LandingPage() {
                 <div className="h-8 w-8 rounded-full bg-muted/50 flex items-center justify-center text-[10px] font-medium text-muted-foreground">
                   JD
                 </div>
-                <button className="h-8 px-3 text-sm font-medium text-foreground hover:bg-muted rounded-md transition-colors">
+                <a
+                  href="/billing"
+                  className="h-8 px-3 text-sm font-medium text-foreground hover:bg-muted rounded-md transition-colors"
+                >
                   Upgrade
-                </button>
+                </a>
               </div>
             </div>
             <div className="p-8">
@@ -120,7 +127,10 @@ export default function LandingPage() {
                         <p className="text-xs text-muted-foreground">124 documents</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3 p-3 rounded-lg bg-background border border-input hover:bg-muted cursor-pointer transition-colors">
+                    <a
+                      href="/document-generator"
+                      className="flex items-center gap-3 p-3 rounded-lg bg-background border border-input hover:bg-muted cursor-pointer transition-colors"
+                    >
                       <div className="h-8 w-8 rounded-md bg-primary/10 flex items-center justify-center text-primary">
                         <FileText className="h-4 w-4" />
                       </div>
@@ -128,8 +138,11 @@ export default function LandingPage() {
                         <p className="text-xs font-medium text-foreground">Create Document</p>
                         <p className="text-xs text-muted-foreground">Blank document</p>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-3 p-3 rounded-lg bg-background border border-input hover:bg-muted cursor-pointer transition-colors">
+                    </a>
+                    <a
+                      href="/templates"
+                      className="flex items-center gap-3 p-3 rounded-lg bg-background border border-input hover:bg-muted cursor-pointer transition-colors"
+                    >
                       <div className="h-8 w-8 rounded-md bg-primary/10 flex items-center justify-center text-primary">
                         <Plus className="h-4 w-4" />
                       </div>
@@ -137,7 +150,7 @@ export default function LandingPage() {
                         <p className="text-xs font-medium text-foreground">New Template</p>
                         <p className="text-xs text-muted-foreground">From gallery</p>
                       </div>
-                    </div>
+                    </a>
                   </div>
                 </div>
                 <div className="col-span-8">
@@ -287,22 +300,33 @@ export default function LandingPage() {
       <section id="solutions" className="py-24 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
+            <div className="flex items-center justify-center gap-2">
+              <span className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">
+                02
+              </span>
+            </div>
             <h2 className="text-3xl font-bold tracking-tight text-foreground mb-4">Built for your industry</h2>
             <p className="text-lg text-muted-foreground max-w-[65ch] mx-auto">See how ForgeDocs fits your specific workflow with industry-tailored templates and features.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="rounded-xl border border-input bg-background p-6">
-              <div className="text-2xl mb-3">📋</div>
+              <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary mb-3">
+                <FileText className="h-5 w-5" />
+              </div>
               <h3 className="text-lg font-bold text-foreground mb-2">Legal</h3>
               <p className="text-sm text-muted-foreground">Manage contracts, NDAs, and legal documents with version control and e-signature ready workflows.</p>
             </div>
             <div className="rounded-xl border border-input bg-background p-6">
-              <div className="text-2xl mb-3">💰</div>
+              <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary mb-3">
+                <BarChart3 className="h-5 w-5" />
+              </div>
               <h3 className="text-lg font-bold text-foreground mb-2">Finance</h3>
               <p className="text-sm text-muted-foreground">Generate invoices, financial reports, and compliance documents with automated formatting.</p>
             </div>
             <div className="rounded-xl border border-input bg-background p-6">
-              <div className="text-2xl mb-3">👥</div>
+              <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary mb-3">
+                <Users className="h-5 w-5" />
+              </div>
               <h3 className="text-lg font-bold text-foreground mb-2">HR</h3>
               <p className="text-sm text-muted-foreground">Streamline offer letters, employment agreements, and onboarding documents for new hires.</p>
             </div>
@@ -372,31 +396,60 @@ export default function LandingPage() {
             <p className="text-lg text-muted-foreground max-w-[65ch] mx-auto">Choose the plan that fits your team. All plans include a 14-day free trial.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            <div className="rounded-xl border border-input bg-background p-6">
-              <h3 className="text-lg font-bold text-foreground mb-1">Free</h3>
-              <p className="text-sm text-muted-foreground">For individuals getting started</p>
-              <div className="mt-3 flex items-baseline">
-                <span className="text-3xl font-bold text-foreground">$0</span>
-                <span className="text-sm text-muted-foreground ml-1">/mo</span>
-              </div>
-            </div>
-            <div className="rounded-xl border border-primary bg-primary/5 p-6 ring-1 ring-primary shadow-lg">
-              <h3 className="text-lg font-bold text-foreground mb-1">Pro</h3>
-              <p className="text-sm text-muted-foreground">For growing teams</p>
-              <div className="mt-3 flex items-baseline">
-                <span className="text-3xl font-bold text-foreground">$19</span>
-                <span className="text-sm text-muted-foreground ml-1">/mo</span>
-              </div>
-            </div>
-            <div className="rounded-xl border border-input bg-background p-6">
-              <h3 className="text-lg font-bold text-foreground mb-1">Business</h3>
-              <p className="text-sm text-muted-foreground">For established organizations</p>
-              <div className="mt-3 flex items-baseline">
-                <span className="text-3xl font-bold text-foreground">$49</span>
-                <span className="text-sm text-muted-foreground ml-1">/mo</span>
-              </div>
-            </div>
+            <PricingCard
+              name="Free"
+              price="$0"
+              description="For individuals getting started"
+              features={[
+                "500 documents/month",
+                "100 conversions/month",
+                "5 GB storage",
+                "10 MB max file size",
+                "Community support",
+              ]}
+              isFeatured={false}
+              ctaText="Get started free"
+              ctaHref="/auth/signup"
+            />
+            <PricingCard
+              name="Pro"
+              price="$19"
+              description="For growing teams"
+              features={[
+                "Unlimited documents",
+                "Unlimited conversions",
+                "100 GB storage",
+                "50 MB max file size",
+                "Priority support",
+                "Audit logs",
+                "Advanced templates",
+              ]}
+              isFeatured={true}
+              ctaText="Start free trial"
+              ctaHref="/auth/signup"
+            />
+            <PricingCard
+              name="Business"
+              price="$49"
+              description="For established organizations"
+              features={[
+                "Unlimited documents",
+                "Unlimited conversions",
+                "500 GB storage",
+                "100 MB max file size",
+                "Priority support",
+                "Audit logs",
+                "Advanced templates",
+                "Custom integrations",
+              ]}
+              isFeatured={false}
+              ctaText="Contact sales"
+              ctaHref="/contact"
+            />
           </div>
+          <p className="text-center mt-12 text-xs text-muted-foreground">
+            All plans include a 14-day free trial. No credit card required for the Free plan.
+          </p>
         </div>
       </section>
 
@@ -408,27 +461,27 @@ export default function LandingPage() {
             <p className="text-lg text-muted-foreground max-w-[65ch] mx-auto">Have questions about ForgeDocs? We've got answers.</p>
           </div>
           <div className="max-w-2xl mx-auto space-y-4">
-            <div className="rounded-xl border border-input bg-background">
-              <div className="p-6 border-b border-input flex justify-between items-center cursor-pointer group">
-                <h3 className="text-lg font-medium text-foreground">How do I get started?</h3>
-                <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
-              </div>
-              <div className="p-6 text-sm text-muted-foreground">Sign up for a free account and start creating documents in minutes. No credit card required.</div>
-            </div>
-            <div className="rounded-xl border border-input bg-background">
-              <div className="p-6 border-b border-input flex justify-between items-center cursor-pointer group">
-                <h3 className="text-lg font-medium text-foreground">What formats are supported?</h3>
-                <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
-              </div>
-              <div className="p-6 text-sm text-muted-foreground">We support DOCX, PDF, XLSX, PPTX, CSV, and 50+ other formats.</div>
-            </div>
-            <div className="rounded-xl border border-input bg-background">
-              <div className="p-6 border-b border-input flex justify-between items-center cursor-pointer group">
-                <h3 className="text-lg font-medium text-foreground">Is my data secure?</h3>
-                <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
-              </div>
-              <div className="p-6 text-sm text-muted-foreground">Yes. All documents are encrypted at rest and in transit using AES-256 encryption.</div>
-            </div>
+            <FaqItem
+              index={0}
+              question="How do I get started?"
+              answer="Sign up for a free account and start creating documents in minutes. No credit card required."
+              isOpen={openFaq === 0}
+              onToggle={() => setOpenFaq(openFaq === 0 ? null : 0)}
+            />
+            <FaqItem
+              index={1}
+              question="What formats are supported?"
+              answer="We support DOCX, PDF, XLSX, PPTX, CSV, and 50+ other formats."
+              isOpen={openFaq === 1}
+              onToggle={() => setOpenFaq(openFaq === 1 ? null : 1)}
+            />
+            <FaqItem
+              index={2}
+              question="Is my data secure?"
+              answer="Yes. All documents are encrypted at rest and in transit using AES-256 encryption."
+              isOpen={openFaq === 2}
+              onToggle={() => setOpenFaq(openFaq === 2 ? null : 2)}
+            />
           </div>
         </div>
       </section>
@@ -475,10 +528,10 @@ export default function LandingPage() {
               <div>
                 <h4 className="text-sm font-semibold text-foreground mb-4 uppercase tracking-tighter">Company</h4>
                 <ul className="space-y-2">
-                  <li><a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">About</a></li>
-                  <li><a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">Contact</a></li>
-                  <li><a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">Blog</a></li>
-                  <li><a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">Help</a></li>
+                  <li><a href="/about" className="text-sm text-muted-foreground hover:text-primary transition-colors">About</a></li>
+                  <li><a href="/contact" className="text-sm text-muted-foreground hover:text-primary transition-colors">Contact</a></li>
+                  <li><a href="/blog" className="text-sm text-muted-foreground hover:text-primary transition-colors">Blog</a></li>
+                  <li><a href="/help" className="text-sm text-muted-foreground hover:text-primary transition-colors">Help</a></li>
                 </ul>
               </div>
             </div>
@@ -486,10 +539,10 @@ export default function LandingPage() {
           <div className="border-t border-input pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-xs text-muted-foreground">© 2026 ForgeDocs Inc. All rights reserved.</p>
             <div className="flex items-center gap-4">
-              <a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+              <a href="/privacy" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                 Privacy
               </a>
-              <a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+              <a href="/terms" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                 Terms
               </a>
             </div>
@@ -557,10 +610,11 @@ function TestimonialCard({
     <div className="rounded-xl border border-input bg-background p-6">
       <div className="flex items-center gap-1 mb-4">
         {[1, 2, 3, 4, 5].map((i) => (
-          <span key={i} className="text-yellow-400 text-xs">
+          <span key={i} className="text-yellow-400 text-xs" aria-hidden="true">
             {i <= rating ? "★" : "☆"}
           </span>
         ))}
+        <span className="sr-only">{rating} out of 5 stars</span>
       </div>
       <p className="text-sm text-muted-foreground leading-relaxed mb-4">"{content}"</p>
       <div className="flex items-center gap-3">
@@ -572,6 +626,90 @@ function TestimonialCard({
           <p className="text-xs text-muted-foreground">{role}, {company}</p>
         </div>
       </div>
+    </div>
+  )
+}
+
+function FaqItem({
+  index,
+  question,
+  answer,
+  isOpen,
+  onToggle,
+}: {
+  index: number
+  question: string
+  answer: string
+  isOpen: boolean
+  onToggle: () => void
+}) {
+  return (
+    <div className="rounded-xl border border-input bg-background">
+      <button
+        onClick={onToggle}
+        className="w-full p-6 border-b border-input flex justify-between items-center text-left cursor-pointer group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+        aria-expanded={isOpen}
+        aria-controls={`faq-answer-${index}`}
+      >
+        <h3 className="text-lg font-medium text-foreground pr-4">{question}</h3>
+        <ChevronDown
+          className={`h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0 ${isOpen ? "rotate-180" : ""}`}
+          aria-hidden="true"
+        />
+      </button>
+      <div
+        id={`faq-answer-${index}`}
+        className={`${isOpen ? "block" : "hidden"} p-6 text-sm text-muted-foreground animate-in slide-in-from-top-2 duration-200`}
+      >
+        {answer}
+      </div>
+    </div>
+  )
+}
+
+function PricingCard({
+  name,
+  price,
+  description,
+  features,
+  isFeatured,
+  ctaText,
+  ctaHref,
+}: {
+  name: string
+  price: string
+  description: string
+  features: string[]
+  isFeatured: boolean
+  ctaText: string
+  ctaHref: string
+}) {
+  return (
+    <div className={`rounded-xl p-6 flex flex-col ${isFeatured ? "border border-primary bg-primary/5 ring-1 ring-primary shadow-lg" : "border border-input bg-background"}`}>
+      <div className="mb-6">
+        <h3 className="text-lg font-bold text-foreground mb-1">{name}</h3>
+        <p className="text-sm text-muted-foreground">{description}</p>
+        <div className="mt-2 flex items-baseline">
+          <span className="text-3xl font-bold text-foreground">{price}</span>
+          <span className="text-sm text-muted-foreground ml-1">/mo</span>
+        </div>
+      </div>
+      <ul className="space-y-3 mb-8 flex-1">
+        {features.map((feature, i) => (
+          <li key={i} className="flex items-start gap-3">
+            <span className="text-green-500 flex-shrink-0 mt-0.5">✓</span>
+            <span className="text-sm text-muted-foreground">{feature}</span>
+          </li>
+        ))}
+      </ul>
+      <a
+        href={ctaHref}
+        className={`w-full py-3 rounded-lg font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${isFeatured
+          ? "bg-primary text-primary-foreground hover:bg-primary/90"
+          : "border border-input bg-background text-foreground hover:bg-accent"}`}
+      >
+        {ctaText}
+      </a>
     </div>
   )
 }

@@ -10,6 +10,7 @@ export function Navbar() {
     { href: "/", label: "Home" },
     { href: "#features", label: "Features" },
     { href: "#solutions", label: "Solutions" },
+    { href: "#testimonials", label: "Testimonials" },
     { href: "#pricing", label: "Pricing" },
     { href: "#faq", label: "FAQ" },
   ]
