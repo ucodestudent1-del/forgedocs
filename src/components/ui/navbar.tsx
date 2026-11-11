@@ -1,6 +1,5 @@
 "use client"
 
-import Link from "next/link"
 import { useState } from "react"
 import { X, Menu } from "lucide-react"
 
@@ -25,12 +24,12 @@ export function Navbar() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
             <div className="flex items-center gap-2">
-              <Link href="/" className="flex items-center gap-2">
+              <a href="/" className="flex items-center gap-2">
                 <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center text-white font-bold text-sm">
                   F
                 </div>
                 <span className="text-xl font-bold tracking-tight text-foreground">ForgeDocs</span>
-              </Link>
+              </a>
             </div>
             <div className="hidden sm:flex items-center gap-6">
               {navLinks.map((link) => (
@@ -42,12 +41,12 @@ export function Navbar() {
                   {link.label}
                 </a>
               ))}
-              <Link
+              <a
                 href="/auth/signup"
                 className="px-4 py-2 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
               >
                 Get started
-              </Link>
+              </a>
             </div>
             <button
               onClick={() => setMobileOpen((prev) => !prev)}
@@ -86,13 +85,13 @@ export function Navbar() {
                 {link.label}
               </a>
             ))}
-            <Link
+            <a
               href="/auth/signup"
               onClick={() => setMobileOpen(false)}
               className="mt-6 block px-6 py-3 text-center font-medium text-white bg-primary rounded-lg hover:bg-primary/90 transition-colors"
             >
               Get started
-            </Link>
+            </a>
           </nav>
         </div>
       )}

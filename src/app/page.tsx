@@ -1,6 +1,5 @@
 "use client"
 
-import Link from "next/link"
 import {
   FileText,
   Zap,
@@ -45,12 +44,12 @@ export default function LandingPage() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-              <Link
+              <a
                 href="/auth/signup"
                 className="px-8 py-4 bg-primary text-primary-foreground font-medium rounded-lg hover:bg-primary/90 transition-colors shadow-lg shadow-primary/30"
               >
                 Start building
-              </Link>
+              </a>
               <a
                 href="#features"
                 className="px-8 py-4 bg-background text-foreground font-medium rounded-lg border border-input hover:bg-accent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
@@ -440,12 +439,12 @@ export default function LandingPage() {
           <div className="rounded-2xl bg-primary p-8 sm:p-12 text-primary-foreground text-center">
             <h2 className="text-3xl font-bold mb-4">Ready to organize your documents?</h2>
             <p className="text-primary-foreground/90 mb-8 max-w-[65ch] mx-auto">Join thousands of teams using ForgeDocs to streamline their document workflow.</p>
-            <Link
+            <a
               href="/auth/signup"
               className="inline-block px-8 py-4 bg-background text-primary font-semibold rounded-lg hover:bg-primary/90 transition-colors shadow-lg shadow-primary/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-foreground focus-visible:ring-offset-2"
             >
               Start for free
-            </Link>
+            </a>
           </div>
         </div>
       </section>
