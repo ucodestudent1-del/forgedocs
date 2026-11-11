@@ -1,3 +1,5 @@
+import Link from "next/link"
+
 export default function AboutPage() {
   return (
     <div className="min-h-screen flex flex-col">
@@ -5,35 +7,35 @@ export default function AboutPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
             <div className="flex items-center gap-2">
-              <a href="/" className="text-xl font-bold tracking-tight text-primary">
+              <Link href="/" className="text-xl font-bold tracking-tight text-primary">
                 ForgeDocs
-              </a>
+              </Link>
             </div>
             <div className="flex items-center gap-4">
-              <a href="/" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
+              <Link href="/" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
                 Home
-              </a>
-              <a href="/pricing" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
+              </Link>
+              <Link href="/pricing" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
                 Pricing
-              </a>
-              <a href="/features" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
+              </Link>
+              <Link href="/features" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
                 Features
-              </a>
-              <a href="/solutions" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
+              </Link>
+              <Link href="/solutions" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
                 Solutions
-              </a>
-              <a href="/faq" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
+              </Link>
+              <Link href="/faq" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
                 FAQ
-              </a>
-              <a href="/auth/login" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+              </Link>
+              <Link href="/auth/login" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
                 Sign in
-              </a>
-              <a
+              </Link>
+              <Link
                 href="/auth/signup"
                 className="px-4 py-2 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
               >
                 Get started
-              </a>
+              </Link>
             </div>
           </div>
         </div>
@@ -74,10 +76,34 @@ export default function AboutPage() {
               <div>
                 <h2 className="text-3xl font-bold tracking-tight text-foreground mb-6">Our values</h2>
                 <div className="space-y-4">
-                  <ValueItem title="Security first" description="SOC 2 Type II compliant with end-to-end encryption and granular access controls." />
-                  <ValueItem title="Developer friendly" description="REST API, webhooks, and clean documentation for seamless integration." />
-                  <ValueItem title="Team collaboration" description="Role-based access, comments, and real-time presence for secure teamwork." />
-                  <ValueItem title="Reliability" description="99.9% uptime SLA with automated backups and disaster recovery." />
+                  <div className="flex items-start gap-3">
+                    <span className="text-green-500 flex-shrink-0 mt-1">✓</span>
+                    <div>
+                      <p className="text-sm font-medium text-foreground">Security first</p>
+                      <p className="text-sm text-muted-foreground">SOC 2 Type II compliant with end-to-end encryption and granular access controls.</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <span className="text-green-500 flex-shrink-0 mt-1">✓</span>
+                    <div>
+                      <p className="text-sm font-medium text-foreground">Developer friendly</p>
+                      <p className="text-sm text-muted-foreground">REST API, webhooks, and clean documentation for seamless integration.</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <span className="text-green-500 flex-shrink-0 mt-1">✓</span>
+                    <div>
+                      <p className="text-sm font-medium text-foreground">Team collaboration</p>
+                      <p className="text-sm text-muted-foreground">Role-based access, comments, and real-time presence for secure teamwork.</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <span className="text-green-500 flex-shrink-0 mt-1">✓</span>
+                    <div>
+                      <p className="text-sm font-medium text-foreground">Reliability</p>
+                      <p className="text-sm text-muted-foreground">99.9% uptime SLA with automated backups and disaster recovery.</p>
+                    </div>
+                  </div>
                 </div>
               </div>
               <div className="flex justify-center">
@@ -126,24 +152,12 @@ export default function AboutPage() {
           <div className="rounded-2xl bg-primary p-8 sm:p-12 text-primary-foreground text-center">
             <h2 className="text-3xl font-bold mb-4">Ready to get started?</h2>
             <p className="text-primary-foreground/90 mb-8 max-w-lg mx-auto">Join thousands of teams using ForgeDocs to streamline their document workflow.</p>
-            <a href="/auth/signup" className="inline-block px-8 py-4 bg-background text-primary font-semibold rounded-lg hover:bg-primary/90 transition-colors shadow-lg shadow-primary/30">
+            <Link href="/auth/signup" className="inline-block px-8 py-4 bg-background text-primary font-semibold rounded-lg hover:bg-primary/90 transition-colors shadow-lg shadow-primary/30">
               Start for free
-            </a>
+            </Link>
           </div>
         </div>
       </section>
-    </div>
-  )
-}
-
-function ValueItem({ title, description }: { title: string; description: string }) {
-  return (
-    <div className="flex items-start gap-3">
-      <span className="text-green-500 flex-shrink-0 mt-1">✓</span>
-      <div>
-        <p className="text-sm font-medium text-foreground">{title}</p>
-        <p className="text-sm text-muted-foreground">{description}</p>
-      </div>
     </div>
   )
 }

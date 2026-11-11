@@ -1,3 +1,5 @@
+import Link from "next/link"
+
 export default function FAQPage() {
   const faqs = [
     {
@@ -48,32 +50,32 @@ export default function FAQPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
             <div className="flex items-center gap-2">
-              <a href="/" className="text-xl font-bold tracking-tight text-primary">
+              <Link href="/" className="text-xl font-bold tracking-tight text-primary">
                 ForgeDocs
-              </a>
+              </Link>
             </div>
             <div className="flex items-center gap-4">
-              <a href="/" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
+              <Link href="/" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
                 Home
-              </a>
-              <a href="/pricing" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
+              </Link>
+              <Link href="/pricing" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
                 Pricing
-              </a>
-              <a href="/features" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
+              </Link>
+              <Link href="/features" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
                 Features
-              </a>
-              <a href="/solutions" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
+              </Link>
+              <Link href="/solutions" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
                 Solutions
-              </a>
-              <a href="/auth/login" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+              </Link>
+              <Link href="/auth/login" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
                 Sign in
-              </a>
-              <a
+              </Link>
+              <Link
                 href="/auth/signup"
                 className="px-4 py-2 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
               >
                 Get started
-              </a>
+              </Link>
             </div>
           </div>
         </div>
@@ -96,12 +98,12 @@ export default function FAQPage() {
             ))}
           </div>
 
-          <div className="mt-16 text-center">
-            <p className="text-muted-foreground">Still have questions?</p>
-            <a href="/contact" className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline">
-              Contact support →
-            </a>
-          </div>
+            <div className="mt-16 text-center">
+              <p className="text-muted-foreground">Still have questions?</p>
+              <Link href="/contact" className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline">
+                Contact support →
+              </Link>
+            </div>
         </div>
       </section>
     </div>
