@@ -260,36 +260,36 @@ export default function LandingPage() {
             <p className="text-lg text-[#64748B] max-w-[65ch] mx-auto">Powerful features built for teams that work with documents every day.</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <FeatureCard
               icon={<FileText className="h-6 w-6 text-[#2563EB]" />}
               title="Document Management"
-              description="Create, organize, version, and share documents with your team. Full audit trail and granular access control."
+              description="Create, organize, version, and share documents with your team. Full audit trail and granular access control on every file."
             />
             <FeatureCard
               icon={<Zap className="h-6 w-6 text-[#2563EB]" />}
               title="Instant Generation"
-              description="Generate professional documents from pre-built templates for proposals, invoices, NDAs, and more."
+              description="Generate professional documents from pre-built templates for proposals, invoices, NDAs, reports, and employment letters in seconds."
             />
             <FeatureCard
               icon={<Layers className="h-6 w-6 text-[#2563EB]" />}
               title="Format Conversion"
-              description="Convert between DOCX, PDF, XLSX, PPTX, CSV, and 50+ other formats with one click."
+              description="Convert between DOCX, PDF, XLSX, PPTX, CSV, and 50+ other formats with one click. No formatting lost, no manual rework."
             />
             <FeatureCard
               icon={<Users className="h-6 w-6 text-[#2563EB]" />}
               title="Team Collaboration"
-              description="Role-based access control, comments, and real-time collaboration for secure teamwork."
+              description="Role-based access control, comments, and real-time collaboration so your team can work together securely on shared documents."
             />
             <FeatureCard
               icon={<Shield className="h-6 w-6 text-[#2563EB]" />}
               title="Enterprise Security"
-              description="SOC 2 Type II compliant, end-to-end encryption, and granular permissions for every document."
+              description="SOC 2 Type II compliant, end-to-end AES-256 encryption, and GDPR-ready practices to keep your documents safe and compliant."
             />
             <FeatureCard
               icon={<Clock className="h-6 w-6 text-[#2563EB]" />}
               title="Fast Search"
-              description="Instantly search across all your documents with advanced filtering and relevance ranking."
+              description="Instantly search across all your documents with advanced filtering and relevance ranking. Find what you need in seconds."
             />
           </div>
         </div>
@@ -349,21 +349,46 @@ export default function LandingPage() {
             <h2 className="text-3xl font-bold tracking-tight text-[#0F172A] mb-4">Built for your industry</h2>
             <p className="text-lg text-[#64748B] max-w-[65ch] mx-auto">See how ForgeDocs fits your specific workflow with industry-tailored templates and features.</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <div className="rounded-xl border border-[#E2E8F0] bg-[#FFFFFF] p-6">
               <div className="text-2xl mb-3">📋</div>
               <h3 className="text-lg font-bold text-[#0F172A] mb-2">Legal</h3>
-              <p className="text-sm text-[#64748B]">Manage contracts, NDAs, and legal documents with version control and e-signature ready workflows.</p>
+              <p className="text-sm text-[#64748B] mb-4">Manage contracts, NDAs, and legal documents with version control and e-signature ready workflows.</p>
+              <ul className="space-y-1 text-xs text-[#64748B]">
+                <li className="flex items-center gap-1.5">• <span>Contract lifecycle management</span></li>
+                <li className="flex items-center gap-1.5">• <span>Version history &amp; audit trail</span></li>
+                <li className="flex items-center gap-1.5">• <span>Access controls &amp; permissions</span></li>
+              </ul>
             </div>
             <div className="rounded-xl border border-[#E2E8F0] bg-[#FFFFFF] p-6">
               <div className="text-2xl mb-3">💰</div>
               <h3 className="text-lg font-bold text-[#0F172A] mb-2">Finance</h3>
-              <p className="text-sm text-[#64748B]">Generate invoices, financial reports, and compliance documents with automated formatting.</p>
+              <p className="text-sm text-[#64748B] mb-4">Generate invoices, financial reports, and compliance documents with automated formatting.</p>
+              <ul className="space-y-1 text-xs text-[#64748B]">
+                <li className="flex items-center gap-1.5">• <span>Invoice generation &amp; billing</span></li>
+                <li className="flex items-center gap-1.5">• <span>Financial reporting templates</span></li>
+                <li className="flex items-center gap-1.5">• <span>Compliance documentation</span></li>
+              </ul>
             </div>
             <div className="rounded-xl border border-[#E2E8F0] bg-[#FFFFFF] p-6">
               <div className="text-2xl mb-3">👥</div>
               <h3 className="text-lg font-bold text-[#0F172A] mb-2">HR</h3>
-              <p className="text-sm text-[#64748B]">Streamline offer letters, employment agreements, and onboarding documents for new hires.</p>
+              <p className="text-sm text-[#64748B] mb-4">Streamline offer letters, employment agreements, and onboarding documents for new hires.</p>
+              <ul className="space-y-1 text-xs text-[#64748B]">
+                <li className="flex items-center gap-1.5">• <span>Offer letter templates</span></li>
+                <li className="flex items-center gap-1.5">• <span>Onboarding documentation</span></li>
+                <li className="flex items-center gap-1.5">• <span>Policy handbook creation</span></li>
+              </ul>
+            </div>
+            <div className="rounded-xl border border-[#E2E8F0] bg-[#FFFFFF] p-6">
+              <div className="text-2xl mb-3">📈</div>
+              <h3 className="text-lg font-bold text-[#0F172A] mb-2">Sales</h3>
+              <p className="text-sm text-[#64748B] mb-4">Close deals faster with professional proposals, quotes, and business reports.</p>
+              <ul className="space-y-1 text-xs text-[#64748B]">
+                <li className="flex items-center gap-1.5">• <span>Sales proposal templates</span></li>
+                <li className="flex items-center gap-1.5">• <span>Quote &amp; invoice generation</span></li>
+                <li className="flex items-center gap-1.5">• <span>Client-ready reporting</span></li>
+              </ul>
             </div>
           </div>
         </div>
@@ -377,30 +402,77 @@ export default function LandingPage() {
             <p className="text-lg text-[#64748B] max-w-[65ch] mx-auto">Choose the plan that fits your team. All plans include a 14-day free trial.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            <div className="rounded-xl border border-[#E2E8F0] bg-[#FFFFFF] p-6">
+            <div className="rounded-xl border border-[#E2E8F0] bg-[#FFFFFF] p-8">
               <h3 className="text-lg font-bold text-[#0F172A] mb-1">Free</h3>
               <p className="text-sm text-[#64748B]">For individuals getting started</p>
-              <div className="mt-3 flex items-baseline">
-                <span className="text-3xl font-bold text-[#0F172A]">$0</span>
+              <div className="mt-6 flex items-baseline">
+                <span className="text-4xl font-bold text-[#0F172A]">$0</span>
                 <span className="text-sm text-[#64748B] ml-1">/mo</span>
               </div>
+              <ul className="mt-8 space-y-4 text-sm text-[#64748B]">
+                <li className="flex items-center gap-2">• <span>500 documents/month</span></li>
+                <li className="flex items-center gap-2">• <span>100 conversions/month</span></li>
+                <li className="flex items-center gap-2">• <span>5 GB storage</span></li>
+                <li className="flex items-center gap-2">• <span>10 MB max file size</span></li>
+                <li className="flex items-center gap-2 text-[#94A3B8]">• <span>Community support</span></li>
+              </ul>
+              <div className="mt-10">
+                <Link href="/auth/signup" className="w-full py-3 rounded-lg bg-[#2563EB] text-white font-medium hover:bg-[#1D4ED8] transition-colors">
+                  Get started free
+                </Link>
+              </div>
             </div>
-            <div className="rounded-xl border border-[#2563EB] bg-[#FFFFFF]/5 p-6 ring-1 ring-[#2563EB] shadow-lg">
-              <h3 className="text-lg font-bold text-[#0F172A] mb-1">Pro</h3>
+            <div className="rounded-xl border border-[#2563EB] bg-[#FFFFFF]/5 p-8 ring-1 ring-[#2563EB] shadow-lg">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-[#2563EB] uppercase tracking-wider">Most popular</span>
+              </div>
+              <h3 className="text-lg font-bold text-[#0F172A] mb-1 mt-2">Pro</h3>
               <p className="text-sm text-[#64748B]">For growing teams</p>
-              <div className="mt-3 flex items-baseline">
-                <span className="text-3xl font-bold text-[#0F172A]">$19</span>
+              <div className="mt-6 flex items-baseline">
+                <span className="text-4xl font-bold text-[#0F172A]">$19</span>
                 <span className="text-sm text-[#64748B] ml-1">/mo</span>
               </div>
+              <ul className="mt-8 space-y-4 text-sm text-[#64748B]">
+                <li className="flex items-center gap-2">• <span className="text-[#0F172A]">Unlimited documents</span></li>
+                <li className="flex items-center gap-2">• <span className="text-[#0F172A]">Unlimited conversions</span></li>
+                <li className="flex items-center gap-2">• <span className="text-[#0F172A]">100 GB storage</span></li>
+                <li className="flex items-center gap-2">• <span className="text-[#0F172A]">50 MB max file size</span></li>
+                <li className="flex items-center gap-2">• <span>Priority support</span></li>
+                <li className="flex items-center gap-2">• <span>Audit logs</span></li>
+                <li className="flex items-center gap-2">• <span>Advanced templates</span></li>
+              </ul>
+              <div className="mt-10">
+                <Link href="/auth/signup" className="w-full py-3 rounded-lg border border-[#2563EB] text-[#2563EB] font-medium hover:bg-[#2563EB]/10 transition-colors">
+                  Start free trial
+                </Link>
+              </div>
             </div>
-            <div className="rounded-xl border border-[#E2E8F0] bg-[#FFFFFF] p-6">
+            <div className="rounded-xl border border-[#E2E8F0] bg-[#FFFFFF] p-8">
               <h3 className="text-lg font-bold text-[#0F172A] mb-1">Business</h3>
               <p className="text-sm text-[#64748B]">For established organizations</p>
-              <div className="mt-3 flex items-baseline">
-                <span className="text-3xl font-bold text-[#0F172A]">$49</span>
+              <div className="mt-6 flex items-baseline">
+                <span className="text-4xl font-bold text-[#0F172A]">$49</span>
                 <span className="text-sm text-[#64748B] ml-1">/mo</span>
               </div>
+              <ul className="mt-8 space-y-4 text-sm text-[#64748B]">
+                <li className="flex items-center gap-2">• <span className="text-[#0F172A]">Unlimited documents</span></li>
+                <li className="flex items-center gap-2">• <span className="text-[#0F172A]">Unlimited conversions</span></li>
+                <li className="flex items-center gap-2">• <span className="text-[#0F172A]">500 GB storage</span></li>
+                <li className="flex items-center gap-2">• <span className="text-[#0F172A]">100 MB max file size</span></li>
+                <li className="flex items-center gap-2">• <span>Priority support</span></li>
+                <li className="flex items-center gap-2">• <span>Audit logs</span></li>
+                <li className="flex items-center gap-2">• <span>Advanced templates</span></li>
+                <li className="flex items-center gap-2">• <span>Custom integrations</span></li>
+              </ul>
+              <div className="mt-10">
+                <Link href="/contact" className="w-full py-3 rounded-lg border border-[#E2E8F0] text-[#0F172A] font-medium hover:bg-[#F8FAFC] transition-colors">
+                  Contact sales
+                </Link>
+              </div>
             </div>
+          </div>
+          <div className="text-center mt-12 text-xs text-[#64748B]">
+            All plans include a 14-day free trial. No credit card required for the Free plan.
           </div>
         </div>
       </section>
@@ -422,17 +494,52 @@ export default function LandingPage() {
             </div>
             <div className="rounded-xl border border-[#E2E8F0] bg-[#FFFFFF]">
               <div className="p-6 border-b border-[#E2E8F0] flex justify-between items-center cursor-pointer group">
-                <h3 className="text-lg font-medium text-[#0F172A]">What formats are supported?</h3>
+                <h3 className="text-lg font-medium text-[#0F172A]">What file formats are supported?</h3>
                 <ArrowRight className="h-5 w-5 text-[#64748B] group-hover:text-[#2563EB]" />
               </div>
-              <div className="p-6 text-sm text-[#64748B]">We support DOCX, PDF, XLSX, PPTX, CSV, and 50+ other formats.</div>
+              <div className="p-6 text-sm text-[#64748B]">We support DOCX, PDF, XLSX, PPTX, CSV, ODT, HTML, MD, EPUB, RTF, and 50+ other formats. Convert between any supported format with one click.</div>
             </div>
             <div className="rounded-xl border border-[#E2E8F0] bg-[#FFFFFF]">
               <div className="p-6 border-b border-[#E2E8F0] flex justify-between items-center cursor-pointer group">
                 <h3 className="text-lg font-medium text-[#0F172A]">Is my data secure?</h3>
                 <ArrowRight className="h-5 w-5 text-[#64748B] group-hover:text-[#2563EB]" />
               </div>
-              <div className="p-6 text-sm text-[#64748B]">Yes. All documents are encrypted at rest and in transit using AES-256 encryption.</div>
+              <div className="p-6 text-sm text-[#64748B]">Yes. All documents are encrypted at rest and in transit using AES-256 encryption, with granular access controls and full audit trails for every document action.</div>
+            </div>
+            <div className="rounded-xl border border-[#E2E8F0] bg-[#FFFFFF]">
+              <div className="p-6 border-b border-[#E2E8F0] flex justify-between items-center cursor-pointer group">
+                <h3 className="text-lg font-medium text-[#0F172A]">Is ForgeDocs SOC 2 compliant?</h3>
+                <ArrowRight className="h-5 w-5 text-[#64748B] group-hover:text-[#2563EB]" />
+              </div>
+              <div className="p-6 text-sm text-[#64748B]">Yes. ForgeDocs is SOC 2 Type II compliant and GDPR ready, with industry-standard security practices protecting your documents.</div>
+            </div>
+            <div className="rounded-xl border border-[#E2E8F0] bg-[#FFFFFF]">
+              <div className="p-6 border-b border-[#E2E8F0] flex justify-between items-center cursor-pointer group">
+                <h3 className="text-lg font-medium text-[#0F172A]">Can I collaborate with my team?</h3>
+                <ArrowRight className="h-5 w-5 text-[#64748B] group-hover:text-[#2563EB]" />
+              </div>
+              <div className="p-6 text-sm text-[#64748B]">Absolutely. ForgeDocs includes role-based access control, comments, and real-time collaboration features for secure teamwork on shared documents.</div>
+            </div>
+            <div className="rounded-xl border border-[#E2E8F0] bg-[#FFFFFF]">
+              <div className="p-6 border-b border-[#E2E8F0] flex justify-between items-center cursor-pointer group">
+                <h3 className="text-lg font-medium text-[#0F172A]">Do you offer a free trial?</h3>
+                <ArrowRight className="h-5 w-5 text-[#64748B] group-hover:text-[#2563EB]" />
+              </div>
+              <div className="p-6 text-sm text-[#64748B]">Yes. All paid plans include a 14-day free trial. No credit card is required to start with the Free plan.</div>
+            </div>
+            <div className="rounded-xl border border-[#E2E8F0] bg-[#FFFFFF]">
+              <div className="p-6 border-b border-[#E2E8F0] flex justify-between items-center cursor-pointer group">
+                <h3 className="text-lg font-medium text-[#0F172A]">Can I cancel anytime?</h3>
+                <ArrowRight className="h-5 w-5 text-[#64748B] group-hover:text-[#2563EB]" />
+              </div>
+              <div className="p-6 text-sm text-[#64748B]">Yes. You can cancel your subscription at any time from the billing dashboard. Your access continues until the end of your billing period.</div>
+            </div>
+            <div className="rounded-xl border border-[#E2E8F0] bg-[#FFFFFF]">
+              <div className="p-6 border-b border-[#E2E8F0] flex justify-between items-center cursor-pointer group">
+                <h3 className="text-lg font-medium text-[#0F172A]">What are the storage and file size limits?</h3>
+                <ArrowRight className="h-5 w-5 text-[#64748B] group-hover:text-[#2563EB]" />
+              </div>
+              <div className="p-6 text-sm text-[#64748B]">Free: 5 GB storage, 10 MB max file. Pro: 100 GB storage, 50 MB max file. Business: 500 GB storage, 100 MB max file.</div>
             </div>
           </div>
         </div>
