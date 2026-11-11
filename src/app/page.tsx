@@ -19,7 +19,7 @@ import { Navbar } from "@/components/ui/navbar"
 
 export default function LandingPage() {
   return (
-    <div className="flex flex-col [scroll-behavior=smooth]">
+    <div className="flex flex-col [scroll-behavior:smooth] [scroll-padding-top:80px]">
       <Navbar />
 
       <a id="main-content" tabIndex={-1} className="sr-only"></a>
