@@ -63,9 +63,6 @@ export function MobileSidebar({ isOpen, onClose }: { isOpen: boolean; onClose: (
       <div className="absolute left-0 top-0 bottom-0 w-64 bg-card border-r shadow-xl transform transition-transform">
         <div className="flex items-center justify-between h-16 px-4 border-b">
           <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-md bg-primary flex items-center justify-center text-primary-foreground font-bold text-sm">
-              F
-            </div>
             <span className="font-bold text-lg tracking-tight text-primary">ForgeDocs</span>
           </div>
           <button onClick={onClose} className="p-2 rounded-md text-muted-foreground hover:bg-accent">

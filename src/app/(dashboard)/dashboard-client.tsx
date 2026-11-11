@@ -48,9 +48,6 @@ export default function DashboardClient({
       <aside className="hidden lg:block fixed left-0 top-0 h-full w-64 border-r bg-card z-30">
         <div className="flex items-center justify-between h-16 px-4 border-b">
           <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-md bg-primary flex items-center justify-center text-primary-foreground font-bold text-sm">
-              F
-            </div>
             <span className="font-bold text-lg tracking-tight text-primary">ForgeDocs</span>
           </div>
         </div>

@@ -8,9 +8,6 @@ export default function Page() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-md bg-primary flex items-center justify-center text-primary-foreground font-bold text-sm">
-                F
-              </div>
               <Link href="/" className="text-xl font-bold tracking-tight text-primary">
                 ForgeDocs
               </Link>
