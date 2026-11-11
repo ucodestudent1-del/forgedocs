@@ -1,81 +1,72 @@
-import Link from "next/link"
-
 export default function Page() {
   return (
     <div className="min-h-screen flex flex-col">
-      <nav className="border-b bg-background/95 backdrop-blur sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-md bg-primary flex items-center justify-center text-primary-foreground font-bold text-sm">
-                F
-              </div>
-              <Link href="/dashboard" className="text-xl font-bold tracking-tight text-primary">
-                ForgeDocs
-              </Link>
-            </div>
-            <div className="flex items-center gap-4">
-              <Link href="/dashboard" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
-                Dashboard
-              </Link>
-              <Link href="/documents" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
-                Documents
-              </Link>
-              <Link href="/templates" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
-                Templates
-              </Link>
-              <Link href="/conversion" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
-                Conversion
-              </Link>
-              <Link href="/billing" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
-                Billing
-              </Link>
-              <Link href="/auth/login" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
-                Sign in
-              </Link>
-            </div>
-          </div>
-        </div>
-      </nav>
-
-      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="space-y-6">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Welcome to ForgeDocs</h1>
-            <p className="mt-2 text-muted-foreground">
-              Professional document management, generation, editing, and conversion platform.
+      <section className="py-20 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h1 className="text-5xl font-bold tracking-tight text-foreground mb-6">
+              Professional document management, generation, editing, and conversion platform
+            </h1>
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+              Create, organize, and version your documents in the cloud. Generate from templates, convert formats, and collaborate seamlessly.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card title="Document Management" description="Create, organize, and version your documents in the cloud.">
-              <Link href="/documents" className="text-primary font-medium hover:underline">
-                View Documents →
-              </Link>
-            </Card>
-            <Card title="Templates" description="Generate professional documents from pre-built templates.">
-              <Link href="/templates" className="text-primary font-medium hover:underline">
-                Browse Templates →
-              </Link>
-            </Card>
-            <Card title="Conversion" description="Convert between DOCX, PDF, XLSX, PPTX, CSV, and more.">
-              <Link href="/conversion" className="text-primary font-medium hover:underline">
-                Start Conversion →
-              </Link>
-            </Card>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
+            <a href="/dashboard" className="px-8 py-4 bg-primary text-primary-foreground font-medium rounded-lg hover:bg-primary/90 transition-colors">
+              Get Started
+            </a>
+            <a href="/templates" className="px-8 py-4 border border-input bg-background hover:bg-accent text-foreground font-medium rounded-lg transition-colors">
+              Browse Templates
+            </a>
           </div>
         </div>
-      </main>
-    </div>
-  )
-}
+      </section>
 
-function Card({ children, title, description }: { children: React.ReactNode; title: string; description: string }) {
-  return (
-    <div className="rounded-lg border bg-card text-card-foreground p-6">
-      <h3 className="font-semibold">{title}</h3>
-      <p className="mt-1 text-sm text-muted-foreground">{description}</p>
-      <div className="mt-4">{children}</div>
+      <section className="bg-muted/50 py-20 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl font-bold tracking-tight text-foreground mb-6">Features</h2>
+            <p className="text-muted-foreground">Everything you need to manage your documents</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="rounded-lg border bg-card p-6">
+              <div className="h-10 w-10 rounded-md bg-primary/10 flex items-center justify-center text-primary mb-4">
+                <span className="text-xl">📄</span>
+              </div>
+              <h3 className="text-xl font-bold text-foreground mb-2">Document Management</h3>
+              <p className="text-muted-foreground">Create, organize, and version your documents in the cloud.</p>
+            </div>
+            <div className="rounded-lg border bg-card p-6">
+              <div className="h-10 w-10 rounded-md bg-primary/10 flex items-center justify-center text-primary mb-4">
+                <span className="text-xl">📋</span>
+              </div>
+              <h3 className="text-xl font-bold text-foreground mb-2">Templates</h3>
+              <p className="text-muted-foreground">Generate professional documents from pre-built templates.</p>
+            </div>
+            <div className="rounded-lg border bg-card p-6">
+              <div className="h-10 w-10 rounded-md bg-primary/10 flex items-center justify-center text-primary mb-4">
+                <span className="text-xl">🔄</span>
+              </div>
+              <h3 className="text-xl font-bold text-foreground mb-2">Conversion</h3>
+              <p className="text-muted-foreground">Convert between DOCX, PDF, XLSX, PPTX, CSV, and more.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="py-20 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="rounded-xl bg-primary p-8 text-primary-foreground">
+            <h2 className="text-3xl font-bold mb-4">Ready to organize your documents?</h2>
+            <p className="text-primary-foreground/90 mb-6">Join thousands of teams using ForgeDocs to streamline their document workflow.</p>
+            <a href="/dashboard" className="px-8 py-3 bg-background text-primary font-semibold rounded-lg hover:bg-primary/90 transition-colors">
+              Start for free
+            </a>
+          </div>
+        </div>
+      </section>
     </div>
   )
 }
