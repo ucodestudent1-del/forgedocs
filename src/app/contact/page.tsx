@@ -1,45 +1,12 @@
+"use client"
+
 import Link from "next/link"
+import { Navbar } from "@/components/ui/navbar"
 
 export default function ContactPage() {
   return (
     <div className="min-h-screen flex flex-col">
-      <nav className="fixed top-0 w-full z-50 border-b bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex h-16 items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Link href="/" className="text-xl font-bold tracking-tight text-primary">
-                ForgeDocs
-              </Link>
-            </div>
-            <div className="flex items-center gap-4">
-              <Link href="/" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
-                Home
-              </Link>
-              <Link href="/pricing" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
-                Pricing
-              </Link>
-              <Link href="/features" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
-                Features
-              </Link>
-              <Link href="/solutions" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
-                Solutions
-              </Link>
-              <Link href="/faq" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
-                FAQ
-              </Link>
-              <Link href="/auth/login" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
-                Sign in
-              </Link>
-              <a
-                href="/auth/signup"
-                className="px-4 py-2 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
-              >
-                Get started
-              </a>
-            </div>
-          </div>
-        </div>
-      </nav>
+      <Navbar />
 
       <section className="pt-32 pb-24 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
@@ -55,19 +22,23 @@ export default function ContactPage() {
                 <ContactItem icon="✉️" label="Email" value="hello@forgedocs.com" href="mailto:hello@forgedocs.com" />
                 <ContactItem icon="💼" label="Sales" value="sales@forgedocs.com" href="mailto:sales@forgedocs.com" />
                 <ContactItem icon="🔒" label="Security" value="security@forgedocs.com" href="mailto:security@forgedocs.com" />
-                <ContactItem icon="🕒" label="Hours" value="Mon–Fri, 9am–6pm EST" />
+                <ContactItem icon="🕒" label="Hours" value="Mon–Fri, 9am–6pm EST" href="#" />
               </div>
             </div>
 
             <div>
-              <form className="space-y-4">
+              <form className="space-y-4" onSubmit={(e) => {
+                e.preventDefault()
+                const formData = new FormData(e.currentTarget)
+                console.log("Contact form submitted:", Object.fromEntries(formData))
+              }}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <TextField label="Full name" placeholder="Jane Doe" />
-                  <TextField label="Work email" placeholder="jane@company.com" type="email" />
+                  <TextField label="Full name" placeholder="Jane Doe" name="fullName" />
+                  <TextField label="Work email" placeholder="jane@company.com" type="email" name="email" />
                 </div>
-                <TextField label="Company" placeholder="Acme Corporation" />
-                <TextField label="Subject" placeholder="How can we help?" />
-                <TextArea label="Message" placeholder="Tell us about your needs..." rows={5} />
+                <TextField label="Company" placeholder="Acme Corporation" name="company" />
+                <TextField label="Subject" placeholder="How can we help?" name="subject" />
+                <TextArea label="Message" placeholder="Tell us about your needs..." rows={5} name="message" />
                 <button type="submit" className="w-full py-3 bg-primary text-primary-foreground font-medium rounded-lg hover:bg-primary/90 transition-colors">
                   Send message
                 </button>
@@ -97,25 +68,39 @@ export default function ContactPage() {
 
 function ContactItem({ icon, label, value, href }: { icon: string; label: string; value: string; href?: string }) {
   return (
-    <a
-      href={href || "#"}
-      className="flex items-center gap-3 p-3 rounded-lg hover:bg-accent transition-colors"
-    >
-      <span className="text-xl">{icon}</span>
-      <div>
-        <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">{label}</p>
-        <p className="text-sm font-medium text-foreground">{value}</p>
-      </div>
-    </a>
+    <>
+      {href ? (
+        <a
+          href={href}
+          className="flex items-center gap-3 p-3 rounded-lg hover:bg-accent transition-colors"
+        >
+          <span className="text-xl">{icon}</span>
+          <div>
+            <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">{label}</p>
+            <p className="text-sm font-medium text-foreground">{value}</p>
+          </div>
+        </a>
+      ) : (
+        <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-accent transition-colors">
+          <span className="text-xl">{icon}</span>
+          <div>
+            <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">{label}</p>
+            <p className="text-sm font-medium text-foreground">{value}</p>
+          </div>
+        </div>
+      )}
+    </>
   )
 }
 
-function TextField({ label, placeholder, type }: { label: string; placeholder: string; type?: string }) {
+function TextField({ label, placeholder, type, name }: { label: string; placeholder: string; type?: string; name?: string }) {
   return (
     <div className="space-y-2">
-      <label className="text-sm font-medium text-foreground">{label}</label>
+      <label htmlFor={name} className="text-sm font-medium text-foreground">{label}</label>
       <input
+        id={name}
         type={type || "text"}
+        name={name}
         placeholder={placeholder}
         className="h-10 w-full px-3 rounded-md border border-input bg-background text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-primary"
       />
@@ -123,11 +108,13 @@ function TextField({ label, placeholder, type }: { label: string; placeholder: s
   )
 }
 
-function TextArea({ label, placeholder, rows }: { label: string; placeholder: string; rows: number }) {
+function TextArea({ label, placeholder, rows, name }: { label: string; placeholder: string; rows: number; name?: string }) {
   return (
     <div className="space-y-2">
-      <label className="text-sm font-medium text-foreground">{label}</label>
+      <label htmlFor={name} className="text-sm font-medium text-foreground">{label}</label>
       <textarea
+        id={name}
+        name={name}
         placeholder={placeholder}
         rows={rows}
         className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-primary"

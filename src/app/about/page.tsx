@@ -1,45 +1,10 @@
 import Link from "next/link"
+import { Navbar } from "@/components/ui/navbar"
 
 export default function AboutPage() {
   return (
     <div className="min-h-screen flex flex-col">
-      <nav className="fixed top-0 w-full z-50 border-b bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex h-16 items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Link href="/" className="text-xl font-bold tracking-tight text-primary">
-                ForgeDocs
-              </Link>
-            </div>
-            <div className="flex items-center gap-4">
-              <Link href="/" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
-                Home
-              </Link>
-              <Link href="/pricing" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
-                Pricing
-              </Link>
-              <Link href="/features" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
-                Features
-              </Link>
-              <Link href="/solutions" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
-                Solutions
-              </Link>
-              <Link href="/faq" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
-                FAQ
-              </Link>
-              <Link href="/auth/login" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
-                Sign in
-              </Link>
-              <Link
-                href="/auth/signup"
-                className="px-4 py-2 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
-              >
-                Get started
-              </Link>
-            </div>
-          </div>
-        </div>
-      </nav>
+      <Navbar />
 
       <section className="pt-32 pb-24 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">

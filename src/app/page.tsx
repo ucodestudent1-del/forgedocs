@@ -1,139 +1,75 @@
 "use client"
 
 import Link from "next/link"
-import { useState } from "react"
 import {
-  Menu,
-  X,
   FileText,
-  File,
   Zap,
   Shield,
   Users,
-  Settings,
+  Layers,
+  Clock,
   ArrowRight,
   CheckCircle2,
-  Mail,
-  Globe,
-  BarChart3,
-  Layers,
-  Rocket,
-  GlobeIcon,
   Lock,
-  Clock,
+  GlobeIcon,
+  BarChart3,
   Plus,
+  Rocket,
 } from "lucide-react"
+import { Navbar } from "@/components/ui/navbar"
 
 export default function LandingPage() {
   return (
-    <div className="flex flex-col [scroll-behavior:smooth]">
-      {/* Navigation */}
-      <nav className="fixed top-0 w-full z-50 border-b border-[#E2E8F0] bg-[#FFFFFF]/80 backdrop-blur supports-[backdrop-filter]:bg-[#FFFFFF]/60">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex h-16 items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Link href="/" className="flex items-center gap-2">
-                <div className="h-8 w-8 rounded-lg bg-[#2563EB] flex items-center justify-center text-white font-bold text-sm">
-                  F
-                </div>
-                <span className="text-xl font-bold tracking-tight text-[#0F172A]">ForgeDocs</span>
-              </Link>
-            </div>
-            <div className="hidden sm:flex items-center gap-6">
-              <a href="#features" className="text-sm font-medium text-[#64748B] hover:text-[#2563EB] transition-colors">
-                Features
-              </a>
-              <a href="#solutions" className="text-sm font-medium text-[#64748B] hover:text-[#2563EB] transition-colors">
-                Solutions
-              </a>
-              <a href="#pricing" className="text-sm font-medium text-[#64748B] hover:text-[#2563EB] transition-colors">
-                Pricing
-              </a>
-              <a href="#faq" className="text-sm font-medium text-[#64748B] hover:text-[#2563EB] transition-colors">
-                FAQ
-              </a>
-              <Link href="/auth/signup" className="px-4 py-2 text-sm font-medium rounded-md bg-[#2563EB] text-white hover:bg-[#1D4ED8] transition-colors">
-                Get started
-              </Link>
-            </div>
-          </div>
-        </div>
-      </nav>
+    <div className="flex flex-col [scroll-behavior=smooth]">
+      <Navbar />
 
-      {/* Mobile Menu Overlay */}
-      <div className="fixed inset-0 z-40 bg-[#0F172A]/90 backdrop-blur-lg hidden lg:flex flex-col items-center justify-center gap-4 p-6">
-        <div className="flex items-center justify-between w-full max-w-md">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-lg bg-[#2563EB] flex items-center justify-center text-white font-bold text-sm">
-              F
-            </div>
-            <span className="text-xl font-bold tracking-tight text-[#0F172A]">ForgeDocs</span>
-          </Link>
-          <button className="p-2 text-white" onClick={() => {}}>
-            <X className="h-6 w-6" />
-          </button>
-        </div>
-          <nav className="mt-6 space-y-4">
-            <a href="#features" className="text-lg font-medium text-white hover:text-[#94A3B8] transition-colors">
-              Features
-            </a>
-            <a href="#solutions" className="text-lg font-medium text-white hover:text-[#94A3B8] transition-colors">
-              Solutions
-            </a>
-            <a href="#pricing" className="text-lg font-medium text-white hover:text-[#94A3B8] transition-colors">
-              Pricing
-            </a>
-          <Link href="/auth/signup" className="mt-4 block px-6 py-2 text-center font-medium text-white bg-[#2563EB] rounded-lg hover:bg-[#1D4ED8] transition-colors">
-            Get started
-          </Link>
-        </nav>
-      </div>
+      <a id="main-content" tabIndex={-1} className="sr-only"></a>
 
       {/* Hero Section */}
       <section className="relative py-24 px-4 sm:px-6 lg:px-8 overflow-hidden">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-[#2563EB]/5 rounded-full blur-[120px] pointer-events-none"></div>
-        <div className="absolute bottom-0 right-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-[#0F172A]/5 rounded-full blur-[120px] pointer-events-none"></div>
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-primary/10 rounded-full blur-[120px] pointer-events-none"></div>
+        <div className="absolute bottom-0 right-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-foreground/5 rounded-full blur-[120px] pointer-events-none"></div>
 
         <div className="max-w-7xl mx-auto relative z-10">
           <div className="text-center">
-            <div className="inline-flex items-center gap-2 rounded-full bg-[#2563EB]/10 px-3 py-1 text-[10px] font-medium text-[#2563EB] uppercase tracking-tighter mb-8">
+            <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-[10px] font-medium text-primary uppercase tracking-tighter mb-8">
               DOCUMENT MANAGEMENT, SIMPLIFIED
             </div>
 
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight text-[#0F172A] mb-6 leading-[1.1]">
-              Professional <span className="text-[#2563EB]">document management</span> for modern teams
+            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight text-foreground mb-6 leading-[1.1]">
+              Professional <span className="text-primary">document management</span> for modern teams
             </h1>
 
-            <p className="text-lg md:text-xl text-[#64748B] max-w-[65ch] mx-auto mb-10 leading-relaxed">
+            <p className="text-lg md:text-xl text-muted-foreground max-w-[65ch] mx-auto mb-10 leading-relaxed">
               Create, organize, generate, and convert documents in the cloud. One platform for every document workflow.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
               <Link
                 href="/auth/signup"
-                className="px-8 py-4 bg-[#2563EB] text-white font-medium rounded-lg hover:bg-[#1D4ED8] transition-colors shadow-lg shadow-[#2563EB]/30"
+                className="px-8 py-4 bg-primary text-primary-foreground font-medium rounded-lg hover:bg-primary/90 transition-colors shadow-lg shadow-primary/30"
               >
                 Start building
               </Link>
               <a
                 href="#features"
-                className="px-8 py-4 bg-[#FFFFFF] text-[#0F172A] font-medium rounded-lg border border-[#E2E8F0] hover:bg-[#F8FAFC] transition-colors"
+                className="px-8 py-4 bg-background text-foreground font-medium rounded-lg border border-input hover:bg-accent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               >
                 Browse templates
               </a>
             </div>
 
-            <div className="flex flex-wrap items-center justify-center gap-8 md:gap-16 opacity-60 text-xs font-medium uppercase tracking-tighter text-[#64748B]">
+            <div className="flex flex-wrap items-center justify-center gap-8 md:gap-16 opacity-60 text-xs font-medium uppercase tracking-tighter text-muted-foreground">
               <span className="flex items-center gap-1">
-                <CheckCircle2 className="h-4 w-4 text-[#22C55E]" />
+                <CheckCircle2 className="h-4 w-4 text-green-500" />
                 SOC 2 compliant
               </span>
               <span className="flex items-center gap-1">
-                <Lock className="h-4 w-4 text-[#2563EB]" />
+                <Lock className="h-4 w-4 text-primary" />
                 End-to-end encrypted
               </span>
               <span className="flex items-center gap-1">
-                <GlobeIcon className="h-4 w-4 text-[#2563EB]" />
+                <GlobeIcon className="h-4 w-4 text-primary" />
                 GDPR ready
               </span>
             </div>
@@ -144,30 +80,30 @@ export default function LandingPage() {
       {/* Dashboard Preview */}
       <section className="py-24 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto relative">
-          <div className="absolute -inset-1 bg-[#0F172A]/5 rounded-[1.25rem] blur-[20px]"></div>
-          <div className="relative z-10 rounded-[1.25rem] border border-[#E2E8F0] bg-[#FFFFFF] shadow-[0_25px_50px_-12px_rgba(0,0,0,0.1)] overflow-hidden">
-            <div className="bg-[#F8FAFC] border-b border-[#E2E8F0] p-6 px-8 flex items-center justify-between gap-4">
+          <div className="absolute -inset-1 bg-foreground/5 rounded-[1.25rem] blur-[20px]"></div>
+          <div className="relative z-10 rounded-[1.25rem] border border-input bg-background shadow-[0_25px_50px_-12px_rgba(0,0,0,0.1)] overflow-hidden">
+            <div className="bg-muted border-b border-input p-6 px-8 flex items-center justify-between gap-4">
               <div className="flex items-center gap-2">
-                <div className="h-6 w-6 rounded-lg bg-[#2563EB] flex items-center justify-center text-[9px] font-bold text-white">
+                <div className="h-6 w-6 rounded-lg bg-primary flex items-center justify-center text-[9px] font-bold text-white">
                   F
                 </div>
-                <span className="text-sm font-medium text-[#0F172A]">ForgeDocs</span>
+                <span className="text-sm font-medium text-foreground">ForgeDocs</span>
               </div>
               <div className="flex items-center gap-2">
                 <input
                   type="text"
                   placeholder="Search documents..."
-                  className="w-64 h-9 px-3 py-1 rounded-md border border-[#E2E8F0] bg-[#FFFFFF] text-sm text-[#0F172A] focus:outline-none focus:ring-2 focus:ring-[#2563EB]/50 transition-colors"
+                  className="w-64 h-9 px-3 py-1 rounded-md border border-input bg-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-colors"
                 />
-                <div className="h-9 w-9 rounded-md bg-[#FFFFFF] border border-[#E2E8F0] flex items-center justify-center text-[#64748B]">
+                <div className="h-9 w-9 rounded-md bg-background border border-input flex items-center justify-center text-muted-foreground">
                   <BarChart3 className="h-5 w-5" />
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <div className="h-8 w-8 rounded-full bg-[#F1F5F9] flex items-center justify-center text-[10px] font-medium text-[#64748B]">
+                <div className="h-8 w-8 rounded-full bg-muted/50 flex items-center justify-center text-[10px] font-medium text-muted-foreground">
                   JD
                 </div>
-                <button className="h-8 px-3 text-sm font-medium text-[#0F172A] hover:bg-[#F1F5F9] rounded-md transition-colors">
+                <button className="h-8 px-3 text-sm font-medium text-foreground hover:bg-muted rounded-md transition-colors">
                   Upgrade
                 </button>
               </div>
@@ -176,31 +112,31 @@ export default function LandingPage() {
               <div className="grid grid-cols-12 gap-6">
                 <div className="col-span-4">
                   <div className="space-y-4">
-                    <div className="flex items-center gap-3 p-3 rounded-lg bg-[#F8FAFC] border border-[#E2E8F0]">
-                      <div className="h-8 w-8 rounded-md bg-[#0F172A]/5 flex items-center justify-center text-[#0F172A]">
+                    <div className="flex items-center gap-3 p-3 rounded-lg bg-muted border border-input">
+                      <div className="h-8 w-8 rounded-md bg-foreground/5 flex items-center justify-center text-foreground">
                         <Layers className="h-4 w-4" />
                       </div>
                       <div>
-                        <p className="text-xs font-medium text-[#0F172A]">My Documents</p>
-                        <p className="text-xs text-[#64748B]">124 documents</p>
+                        <p className="text-xs font-medium text-foreground">My Documents</p>
+                        <p className="text-xs text-muted-foreground">124 documents</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3 p-3 rounded-lg bg-[#FFFFFF] border border-[#E2E8F0] hover:bg-[#F1F5F9] cursor-pointer transition-colors">
-                      <div className="h-8 w-8 rounded-md bg-[#2563EB]/10 flex items-center justify-center text-[#2563EB]">
+                    <div className="flex items-center gap-3 p-3 rounded-lg bg-background border border-input hover:bg-muted cursor-pointer transition-colors">
+                      <div className="h-8 w-8 rounded-md bg-primary/10 flex items-center justify-center text-primary">
                         <FileText className="h-4 w-4" />
                       </div>
                       <div>
-                        <p className="text-xs font-medium text-[#0F172A]">Create Document</p>
-                        <p className="text-xs text-[#64748B]">Blank document</p>
+                        <p className="text-xs font-medium text-foreground">Create Document</p>
+                        <p className="text-xs text-muted-foreground">Blank document</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3 p-3 rounded-lg bg-[#FFFFFF] border border-[#E2E8F0] hover:bg-[#F1F5F9] cursor-pointer transition-colors">
-                      <div className="h-8 w-8 rounded-md bg-[#2563EB]/10 flex items-center justify-center text-[#2563EB]">
+                    <div className="flex items-center gap-3 p-3 rounded-lg bg-background border border-input hover:bg-muted cursor-pointer transition-colors">
+                      <div className="h-8 w-8 rounded-md bg-primary/10 flex items-center justify-center text-primary">
                         <Plus className="h-4 w-4" />
                       </div>
                       <div>
-                        <p className="text-xs font-medium text-[#0F172A]">New Template</p>
-                        <p className="text-xs text-[#64748B]">From gallery</p>
+                        <p className="text-xs font-medium text-foreground">New Template</p>
+                        <p className="text-xs text-muted-foreground">From gallery</p>
                       </div>
                     </div>
                   </div>
@@ -209,15 +145,15 @@ export default function LandingPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="flex flex-col gap-2 h-64">
                       {[1, 2, 3, 4].map((i) => (
-                        <div key={i} className="flex items-center gap-3 p-3 rounded-lg border border-[#E2E8F0] bg-[#FFFFFF] cursor-pointer hover:bg-[#F8FAFC] transition-colors">
-                          <div className="h-10 w-10 rounded-md bg-[#F8FAFC] flex items-center justify-center text-[#64748B]">
+                        <div key={i} className="flex items-center gap-3 p-3 rounded-lg border border-input bg-background cursor-pointer hover:bg-muted transition-colors">
+                          <div className="h-10 w-10 rounded-md bg-muted flex items-center justify-center text-muted-foreground">
                             <Rocket className="h-4 w-4" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <div className="h-4 w-3/4 rounded bg-[#F1F5F9]"></div>
-                            <div className="h-4 w-1/2 rounded bg-[#F1F5F9] mt-1"></div>
+                            <div className="h-4 w-3/4 rounded bg-muted/50"></div>
+                            <div className="h-4 w-1/2 rounded bg-muted/50 mt-1"></div>
                           </div>
-                          <div className="text-xs text-[#64748B] font-medium">
+                          <div className="text-xs text-muted-foreground font-medium">
                             Q4 Financial Report
                           </div>
                         </div>
@@ -225,15 +161,15 @@ export default function LandingPage() {
                     </div>
                     <div className="flex flex-col gap-2 h-64">
                       {[5, 6, 7, 8].map((i) => (
-                        <div key={i} className="flex items-center gap-3 p-3 rounded-lg border border-[#E2E8F0] bg-[#FFFFFF] cursor-pointer hover:bg-[#F8FAFC] transition-colors">
-                          <div className="h-10 w-10 rounded-md bg-[#F8FAFC] flex items-center justify-center text-[#64748B]">
+                        <div key={i} className="flex items-center gap-3 p-3 rounded-lg border border-input bg-background cursor-pointer hover:bg-muted transition-colors">
+                          <div className="h-10 w-10 rounded-md bg-muted flex items-center justify-center text-muted-foreground">
                             <GlobeIcon className="h-4 w-4" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <div className="h-4 w-2/3 rounded bg-[#F1F5F9]"></div>
-                            <div className="h-4 w-1/3 rounded bg-[#F1F5F9] mt-1"></div>
+                            <div className="h-4 w-2/3 rounded bg-muted/50"></div>
+                            <div className="h-4 w-1/3 rounded bg-muted/50 mt-1"></div>
                           </div>
-                          <div className="text-xs text-[#64748B] font-medium">
+                          <div className="text-xs text-muted-foreground font-medium">
                             Client Contract NDA
                           </div>
                         </div>
@@ -252,55 +188,61 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <div className="flex items-center justify-center gap-2">
-              <span className="h-8 w-8 rounded-lg bg-[#2563EB]/10 flex items-center justify-center text-[#2563EB] font-bold text-sm">
+              <span className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">
                 01
               </span>
             </div>
-            <h2 className="text-3xl font-bold tracking-tight text-[#0F172A] mb-4">Everything you need to manage documents</h2>
-            <p className="text-lg text-[#64748B] max-w-[65ch] mx-auto">Powerful features built for teams that work with documents every day.</p>
+            <h2 className="text-3xl font-bold tracking-tight text-foreground mb-4">Everything you need to manage documents</h2>
+            <p className="text-lg text-muted-foreground max-w-[65ch] mx-auto">Powerful features built for teams that work with documents every day.</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <FeatureCard
-              icon={<FileText className="h-6 w-6 text-[#2563EB]" />}
+              key="document-management"
+              icon={<FileText className="h-6 w-6 text-primary" />}
               title="Document Management"
-              description="Create, organize, version, and share documents with your team. Full audit trail and granular access control on every file."
+              description="Create, organize, version, and share documents with your team. Full audit trail and granular access control."
             />
             <FeatureCard
-              icon={<Zap className="h-6 w-6 text-[#2563EB]" />}
+              key="instant-generation"
+              icon={<Zap className="h-6 w-6 text-primary" />}
               title="Instant Generation"
-              description="Generate professional documents from pre-built templates for proposals, invoices, NDAs, reports, and employment letters in seconds."
+              description="Generate professional documents from pre-built templates for proposals, invoices, NDAs, and more."
             />
             <FeatureCard
-              icon={<Layers className="h-6 w-6 text-[#2563EB]" />}
+              key="format-conversion"
+              icon={<Layers className="h-6 w-6 text-primary" />}
               title="Format Conversion"
-              description="Convert between DOCX, PDF, XLSX, PPTX, CSV, and 50+ other formats with one click. No formatting lost, no manual rework."
+              description="Convert between DOCX, PDF, XLSX, PPTX, CSV, and 50+ other formats with one click."
             />
             <FeatureCard
-              icon={<Users className="h-6 w-6 text-[#2563EB]" />}
+              key="team-collaboration"
+              icon={<Users className="h-6 w-6 text-primary" />}
               title="Team Collaboration"
-              description="Role-based access control, comments, and real-time collaboration so your team can work together securely on shared documents."
+              description="Role-based access control, comments, and real-time collaboration for secure teamwork."
             />
             <FeatureCard
-              icon={<Shield className="h-6 w-6 text-[#2563EB]" />}
+              key="enterprise-security"
+              icon={<Shield className="h-6 w-6 text-primary" />}
               title="Enterprise Security"
-              description="SOC 2 Type II compliant, end-to-end AES-256 encryption, and GDPR-ready practices to keep your documents safe and compliant."
+              description="SOC 2 Type II compliant, end-to-end encryption, and granular permissions for every document."
             />
             <FeatureCard
-              icon={<Clock className="h-6 w-6 text-[#2563EB]" />}
+              key="fast-search"
+              icon={<Clock className="h-6 w-6 text-primary" />}
               title="Fast Search"
-              description="Instantly search across all your documents with advanced filtering and relevance ranking. Find what you need in seconds."
+              description="Instantly search across all your documents with advanced filtering and relevance ranking."
             />
           </div>
         </div>
       </section>
 
       {/* How It Works */}
-      <section className="py-24 px-4 sm:px-6 lg:px-8 bg-[#F8FAFC]">
+      <section className="py-24 px-4 sm:px-6 lg:px-8 bg-muted/50">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold tracking-tight text-[#0F172A] mb-4">How it works</h2>
-            <p className="text-lg text-[#64748B] max-w-[65ch] mx-auto">Get started in three simple steps.</p>
+            <h2 className="text-3xl font-bold tracking-tight text-foreground mb-4">How it works</h2>
+            <p className="text-lg text-muted-foreground max-w-[65ch] mx-auto">Get started in three simple steps.</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -312,30 +254,30 @@ export default function LandingPage() {
       </section>
 
       {/* Trust Section */}
-      <section id="trust" className="py-24 px-4 sm:px-6 lg:px-8 border-y border-[#E2E8F0]">
+      <section id="trust" className="py-24 px-4 sm:px-6 lg:px-8 border-y border-input">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold tracking-tight text-[#0F172A] mb-4">Built with security in mind</h2>
-            <p className="text-lg text-[#64748B] max-w-[65ch] mx-auto">Your documents are protected by industry-standard security practices.</p>
+            <h2 className="text-3xl font-bold tracking-tight text-foreground mb-4">Built with security in mind</h2>
+            <p className="text-lg text-muted-foreground max-w-[65ch] mx-auto">Your documents are protected by industry-standard security practices.</p>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
-            <TrustCard icon={<Lock className="h-6 w-6 text-[#2563EB]" />} title="End-to-end encryption" description="All documents are encrypted at rest and in transit using AES-256 encryption standards." />
-            <TrustCard icon={<Shield className="h-6 w-6 text-[#2563EB]" />} title="Access control" description="Role-based permissions ensure only authorized team members can view or edit sensitive documents." />
-            <TrustCard icon={<BarChart3 className="h-6 w-6 text-[#2563EB]" />} title="Audit trails" description="Complete activity logs track every document change, access, and share event for full compliance visibility." />
+            <TrustCard icon={<Lock className="h-6 w-6 text-primary" />} title="End-to-end encryption" description="All documents are encrypted at rest and in transit using AES-256 encryption standards." />
+            <TrustCard icon={<Shield className="h-6 w-6 text-primary" />} title="Access control" description="Role-based permissions ensure only authorized team members can view or edit sensitive documents." />
+            <TrustCard icon={<BarChart3 className="h-6 w-6 text-primary" />} title="Audit trails" description="Complete activity logs track every document change, access, and share event for full compliance visibility." />
           </div>
 
-          <div className="mt-12 flex flex-wrap items-center justify-center gap-8 md:gap-16 opacity-50 text-sm font-medium uppercase tracking-tighter text-[#64748B]">
+          <div className="mt-12 flex flex-wrap items-center justify-center gap-8 md:gap-16 opacity-50 text-sm font-medium uppercase tracking-tighter text-muted-foreground">
             <span className="flex items-center gap-1">
-              <CheckCircle2 className="h-4 w-4 text-[#22C55E]" />
+              <CheckCircle2 className="h-4 w-4 text-green-500" />
               SOC 2 Type II
             </span>
             <span className="flex items-center gap-1">
-              <GlobeIcon className="h-4 w-4 text-[#2563EB]" />
+              <GlobeIcon className="h-4 w-4 text-primary" />
               GDPR compliant
             </span>
             <span className="flex items-center gap-1">
-              <Lock className="h-4 w-4 text-[#2563EB]" />
+              <Lock className="h-4 w-4 text-primary" />
               AES-256 encryption
             </span>
           </div>
@@ -346,133 +288,61 @@ export default function LandingPage() {
       <section id="solutions" className="py-24 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold tracking-tight text-[#0F172A] mb-4">Built for your industry</h2>
-            <p className="text-lg text-[#64748B] max-w-[65ch] mx-auto">See how ForgeDocs fits your specific workflow with industry-tailored templates and features.</p>
+            <h2 className="text-3xl font-bold tracking-tight text-foreground mb-4">Built for your industry</h2>
+            <p className="text-lg text-muted-foreground max-w-[65ch] mx-auto">See how ForgeDocs fits your specific workflow with industry-tailored templates and features.</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="rounded-xl border border-[#E2E8F0] bg-[#FFFFFF] p-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="rounded-xl border border-input bg-background p-6">
               <div className="text-2xl mb-3">📋</div>
-              <h3 className="text-lg font-bold text-[#0F172A] mb-2">Legal</h3>
-              <p className="text-sm text-[#64748B] mb-4">Manage contracts, NDAs, and legal documents with version control and e-signature ready workflows.</p>
-              <ul className="space-y-1 text-xs text-[#64748B]">
-                <li className="flex items-center gap-1.5">• <span>Contract lifecycle management</span></li>
-                <li className="flex items-center gap-1.5">• <span>Version history &amp; audit trail</span></li>
-                <li className="flex items-center gap-1.5">• <span>Access controls &amp; permissions</span></li>
-              </ul>
+              <h3 className="text-lg font-bold text-foreground mb-2">Legal</h3>
+              <p className="text-sm text-muted-foreground">Manage contracts, NDAs, and legal documents with version control and e-signature ready workflows.</p>
             </div>
-            <div className="rounded-xl border border-[#E2E8F0] bg-[#FFFFFF] p-6">
+            <div className="rounded-xl border border-input bg-background p-6">
               <div className="text-2xl mb-3">💰</div>
-              <h3 className="text-lg font-bold text-[#0F172A] mb-2">Finance</h3>
-              <p className="text-sm text-[#64748B] mb-4">Generate invoices, financial reports, and compliance documents with automated formatting.</p>
-              <ul className="space-y-1 text-xs text-[#64748B]">
-                <li className="flex items-center gap-1.5">• <span>Invoice generation &amp; billing</span></li>
-                <li className="flex items-center gap-1.5">• <span>Financial reporting templates</span></li>
-                <li className="flex items-center gap-1.5">• <span>Compliance documentation</span></li>
-              </ul>
+              <h3 className="text-lg font-bold text-foreground mb-2">Finance</h3>
+              <p className="text-sm text-muted-foreground">Generate invoices, financial reports, and compliance documents with automated formatting.</p>
             </div>
-            <div className="rounded-xl border border-[#E2E8F0] bg-[#FFFFFF] p-6">
+            <div className="rounded-xl border border-input bg-background p-6">
               <div className="text-2xl mb-3">👥</div>
-              <h3 className="text-lg font-bold text-[#0F172A] mb-2">HR</h3>
-              <p className="text-sm text-[#64748B] mb-4">Streamline offer letters, employment agreements, and onboarding documents for new hires.</p>
-              <ul className="space-y-1 text-xs text-[#64748B]">
-                <li className="flex items-center gap-1.5">• <span>Offer letter templates</span></li>
-                <li className="flex items-center gap-1.5">• <span>Onboarding documentation</span></li>
-                <li className="flex items-center gap-1.5">• <span>Policy handbook creation</span></li>
-              </ul>
-            </div>
-            <div className="rounded-xl border border-[#E2E8F0] bg-[#FFFFFF] p-6">
-              <div className="text-2xl mb-3">📈</div>
-              <h3 className="text-lg font-bold text-[#0F172A] mb-2">Sales</h3>
-              <p className="text-sm text-[#64748B] mb-4">Close deals faster with professional proposals, quotes, and business reports.</p>
-              <ul className="space-y-1 text-xs text-[#64748B]">
-                <li className="flex items-center gap-1.5">• <span>Sales proposal templates</span></li>
-                <li className="flex items-center gap-1.5">• <span>Quote &amp; invoice generation</span></li>
-                <li className="flex items-center gap-1.5">• <span>Client-ready reporting</span></li>
-              </ul>
+              <h3 className="text-lg font-bold text-foreground mb-2">HR</h3>
+              <p className="text-sm text-muted-foreground">Streamline offer letters, employment agreements, and onboarding documents for new hires.</p>
             </div>
           </div>
         </div>
       </section>
 
       {/* Pricing Section */}
-      <section id="pricing" className="py-24 px-4 sm:px-6 lg:px-8 bg-[#F8FAFC]">
+      <section id="pricing" className="py-24 px-4 sm:px-6 lg:px-8 bg-muted/50">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold tracking-tight text-[#0F172A] mb-4">Simple, transparent pricing</h2>
-            <p className="text-lg text-[#64748B] max-w-[65ch] mx-auto">Choose the plan that fits your team. All plans include a 14-day free trial.</p>
+            <h2 className="text-3xl font-bold tracking-tight text-foreground mb-4">Simple, transparent pricing</h2>
+            <p className="text-lg text-muted-foreground max-w-[65ch] mx-auto">Choose the plan that fits your team. All plans include a 14-day free trial.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            <div className="rounded-xl border border-[#E2E8F0] bg-[#FFFFFF] p-8">
-              <h3 className="text-lg font-bold text-[#0F172A] mb-1">Free</h3>
-              <p className="text-sm text-[#64748B]">For individuals getting started</p>
-              <div className="mt-6 flex items-baseline">
-                <span className="text-4xl font-bold text-[#0F172A]">$0</span>
-                <span className="text-sm text-[#64748B] ml-1">/mo</span>
-              </div>
-              <ul className="mt-8 space-y-4 text-sm text-[#64748B]">
-                <li className="flex items-center gap-2">• <span>500 documents/month</span></li>
-                <li className="flex items-center gap-2">• <span>100 conversions/month</span></li>
-                <li className="flex items-center gap-2">• <span>5 GB storage</span></li>
-                <li className="flex items-center gap-2">• <span>10 MB max file size</span></li>
-                <li className="flex items-center gap-2 text-[#94A3B8]">• <span>Community support</span></li>
-              </ul>
-              <div className="mt-10">
-                <Link href="/auth/signup" className="w-full py-3 rounded-lg bg-[#2563EB] text-white font-medium hover:bg-[#1D4ED8] transition-colors">
-                  Get started free
-                </Link>
+            <div className="rounded-xl border border-input bg-background p-6">
+              <h3 className="text-lg font-bold text-foreground mb-1">Free</h3>
+              <p className="text-sm text-muted-foreground">For individuals getting started</p>
+              <div className="mt-3 flex items-baseline">
+                <span className="text-3xl font-bold text-foreground">$0</span>
+                <span className="text-sm text-muted-foreground ml-1">/mo</span>
               </div>
             </div>
-            <div className="rounded-xl border border-[#2563EB] bg-[#FFFFFF]/5 p-8 ring-1 ring-[#2563EB] shadow-lg">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-[#2563EB] uppercase tracking-wider">Most popular</span>
-              </div>
-              <h3 className="text-lg font-bold text-[#0F172A] mb-1 mt-2">Pro</h3>
-              <p className="text-sm text-[#64748B]">For growing teams</p>
-              <div className="mt-6 flex items-baseline">
-                <span className="text-4xl font-bold text-[#0F172A]">$19</span>
-                <span className="text-sm text-[#64748B] ml-1">/mo</span>
-              </div>
-              <ul className="mt-8 space-y-4 text-sm text-[#64748B]">
-                <li className="flex items-center gap-2">• <span className="text-[#0F172A]">Unlimited documents</span></li>
-                <li className="flex items-center gap-2">• <span className="text-[#0F172A]">Unlimited conversions</span></li>
-                <li className="flex items-center gap-2">• <span className="text-[#0F172A]">100 GB storage</span></li>
-                <li className="flex items-center gap-2">• <span className="text-[#0F172A]">50 MB max file size</span></li>
-                <li className="flex items-center gap-2">• <span>Priority support</span></li>
-                <li className="flex items-center gap-2">• <span>Audit logs</span></li>
-                <li className="flex items-center gap-2">• <span>Advanced templates</span></li>
-              </ul>
-              <div className="mt-10">
-                <Link href="/auth/signup" className="w-full py-3 rounded-lg border border-[#2563EB] text-[#2563EB] font-medium hover:bg-[#2563EB]/10 transition-colors">
-                  Start free trial
-                </Link>
+            <div className="rounded-xl border border-primary bg-primary/5 p-6 ring-1 ring-primary shadow-lg">
+              <h3 className="text-lg font-bold text-foreground mb-1">Pro</h3>
+              <p className="text-sm text-muted-foreground">For growing teams</p>
+              <div className="mt-3 flex items-baseline">
+                <span className="text-3xl font-bold text-foreground">$19</span>
+                <span className="text-sm text-muted-foreground ml-1">/mo</span>
               </div>
             </div>
-            <div className="rounded-xl border border-[#E2E8F0] bg-[#FFFFFF] p-8">
-              <h3 className="text-lg font-bold text-[#0F172A] mb-1">Business</h3>
-              <p className="text-sm text-[#64748B]">For established organizations</p>
-              <div className="mt-6 flex items-baseline">
-                <span className="text-4xl font-bold text-[#0F172A]">$49</span>
-                <span className="text-sm text-[#64748B] ml-1">/mo</span>
-              </div>
-              <ul className="mt-8 space-y-4 text-sm text-[#64748B]">
-                <li className="flex items-center gap-2">• <span className="text-[#0F172A]">Unlimited documents</span></li>
-                <li className="flex items-center gap-2">• <span className="text-[#0F172A]">Unlimited conversions</span></li>
-                <li className="flex items-center gap-2">• <span className="text-[#0F172A]">500 GB storage</span></li>
-                <li className="flex items-center gap-2">• <span className="text-[#0F172A]">100 MB max file size</span></li>
-                <li className="flex items-center gap-2">• <span>Priority support</span></li>
-                <li className="flex items-center gap-2">• <span>Audit logs</span></li>
-                <li className="flex items-center gap-2">• <span>Advanced templates</span></li>
-                <li className="flex items-center gap-2">• <span>Custom integrations</span></li>
-              </ul>
-              <div className="mt-10">
-                <Link href="/contact" className="w-full py-3 rounded-lg border border-[#E2E8F0] text-[#0F172A] font-medium hover:bg-[#F8FAFC] transition-colors">
-                  Contact sales
-                </Link>
+            <div className="rounded-xl border border-input bg-background p-6">
+              <h3 className="text-lg font-bold text-foreground mb-1">Business</h3>
+              <p className="text-sm text-muted-foreground">For established organizations</p>
+              <div className="mt-3 flex items-baseline">
+                <span className="text-3xl font-bold text-foreground">$49</span>
+                <span className="text-sm text-muted-foreground ml-1">/mo</span>
               </div>
             </div>
-          </div>
-          <div className="text-center mt-12 text-xs text-[#64748B]">
-            All plans include a 14-day free trial. No credit card required for the Free plan.
           </div>
         </div>
       </section>
@@ -481,65 +351,30 @@ export default function LandingPage() {
       <section id="faq" className="py-24 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold tracking-tight text-[#0F172A] mb-4">Frequently asked questions</h2>
-            <p className="text-lg text-[#64748B] max-w-[65ch] mx-auto">Have questions about ForgeDocs? We've got answers.</p>
+            <h2 className="text-3xl font-bold tracking-tight text-foreground mb-4">Frequently asked questions</h2>
+            <p className="text-lg text-muted-foreground max-w-[65ch] mx-auto">Have questions about ForgeDocs? We've got answers.</p>
           </div>
           <div className="max-w-2xl mx-auto space-y-4">
-            <div className="rounded-xl border border-[#E2E8F0] bg-[#FFFFFF]">
-              <div className="p-6 border-b border-[#E2E8F0] flex justify-between items-center cursor-pointer group">
-                <h3 className="text-lg font-medium text-[#0F172A]">How do I get started?</h3>
-                <ArrowRight className="h-5 w-5 text-[#64748B] group-hover:text-[#2563EB]" />
+            <div className="rounded-xl border border-input bg-background">
+              <div className="p-6 border-b border-input flex justify-between items-center cursor-pointer group">
+                <h3 className="text-lg font-medium text-foreground">How do I get started?</h3>
+                <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
               </div>
-              <div className="p-6 text-sm text-[#64748B]">Sign up for a free account and start creating documents in minutes. No credit card required.</div>
+              <div className="p-6 text-sm text-muted-foreground">Sign up for a free account and start creating documents in minutes. No credit card required.</div>
             </div>
-            <div className="rounded-xl border border-[#E2E8F0] bg-[#FFFFFF]">
-              <div className="p-6 border-b border-[#E2E8F0] flex justify-between items-center cursor-pointer group">
-                <h3 className="text-lg font-medium text-[#0F172A]">What file formats are supported?</h3>
-                <ArrowRight className="h-5 w-5 text-[#64748B] group-hover:text-[#2563EB]" />
+            <div className="rounded-xl border border-input bg-background">
+              <div className="p-6 border-b border-input flex justify-between items-center cursor-pointer group">
+                <h3 className="text-lg font-medium text-foreground">What formats are supported?</h3>
+                <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
               </div>
-              <div className="p-6 text-sm text-[#64748B]">We support DOCX, PDF, XLSX, PPTX, CSV, ODT, HTML, MD, EPUB, RTF, and 50+ other formats. Convert between any supported format with one click.</div>
+              <div className="p-6 text-sm text-muted-foreground">We support DOCX, PDF, XLSX, PPTX, CSV, and 50+ other formats.</div>
             </div>
-            <div className="rounded-xl border border-[#E2E8F0] bg-[#FFFFFF]">
-              <div className="p-6 border-b border-[#E2E8F0] flex justify-between items-center cursor-pointer group">
-                <h3 className="text-lg font-medium text-[#0F172A]">Is my data secure?</h3>
-                <ArrowRight className="h-5 w-5 text-[#64748B] group-hover:text-[#2563EB]" />
+            <div className="rounded-xl border border-input bg-background">
+              <div className="p-6 border-b border-input flex justify-between items-center cursor-pointer group">
+                <h3 className="text-lg font-medium text-foreground">Is my data secure?</h3>
+                <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
               </div>
-              <div className="p-6 text-sm text-[#64748B]">Yes. All documents are encrypted at rest and in transit using AES-256 encryption, with granular access controls and full audit trails for every document action.</div>
-            </div>
-            <div className="rounded-xl border border-[#E2E8F0] bg-[#FFFFFF]">
-              <div className="p-6 border-b border-[#E2E8F0] flex justify-between items-center cursor-pointer group">
-                <h3 className="text-lg font-medium text-[#0F172A]">Is ForgeDocs SOC 2 compliant?</h3>
-                <ArrowRight className="h-5 w-5 text-[#64748B] group-hover:text-[#2563EB]" />
-              </div>
-              <div className="p-6 text-sm text-[#64748B]">Yes. ForgeDocs is SOC 2 Type II compliant and GDPR ready, with industry-standard security practices protecting your documents.</div>
-            </div>
-            <div className="rounded-xl border border-[#E2E8F0] bg-[#FFFFFF]">
-              <div className="p-6 border-b border-[#E2E8F0] flex justify-between items-center cursor-pointer group">
-                <h3 className="text-lg font-medium text-[#0F172A]">Can I collaborate with my team?</h3>
-                <ArrowRight className="h-5 w-5 text-[#64748B] group-hover:text-[#2563EB]" />
-              </div>
-              <div className="p-6 text-sm text-[#64748B]">Absolutely. ForgeDocs includes role-based access control, comments, and real-time collaboration features for secure teamwork on shared documents.</div>
-            </div>
-            <div className="rounded-xl border border-[#E2E8F0] bg-[#FFFFFF]">
-              <div className="p-6 border-b border-[#E2E8F0] flex justify-between items-center cursor-pointer group">
-                <h3 className="text-lg font-medium text-[#0F172A]">Do you offer a free trial?</h3>
-                <ArrowRight className="h-5 w-5 text-[#64748B] group-hover:text-[#2563EB]" />
-              </div>
-              <div className="p-6 text-sm text-[#64748B]">Yes. All paid plans include a 14-day free trial. No credit card is required to start with the Free plan.</div>
-            </div>
-            <div className="rounded-xl border border-[#E2E8F0] bg-[#FFFFFF]">
-              <div className="p-6 border-b border-[#E2E8F0] flex justify-between items-center cursor-pointer group">
-                <h3 className="text-lg font-medium text-[#0F172A]">Can I cancel anytime?</h3>
-                <ArrowRight className="h-5 w-5 text-[#64748B] group-hover:text-[#2563EB]" />
-              </div>
-              <div className="p-6 text-sm text-[#64748B]">Yes. You can cancel your subscription at any time from the billing dashboard. Your access continues until the end of your billing period.</div>
-            </div>
-            <div className="rounded-xl border border-[#E2E8F0] bg-[#FFFFFF]">
-              <div className="p-6 border-b border-[#E2E8F0] flex justify-between items-center cursor-pointer group">
-                <h3 className="text-lg font-medium text-[#0F172A]">What are the storage and file size limits?</h3>
-                <ArrowRight className="h-5 w-5 text-[#64748B] group-hover:text-[#2563EB]" />
-              </div>
-              <div className="p-6 text-sm text-[#64748B]">Free: 5 GB storage, 10 MB max file. Pro: 100 GB storage, 50 MB max file. Business: 500 GB storage, 100 MB max file.</div>
+              <div className="p-6 text-sm text-muted-foreground">Yes. All documents are encrypted at rest and in transit using AES-256 encryption.</div>
             </div>
           </div>
         </div>
@@ -548,12 +383,12 @@ export default function LandingPage() {
       {/* CTA Section */}
       <section className="py-24 px-4 sm:px-6 lg:px-8">
         <div className="max-w-3xl mx-auto">
-          <div className="rounded-2xl bg-[#2563EB] p-8 sm:p-12 text-white text-center">
+          <div className="rounded-2xl bg-primary p-8 sm:p-12 text-primary-foreground text-center">
             <h2 className="text-3xl font-bold mb-4">Ready to organize your documents?</h2>
-            <p className="text-[#2563EB]/20 mb-8 max-w-[65ch] mx-auto">Join thousands of teams using ForgeDocs to streamline their document workflow.</p>
+            <p className="text-primary-foreground/90 mb-8 max-w-[65ch] mx-auto">Join thousands of teams using ForgeDocs to streamline their document workflow.</p>
             <Link
               href="/auth/signup"
-              className="inline-block px-8 py-4 bg-[#FFFFFF] text-[#2563EB] font-semibold rounded-lg hover:bg-[#F1F5F9] transition-colors shadow-lg shadow-[#2563EB]/30"
+              className="inline-block px-8 py-4 bg-background text-primary font-semibold rounded-lg hover:bg-primary/90 transition-colors shadow-lg shadow-primary/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-foreground focus-visible:ring-offset-2"
             >
               Start for free
             </Link>
@@ -562,46 +397,46 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="py-12 px-4 sm:px-6 lg:px-8 border-t border-[#E2E8F0] bg-[#FFFFFF]">
+      <footer className="py-12 px-4 sm:px-6 lg:px-8 border-t border-input bg-background">
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
             <div className="col-span-1 md:col-span-2">
               <div className="flex items-center gap-2 mb-4">
-                <div className="h-8 w-8 rounded-lg bg-[#2563EB] flex items-center justify-center text-white font-bold text-sm">
+                <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center text-white font-bold text-sm">
                   F
                 </div>
-                <span className="text-xl font-bold tracking-tight text-[#0F172A]">ForgeDocs</span>
+                <span className="text-xl font-bold tracking-tight text-foreground">ForgeDocs</span>
               </div>
-              <p className="text-sm text-[#64748B] max-w-[35ch]">Professional document management for modern teams. Simple, secure, and scalable.</p>
+              <p className="text-sm text-muted-foreground max-w-[35ch]">Professional document management for modern teams. Simple, secure, and scalable.</p>
             </div>
             <div className="grid grid-cols-2 gap-6">
               <div>
-                <h4 className="text-sm font-semibold text-[#0F172A] mb-4 uppercase tracking-tighter">Product</h4>
+                <h4 className="text-sm font-semibold text-foreground mb-4 uppercase tracking-tighter">Product</h4>
                 <ul className="space-y-2">
-                  <li><a href="#features" className="text-sm text-[#64748B] hover:text-[#2563EB] transition-colors">Features</a></li>
-                  <li><a href="#solutions" className="text-sm text-[#64748B] hover:text-[#2563EB] transition-colors">Solutions</a></li>
-                  <li><a href="#pricing" className="text-sm text-[#64748B] hover:text-[#2563EB] transition-colors">Pricing</a></li>
-                  <li><a href="#faq" className="text-sm text-[#64748B] hover:text-[#2563EB] transition-colors">FAQ</a></li>
+                  <li><a href="#features" className="text-sm text-muted-foreground hover:text-primary transition-colors">Features</a></li>
+                  <li><a href="#solutions" className="text-sm text-muted-foreground hover:text-primary transition-colors">Solutions</a></li>
+                  <li><a href="#pricing" className="text-sm text-muted-foreground hover:text-primary transition-colors">Pricing</a></li>
+                  <li><a href="#faq" className="text-sm text-muted-foreground hover:text-primary transition-colors">FAQ</a></li>
                 </ul>
               </div>
               <div>
-                <h4 className="text-sm font-semibold text-[#0F172A] mb-4 uppercase tracking-tighter">Company</h4>
+                <h4 className="text-sm font-semibold text-foreground mb-4 uppercase tracking-tighter">Company</h4>
                 <ul className="space-y-2">
-                  <li><a href="#" className="text-sm text-[#64748B] hover:text-[#2563EB] transition-colors">About</a></li>
-                  <li><a href="#" className="text-sm text-[#64748B] hover:text-[#2563EB] transition-colors">Contact</a></li>
-                  <li><a href="#" className="text-sm text-[#64748B] hover:text-[#2563EB] transition-colors">Blog</a></li>
-                  <li><a href="#" className="text-sm text-[#64748B] hover:text-[#2563EB] transition-colors">Help</a></li>
+                  <li><a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">About</a></li>
+                  <li><a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">Contact</a></li>
+                  <li><a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">Blog</a></li>
+                  <li><a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">Help</a></li>
                 </ul>
               </div>
             </div>
           </div>
-          <div className="border-t border-[#E2E8F0] pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-xs text-[#64748B]">© 2026 ForgeDocs Inc. All rights reserved.</p>
+          <div className="border-t border-input pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+            <p className="text-xs text-muted-foreground">© 2026 ForgeDocs Inc. All rights reserved.</p>
             <div className="flex items-center gap-4">
-              <a href="#" className="text-sm text-[#64748B] hover:text-[#2563EB] transition-colors">
+              <a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                 Privacy
               </a>
-              <a href="#" className="text-sm text-[#64748B] hover:text-[#2563EB] transition-colors">
+              <a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                 Terms
               </a>
             </div>
@@ -614,12 +449,12 @@ export default function LandingPage() {
 
 function FeatureCard({ icon, title, description }: { icon: React.ReactNode; title: string; description: string }) {
   return (
-    <div className="rounded-xl border border-[#E2E8F0] bg-[#FFFFFF] p-6 hover:border-[#2563EB] transition-colors group">
-      <div className="h-11 w-11 rounded-lg bg-[#F1F5F9] flex items-center justify-center text-[#2563EB] mb-4">
+    <div className="rounded-xl border border-input bg-background p-6 hover:border-primary transition-colors">
+      <div className="h-11 w-11 rounded-lg bg-muted flex items-center justify-center text-primary mb-4">
         {icon}
       </div>
-      <h3 className="text-lg font-bold text-[#0F172A] mb-3">{title}</h3>
-      <p className="text-sm text-[#64748B] leading-relaxed">{description}</p>
+      <h3 className="text-lg font-bold text-foreground mb-3">{title}</h3>
+      <p className="text-sm text-muted-foreground leading-relaxed">{description}</p>
     </div>
   )
 }
@@ -628,25 +463,25 @@ function StepCard({ number, title, description }: { number: string; title: strin
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-3">
-        <div className="h-10 w-10 rounded-lg bg-[#2563EB] flex items-center justify-center text-white font-bold text-lg">
+        <div className="h-10 w-10 rounded-lg bg-primary flex items-center justify-center text-white font-bold text-lg">
           {number}
         </div>
-        <h3 className="text-lg font-bold text-[#0F172A]">{title}</h3>
+        <h3 className="text-lg font-bold text-foreground">{title}</h3>
       </div>
-      <p className="text-sm text-[#64748B] leading-relaxed">{description}</p>
+      <p className="text-sm text-muted-foreground leading-relaxed">{description}</p>
     </div>
   )
 }
 
 function TrustCard({ icon, title, description }: { icon: React.ReactNode; title: string; description: string }) {
   return (
-    <div className="flex items-start gap-3 p-6 rounded-lg border border-[#E2E8F0] bg-[#FFFFFF] hover:border-[#2563EB]/50 transition-colors">
-      <div className="h-10 w-10 rounded-lg bg-[#2563EB]/10 flex items-center justify-center text-[#2563EB]">
+    <div className="flex items-start gap-3 p-6 rounded-lg border border-input bg-background hover:border-primary/50 transition-colors">
+      <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
         {icon}
       </div>
       <div>
-        <h3 className="text-lg font-bold text-[#0F172A] mb-1">{title}</h3>
-        <p className="text-sm text-[#64748B] leading-relaxed">{description}</p>
+        <h3 className="text-lg font-bold text-foreground mb-1">{title}</h3>
+        <p className="text-sm text-muted-foreground leading-relaxed">{description}</p>
       </div>
     </div>
   )
