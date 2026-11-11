@@ -95,6 +95,17 @@ export default function EditorPage() {
                         <Share2 className="h-4 w-4" />
                         New Document
                       </Button>
+                      {documentId && (
+                        <Button
+                          onClick={() => {
+                            window.location.href = `/reader/${documentId}`
+                          }}
+                          variant="outline"
+                          size="sm"
+                        >
+                          Reader view
+                        </Button>
+                      )}
                     </div>
                   </div>
                   <SimpleEditor documentId={documentId as string} content={content} onChange={setContent} />

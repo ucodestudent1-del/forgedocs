@@ -65,12 +65,13 @@ export default function DocumentsPage() {
 
       <div className="overflow-hidden rounded-lg border">
         <div className="bg-muted px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-          <div className="grid grid-cols-12">
-            <div className="col-span-6">Title</div>
-            <div className="col-span-3">Type</div>
-            <div className="col-span-2">Updated</div>
-            <div className="col-span-1">Status</div>
-          </div>
+            <div className="grid grid-cols-12">
+              <div className="col-span-6">Title</div>
+              <div className="col-span-3">Type</div>
+              <div className="col-span-2">Updated</div>
+              <div className="col-span-1">Status</div>
+              <div className="col-span-1">Action</div>
+            </div>
         </div>
         <div className="divide-y overflow-x-auto">
           {loading ? (
@@ -113,9 +114,16 @@ export default function DocumentsPage() {
                 <div className="col-span-2 text-sm text-muted-foreground">
                   {new Date(doc.updated_at).toLocaleDateString()}
                 </div>
-                <div className="col-span-1 text-sm">
-                  <Badge variant="secondary">{doc.version}</Badge>
-                </div>
+              <div className="col-span-1 text-sm">
+                <Badge variant="secondary">{doc.version}</Badge>
+              </div>
+              <div className="col-span-1">
+                <Button size="sm" asChild variant="outline" className="w-auto" onClick={(e) => e.stopPropagation()}>
+                  <a href={`/reader/${doc.id}`} className="text-xs text-primary hover:underline flex items-center gap-1">
+                    Read
+                  </a>
+                </Button>
+              </div>
               </div>
             ))
           )}
