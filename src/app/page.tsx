@@ -2,7 +2,7 @@ import Link from "next/link"
 
 export default function Page() {
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col [scroll-behavior:smooth]">
       {/* Navigation */}
       <nav className="fixed top-0 w-full z-50 border-b bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -13,13 +13,13 @@ export default function Page() {
               </Link>
             </div>
             <div className="flex items-center gap-4">
-              <Link href="/pricing" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
+              <Link href="#pricing" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
                 Pricing
               </Link>
-              <Link href="/features" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
+              <Link href="#features" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
                 Features
               </Link>
-              <Link href="/solutions" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
+              <Link href="#solutions" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
                 Solutions
               </Link>
               <Link href="/auth/signup" className="px-4 py-2 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
@@ -109,7 +109,7 @@ export default function Page() {
       </section>
 
       {/* Features */}
-      <section className="py-24 px-4 sm:px-6 lg:px-8">
+      <section id="features" className="py-24 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold tracking-tight text-foreground mb-6">Everything you need to manage documents</h2>
@@ -152,7 +152,7 @@ export default function Page() {
       </section>
 
       {/* Use Cases */}
-      <section className="py-24 px-4 sm:px-6 lg:px-8 bg-muted/50">
+      <section id="solutions" className="py-24 px-4 sm:px-6 lg:px-8 bg-muted/50">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold tracking-tight text-foreground mb-6">Built for your industry</h2>
@@ -185,7 +185,7 @@ export default function Page() {
       </section>
 
       {/* Pricing Preview */}
-      <section className="py-24 px-4 sm:px-6 lg:px-8">
+      <section id="pricing" className="py-24 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold tracking-tight text-foreground mb-6">Simple, transparent pricing</h2>
