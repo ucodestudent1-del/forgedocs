@@ -38,9 +38,6 @@ RUN npm install
 COPY . ./
 RUN npm run build
 
-# Verify standalone output exists
-RUN test -f /app/.next/standalone/server.js || (echo "STANDALONE BUILD FAILED" && exit 1)
-
 # Runner stage
 FROM node:24-alpine AS runner
 WORKDIR /app
@@ -54,13 +51,11 @@ RUN adduser --system --uid 1001 nodejs
 
 USER nodejs
 
-# Copy built application from builder (standalone output)
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
+# Copy built application from builder
+COPY --from=builder /app/package.json ./package.json
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
 
-# Copy start script (always fresh)
-COPY start.js ./start.js
-
 EXPOSE 3000
-CMD ["node", "start.js"]
+CMD ["node_modules/.bin/next", "start"]
