@@ -12,7 +12,6 @@ export default function Page() {
                 ForgeDocs
               </Link>
             </div>
-
             <div className="flex items-center gap-4">
               <Link href="/pricing" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
                 Pricing
@@ -23,18 +22,9 @@ export default function Page() {
               <Link href="/solutions" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
                 Solutions
               </Link>
-              <Link href="/dashboard" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
-                Dashboard
-              </Link>
-              <Link href="/auth/login" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
-                Sign in
-              </Link>
-              <a
-                href="/auth/signup"
-                className="px-4 py-2 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
-              >
+              <Link href="/auth/signup" className="px-4 py-2 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
                 Get started
-              </a>
+              </Link>
             </div>
           </div>
         </div>
@@ -43,11 +33,6 @@ export default function Page() {
       {/* Hero Section */}
       <section className="relative pt-32 pb-24 px-4 sm:px-6 lg:px-8 overflow-hidden">
         <div className="max-w-7xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 rounded-full border border-input bg-secondary px-3 py-1 text-xs font-semibold text-secondary-foreground mb-8">
-            <span className="relative flex h-1.5 w-1.5 rounded-full bg-green-500 after:absolute after:-inset-0.5 after:rounded-full after:ring-2 after:ring-green-500 after:opacity-50"></span>
-            SOC 2 Type II Compliant
-          </div>
-
           <h1 className="text-5xl md:text-6xl font-bold tracking-tight text-foreground mb-6">
             Professional document management for modern teams
           </h1>
@@ -56,18 +41,9 @@ export default function Page() {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
-            <a
-              href="/dashboard"
-              className="px-8 py-4 bg-primary text-primary-foreground font-medium rounded-lg hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20"
-            >
+            <Link href="/auth/signup" className="px-8 py-4 bg-primary text-primary-foreground font-medium rounded-lg hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20">
               Start building
-            </a>
-            <a
-              href="/templates"
-              className="px-8 py-4 border border-input bg-background hover:bg-accent text-foreground font-medium rounded-lg transition-colors"
-            >
-              Browse templates
-            </a>
+            </Link>
           </div>
 
           {/* Trust badges */}
@@ -169,7 +145,7 @@ export default function Page() {
             <FeatureCard
               icon="🔒"
               title="Enterprise Security"
-              description="SOC 2 Type II compliant, end-to-end encryption, and granular permissions for every document."
+              description="End-to-end encryption and granular permissions for every document."
             />
           </div>
         </div>
@@ -233,7 +209,7 @@ export default function Page() {
               features={["Unlimited documents", "Unlimited templates", "All format conversions", "Priority support", "Team collaboration"]}
               isFeatured={true}
               ctaText="Start free trial"
-              ctaHref="/pricing"
+              ctaHref="/auth/signup"
             />
             <PricingCard
               name="Business"
@@ -267,7 +243,7 @@ export default function Page() {
             />
             <FaqItem
               question="Is my data secure?"
-              answer="Yes. ForgeDocs is SOC 2 Type II compliant with end-to-end encryption, granular access controls, and full audit trails for every document action."
+              answer="Yes. ForgeDocs uses end-to-end encryption, granular access controls, and full audit trails for every document action."
             />
             <FaqItem
               question="Can I collaborate with my team?"
@@ -295,12 +271,9 @@ export default function Page() {
           <div className="rounded-2xl bg-primary p-8 sm:p-12 text-primary-foreground text-center">
             <h2 className="text-3xl font-bold mb-4">Ready to organize your documents?</h2>
             <p className="text-primary-foreground/90 mb-8 max-w-lg mx-auto">Join thousands of teams using ForgeDocs to streamline their document workflow.</p>
-            <a
-              href="/auth/signup"
-              className="inline-block px-8 py-4 bg-background text-primary font-semibold rounded-lg hover:bg-primary/90 transition-colors shadow-lg shadow-primary/30"
-            >
+            <Link href="/auth/signup" className="inline-block px-8 py-4 bg-background text-primary font-semibold rounded-lg hover:bg-primary/90 transition-colors shadow-lg shadow-primary/30">
               Start for free
-            </a>
+            </Link>
           </div>
         </div>
       </section>
@@ -372,16 +345,13 @@ function PricingCard({
           </li>
         ))}
       </ul>
-      <a
-        href={ctaHref}
-        className={`w-full py-3 rounded-lg font-medium transition-colors ${
-          isFeatured
-            ? "bg-primary text-primary-foreground hover:bg-primary/90"
-            : "border border-input bg-background text-foreground hover:bg-accent"
-        }`}
-      >
+      <Link href={ctaHref} className={`w-full py-3 rounded-lg font-medium transition-colors ${
+        isFeatured
+          ? "bg-primary text-primary-foreground hover:bg-primary/90"
+          : "border border-input bg-background text-foreground hover:bg-accent"
+      }`}>
         {ctaText}
-      </a>
+      </Link>
     </div>
   )
 }
