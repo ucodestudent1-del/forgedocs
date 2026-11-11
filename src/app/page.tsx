@@ -342,6 +342,102 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Solutions Section */}
+      <section id="solutions" className="py-24 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl font-bold tracking-tight text-[#0F172A] mb-4">Built for your industry</h2>
+            <p className="text-lg text-[#64748B] max-w-[65ch] mx-auto">See how ForgeDocs fits your specific workflow with industry-tailored templates and features.</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="rounded-xl border border-[#E2E8F0] bg-[#FFFFFF] p-6">
+              <div className="text-2xl mb-3">📋</div>
+              <h3 className="text-lg font-bold text-[#0F172A] mb-2">Legal</h3>
+              <p className="text-sm text-[#64748B]">Manage contracts, NDAs, and legal documents with version control and e-signature ready workflows.</p>
+            </div>
+            <div className="rounded-xl border border-[#E2E8F0] bg-[#FFFFFF] p-6">
+              <div className="text-2xl mb-3">💰</div>
+              <h3 className="text-lg font-bold text-[#0F172A] mb-2">Finance</h3>
+              <p className="text-sm text-[#64748B]">Generate invoices, financial reports, and compliance documents with automated formatting.</p>
+            </div>
+            <div className="rounded-xl border border-[#E2E8F0] bg-[#FFFFFF] p-6">
+              <div className="text-2xl mb-3">👥</div>
+              <h3 className="text-lg font-bold text-[#0F172A] mb-2">HR</h3>
+              <p className="text-sm text-[#64748B]">Streamline offer letters, employment agreements, and onboarding documents for new hires.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing Section */}
+      <section id="pricing" className="py-24 px-4 sm:px-6 lg:px-8 bg-[#F8FAFC]">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl font-bold tracking-tight text-[#0F172A] mb-4">Simple, transparent pricing</h2>
+            <p className="text-lg text-[#64748B] max-w-[65ch] mx-auto">Choose the plan that fits your team. All plans include a 14-day free trial.</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+            <div className="rounded-xl border border-[#E2E8F0] bg-[#FFFFFF] p-6">
+              <h3 className="text-lg font-bold text-[#0F172A] mb-1">Free</h3>
+              <p className="text-sm text-[#64748B]">For individuals getting started</p>
+              <div className="mt-3 flex items-baseline">
+                <span className="text-3xl font-bold text-[#0F172A]">$0</span>
+                <span className="text-sm text-[#64748B] ml-1">/mo</span>
+              </div>
+            </div>
+            <div className="rounded-xl border border-[#2563EB] bg-[#FFFFFF]/5 p-6 ring-1 ring-[#2563EB] shadow-lg">
+              <h3 className="text-lg font-bold text-[#0F172A] mb-1">Pro</h3>
+              <p className="text-sm text-[#64748B]">For growing teams</p>
+              <div className="mt-3 flex items-baseline">
+                <span className="text-3xl font-bold text-[#0F172A]">$19</span>
+                <span className="text-sm text-[#64748B] ml-1">/mo</span>
+              </div>
+            </div>
+            <div className="rounded-xl border border-[#E2E8F0] bg-[#FFFFFF] p-6">
+              <h3 className="text-lg font-bold text-[#0F172A] mb-1">Business</h3>
+              <p className="text-sm text-[#64748B]">For established organizations</p>
+              <div className="mt-3 flex items-baseline">
+                <span className="text-3xl font-bold text-[#0F172A]">$49</span>
+                <span className="text-sm text-[#64748B] ml-1">/mo</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section id="faq" className="py-24 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl font-bold tracking-tight text-[#0F172A] mb-4">Frequently asked questions</h2>
+            <p className="text-lg text-[#64748B] max-w-[65ch] mx-auto">Have questions about ForgeDocs? We've got answers.</p>
+          </div>
+          <div className="max-w-2xl mx-auto space-y-4">
+            <div className="rounded-xl border border-[#E2E8F0] bg-[#FFFFFF]">
+              <div className="p-6 border-b border-[#E2E8F0] flex justify-between items-center cursor-pointer group">
+                <h3 className="text-lg font-medium text-[#0F172A]">How do I get started?</h3>
+                <ArrowRight className="h-5 w-5 text-[#64748B] group-hover:text-[#2563EB]" />
+              </div>
+              <div className="p-6 text-sm text-[#64748B]">Sign up for a free account and start creating documents in minutes. No credit card required.</div>
+            </div>
+            <div className="rounded-xl border border-[#E2E8F0] bg-[#FFFFFF]">
+              <div className="p-6 border-b border-[#E2E8F0] flex justify-between items-center cursor-pointer group">
+                <h3 className="text-lg font-medium text-[#0F172A]">What formats are supported?</h3>
+                <ArrowRight className="h-5 w-5 text-[#64748B] group-hover:text-[#2563EB]" />
+              </div>
+              <div className="p-6 text-sm text-[#64748B]">We support DOCX, PDF, XLSX, PPTX, CSV, and 50+ other formats.</div>
+            </div>
+            <div className="rounded-xl border border-[#E2E8F0] bg-[#FFFFFF]">
+              <div className="p-6 border-b border-[#E2E8F0] flex justify-between items-center cursor-pointer group">
+                <h3 className="text-lg font-medium text-[#0F172A]">Is my data secure?</h3>
+                <ArrowRight className="h-5 w-5 text-[#64748B] group-hover:text-[#2563EB]" />
+              </div>
+              <div className="p-6 text-sm text-[#64748B]">Yes. All documents are encrypted at rest and in transit using AES-256 encryption.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* CTA Section */}
       <section className="py-24 px-4 sm:px-6 lg:px-8">
         <div className="max-w-3xl mx-auto">
