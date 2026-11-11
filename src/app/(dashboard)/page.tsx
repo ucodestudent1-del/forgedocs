@@ -13,6 +13,8 @@ import {
   Lock,
   Plus,
 } from "lucide-react"
+import { DashboardHeader } from "@/components/dashboard/header"
+import { useToast } from "@/components/ui/use-toast"
 
 const DOC_TYPE_ICONS: Record<string, React.ElementType> = {
   pdf: File,
@@ -25,6 +27,7 @@ const DOC_TYPE_ICONS: Record<string, React.ElementType> = {
 export default function DashboardPage() {
   const [documents, setDocuments] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const { toast } = useToast()
 
   useEffect(() => {
     fetchDocuments()
@@ -35,25 +38,31 @@ export default function DashboardPage() {
       const res = await fetch("/api/documents?limit=10")
       const data = await res.json()
       setDocuments(data.documents || [])
+      toast({ title: "Documents loaded", variant: "success" })
     } catch (e) {
       console.error(e)
+      toast({ title: "Failed to load documents", variant: "destructive" })
     } finally {
       setLoading(false)
     }
   }
 
+  async function handleCreateDocument() {
+    toast({ title: "Creating document...", variant: "info" })
+    // Redirect to document generator
+    window.location.href = "/document-generator"
+  }
+
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-muted-foreground">Manage your documents and templates</p>
-        </div>
-        <Button className="flex items-center gap-2">
+      <DashboardHeader
+        title="Dashboard"
+        description="Manage your documents and templates"
+        action={<Button className="flex items-center gap-2" onClick={handleCreateDocument}>
           <Plus className="h-4 w-4" />
           New Document
-        </Button>
-      </div>
+        </Button>}
+      />
 
       {/* Stats cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -75,6 +84,12 @@ export default function DashboardPage() {
             <FileText className="h-12 w-12 mx-auto mb-2 opacity-50" />
             <h3 className="font-medium">No documents yet</h3>
             <p>Create your first document to get started.</p>
+            <Button
+              className="mt-4"
+              onClick={handleCreateDocument}
+            >
+              Create Document
+            </Button>
           </div>
         ) : (
           documents.map((doc) => (
@@ -104,7 +119,9 @@ function StatCard({ title, value, icon: Icon, change }: { title: string; value: 
 function DocCard({ doc }: { doc: any }) {
   const Icon = DOC_TYPE_ICONS[doc.mime_type?.split("/").pop() || "txt"] || FileText
   return (
-    <Card className="hover:border-primary/50 transition-colors cursor-pointer group">
+    <Card className="hover:border-primary/50 transition-colors cursor-pointer group" onClick={() => {
+      window.location.href = `/editor?id=${doc.id}`
+    }}>
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center text-muted-foreground">
