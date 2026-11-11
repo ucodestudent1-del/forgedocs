@@ -9,6 +9,9 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-sans" })
 export const metadata: Metadata = {
   title: "ForgeDocs",
   description: "Professional document management platform",
+  icons: {
+    icon: "/favicon.svg",
+  },
 }
 
 export default function RootLayout({
