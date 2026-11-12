@@ -18,7 +18,6 @@ import {
   ChevronDown,
 } from "lucide-react"
 import { Navbar } from "@/components/ui/navbar"
-import { Link } from "@/components/ui/link"
 
 export default function LandingPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null)
@@ -49,16 +48,12 @@ export default function LandingPage() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-              <Link href="/auth/signup">
-                <a className="px-8 py-4 bg-primary text-primary-foreground font-medium rounded-lg hover:bg-primary/90 transition-colors shadow-lg shadow-primary/30 text-lg">
-                  Start building
-                </a>
-              </Link>
-              <Link href="/templates">
-                <a className="px-8 py-4 bg-background text-foreground font-medium rounded-lg border border-input hover:bg-accent transition-colors text-lg">
-                  Browse templates
-                </a>
-              </Link>
+              <a href="/auth/signup" className="px-8 py-4 bg-primary text-primary-foreground font-medium rounded-lg hover:bg-primary/90 transition-colors shadow-lg shadow-primary/30 text-lg">
+                Start building
+              </a>
+              <a href="/templates" className="px-8 py-4 bg-background text-foreground font-medium rounded-lg border border-input hover:bg-accent transition-colors text-lg">
+                Browse templates
+              </a>
             </div>
 
             <div className="flex flex-wrap items-center justify-center gap-8 md:gap-16 opacity-60 text-xs font-medium uppercase tracking-tighter text-muted-foreground">
@@ -105,11 +100,9 @@ export default function LandingPage() {
                   <div className="h-8 w-8 rounded-full bg-muted/50 flex items-center justify-center text-[10px] font-medium text-muted-foreground">
                     JD
                   </div>
-                  <Link href="/auth/login">
-                    <a className="h-8 px-3 text-sm font-medium text-foreground hover:bg-muted rounded-md transition-colors">
-                      Sign in
-                    </a>
-                  </Link>
+                  <a href="/auth/login" className="h-8 px-3 text-sm font-medium text-foreground hover:bg-muted rounded-md transition-colors">
+                    Sign in
+                  </a>
                 </div>
             </div>
             <div className="p-8">
@@ -125,8 +118,7 @@ export default function LandingPage() {
                         <p className="text-xs text-muted-foreground">124 documents</p>
                       </div>
                     </div>
-                    <Link href="/auth/signup">
-                      <a className="flex items-center gap-3 p-3 rounded-lg bg-background border border-input hover:bg-muted w-full cursor-pointer transition-colors justify-start">
+                    <a href="/auth/signup" className="flex items-center gap-3 p-3 rounded-lg bg-background border border-input hover:bg-muted w-full cursor-pointer transition-colors justify-start">
                         <div className="h-8 w-8 rounded-md bg-primary/10 flex items-center justify-center text-primary">
                           <FileText className="h-4 w-4" />
                         </div>
@@ -135,9 +127,7 @@ export default function LandingPage() {
                           <p className="text-xs text-muted-foreground">Blank document</p>
                         </div>
                       </a>
-                    </Link>
-                    <Link href="/templates">
-                      <a className="flex items-center gap-3 p-3 rounded-lg bg-background border border-input hover:bg-muted w-full cursor-pointer transition-colors justify-start">
+                    <a href="/templates" className="flex items-center gap-3 p-3 rounded-lg bg-background border border-input hover:bg-muted w-full cursor-pointer transition-colors justify-start">
                         <div className="h-8 w-8 rounded-md bg-primary/10 flex items-center justify-center text-primary">
                           <Plus className="h-4 w-4" />
                         </div>
@@ -146,7 +136,6 @@ export default function LandingPage() {
                           <p className="text-xs text-muted-foreground">From gallery</p>
                         </div>
                       </a>
-                    </Link>
                   </div>
                 </div>
                 <div className="col-span-8">
@@ -488,11 +477,9 @@ export default function LandingPage() {
           <div className="rounded-2xl bg-primary p-8 sm:p-12 text-primary-foreground text-center">
             <h2 className="text-3xl font-bold mb-4">Ready to organize your documents?</h2>
             <p className="text-primary-foreground/90 mb-8 max-w-[65ch] mx-auto">Join thousands of teams using ForgeDocs to streamline their document workflow.</p>
-            <Link href="/auth/signup">
-              <a className="inline-block px-8 py-4 bg-background text-primary font-semibold rounded-lg hover:bg-primary/90 transition-colors shadow-lg shadow-primary/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-foreground focus-visible:ring-offset-2 text-lg">
-                Start for free
-              </a>
-            </Link>
+            <a href="/auth/signup" className="inline-block px-8 py-4 bg-background text-primary font-semibold rounded-lg hover:bg-primary/90 transition-colors shadow-lg shadow-primary/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-foreground focus-visible:ring-offset-2 text-lg">
+              Start for free
+            </a>
           </div>
         </div>
       </section>
@@ -523,10 +510,10 @@ export default function LandingPage() {
               <div>
                 <h4 className="text-sm font-semibold text-foreground mb-4 uppercase tracking-tighter">Company</h4>
                 <ul className="space-y-2">
-                  <li><Link href="/about"><a className="text-sm text-muted-foreground hover:text-primary transition-colors">About</a></Link></li>
-                  <li><Link href="/contact"><a className="text-sm text-muted-foreground hover:text-primary transition-colors">Contact</a></Link></li>
-                  <li><Link href="/blog"><a className="text-sm text-muted-foreground hover:text-primary transition-colors">Blog</a></Link></li>
-                  <li><Link href="/help"><a className="text-sm text-muted-foreground hover:text-primary transition-colors">Help</a></Link></li>
+                  <li><a href="/about" className="text-sm text-muted-foreground hover:text-primary transition-colors">About</a></li>
+                  <li><a href="/contact" className="text-sm text-muted-foreground hover:text-primary transition-colors">Contact</a></li>
+                  <li><a href="/blog" className="text-sm text-muted-foreground hover:text-primary transition-colors">Blog</a></li>
+                  <li><a href="/help" className="text-sm text-muted-foreground hover:text-primary transition-colors">Help</a></li>
                 </ul>
               </div>
             </div>
@@ -534,8 +521,8 @@ export default function LandingPage() {
           <div className="border-t border-input pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-xs text-muted-foreground">© 2026 ForgeDocs Inc. All rights reserved.</p>
             <div className="flex items-center gap-4">
-              <Link href="/privacy"><a className="text-sm text-muted-foreground hover:text-primary transition-colors">Privacy</a></Link>
-              <Link href="/terms"><a className="text-sm text-muted-foreground hover:text-primary transition-colors">Terms</a></Link>
+              <a href="/privacy" className="text-sm text-muted-foreground hover:text-primary transition-colors">Privacy</a>
+              <a href="/terms" className="text-sm text-muted-foreground hover:text-primary transition-colors">Terms</a>
             </div>
           </div>
         </div>
@@ -693,13 +680,11 @@ function PricingCard({
           </li>
         ))}
       </ul>
-      <Link href={ctaHref}>
-        <a className={`w-full py-3 rounded-lg font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 text-center block ${isFeatured
+      <a href={ctaHref} className={`w-full py-3 rounded-lg font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 text-center block ${isFeatured
           ? "bg-primary text-primary-foreground hover:bg-primary/90"
           : "border border-input bg-background text-foreground hover:bg-accent"}`}>
           {ctaText}
         </a>
-      </Link>
     </div>
   )
 }
