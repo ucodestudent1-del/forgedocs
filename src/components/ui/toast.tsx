@@ -103,15 +103,17 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   const { toast, dismiss, toasts } = useToast()
 
   return (
-    <div className="fixed top-4 right-4 z-50 flex flex-col gap-2 pointer-events-none">
-      {toasts.map((t) => (
-        <Toast
-          key={t.id}
-          toast={t}
-          onDismiss={() => dismiss(t.id!)}
-        />
-      ))}
-      <div style={{ pointerEvents: "none" }}>{children}</div>
-    </div>
+    <>
+      <div className="fixed top-4 right-4 z-50 flex flex-col gap-2 pointer-events-none">
+        {toasts.map((t) => (
+          <Toast
+            key={t.id}
+            toast={t}
+            onDismiss={() => dismiss(t.id!)}
+          />
+        ))}
+      </div>
+      {children}
+    </>
   )
 }
