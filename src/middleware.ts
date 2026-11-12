@@ -10,10 +10,11 @@ const CSP_HEADER = `
   font-src 'self' data: https://fonts.gstatic.com;
   connect-src 'self' https://api.stripe.com https://*.supabase.co wss://*.supabase.co;
   frame-src 'self' https://js.stripe.com https://hooks.stripe.com;
-  frame-ancestors 'none';
+  frame-ancestors 'self';
   base-uri 'self';
   form-action 'self';
   object-src 'none';
+  navigate-to 'self';
 `
 
 const SECURITY_HEADERS = {
