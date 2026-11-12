@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Link } from "@/components/ui/link"
 import { Mail, Loader2 } from "lucide-react"
 
 export default function ForgotPasswordPage() {
@@ -69,11 +68,9 @@ export default function ForgotPasswordPage() {
             <p className="text-sm text-muted-foreground mt-2">The link expires in 1 hour.</p>
           </CardContent>
           <CardFooter className="flex flex-col gap-4">
-            <Link asChild href="/auth/login">
-              <Button variant="outline" className="w-full">
-                Back to Sign In
-              </Button>
-            </Link>
+            <a href="/auth/login" className="w-full inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-md border border-input bg-background text-foreground hover:bg-accent transition-colors">
+              Back to Sign In
+            </a>
           </CardFooter>
         </Card>
       </div>
@@ -109,13 +106,11 @@ export default function ForgotPasswordPage() {
             </Button>
           </form>
         </CardContent>
-        <CardFooter className="flex flex-col gap-4">
-          <Link asChild href="/auth/login">
-            <Button variant="outline" className="w-full">
+<CardFooter className="flex flex-col gap-4">
+            <a href="/auth/login" className="w-full inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-md border border-input bg-background text-foreground hover:bg-accent transition-colors">
               Back to Sign In
-            </Button>
-          </Link>
-        </CardFooter>
+            </a>
+          </CardFooter>
       </Card>
     </div>
   )

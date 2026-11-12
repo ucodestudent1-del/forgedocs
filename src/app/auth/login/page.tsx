@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Link } from "@/components/ui/link"
 import { Mail, Lock } from "lucide-react"
 
 export default function LoginPage() {
@@ -96,16 +95,12 @@ export default function LoginPage() {
           </form>
         </CardContent>
         <CardFooter className="flex flex-col gap-4">
-          <Link asChild href="/auth/signup">
-            <Button variant="outline" className="w-full">
-              Create an account
-            </Button>
-          </Link>
-          <Link asChild href="/auth/forgot-password">
-            <Button variant="ghost" className="w-full text-sm">
-              Forgot password?
-            </Button>
-          </Link>
+          <a href="/auth/signup" className="w-full inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-md border border-input bg-background text-foreground hover:bg-accent transition-colors">
+            Create an account
+          </a>
+          <a href="/auth/forgot-password" className="w-full inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-md text-sm text-muted-foreground hover:text-foreground transition-colors">
+            Forgot password?
+          </a>
         </CardFooter>
       </Card>
     </div>

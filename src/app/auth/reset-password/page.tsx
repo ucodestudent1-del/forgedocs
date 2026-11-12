@@ -6,7 +6,6 @@ import { createBrowserSupabaseClient } from "@/lib/supabase-browser"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Link } from "@/components/ui/link"
 import { Lock, Loader2, AlertCircle } from "lucide-react"
 
 function ResetPasswordContent() {
@@ -85,11 +84,9 @@ function ResetPasswordContent() {
           )}
           {!validToken ? (
             <div className="text-center py-8">
-              <Link asChild href="/auth/forgot-password">
-                <Button variant="outline" className="w-full">
-                  Request New Link
-                </Button>
-              </Link>
+              <a href="/auth/forgot-password" className="w-full inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-md border border-input bg-background text-foreground hover:bg-accent transition-colors">
+                Request New Link
+              </a>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -121,11 +118,9 @@ function ResetPasswordContent() {
           )}
         </CardContent>
         <CardFooter className="flex flex-col gap-4">
-          <Link asChild href="/auth/login">
-            <Button variant="outline" className="w-full">
-              Back to Sign In
-            </Button>
-          </Link>
+          <a href="/auth/login" className="w-full inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-md border border-input bg-background text-foreground hover:bg-accent transition-colors">
+            Back to Sign In
+          </a>
         </CardFooter>
       </Card>
     </div>

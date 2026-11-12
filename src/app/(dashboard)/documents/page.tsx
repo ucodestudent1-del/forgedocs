@@ -118,11 +118,13 @@ export default function DocumentsPage() {
                 <Badge variant="secondary">{doc.version}</Badge>
               </div>
               <div className="col-span-1">
-                <Button size="sm" asChild variant="outline" className="w-auto" onClick={(e) => e.stopPropagation()}>
-                  <a href={`/reader/${doc.id}`} className="text-xs text-primary hover:underline flex items-center gap-1">
-                    Read
-                  </a>
-                </Button>
+                <a
+                  href={`/reader/${doc.id}`}
+                  onClick={(e) => e.stopPropagation()}
+                  className="text-xs text-primary hover:underline flex items-center gap-1 w-auto inline-block px-3 py-1.5 border border-input rounded-md hover:bg-accent transition-colors"
+                >
+                  Read
+                </a>
               </div>
               </div>
             ))

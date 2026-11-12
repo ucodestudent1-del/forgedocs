@@ -220,8 +220,8 @@ export default function ReaderPage({ document }: ReaderPageProps) {
             )}
             {copied ? "Copied" : "Copy"}
           </Button>
-          <Button size="sm" asChild>
-            <a href={`/editor?id=${document?.id}`} className="text-xs text-primary hover:underline">
+          <Button size="sm" variant="ghost">
+            <a href={`/editor?id=${document?.id}`} className="text-xs text-primary hover:underline flex items-center gap-1">
               <svg className="h-4 w-4 mr-1" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M11 3H4v16h16V8l-6-6m0 0L3 17m0 0l6-6" /></svg>
               Edit document
             </a>

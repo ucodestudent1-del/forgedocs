@@ -4,7 +4,6 @@ import { redirect } from "next/navigation"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Link } from "@/components/ui/link"
 import { Mail, Lock, User } from "lucide-react"
 
 export default async function SignupPage() {
@@ -64,11 +63,9 @@ export default async function SignupPage() {
           </form>
         </CardContent>
         <CardFooter className="flex flex-col gap-4">
-          <Link asChild href="/auth/login">
-            <Button variant="outline" className="w-full">
-              Already have an account? Sign in
-            </Button>
-          </Link>
+          <a href="/auth/login" className="w-full inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-md border border-input bg-background text-foreground hover:bg-accent transition-colors">
+            Already have an account? Sign in
+          </a>
         </CardFooter>
       </Card>
     </div>
