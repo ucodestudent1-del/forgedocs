@@ -4,7 +4,7 @@ import { redirect } from "next/navigation"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Mail, Lock, User } from "lucide-react"
+import { Mail, Lock, User, Chrome } from "lucide-react"
 
 export default async function SignupPage() {
   const cookieStore = await cookies()
@@ -61,6 +61,23 @@ export default async function SignupPage() {
               Create account
             </Button>
           </form>
+
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
+            </div>
+          </div>
+
+          <a
+            href="/api/auth/google"
+            className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-md border border-input bg-background text-foreground hover:bg-accent transition-colors"
+          >
+            <Chrome className="h-4 w-4" />
+            Google
+          </a>
         </CardContent>
         <CardFooter className="flex flex-col gap-4">
           <a href="/auth/login" className="w-full inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-md border border-input bg-background text-foreground hover:bg-accent transition-colors">
