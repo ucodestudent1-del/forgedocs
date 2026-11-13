@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { usePathname } from "next/navigation"
-import { Search, Bell, ChevronLeft, ChevronRight } from "lucide-react"
+import { Search, Bell, ChevronLeft, ChevronRight, Menu } from "lucide-react"
 import { Sidebar } from "@/components/layout/Sidebar"
 import { DashboardHeader } from "@/components/dashboard/header"
 import { useToast } from "@/components/ui/use-toast"
