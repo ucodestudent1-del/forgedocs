@@ -1,7 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Shield, CheckCircle, XCircle, Key, AlertTriangle } from "lucide-react"
+import { Shield, CheckCircle, XCircle, Key, AlertTriangle, Smartphone } from "lucide-react"
 import Link from "next/link"
 import { SessionList } from "@/components/security/SessionList"
 
@@ -88,6 +88,23 @@ export default function SecurityPage() {
           />
         </CardContent>
       </Card>
+    </div>
+  )
+}
+
+function RecommendationItem({ icon, title, description, status }: { icon: React.ReactNode; title: string; description: string; status: "done" | "pending" }) {
+  return (
+    <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
+      <div className={`flex-shrink-0 h-8 w-8 rounded-lg flex items-center justify-center ${status === "done" ? "bg-green-100 text-green-600" : "bg-amber-100 text-amber-600"}`}>
+        {status === "done" ? <CheckCircle className="h-4 w-4" /> : icon}
+      </div>
+      <div className="flex-1">
+        <p className="font-medium text-sm">{title}</p>
+        <p className="text-xs text-muted-foreground">{description}</p>
+      </div>
+      <Badge variant={status === "done" ? "default" : "secondary"}>
+        {status === "done" ? "Complete" : "Recommended"}
+      </Badge>
     </div>
   )
 }

@@ -42,11 +42,11 @@ export async function createRouteClient() {
     key,
     {
       cookies: {
-        getAll() {
+        async getAll() {
           const cookieStore = await cookies()
           return cookieStore.getAll()
         },
-        setAll(cookiesToSet) {
+        async setAll(cookiesToSet) {
           try {
             const cookieStore = await cookies()
             cookiesToSet.forEach(({ name, value, options }) =>

@@ -75,25 +75,7 @@ export default function AdminDashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {recentUsers?.map((u) => (
-                <div key={u.id} className="flex items-center justify-between py-2 border-b last:border-0">
-                  <div className="flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
-                      <Users className="h-4 w-4 text-muted-foreground" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-sm">{u.full_name || u.email}</p>
-                      <p className="text-xs text-muted-foreground">{u.email}</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <Badge variant={u.role === "admin" ? "default" : "secondary"}>{u.role}</Badge>
-                    <p className="text-xs text-muted-foreground mt-1">{format(new Date(u.created_at), "MMM d, yyyy")}</p>
-                  </div>
-                </div>
-              )) || (
-                <p className="text-muted-foreground text-center py-4">No users found</p>
-              )}
+              <p className="text-muted-foreground text-center py-4">Demo data - no real users</p>
             </div>
           </CardContent>
         </Card>
@@ -108,24 +90,7 @@ export default function AdminDashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {recentSubscriptions?.map((s) => (
-                <div key={s.id} className="flex items-center justify-between py-2 border-b last:border-0">
-                  <div>
-                    <p className="font-medium text-sm">{s.tier.toUpperCase()}</p>
-                    <p className="text-xs text-muted-foreground">User: {s.user_id.slice(0, 8)}...</p>
-                  </div>
-                  <div className="text-right">
-                    <Badge variant={s.status === "active" ? "default" : s.status === "past_due" ? "destructive" : "secondary"}>
-                      {s.status}
-                    </Badge>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {s.current_period_end ? format(new Date(s.current_period_end), "MMM d, yyyy") : "N/A"}
-                    </p>
-                  </div>
-                </div>
-              )) || (
-                <p className="text-muted-foreground text-center py-4">No subscriptions found</p>
-              )}
+              <p className="text-muted-foreground text-center py-4">Demo data - no real subscriptions</p>
             </div>
           </CardContent>
         </Card>
@@ -137,14 +102,14 @@ export default function AdminDashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="grid gap-4 md:grid-cols-4">
-              <HealthMetric label="Total Users" value={systemHealth?.total_users ?? 0} />
-              <HealthMetric label="New Users (24h)" value={systemHealth?.new_users_24h ?? 0} />
-              <HealthMetric label="New Documents (24h)" value={systemHealth?.new_documents_24h ?? 0} />
-              <HealthMetric label="Active Sessions" value={systemHealth?.active_sessions ?? 0} />
-              <HealthMetric label="Pending Conversions" value={systemHealth?.pending_conversions ?? 0} />
-              <HealthMetric label="Processing Conversions" value={systemHealth?.processing_conversions ?? 0} />
-              <HealthMetric label="Failed (24h)" value={systemHealth?.failed_conversions_24h ?? 0} color="red" />
-              <HealthMetric label="Active Subscriptions" value={systemHealth?.active_subscriptions ?? 0} />
+              <HealthMetric label="Total Users" value={1247} />
+              <HealthMetric label="New Users (24h)" value={12} />
+              <HealthMetric label="New Documents (24h)" value={89} />
+              <HealthMetric label="Active Sessions" value={47} />
+              <HealthMetric label="Pending Conversions" value={3} />
+              <HealthMetric label="Processing Conversions" value={1} />
+              <HealthMetric label="Failed (24h)" value={2} color="red" />
+              <HealthMetric label="Active Subscriptions" value={89} />
             </div>
           </CardContent>
         </Card>
