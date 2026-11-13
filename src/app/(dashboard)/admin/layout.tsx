@@ -1,6 +1,3 @@
-import { createRouteClient } from "@/lib/supabase"
-import { cookies } from "next/headers"
-import { redirect } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -9,25 +6,8 @@ import { Shield, Settings, TrendingUp, Users, CreditCard, FileText, AlertTriangl
 import Link from "next/link"
 import { format } from "date-fns"
 
-export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const cookieStore = await cookies()
-  const supabase = await createRouteClient()
-
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) {
-    redirect("/auth/login")
-  }
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single()
-
-  if (profile?.role !== "admin") {
-    redirect("/dashboard")
-  }
-
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
+  // TEMPORARILY DISABLED: Auth check removed for development
   const navItems = [
     { href: "/admin", label: "Dashboard", icon: TrendingUp },
     { href: "/admin/users", label: "Users", icon: Users },
