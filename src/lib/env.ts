@@ -11,7 +11,11 @@ const optionalEnvVars = [
   "SENTRY_DSN",
 ] as const
 
+const isBuildTime = typeof window === "undefined" && process.env.NEXT_PHASE === "phase-production-build"
+
 export function validateEnv() {
+  if (isBuildTime) return
+
   const missing: string[] = []
 
   for (const key of requiredEnvVars) {
@@ -34,10 +38,10 @@ export function getEnv(key: typeof requiredEnvVars[number] | typeof optionalEnvV
 
 export function getRequiredEnv(key: typeof requiredEnvVars[number]): string {
   const value = process.env[key]
-  if (!value) {
+  if (!value && !isBuildTime) {
     throw new Error(`Missing required environment variable: ${key}`)
   }
-  return value
+  return value || ""
 }
 
 export const env = {
