@@ -42,12 +42,6 @@ export function Navbar() {
                   {link.label}
                 </a>
               ))}
-              <a
-                href="/auth/signup"
-                className="px-4 py-2 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
-              >
-                Get started
-              </a>
             </div>
             <button
               onClick={() => setMobileOpen((prev) => !prev)}
@@ -86,13 +80,6 @@ export function Navbar() {
                 {link.label}
               </a>
             ))}
-            <a
-              href="/auth/signup"
-              onClick={() => setMobileOpen(false)}
-              className="mt-6 block px-6 py-3 text-center font-medium text-white bg-primary rounded-lg hover:bg-primary/90 transition-colors"
-            >
-              Get started
-            </a>
           </nav>
         </div>
       )}
