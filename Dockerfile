@@ -3,20 +3,20 @@ FROM node:24-alpine AS builder
 
 WORKDIR /app
 
-# Accept build-time environment variables as build args
-ARG NEXT_PUBLIC_SUPABASE_URL
-ARG NEXT_PUBLIC_SUPABASE_ANON_KEY
-ARG SUPABASE_SERVICE_ROLE_KEY
-ARG STRIPE_SECRET_KEY
-ARG STRIPE_WEBHOOK_SECRET
-ARG NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
-ARG RESEND_API_KEY
-ARG EMAIL_FROM
-ARG REDIS_URL
-ARG NEXT_PUBLIC_APP_URL
-ARG SENTRY_DSN
-ARG SENTRY_ORG
-ARG SENTRY_PROJECT
+# Accept build-time environment variables as build args (with defaults for build)
+ARG NEXT_PUBLIC_SUPABASE_URL=https://placeholder.supabase.co
+ARG NEXT_PUBLIC_SUPABASE_ANON_KEY=placeholder-anon-key
+ARG SUPABASE_SERVICE_ROLE_KEY=placeholder-service-role-key
+ARG STRIPE_SECRET_KEY=sk_test_placeholder
+ARG STRIPE_WEBHOOK_SECRET=whsec_placeholder
+ARG NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_placeholder
+ARG RESEND_API_KEY=placeholder-resend-key
+ARG EMAIL_FROM=noreply@localhost
+ARG REDIS_URL=redis://localhost:6379
+ARG NEXT_PUBLIC_APP_URL=http://localhost:3000
+ARG SENTRY_DSN=placeholder-sentry-dsn
+ARG SENTRY_ORG=placeholder-org
+ARG SENTRY_PROJECT=placeholder-project
 
 # Set them as environment variables for the build
 ENV NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL
