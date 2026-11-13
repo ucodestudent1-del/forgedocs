@@ -1,15 +1,21 @@
+import { createRouteClient } from "@/lib/supabase"
 import DashboardClient from "./dashboard-client"
 
-export default function DashboardLayout({
+export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  // TEMPORARILY DISABLED: Auth check removed for development
+  const supabase = await createRouteClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  const userEmail = user?.email || null
+  const userInitial = user?.email?.charAt(0).toUpperCase() || "U"
+
   return (
     <DashboardClient
-      userEmail="dev@local"
-      userInitial="D"
+      userEmail={userEmail}
+      userInitial={userInitial}
       children={children}
     />
   )

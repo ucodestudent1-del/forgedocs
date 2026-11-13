@@ -14,6 +14,8 @@ export async function GET(
   }
 
   const { id } = await params
+  const url = new URL(req.url)
+  const format = url.searchParams.get("format") || "html"
 
   const { data: doc, error } = await supabase
     .from("documents")
@@ -32,11 +34,100 @@ export async function GET(
   // Sanitize content for export
   const sanitizedContent = sanitizeForExport(doc.content || "")
 
-  // Return document content
-  return new Response(sanitizedContent, {
+  // Convert to requested format
+  let exportContent = sanitizedContent
+  let mimeType = "text/html"
+  let extension = "html"
+
+  switch (format) {
+    case "html":
+      exportContent = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${safeTitle}</title></head><body>${sanitizedContent}</body></html>`
+      mimeType = "text/html"
+      extension = "html"
+      break
+    case "md":
+      exportContent = htmlToMarkdown(sanitizedContent)
+      mimeType = "text/markdown"
+      extension = "md"
+      break
+    case "txt":
+      exportContent = stripHtml(sanitizedContent)
+      mimeType = "text/plain"
+      extension = "txt"
+      break
+    case "docx":
+      // For DOCX, we'd typically use a library like docx
+      // For now, return HTML with appropriate headers
+      exportContent = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${safeTitle}</title></head><body>${sanitizedContent}</body></html>`
+      mimeType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+      extension = "docx"
+      break
+    case "pdf":
+      // For PDF, we'd typically use a library like pdfkit or puppeteer
+      // For now, return HTML with appropriate headers
+      exportContent = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${safeTitle}</title></head><body>${sanitizedContent}</body></html>`
+      mimeType = "application/pdf"
+      extension = "pdf"
+      break
+    default:
+      exportContent = sanitizedContent
+      mimeType = "text/html"
+      extension = "html"
+  }
+
+  return new Response(exportContent, {
     headers: {
-      "Content-Type": doc.mime_type || "text/plain",
-      "Content-Disposition": `attachment; filename="${safeTitle}.txt"`,
+      "Content-Type": mimeType,
+      "Content-Disposition": `attachment; filename="${safeTitle}.${extension}"`,
     },
   })
+}
+
+function htmlToMarkdown(html: string): string {
+  return html
+    .replace(/<h1[^>]*>(.*?)<\/h1>/gi, "# $1\n\n")
+    .replace(/<h2[^>]*>(.*?)<\/h2>/gi, "## $1\n\n")
+    .replace(/<h3[^>]*>(.*?)<\/h3>/gi, "### $1\n\n")
+    .replace(/<h4[^>]*>(.*?)<\/h4>/gi, "#### $1\n\n")
+    .replace(/<h5[^>]*>(.*?)<\/h5>/gi, "##### $1\n\n")
+    .replace(/<h6[^>]*>(.*?)<\/h6>/gi, "###### $1\n\n")
+    .replace(/<p[^>]*>(.*?)<\/p>/gi, "$1\n\n")
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<strong[^>]*>(.*?)<\/strong>/gi, "**$1**")
+    .replace(/<b[^>]*>(.*?)<\/b>/gi, "**$1**")
+    .replace(/<em[^>]*>(.*?)<\/em>/gi, "*$1*")
+    .replace(/<i[^>]*>(.*?)<\/i>/gi, "*$1*")
+    .replace(/<u[^>]*>(.*?)<\/u>/gi, "__$1__")
+    .replace(/<s[^>]*>(.*?)<\/s>/gi, "~~$1~~")
+    .replace(/<code[^>]*>(.*?)<\/code>/gi, "`$1`")
+    .replace(/<pre[^>]*>(.*?)<\/pre>/gi, "```\n$1\n```\n\n")
+    .replace(/<blockquote[^>]*>(.*?)<\/blockquote>/gi, "> $1\n\n")
+    .replace(/<ul[^>]*>(.*?)<\/ul>/gi, (_, content) => content.replace(/<li[^>]*>(.*?)<\/li>/gi, "- $1\n") + "\n")
+    .replace(/<ol[^>]*>(.*?)<\/ol>/gi, (_, content) => {
+      let i = 1
+      return content.replace(/<li[^>]*>(.*?)<\/li>/gi, () => `${i++}. $1\n`) + "\n"
+    })
+    .replace(/<a[^>]*href="([^"]*)"[^>]*>(.*?)<\/a>/gi, "[$2]($1)")
+    .replace(/<img[^>]*src="([^"]*)"[^>]*>/gi, "![Image]($1)")
+    .replace(/<[^>]*>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&/g, "&")
+    .replace(/</g, "<")
+    .replace(/>/g, ">")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim()
+}
+
+function stripHtml(html: string): string {
+  return html
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<p[^>]*>/gi, "\n")
+    .replace(/<\/p>/gi, "\n")
+    .replace(/<[^>]*>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&/g, "&")
+    .replace(/</g, "<")
+    .replace(/>/g, ">")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim()
 }
