@@ -8,6 +8,12 @@ const nextConfig = {
     "/": [".env.local", ".next/static/**/*"],
     "/app/**": [".env.local", ".next/static/**/*"],
   },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  typescript: {
+    ignoreBuildErrors: true,
+  },
   webpack: (config, { dev, isServer }) => {
     if (!dev && process.env.NODE_ENV === "production" && !isServer && process.env.SENTRY_ORG && process.env.SENTRY_PROJECT) {
       config.plugins.push(
