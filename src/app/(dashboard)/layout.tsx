@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic"
+
 import { createRouteClient } from "@/lib/supabase"
 import DashboardClient from "./dashboard-client"
 

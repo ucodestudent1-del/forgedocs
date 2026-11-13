@@ -93,6 +93,7 @@ export default function ActivityPage() {
   const { toast } = useToast()
 
   useEffect(() => {
+    if (typeof window === "undefined") return
     fetchActivities()
   }, [dateRange])
 
