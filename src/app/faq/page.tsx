@@ -1,8 +1,9 @@
 "use client"
 
-import Link from "next/link"
 import { useState } from "react"
+import Link from "next/link"
 import { Navbar } from "@/components/ui/navbar"
+import { Footer } from "@/components/marketing/footer"
 
 export default function FAQPage() {
   const faqs = [
@@ -67,7 +68,6 @@ export default function FAQPage() {
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
-
       <section className="pt-32 pb-24 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
@@ -78,21 +78,20 @@ export default function FAQPage() {
               Everything you need to know about ForgeDocs, from pricing to security to getting started.
             </p>
           </div>
-
           <div className="max-w-3xl mx-auto space-y-3">
             {faqs.map((faq) => (
               <FaqItem key={faq.id} {...faq} isOpen={openIds.includes(faq.id)} onToggle={toggle} />
             ))}
           </div>
-
-            <div className="mt-16 text-center">
-              <p className="text-muted-foreground">Still have questions?</p>
-              <Link href="/contact" className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline">
-                Contact support →
-              </Link>
-            </div>
+          <div className="mt-16 text-center">
+            <p className="text-muted-foreground">Still have questions?</p>
+            <Link href="/contact" className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline">
+              Contact support →
+            </Link>
+          </div>
         </div>
       </section>
+      <Footer />
     </div>
   )
 }

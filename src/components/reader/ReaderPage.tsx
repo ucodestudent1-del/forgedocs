@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Copy, ExternalLink, RotateCcw, X } from "lucide-react"
+import { Copy, Printer, FileText, ArrowLeft, Pen, Check } from "lucide-react"
 import { formatDate } from "@/lib/utils"
 
 interface InlineSegment {
@@ -189,7 +189,7 @@ export default function ReaderPage({ document }: ReaderPageProps) {
       {/* Reader-only toolbar: no site nav, no sidebar, no footer chrome */}
       <header className="border-b border-border px-6 py-4 flex items-center justify-between bg-background/50 backdrop-blur sticky top-0 z-20">
         <div className="flex items-center gap-3">
-          <svg className="h-5 w-5 text-muted-foreground" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /><polyline points="10 9 9 9 8 9" /></svg>
+          <ArrowLeft className="h-5 w-5 text-muted-foreground" />
           <div>
             <h1 className="text-lg font-semibold text-foreground tracking-tight">{document?.title || "Untitled"}</h1>
             <p className="text-xs text-muted-foreground">
@@ -201,7 +201,7 @@ export default function ReaderPage({ document }: ReaderPageProps) {
         </div>
         <div className="flex items-center gap-2">
           <Button size="sm" variant="outline" onClick={() => window.print()} disabled={!content}>
-            <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9" /><path d="M6 21H4a2 2 0 0 1-2-2v5a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-5a2 2 0 0 1-2-2h-2" /><polyline points="6 9 16 9" /></svg>
+            <Printer className="h-4 w-4 mr-2" />
             Print
           </Button>
           <Button
@@ -214,20 +214,20 @@ export default function ReaderPage({ document }: ReaderPageProps) {
             }}
           >
             {copied ? (
-              <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              <Check className="h-4 w-4" />
             ) : (
-              <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+              <Copy className="h-4 w-4" />
             )}
             {copied ? "Copied" : "Copy"}
           </Button>
           <Button size="sm" variant="ghost">
             <a href={`/editor?id=${document?.id}`} className="text-xs text-primary hover:underline flex items-center gap-1">
-              <svg className="h-4 w-4 mr-1" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M11 3H4v16h16V8l-6-6m0 0L3 17m0 0l6-6" /></svg>
+              <Pen className="h-4 w-4 mr-1" />
               Edit document
             </a>
           </Button>
           <Button size="sm" variant="ghost" onClick={() => window.history.back()}>
-            <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><line x1="19" y1="5" x2="5" y2="19" /><polyline points="2 11 6 19 10 11" /></svg>
+            <ArrowLeft className="h-4 w-4" />
           </Button>
         </div>
       </header>
@@ -235,13 +235,13 @@ export default function ReaderPage({ document }: ReaderPageProps) {
       <main className="flex-1 max-w-3xl mx-auto px-6 py-10 overflow-y-auto">
         {document?.error ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
-            <svg className="h-16 w-16 mb-3 opacity-50" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /><polyline points="10 9 9 9 8 9" /></svg>
+            <FileText className="h-16 w-16 mb-3 opacity-50" />
             <h2 className="text-xl font-semibold text-foreground mb-2">Document not found</h2>
             <p className="text-muted-foreground">{document.error}</p>
           </div>
         ) : !content ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
-            <svg className="h-16 w-16 mb-3 opacity-50" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /><polyline points="10 9 9 9 8 9" /></svg>
+            <FileText className="h-16 w-16 mb-3 opacity-50" />
             <h2 className="text-xl font-semibold text-foreground mb-2">No content</h2>
             <p className="text-muted-foreground">This document is empty.</p>
           </div>

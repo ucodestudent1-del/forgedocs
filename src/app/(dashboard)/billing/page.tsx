@@ -28,22 +28,22 @@ export default function BillingPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Billing</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">Billing</h1>
         <p className="text-muted-foreground">Manage your subscription and usage</p>
       </div>
 
       {/* Current plan */}
       <Card>
         <CardHeader>
-          <CardTitle>Current Plan</CardTitle>
+          <CardTitle className="text-foreground">Current Plan</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
           <div>
-            <h2 className="text-lg font-semibold">{currentTier.name}</h2>
+            <h2 className="text-lg font-semibold text-foreground">{currentTier.name}</h2>
             <p className="text-muted-foreground text-sm">{currentTier.description}</p>
           </div>
           <div className="flex items-center gap-4">
-            <span className="text-2xl font-bold">{currentTier.price}</span>
+            <span className="text-2xl font-bold text-foreground">{currentTier.price}</span>
             <span className="text-muted-foreground text-sm">/month</span>
           </div>
           <div className="flex items-center gap-3 w-full lg:w-auto">
@@ -57,7 +57,7 @@ export default function BillingPage() {
       {/* Usage */}
       <Card>
         <CardHeader>
-          <CardTitle>Usage This Period</CardTitle>
+          <CardTitle className="text-foreground">Usage This Period</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -71,7 +71,7 @@ export default function BillingPage() {
       {/* Plans */}
       <Card>
         <CardHeader>
-          <CardTitle>Choose a Plan</CardTitle>
+          <CardTitle className="text-foreground">Choose a Plan</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -105,37 +105,38 @@ function UsageStat({ title, value, icon: Icon }: { title: string; value: string;
         <Icon className="h-4 w-4 text-muted-foreground" />
         <span className="text-sm font-medium text-muted-foreground">{title}</span>
       </div>
-      <div className="text-lg font-bold">{value}</div>
+      <div className="text-lg font-bold text-foreground">{value}</div>
     </div>
   )
 }
 
 function PlanCard({ name, price, description, features, popular, currentTier }: { name: string; price: string; description: string; features: string[]; popular: boolean; currentTier: string }) {
+  const isCurrent = name.toLowerCase() === currentTier
   return (
-    <Card className={`relative flex flex-col ${popular ? "border-primary ring-1 ring-primary" : ""}`}>
+    <Card className={`relative flex flex-col border ${popular ? "border-primary ring-1 ring-primary" : ""}`}>
       {popular && (
         <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-md bg-primary px-2 py-0.5 text-xs font-semibold text-primary-foreground">
           Popular
         </div>
       )}
       <CardHeader className="pb-2">
-        <CardTitle className="text-lg">{name}</CardTitle>
+        <CardTitle className="text-lg text-foreground">{name}</CardTitle>
         <CardDescription>{description}</CardDescription>
       </CardHeader>
       <CardContent className="flex-1">
-        <div className="text-3xl font-bold mb-4">{price}</div>
+        <div className="text-3xl font-bold text-foreground mb-4">{price}</div>
         <ul className="space-y-2 text-sm text-muted-foreground">
           {features.map((f) => (
             <li key={f} className="flex items-center gap-2">
-              <span className="text-xs text-green-600">✓</span>
+              <span className="text-xs text-primary">✓</span>
               {f}
             </li>
           ))}
         </ul>
       </CardContent>
       <CardFooter className="pt-4">
-          <Button className="w-full" variant="outline" disabled>
-            Current Plan
+          <Button className="w-full" variant="outline" disabled={isCurrent}>
+            {isCurrent ? "Current Plan" : "Choose Plan"}
           </Button>
       </CardFooter>
     </Card>

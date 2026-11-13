@@ -170,7 +170,7 @@ export default function DocumentGeneratorPage() {
                       <div key={fieldName} className="space-y-1">
                         <label className="text-sm font-medium text-muted-foreground block">
                           {field.label}
-                          {field.required && <span className="text-red-500 text-xs ml-1">*</span>}
+                          {field.required && <span className="text-destructive text-xs ml-1">*</span>}
                         </label>
                         <input
                           type={field.type === "textarea" ? "text" : field.type}

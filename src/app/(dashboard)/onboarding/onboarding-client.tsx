@@ -98,7 +98,7 @@ export default function OnboardingClient({
               <div key={step.id} className="flex flex-col items-center flex-1 relative">
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium transition-all ${
                   index + 1 < currentStep
-                    ? "bg-green-500 text-white"
+                    ? "bg-success text-white"
                     : index + 1 === currentStep
                     ? "bg-primary text-white"
                     : "bg-muted text-muted-foreground"
@@ -109,7 +109,7 @@ export default function OnboardingClient({
                   {step.title}
                 </p>
                 {index < ONBOARDING_STEPS.length - 1 && (
-                  <div className={`absolute top-5 left-[50%] w-full h-1 ${index + 1 < currentStep ? "bg-green-500" : "bg-muted"}`} />
+                  <div className={`absolute top-5 left-[50%] w-full h-1 ${index + 1 < currentStep ? "bg-success" : "bg-muted"}`} />
                 )}
               </div>
             ))}
@@ -188,12 +188,12 @@ function StepWelcome({ email, fullName }: { email: string | null; fullName: stri
         </p>
       </div>
       <ul className="space-y-3 text-left max-w-md mx-auto">
-        <li className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
-          <CheckCircle className="h-5 w-5 text-green-600" />
+        <li className="flex items-center gap-3 p-3 bg-success/10 rounded-lg">
+          <CheckCircle className="h-5 w-5 text-success" />
           <span>Email verified</span>
         </li>
-        <li className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
-          <CheckCircle className="h-5 w-5 text-blue-600" />
+        <li className="flex items-center gap-3 p-3 bg-primary/10 rounded-lg">
+          <CheckCircle className="h-5 w-5 text-primary" />
           <span>Account created</span>
         </li>
         <li className="flex items-center gap-3 p-3 bg-purple-50 rounded-lg">
@@ -329,7 +329,7 @@ function RoleCard({ name, description, permissions }: { name: string; descriptio
         <ul className="space-y-2">
           {permissions.map((p) => (
             <li key={p} className="flex items-center gap-2 text-sm">
-              <CheckCircle className="h-4 w-4 text-green-600" />
+              <CheckCircle className="h-4 w-4 text-success" />
               {p}
             </li>
           ))}
@@ -373,7 +373,7 @@ function PlanCard({ name, price, features, current, popular }: { name: string; p
         <ul className="space-y-2">
           {features.map((f) => (
             <li key={f} className="flex items-center gap-2 text-sm">
-              <CheckCircle className="h-4 w-4 text-green-600" />
+              <CheckCircle className="h-4 w-4 text-success" />
               {f}
             </li>
           ))}

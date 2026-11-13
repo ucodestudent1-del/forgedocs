@@ -66,12 +66,12 @@ export function AuditLogsTable() {
   }
 
   function getActionIcon(action: string) {
-    if (action.includes("created")) return <FileText className="h-4 w-4 text-green-600" />
-    if (action.includes("updated")) return <Database className="h-4 w-4 text-blue-600" />
-    if (action.includes("deleted")) return <AlertCircle className="h-4 w-4 text-red-600" />
-    if (action.includes("mfa")) return <Shield className="h-4 w-4 text-purple-600" />
-    if (action.includes("login")) return <User className="h-4 w-4 text-gray-600" />
-    return <FileText className="h-4 w-4 text-gray-600" />
+    if (action.includes("created")) return <FileText className="h-4 w-4 text-success" />
+    if (action.includes("updated")) return <Database className="h-4 w-4 text-primary" />
+    if (action.includes("deleted")) return <AlertCircle className="h-4 w-4 text-destructive" />
+    if (action.includes("mfa")) return <Shield className="h-4 w-4 text-primary" />
+    if (action.includes("login")) return <User className="h-4 w-4 text-muted-foreground" />
+    return <FileText className="h-4 w-4 text-muted-foreground" />
   }
 
   if (loading) {

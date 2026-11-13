@@ -2,12 +2,17 @@
 
 import Link from "next/link"
 import { Navbar } from "@/components/ui/navbar"
+import { Footer } from "@/components/marketing/footer"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { Label } from "@/components/ui/label"
+import { Button } from "@/components/ui/button"
+import { Mail, DollarSign, Shield, Clock } from "lucide-react"
 
 export default function ContactPage() {
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
-
       <section className="pt-32 pb-24 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
@@ -19,13 +24,12 @@ export default function ContactPage() {
                 Have questions about ForgeDocs? Want to discuss enterprise pricing or a custom integration? We'd love to hear from you.
               </p>
               <div className="space-y-6">
-                <ContactItem icon="✉️" label="Email" value="hello@forgedocs.com" href="mailto:hello@forgedocs.com" />
-                <ContactItem icon="💼" label="Sales" value="sales@forgedocs.com" href="mailto:sales@forgedocs.com" />
-                <ContactItem icon="🔒" label="Security" value="security@forgedocs.com" href="mailto:security@forgedocs.com" />
-                <ContactItem icon="🕒" label="Hours" value="Mon–Fri, 9am–6pm EST" href="#" />
+                <ContactItem label="Email" value="hello@forgedocs.com" href="mailto:hello@forgedocs.com" icon={<Mail className="h-5 w-5" />} />
+                <ContactItem label="Sales" value="sales@forgedocs.com" href="mailto:sales@forgedocs.com" icon={<DollarSign className="h-5 w-5" />} />
+                <ContactItem label="Security" value="security@forgedocs.com" href="mailto:security@forgedocs.com" icon={<Shield className="h-5 w-5" />} />
+                <ContactItem label="Hours" value="Mon–Fri, 9am–6pm EST" href="#" icon={<Clock className="h-5 w-5" />} />
               </div>
             </div>
-
             <div>
               <form className="space-y-4" onSubmit={(e) => {
                 e.preventDefault()
@@ -38,7 +42,7 @@ export default function ContactPage() {
                 </div>
                 <TextField label="Company" placeholder="Acme Corporation" name="company" />
                 <TextField label="Subject" placeholder="How can we help?" name="subject" />
-                <TextArea label="Message" placeholder="Tell us about your needs..." rows={5} name="message" />
+                <TextAreaField label="Message" placeholder="Tell us about your needs..." rows={5} name="message" />
                 <button type="submit" className="w-full py-3 bg-primary text-primary-foreground font-medium rounded-lg hover:bg-primary/90 transition-colors">
                   Send message
                 </button>
@@ -47,7 +51,6 @@ export default function ContactPage() {
           </div>
         </div>
       </section>
-
       <section className="py-24 px-4 sm:px-6 lg:px-8 border-t">
         <div className="max-w-7xl mx-auto text-center">
           <h2 className="text-3xl font-bold tracking-tight text-foreground mb-6">Prefer to self-serve?</h2>
@@ -62,11 +65,13 @@ export default function ContactPage() {
           </div>
         </div>
       </section>
+      <Footer />
     </div>
   )
 }
 
-function ContactItem({ icon, label, value, href }: { icon: string; label: string; value: string; href?: string }) {
+function ContactItem({ label, value, href, icon }: { label: string; value: string; href?: string; icon: React.ReactNode }) {
+  const Content = href ? "a" : "div"
   return (
     <>
       {href ? (
@@ -74,7 +79,7 @@ function ContactItem({ icon, label, value, href }: { icon: string; label: string
           href={href}
           className="flex items-center gap-3 p-3 rounded-lg hover:bg-accent transition-colors"
         >
-          <span className="text-xl">{icon}</span>
+          <span>{icon}</span>
           <div>
             <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">{label}</p>
             <p className="text-sm font-medium text-foreground">{value}</p>
@@ -82,7 +87,7 @@ function ContactItem({ icon, label, value, href }: { icon: string; label: string
         </a>
       ) : (
         <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-accent transition-colors">
-          <span className="text-xl">{icon}</span>
+          <span>{icon}</span>
           <div>
             <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">{label}</p>
             <p className="text-sm font-medium text-foreground">{value}</p>
@@ -96,29 +101,17 @@ function ContactItem({ icon, label, value, href }: { icon: string; label: string
 function TextField({ label, placeholder, type, name }: { label: string; placeholder: string; type?: string; name?: string }) {
   return (
     <div className="space-y-2">
-      <label htmlFor={name} className="text-sm font-medium text-foreground">{label}</label>
-      <input
-        id={name}
-        type={type || "text"}
-        name={name}
-        placeholder={placeholder}
-        className="h-10 w-full px-3 rounded-md border border-input bg-background text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-primary"
-      />
+      <Label htmlFor={name}>{label}</Label>
+      <Input id={name} type={type || "text"} name={name} placeholder={placeholder} />
     </div>
   )
 }
 
-function TextArea({ label, placeholder, rows, name }: { label: string; placeholder: string; rows: number; name?: string }) {
+function TextAreaField({ label, placeholder, rows, name }: { label: string; placeholder: string; rows: number; name?: string }) {
   return (
     <div className="space-y-2">
-      <label htmlFor={name} className="text-sm font-medium text-foreground">{label}</label>
-      <textarea
-        id={name}
-        name={name}
-        placeholder={placeholder}
-        rows={rows}
-        className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-primary"
-      />
+      <Label htmlFor={name}>{label}</Label>
+      <Textarea id={name} name={name} placeholder={placeholder} rows={rows} />
     </div>
   )
 }

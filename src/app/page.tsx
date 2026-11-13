@@ -58,7 +58,7 @@ export default function LandingPage() {
 
             <div className="flex flex-wrap items-center justify-center gap-8 md:gap-16 opacity-60 text-xs font-medium uppercase tracking-tighter text-muted-foreground">
               <span className="flex items-center gap-1">
-                <CheckCircle2 className="h-4 w-4 text-green-500" />
+                <CheckCircle2 className="h-4 w-4 text-success" />
                 SOC 2 compliant
               </span>
               <span className="flex items-center gap-1">
@@ -266,7 +266,7 @@ export default function LandingPage() {
 
           <div className="mt-12 flex flex-wrap items-center justify-center gap-8 md:gap-16 opacity-50 text-sm font-medium uppercase tracking-tighter text-muted-foreground">
             <span className="flex items-center gap-1">
-              <CheckCircle2 className="h-4 w-4 text-green-500" />
+              <CheckCircle2 className="h-4 w-4 text-success" />
               SOC 2 Type II
             </span>
             <span className="flex items-center gap-1">
@@ -657,7 +657,7 @@ function PricingCard({
       <ul className="space-y-3 mb-8 flex-1">
         {features.map((feature, i) => (
           <li key={i} className="flex items-start gap-3">
-            <span className="text-green-500 flex-shrink-0 mt-0.5">✓</span>
+            <span className="text-success flex-shrink-0 mt-0.5">✓</span>
             <span className="text-sm text-muted-foreground">{feature}</span>
           </li>
         ))}

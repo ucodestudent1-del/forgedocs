@@ -1,11 +1,13 @@
 import Link from "next/link"
 import { Navbar } from "@/components/ui/navbar"
+import { Footer } from "@/components/marketing/footer"
+import { PageHeader } from "@/components/marketing/page-header"
+import { CTASection } from "@/components/marketing/cta-section"
 
 export default function FeaturesPage() {
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
-
       <section className="pt-32 pb-24 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
@@ -19,7 +21,6 @@ export default function FeaturesPage() {
               From creation to conversion, ForgeDocs handles every part of your document workflow.
             </p>
           </div>
-
           <div className="space-y-16">
             <FeatureSection
               number="01"
@@ -35,7 +36,6 @@ export default function FeaturesPage() {
                 "Bulk actions and organization",
               ]}
             />
-
             <FeatureSection
               number="02"
               title="Templates"
@@ -43,7 +43,6 @@ export default function FeaturesPage() {
               imagePlaceholder="Template gallery with category filters"
               features={["70+ pre-built templates", "Custom template creation", "Variable field substitution", "Bulk document generation", "Template sharing across teams", "Version-controlled templates"]}
             />
-
             <FeatureSection
               number="03"
               title="Format Conversion"
@@ -51,7 +50,6 @@ export default function FeaturesPage() {
               imagePlaceholder="File conversion interface with drag-and-drop upload"
               features={["DOCX ↔ PDF conversion", "XLSX ↔ CSV conversion", "PPTX to PDF", "Image to PDF", "Merge multiple documents", "Batch conversion"]}
             />
-
             <FeatureSection
               number="04"
               title="Team Collaboration"
@@ -59,7 +57,6 @@ export default function FeaturesPage() {
               imagePlaceholder="Team collaboration interface with user avatars"
               features={["Role-based access (Admin/Editor/Viewer)", "Document comments and mentions", "Real-time presence indicators", "Team workspaces", "Share links with expiration", "Activity feed"]}
             />
-
             <FeatureSection
               number="05"
               title="Security & Compliance"
@@ -67,7 +64,6 @@ export default function FeaturesPage() {
               imagePlaceholder="Security dashboard with compliance badges"
               features={["SOC 2 Type II compliant", "End-to-end encryption", "SSO / SAML authentication", "Two-factor authentication", "GDPR and CCPA ready", "99.9% uptime SLA"]}
             />
-
             <FeatureSection
               number="06"
               title="API & Integrations"
@@ -78,18 +74,13 @@ export default function FeaturesPage() {
           </div>
         </div>
       </section>
-
-      <section className="py-24 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-3xl mx-auto">
-          <div className="rounded-2xl bg-primary p-8 sm:p-12 text-primary-foreground text-center">
-            <h2 className="text-3xl font-bold mb-4">Ready to streamline your documents?</h2>
-            <p className="text-primary-foreground/90 mb-8 max-w-lg mx-auto">Join thousands of teams using ForgeDocs to move faster.</p>
-            <Link href="/auth/signup" className="inline-block px-8 py-4 bg-background text-primary font-semibold rounded-lg hover:bg-primary/90 transition-colors shadow-lg shadow-primary/30">
-              Start for free
-            </Link>
-          </div>
-        </div>
-      </section>
+      <CTASection
+        title="Ready to streamline your documents?"
+        description="Join thousands of teams using ForgeDocs to move faster."
+        ctaText="Start for free"
+        ctaHref="/auth/signup"
+      />
+      <Footer />
     </div>
   )
 }
@@ -106,9 +97,9 @@ function FeatureSection({ number, title, description, imagePlaceholder, features
         </div>
         <p className="text-lg text-muted-foreground leading-relaxed">{description}</p>
         <ul className="space-y-3">
-              {features.map((feature) => (
-                <li key={feature} className="flex items-start gap-3 text-sm text-muted-foreground leading-relaxed">
-              <span className="text-green-500 flex-shrink-0 mt-1">✓</span>
+          {features.map((feature) => (
+            <li key={feature} className="flex items-start gap-3 text-sm text-muted-foreground leading-relaxed">
+              <span className="text-success flex-shrink-0 mt-1">✓</span>
               {feature}
             </li>
           ))}

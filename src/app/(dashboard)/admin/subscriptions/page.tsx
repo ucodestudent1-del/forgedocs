@@ -65,10 +65,10 @@ export default function AdminSubscriptionsPage() {
 
 function StatCard({ title, value, icon: Icon, color }: { title: string; value: string | number; icon: React.ElementType; color: string }) {
   const colors = {
-    green: "bg-green-100 text-green-600",
-    amber: "bg-amber-100 text-amber-600",
-    red: "bg-red-100 text-red-600",
-    blue: "bg-blue-100 text-blue-600",
+    green: "bg-success/10 text-success",
+    amber: "bg-warning/10 text-warning",
+    red: "bg-destructive/10 text-destructive",
+    blue: "bg-primary/10 text-primary",
   }
   return (
     <Card>

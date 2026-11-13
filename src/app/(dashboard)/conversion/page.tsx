@@ -16,7 +16,6 @@ import {
   Settings,
   BarChart3,
   Layout,
-  RefreshCw as RefreshIcon,
 } from "lucide-react"
 import { documentRateLimit } from "@/lib/rate-limit"
 import { validateCSRF } from "@/lib/csrf"
@@ -24,14 +23,14 @@ import { validateCSRF } from "@/lib/csrf"
 type Tab = "document" | "unit" | "metadata"
 
 const DOCUMENT_PAIRS = [
-  { source: "DOCX", target: "PDF", icon: FileText, color: "bg-blue-500/10 text-blue-600" },
-  { source: "PDF", target: "DOCX", icon: FileText, color: "bg-red-500/10 text-red-600" },
-  { source: "XLSX", target: "CSV", icon: FileSpreadsheet, color: "bg-green-500/10 text-green-600" },
-  { source: "CSV", target: "XLSX", icon: FileSpreadsheet, color: "bg-green-500/10 text-green-600" },
-  { source: "PPTX", target: "PDF", icon: FileImage, color: "bg-orange-500/10 text-orange-600" },
-  { source: "PDF", target: "TXT", icon: FileText, color: "bg-red-500/10 text-red-600" },
-  { source: "DOCX", target: "TXT", icon: FileText, color: "bg-blue-500/10 text-blue-600" },
-  { source: "XLSX", target: "PDF", icon: FileSpreadsheet, color: "bg-green-500/10 text-green-600" },
+  { source: "DOCX", target: "PDF", icon: FileText, color: "bg-primary/10 text-primary" },
+  { source: "PDF", target: "DOCX", icon: FileText, color: "bg-primary/10 text-primary" },
+  { source: "XLSX", target: "CSV", icon: FileSpreadsheet, color: "bg-primary/10 text-primary" },
+  { source: "CSV", target: "XLSX", icon: FileSpreadsheet, color: "bg-primary/10 text-primary" },
+  { source: "PPTX", target: "PDF", icon: FileImage, color: "bg-primary/10 text-primary" },
+  { source: "PDF", target: "TXT", icon: FileText, color: "bg-primary/10 text-primary" },
+  { source: "DOCX", target: "TXT", icon: FileText, color: "bg-primary/10 text-primary" },
+  { source: "XLSX", target: "PDF", icon: FileSpreadsheet, color: "bg-primary/10 text-primary" },
 ]
 
 const UNIT_CATEGORIES = [
@@ -40,12 +39,12 @@ const UNIT_CATEGORIES = [
   { id: "temperature", name: "Temperature", icon: Settings },
   { id: "volume", name: "Volume", icon: BarChart3 },
   { id: "area", name: "Area", icon: Layout },
-  { id: "speed", name: "Speed", icon: RefreshIcon },
+  { id: "speed", name: "Speed", icon: RefreshCw },
   { id: "data-size", name: "Data Size", icon: BarChart3 },
   { id: "angle", name: "Angle", icon: Layout },
   { id: "energy", name: "Energy", icon: BarChart3 },
   { id: "pressure", name: "Pressure", icon: Settings },
-  { id: "time", name: "Time", icon: RefreshIcon },
+  { id: "time", name: "Time", icon: RefreshCw },
 ]
 
 export default function ConversionPage() {
@@ -296,12 +295,12 @@ export default function ConversionPage() {
                 <div className="flex flex-col gap-2">
                   <label className="text-sm font-medium text-foreground">Source</label>
                   <div className="flex gap-2">
-                    <button
-                      onClick={() => document.getElementById("file-input")?.click()}
-                      className={`flex-1 flex flex-col items-center justify-center p-3 rounded-lg border-2 border-dashed ${
-                        sourceFile ? "bg-blue-50 border-blue-500" : "border-input hover:border-primary/50"
-                      }`}
-                    >
+                      <button
+                        onClick={() => document.getElementById("file-input")?.click()}
+                        className={`flex-1 flex flex-col items-center justify-center p-3 rounded-lg border-2 border-dashed ${
+                          sourceFile ? "bg-primary/10 border-primary" : "border-input hover:border-primary/50"
+                        }`}
+                      >
                       <Upload className="h-5 w-5 mb-2 text-primary" />
                       <span className="text-sm">Upload File</span>
                       <input
@@ -314,14 +313,14 @@ export default function ConversionPage() {
                     </button>
                     <button
                       onClick={() => setSourceFile(null)}
-                      className="w-full flex items-center justify-center py-2 rounded-md text-sm text-red-500 hover:bg-red-50"
+                      className="w-full flex items-center justify-center py-2 rounded-md text-sm text-destructive hover:bg-destructive/10"
                       disabled={!sourceFile}
                     >
                       Remove File
                     </button>
                   </div>
                   {sourceFile && (
-                    <div className="mt-2 p-2 rounded-md bg-blue-50 text-sm text-blue-700 border border-blue-100">
+                    <div className="mt-2 p-2 rounded-md bg-primary/50 text-sm text-primary border border-primary/20">
                       <FileText className="h-4 w-4 mr-2" />
                       {sourceFile.name} ({Math.round(sourceFile.size / 1024)} KB)
                     </div>
@@ -351,7 +350,7 @@ export default function ConversionPage() {
                       onClick={() => setSelectedTargetFormat(pair.target)}
                       className={`flex flex-col items-center gap-2 p-3 rounded-lg border-2 ${
                         selectedTargetFormat === pair.target
-                          ? "bg-blue-50 border-blue-500 text-blue-600"
+                          ? "bg-primary/10 border-primary text-primary"
                           : "border-input hover:border-primary/50"
                       }`}
                     >

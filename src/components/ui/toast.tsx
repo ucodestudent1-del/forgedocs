@@ -66,8 +66,8 @@ const VariantIcons: Record<NonNullable<ToastProps["variant"]>, React.ElementType
 const VariantColors: Record<NonNullable<ToastProps["variant"]>, string> = {
   default: "bg-primary text-primary-foreground",
   destructive: "bg-destructive text-destructive-foreground",
-  success: "bg-green-500 text-white",
-  info: "bg-blue-500 text-white",
+  success: "bg-success text-success-foreground",
+  info: "bg-primary text-primary-foreground",
 }
 
 export function Toast({ toast, onDismiss, className }: { toast: ToastProps; onDismiss?: () => void; className?: string }) {

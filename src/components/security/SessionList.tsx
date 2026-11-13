@@ -107,9 +107,9 @@ export function SessionList({ userId }: SessionListProps) {
       <CardHeader>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg bg-purple-100 flex items-center justify-center">
-              <Globe className="h-5 w-5 text-purple-600" />
-            </div>
+<div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+  <Globe className="h-5 w-5 text-primary" />
+</div>
             <div>
               <CardTitle className="text-lg">Active Sessions</CardTitle>
               <CardDescription>Manage devices signed into your account</CardDescription>

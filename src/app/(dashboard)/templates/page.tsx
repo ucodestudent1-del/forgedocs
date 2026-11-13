@@ -34,7 +34,7 @@ export default function TemplatesPage() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Templates</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Templates</h1>
           <p className="text-muted-foreground">Generate documents from templates</p>
         </div>
         <Button className="flex items-center gap-2">
@@ -44,13 +44,15 @@ export default function TemplatesPage() {
       </div>
 
       <div className="relative">
+        <label htmlFor="template-search" className="sr-only">Search templates</label>
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <input
+          id="template-search"
           type="search"
           placeholder="Search templates..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="h-10 pl-10 pr-4 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary w-full md:w-96"
+          className="h-10 pl-10 pr-4 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary w-full md:w-96"
         />
       </div>
 
@@ -85,7 +87,7 @@ function TemplateCard({ template }: { template: any }) {
           </div>
           <span className="text-xs font-medium text-muted-foreground">Template</span>
         </div>
-        <CardTitle className="mt-2">{template.name}</CardTitle>
+        <CardTitle className="mt-2 text-lg font-medium">{template.name}</CardTitle>
         <CardDescription>{template.description}</CardDescription>
       </CardHeader>
       <CardContent className="pt-0">

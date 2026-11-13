@@ -53,11 +53,11 @@ export default function AdminSystemHealthPage() {
       </div>
 
       {/* Overall Status */}
-      <Card className={health?.status === "healthy" ? "border-green-500" : "border-amber-500"}>
+      <Card className={health?.status === "healthy" ? "border-success" : "border-warning"}>
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className={`h-12 w-12 rounded-full flex items-center justify-center ${health?.status === "healthy" ? "bg-green-100 text-green-600" : "bg-amber-100 text-amber-600"}`}>
+              <div className={`h-12 w-12 rounded-full flex items-center justify-center ${health?.status === "healthy" ? "bg-success/10 text-success" : "bg-warning/10 text-warning"}`}>
                 {health?.status === "healthy" ? (
                   <CheckCircle className="h-6 w-6" />
                 ) : (
@@ -166,11 +166,11 @@ function HealthCheckCard({ title, icon: Icon, status, latency, error, descriptio
 }) {
   const isHealthy = status === "healthy"
   return (
-    <Card className={isHealthy ? "border-green-200" : status === "unhealthy" ? "border-red-200" : "border-amber-200"}>
+    <Card className={isHealthy ? "border-success/20" : status === "unhealthy" ? "border-destructive/20" : "border-warning/20"}>
       <CardContent className="pt-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className={`h-10 w-10 rounded-full flex items-center justify-center ${isHealthy ? "bg-green-100 text-green-600" : status === "unhealthy" ? "bg-red-100 text-red-600" : "bg-amber-100 text-amber-600"}`}>
+            <div className={`h-10 w-10 rounded-full flex items-center justify-center ${isHealthy ? "bg-success/10 text-success" : status === "unhealthy" ? "bg-destructive/10 text-destructive" : "bg-warning/10 text-warning"}`}>
               <Icon className="h-5 w-5" />
             </div>
             <div>
@@ -189,7 +189,7 @@ function HealthCheckCard({ title, icon: Icon, status, latency, error, descriptio
           </div>
         )}
         {error && (
-          <div className="mt-4 pt-4 border-t text-sm text-red-600 bg-red-50 p-3 rounded">
+          <div className="mt-4 pt-4 border-t text-sm text-destructive bg-destructive/10 p-3 rounded">
             {error}
           </div>
         )}

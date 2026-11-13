@@ -19,8 +19,8 @@ export default function SecurityPage() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-blue-100 flex items-center justify-center">
-                <Shield className="h-5 w-5 text-blue-600" />
+              <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Shield className="h-5 w-5 text-primary" />
               </div>
               <div>
                 <CardTitle className="text-lg">Two-Factor Authentication</CardTitle>
@@ -34,12 +34,12 @@ export default function SecurityPage() {
         </CardHeader>
         <CardContent className="pt-0">
           <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 bg-amber-50 border border-amber-200 rounded-lg">
+            <div className="flex items-center justify-between p-4 bg-primary/50 border border-primary/20 rounded-lg">
               <div className="flex items-center gap-3">
-                <AlertTriangle className="h-5 w-5 text-amber-600" />
+                <AlertTriangle className="h-5 w-5 text-primary" />
                 <div>
-                  <p className="font-medium text-amber-800">Two-factor authentication is not enabled</p>
-                  <p className="text-sm text-amber-700">Enable 2FA to add an extra layer of security to your account</p>
+                  <p className="font-medium text-primary">Two-factor authentication is not enabled</p>
+                  <p className="text-sm text-primary/70">Enable 2FA to add an extra layer of security to your account</p>
                 </div>
               </div>
             </div>
@@ -95,7 +95,7 @@ export default function SecurityPage() {
 function RecommendationItem({ icon, title, description, status }: { icon: React.ReactNode; title: string; description: string; status: "done" | "pending" }) {
   return (
     <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
-      <div className={`flex-shrink-0 h-8 w-8 rounded-lg flex items-center justify-center ${status === "done" ? "bg-green-100 text-green-600" : "bg-amber-100 text-amber-600"}`}>
+      <div className={`flex-shrink-0 h-8 w-8 rounded-lg flex items-center justify-center ${status === "done" ? "bg-success/10 text-success" : "bg-warning/10 text-warning"}`}>
         {status === "done" ? <CheckCircle className="h-4 w-4" /> : icon}
       </div>
       <div className="flex-1">
