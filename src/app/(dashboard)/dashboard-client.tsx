@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { usePathname } from "next/navigation"
 import { Search, Bell, ChevronLeft, ChevronRight } from "lucide-react"
 import { Sidebar } from "@/components/layout/Sidebar"
