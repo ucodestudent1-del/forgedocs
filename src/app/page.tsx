@@ -380,7 +380,7 @@ export default function LandingPage() {
             <h2 className="text-3xl font-bold tracking-tight text-foreground mb-4">Simple, transparent pricing</h2>
             <p className="text-lg text-muted-foreground max-w-[65ch] mx-auto">Choose the plan that fits your team. All plans include a 14-day free trial.</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
             <PricingCard
               name="Free"
               price="$0"
@@ -412,24 +412,6 @@ export default function LandingPage() {
               isFeatured={true}
               ctaText="Start free trial"
               ctaHref="/auth/signup"
-            />
-            <PricingCard
-              name="Business"
-              price="$49"
-              description="For established organizations"
-              features={[
-                "Unlimited documents",
-                "Unlimited conversions",
-                "500 GB storage",
-                "100 MB max file size",
-                "Priority support",
-                "Audit logs",
-                "Advanced templates",
-                "Custom integrations",
-              ]}
-              isFeatured={false}
-              ctaText="Contact sales"
-              ctaHref="/contact"
             />
           </div>
           <p className="text-center mt-12 text-xs text-muted-foreground">
