@@ -157,7 +157,7 @@ export default function DocumentGeneratorPage() {
         </div>
       ) : (
         <div className="flex flex-col lg:flex-row gap-6">
-          <div className="w-full lg:w-1/3">
+          <div className="w-full lg:w-1/3 overflow-y-auto max-h-[calc(100vh-160px)]">
             <Card>
               <CardHeader>
                 <CardTitle>Document Details</CardTitle>
