@@ -1,38 +1,11 @@
-import { createServerClient } from "@supabase/ssr"
-import { cookies } from "next/headers"
-import { redirect } from "next/navigation"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { CreditCard, DollarSign, Clock, Users, Settings } from "lucide-react"
 
-export default async function BillingPage() {
-  const cookieStore = await cookies()
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll()
-        },
-      },
-    },
-  )
-
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) {
-    redirect("/auth/login")
-  }
-
-  const { data: subscription } = await supabase
-    .from("subscriptions")
-    .select("*")
-    .eq("user_id", user.id)
-    .eq("status", "active")
-    .single()
-
-  const tier = subscription?.tier || "free"
+export default function BillingPage() {
+  // TEMPORARILY DISABLED: Auth check removed for development
+  const tier = "free"
   const tierInfo = {
     free: {
       name: "Free",
@@ -74,15 +47,9 @@ export default async function BillingPage() {
             <span className="text-muted-foreground text-sm">/month</span>
           </div>
           <div className="flex items-center gap-3 w-full lg:w-auto">
-            <Button className="w-full lg:w-auto" disabled={tier === "pro"}>
-              {tier === "pro" ? "Current Plan" : "Upgrade to Pro"}
+            <Button className="w-full lg:w-auto" disabled>
+              Current Plan
             </Button>
-            {subscription?.stripe_customer_id && tier !== "free" && (
-              <Button variant="outline" onClick={() => window.location.href = "/api/billing/portal"}>
-                <Settings className="h-4 w-4 mr-2" />
-                Manage Billing
-              </Button>
-            )}
           </div>
         </CardContent>
       </Card>
@@ -167,9 +134,9 @@ function PlanCard({ name, price, description, features, popular, currentTier }: 
         </ul>
       </CardContent>
       <CardFooter className="pt-4">
-          <Button className="w-full" variant={popular ? "default" : "outline"} disabled={currentTier === name.toLowerCase()}>
-            {currentTier === name.toLowerCase() ? "Current Plan" : popular ? "Get Started" : "Choose Plan"}
-        </Button>
+          <Button className="w-full" variant="outline" disabled>
+            Current Plan
+          </Button>
       </CardFooter>
     </Card>
   )

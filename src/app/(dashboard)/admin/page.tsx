@@ -1,6 +1,3 @@
-import { createRouteClient } from "@/lib/supabase"
-import { cookies } from "next/headers"
-import { redirect } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -20,52 +17,17 @@ interface SystemHealth {
   active_subscriptions: number
 }
 
-export default async function AdminDashboardPage() {
-  const cookieStore = await cookies()
-  const supabase = await createRouteClient()
-
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) {
-    redirect("/auth/login")
-  }
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single()
-
-  if (profile?.role !== "admin") {
-    redirect("/dashboard")
-  }
-
-  const [
-    { count: totalUsers },
-    { count: activeSubscriptions },
-    { count: totalDocuments },
-    { count: pendingConversions },
-    { count: failedConversions },
-    { data: recentUsers },
-    { data: recentSubscriptions },
-    { data: systemHealth },
-  ] = await Promise.all([
-    supabase.from("profiles").select("*", { count: "exact", head: true }),
-    supabase.from("subscriptions").select("*", { count: "exact", head: true }).eq("status", "active"),
-    supabase.from("documents").select("*", { count: "exact", head: true }),
-    supabase.from("conversion_jobs").select("*", { count: "exact", head: true }).eq("status", "pending"),
-    supabase.from("conversion_jobs").select("*", { count: "exact", head: true }).eq("status", "failed").gte("created_at", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()),
-    supabase.from("profiles").select("id, email, full_name, created_at, role").order("created_at", { ascending: false }).limit(5),
-    supabase.from("subscriptions").select("id, user_id, tier, status, current_period_end").order("created_at", { ascending: false }).limit(5),
-    supabase.rpc("system_health").single() as unknown as Promise<{ data: SystemHealth | null }>,
-  ])
+export default function AdminDashboardPage() {
+  // TEMPORARILY DISABLED: Auth check removed for development
+  // Using mock data for demo
 
   const stats = [
-    { label: "Total Users", value: totalUsers ?? 0, icon: Users, color: "bg-blue-100 text-blue-600", change: "+12%" },
-    { label: "Active Subscriptions", value: activeSubscriptions ?? 0, icon: CreditCard, color: "bg-green-100 text-green-600", change: "+8%" },
-    { label: "Total Documents", value: totalDocuments ?? 0, icon: FileText, color: "bg-purple-100 text-purple-600", change: "+23%" },
-    { label: "Pending Conversions", value: pendingConversions ?? 0, icon: Clock, color: "bg-amber-100 text-amber-600", change: "-5%" },
-    { label: "Failed (24h)", value: failedConversions ?? 0, icon: AlertTriangle, color: "bg-red-100 text-red-600", change: "+2" },
-    { label: "System Health", value: systemHealth?.status === "healthy" ? "Healthy" : "Degraded", icon: TrendingUp, color: systemHealth?.status === "healthy" ? "bg-green-100 text-green-600" : "bg-red-100 text-red-600", change: "" },
+    { label: "Total Users", value: 1247, icon: Users, color: "bg-blue-100 text-blue-600", change: "+12%" },
+    { label: "Active Subscriptions", value: 89, icon: CreditCard, color: "bg-green-100 text-green-600", change: "+8%" },
+    { label: "Total Documents", value: 12847, icon: FileText, color: "bg-purple-100 text-purple-600", change: "+23%" },
+    { label: "Pending Conversions", value: 3, icon: Clock, color: "bg-amber-100 text-amber-600", change: "-5%" },
+    { label: "Failed (24h)", value: 2, icon: AlertTriangle, color: "bg-red-100 text-red-600", change: "+2" },
+    { label: "System Health", value: "Healthy", icon: TrendingUp, color: "bg-green-100 text-green-600", change: "" },
   ]
 
   return (
