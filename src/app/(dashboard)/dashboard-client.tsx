@@ -1,7 +1,8 @@
 "use client"
 
 import Link from "next/link"
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import { usePathname } from "next/navigation"
 import {
   LayoutDashboard,
   FileText,
@@ -38,6 +39,11 @@ export default function DashboardClient({
 }: DashboardClientProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const { toast } = useToast()
+  const pathname = usePathname()
+
+  useEffect(() => {
+    setSidebarOpen(false)
+  }, [pathname])
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
@@ -59,6 +65,7 @@ export default function DashboardClient({
               <Link
                 key={item.href}
                 href={item.href}
+                onClick={() => setSidebarOpen(false)}
                 className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
               >
                 <Icon className="h-5 w-5" />
