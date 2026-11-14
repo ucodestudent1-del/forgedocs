@@ -6,8 +6,27 @@ import { Shield, Settings, TrendingUp, Users, CreditCard, FileText, AlertTriangl
 import Link from "next/link"
 import { format } from "date-fns"
 import { useTranslations } from "next-intl"
+import { getRouteClient } from "@/lib/supabase"
+import { redirect } from "next/navigation"
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+  const supabase = await getRouteClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) {
+    redirect("/auth/login")
+  }
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single()
+
+  if (!profile || !["admin"].includes(profile.role)) {
+    redirect("/dashboard")
+  }
+
   const t = useTranslations("navigation")
   const tCommon = useTranslations("common")
   const navItems = [
