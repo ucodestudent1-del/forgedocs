@@ -22,8 +22,6 @@ interface SystemHealth {
 }
 
 export default function AdminSystemHealthPage() {
-  // TEMPORARILY DISABLED: Auth check removed for development
-  // Using mock data for demo
   const health: SystemHealth = {
     status: "healthy",
     total_users: 1247,

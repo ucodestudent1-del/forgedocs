@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { DashboardHeader } from "@/components/dashboard/header"
 import { useToast } from "@/components/ui/use-toast"
 import {
@@ -25,6 +26,7 @@ import {
   MoreVertical,
   Check,
   X,
+  FileText,
 } from "lucide-react"
 
 interface SharedDoc {
@@ -354,6 +356,3 @@ export default function SharedDocumentsPage() {
     </div>
   )
 }
-
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { FileText } from "lucide-react"

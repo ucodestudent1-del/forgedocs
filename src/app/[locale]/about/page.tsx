@@ -1,8 +1,14 @@
+import { Metadata } from "next"
 import Link from "next/link"
 import { Navbar } from "@/components/ui/navbar"
 import { Footer } from "@/components/marketing/footer"
 import { PageHeader } from "@/components/marketing/page-header"
 import { CTASection } from "@/components/marketing/cta-section"
+
+export const metadata: Metadata = {
+  title: "About ForgeDocs - Building Better Document Workflows",
+  description: "Learn about ForgeDocs, our story, and our values. Professional document management for modern teams.",
+}
 
 export default function AboutPage() {
   return (

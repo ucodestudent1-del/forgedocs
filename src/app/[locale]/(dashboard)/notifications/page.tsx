@@ -5,9 +5,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { DashboardHeader } from "@/components/dashboard/header"
 import { useToast } from "@/components/ui/use-toast"
 import {
+  AlertTriangle,
   Bell,
   Check,
   CheckCircle,
@@ -322,6 +324,3 @@ export default function NotificationsPage() {
     </div>
   )
 }
-
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { AlertTriangle } from "lucide-react"

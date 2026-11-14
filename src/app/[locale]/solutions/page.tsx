@@ -1,8 +1,14 @@
+import { Metadata } from "next"
 import Link from "next/link"
 import { Navbar } from "@/components/ui/navbar"
 import { Footer } from "@/components/marketing/footer"
 import { PageHeader } from "@/components/marketing/page-header"
 import { Scale, DollarSign, Users, GraduationCap, Home, HeartPulse, Package } from "lucide-react"
+
+export const metadata: Metadata = {
+  title: "Solutions - Built for Your Industry",
+  description: "ForgeDocs industry solutions for Legal, Finance, HR, Education, Real Estate, and Healthcare. Industry-tailored templates and features.",
+}
 
 export default function SolutionsPage() {
   const solutions = [

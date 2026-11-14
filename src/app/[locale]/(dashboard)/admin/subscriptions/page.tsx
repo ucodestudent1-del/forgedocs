@@ -14,8 +14,6 @@ import { useFormatNumber } from "@/lib/i18n"
 export default function AdminSubscriptionsPage() {
   const t = useTranslations(["admin", "common"])
   const formatNumber = useFormatNumber()
-  // TEMPORARILY DISABLED: Auth check removed for development
-  // Using mock data for demo
   const activeCount = 89
   const pastDueCount = 12
   const canceledCount = 5

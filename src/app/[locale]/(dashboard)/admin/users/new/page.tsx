@@ -21,7 +21,7 @@ export default function AdminInviteUserPage() {
       const res = await fetch("/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password: "invite-" + crypto.randomUUID(), full_name: email }),
+        body: JSON.stringify({ email, password: crypto.randomUUID(), full_name: email, role }),
       })
       if (!res.ok) {
         const err = await res.json()

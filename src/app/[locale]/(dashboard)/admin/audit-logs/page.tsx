@@ -12,7 +12,6 @@ import { AuditLogsTable } from "@/components/admin/AuditLogsTable"
 
 export default function AdminAuditLogsPage() {
   const t = useTranslations(["admin", "common"])
-  // TEMPORARILY DISABLED: Auth check removed for development
 
   return (
     <div className="space-y-6">

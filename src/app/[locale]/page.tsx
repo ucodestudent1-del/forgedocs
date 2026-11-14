@@ -1,6 +1,12 @@
-"use client"
+import { Metadata } from "next"
+import { ClientFaqSection } from "@/components/client/FaqSection"
 
-import { useState } from "react"
+export const metadata: Metadata = {
+  title: "ForgeDocs - Professional Document Management for Modern Teams",
+  description: "Create, organize, generate, and convert documents in the cloud. One platform for every document workflow. SOC 2 compliant, end-to-end encrypted, GDPR ready.",
+  keywords: ["document management", "document conversion", "e-signatures", "team collaboration", "SOC 2", "GDPR"],
+}
+
 import {
   FileText,
   Zap,
@@ -15,13 +21,11 @@ import {
   BarChart3,
   Plus,
   Rocket,
-  ChevronDown,
 } from "lucide-react"
 import { Navbar } from "@/components/ui/navbar"
 import { ScrollIndicator } from "@/components/ui/scroll-indicator"
 
 export default function LandingPage() {
-  const [openFaq, setOpenFaq] = useState<number | null>(null)
 
   return (
     <div className="flex flex-col [scroll-behavior:smooth] [scroll-padding-top:80px]">
@@ -430,26 +434,24 @@ export default function LandingPage() {
             <p className="text-lg text-muted-foreground max-w-[65ch] mx-auto">Have questions about ForgeDocs? We've got answers.</p>
           </div>
           <div className="max-w-2xl mx-auto space-y-4">
-            <FaqItem
-              index={0}
-              question="How do I get started?"
-              answer="Sign up for a free account and start creating documents in minutes. No credit card required."
-              isOpen={openFaq === 0}
-              onToggle={() => setOpenFaq(openFaq === 0 ? null : 0)}
-            />
-            <FaqItem
-              index={1}
-              question="What formats are supported?"
-              answer="We support DOCX, PDF, XLSX, PPTX, CSV, and 50+ other formats."
-              isOpen={openFaq === 1}
-              onToggle={() => setOpenFaq(openFaq === 1 ? null : 1)}
-            />
-            <FaqItem
-              index={2}
-              question="Is my data secure?"
-              answer="Yes. All documents are encrypted at rest and in transit using AES-256 encryption."
-              isOpen={openFaq === 2}
-              onToggle={() => setOpenFaq(openFaq === 2 ? null : 2)}
+            <ClientFaqSection
+              faqs={[
+                {
+                  index: 0,
+                  question: "How do I get started?",
+                  answer: "Sign up for a free account and start creating documents in minutes. No credit card required.",
+                },
+                {
+                  index: 1,
+                  question: "What formats are supported?",
+                  answer: "We support DOCX, PDF, XLSX, PPTX, CSV, and 50+ other formats.",
+                },
+                {
+                  index: 2,
+                  question: "Is my data secure?",
+                  answer: "Yes. All documents are encrypted at rest and in transit using AES-256 encryption.",
+                },
+              ]}
             />
           </div>
         </div>
@@ -587,43 +589,6 @@ function TestimonialCard({
           <p className="text-sm font-semibold text-foreground">{name}</p>
           <p className="text-xs text-muted-foreground">{role}, {company}</p>
         </div>
-      </div>
-    </div>
-  )
-}
-
-function FaqItem({
-  index,
-  question,
-  answer,
-  isOpen,
-  onToggle,
-}: {
-  index: number
-  question: string
-  answer: string
-  isOpen: boolean
-  onToggle: () => void
-}) {
-  return (
-    <div className="rounded-xl border border-input bg-background">
-      <button
-        onClick={onToggle}
-        className="w-full p-6 border-b border-input flex justify-between items-center text-left cursor-pointer group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-        aria-expanded={isOpen}
-        aria-controls={`faq-answer-${index}`}
-      >
-        <h3 className="text-lg font-medium text-foreground pr-4">{question}</h3>
-        <ChevronDown
-          className={`h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0 ${isOpen ? "rotate-180" : ""}`}
-          aria-hidden="true"
-        />
-      </button>
-      <div
-        id={`faq-answer-${index}`}
-        className={`${isOpen ? "block" : "hidden"} p-6 text-sm text-muted-foreground animate-in slide-in-from-top-2 duration-200`}
-      >
-        {answer}
       </div>
     </div>
   )

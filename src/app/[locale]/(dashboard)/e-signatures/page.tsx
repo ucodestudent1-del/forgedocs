@@ -24,6 +24,7 @@ import {
   Send,
   Settings,
   RefreshCw,
+  Loader2,
 } from "lucide-react"
 
 const STATUS_COLORS = {
@@ -180,7 +181,21 @@ export default function ESignaturesPage() {
 
       setLoading(true)
       try {
-        await new Promise((resolve) => setTimeout(resolve, 2000))
+        const formData = new FormData()
+        formData.append("document", documentFile)
+        formData.append("signers", JSON.stringify(signers))
+        formData.append("message", message)
+
+        const res = await fetch("/api/e-signatures/send", {
+          method: "POST",
+          body: formData,
+        })
+
+        if (!res.ok) {
+          const err = await res.json()
+          throw new Error(err.error || "Failed to send signature request")
+        }
+
         toast({ title: "Signature request sent!", variant: "success" })
         setActiveTab("dashboard")
         setDocumentFile(null)
@@ -392,8 +407,4 @@ function StatCard({ title, value, icon: Icon, color = "blue" }: { title: string;
       </CardContent>
     </Card>
   )
-}
-
-function Loader2({ className }: { className?: string }) {
-  return <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
 }

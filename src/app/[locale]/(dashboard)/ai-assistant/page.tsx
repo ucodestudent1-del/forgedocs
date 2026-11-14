@@ -81,37 +81,23 @@ export default function AIAssistantPage() {
 
     setProcessing(true)
     try {
-      // Simulate AI processing
-      await new Promise((resolve) => setTimeout(resolve, 1500))
+      const res = await fetch("/api/ai/assistant", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: selectedAction,
+          input: inputText,
+          tone,
+        }),
+      })
 
-      let result = ""
-      switch (selectedAction) {
-        case "generate":
-          result = `Generated content based on your requirements. This would be replaced with actual AI output from your configured provider.`
-          break
-        case "rewrite":
-          result = `Rewritten version of your text with improved clarity and flow: ${inputText}`
-          break
-        case "summarize":
-          result = `Summary: ${inputText.slice(0, 200)}...`
-          break
-        case "expand":
-          result = `Expanded version with more detail: ${inputText} Additional context and examples would be added here.`
-          break
-        case "shorten":
-          result = `Condensed: ${inputText.slice(0, 100)}...`
-          break
-        case "tone":
-          result = `[${tone.charAt(0).toUpperCase() + tone.slice(1)} tone] ${inputText}`
-          break
-        case "grammar":
-          result = `Corrected: ${inputText} (grammar fixes applied)`
-          break
-        case "translate":
-          result = `[Translated] ${inputText}`
-          break
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.error || "AI processing failed")
       }
-      setOutputText(result)
+
+      const data = await res.json()
+      setOutputText(data.result)
       toast({ title: "AI processing complete", variant: "success" })
     } catch (e) {
       toast({ title: "AI processing failed", variant: "destructive" })
@@ -138,9 +124,24 @@ export default function AIAssistantPage() {
 
     setProcessing(true)
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-      const response = `AI response to: "${userMessage}". This would come from your AI provider.`
-      setChatMessages((prev) => [...prev, { role: "assistant", content: response }])
+      const res = await fetch("/api/ai/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: userMessage,
+          history: chatMessages,
+        }),
+      })
+
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.error || "Chat failed")
+      }
+
+      const data = await res.json()
+      setChatMessages((prev) => [...prev, { role: "assistant", content: data.response }])
+    } catch (e) {
+      toast({ title: "AI processing failed", variant: "destructive" })
     } finally {
       setProcessing(false)
     }
@@ -152,7 +153,7 @@ export default function AIAssistantPage() {
         title="AI Assistant"
         description="Power your documents with AI — generate, rewrite, summarize, and more"
         action={
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={() => setActiveTab("chat")}>
             <Zap className="h-4 w-4 mr-2" />
             Configure AI Provider
           </Button>

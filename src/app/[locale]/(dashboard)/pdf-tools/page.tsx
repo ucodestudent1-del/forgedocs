@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { DashboardHeader } from "@/components/dashboard/header"
 import { useToast } from "@/components/ui/use-toast"
 import {
@@ -114,19 +115,35 @@ export default function PDFToolsPage() {
     setProgress(0)
 
     try {
-      // Simulate processing
-      for (let i = 0; i <= 100; i += 10) {
-        await new Promise((resolve) => setTimeout(resolve, 100))
-        setProgress(i)
+      const formData = new FormData()
+      files.forEach((file) => formData.append("files", file))
+      formData.append("tool", selectedTool!)
+
+      const res = await fetch("/api/pdf-tools/process", {
+        method: "POST",
+        body: formData,
+      })
+
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.error || "Processing failed")
       }
 
+      const data = await res.json()
+      if (data.downloadUrl) {
+        const a = document.createElement("a")
+        a.href = data.downloadUrl
+        a.download = `${selectedTool}-result.pdf`
+        a.click()
+      }
       toast({ title: `${tool?.label} completed successfully`, variant: "success" })
       setFiles([])
+      setProgress(100)
     } catch (e) {
       toast({ title: "Processing failed", variant: "destructive" })
     } finally {
       setProcessing(false)
-      setProgress(0)
+      setTimeout(() => setProgress(0), 500)
     }
   }
 
@@ -516,4 +533,3 @@ function ToolOptions({ toolId }: { toolId: string }) {
 }
 
 // Import Select for tool options
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"

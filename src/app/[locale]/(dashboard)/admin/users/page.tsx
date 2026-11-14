@@ -12,8 +12,6 @@ import { UserTable } from "@/components/admin/UserTable"
 
 export default function AdminUsersPage() {
   const t = useTranslations(["admin", "common"])
-  // TEMPORARILY DISABLED: Auth check removed for development
-  // Using mock data for demo
 
   return (
     <div className="space-y-6">

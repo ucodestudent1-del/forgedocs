@@ -2,12 +2,13 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { useToast } from "@/components/ui/use-toast"
 import { Shield, ArrowLeft, Lock } from "lucide-react"
-import Link from "next/link"
 
 export default function MfaDisablePage() {
   const router = useRouter()
@@ -20,9 +21,16 @@ export default function MfaDisablePage() {
     if (!token) return
     setDisabling(true)
     try {
+      // Fetch CSRF token
+      const csrfRes = await fetch("/api/csrf")
+      const csrfData = await csrfRes.json()
+
       const res = await fetch("/api/auth/mfa/disable", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(csrfData.csrf_token ? { "X-CSRF-Token": csrfData.csrf_token } : {}),
+        },
         body: JSON.stringify({ token }),
       })
       if (!res.ok) {
@@ -60,8 +68,9 @@ export default function MfaDisablePage() {
         <CardContent>
           <form onSubmit={handleDisable} className="space-y-4">
             <div className="space-y-2">
-              <label className="block text-sm font-medium">Authentication Code</label>
+              <Label htmlFor="token">Authentication Code</Label>
               <Input
+                id="token"
                 type="text"
                 maxLength={6}
                 value={token}
@@ -69,6 +78,7 @@ export default function MfaDisablePage() {
                 placeholder="123456"
                 className="w-full"
                 autoFocus
+                required
               />
             </div>
             <Button type="submit" disabled={disabling || token.length !== 6} className="w-full">

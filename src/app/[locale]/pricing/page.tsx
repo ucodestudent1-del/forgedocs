@@ -1,7 +1,13 @@
+import { Metadata } from "next"
 import Link from "next/link"
 import { Navbar } from "@/components/ui/navbar"
 import { Footer } from "@/components/marketing/footer"
 import { PricingCard } from "@/components/ui/pricing-card"
+
+export const metadata: Metadata = {
+  title: "Pricing - Simple, Transparent Document Management",
+  description: "Choose the ForgeDocs plan that fits your team. Free, Pro ($19/mo), and Business ($49/mo). All plans include a 14-day free trial.",
+}
 
 export default function PricingPage() {
   const plans = [
@@ -10,7 +16,7 @@ export default function PricingPage() {
       price: "$0",
       description: "For individuals getting started",
       interval: "/mo",
-      features: ["5 documents per month", "3 template uses", "Basic format conversion", "Community support", "1GB storage"],
+      features: ["500 documents per month", "3 template uses", "Basic format conversion", "Community support", "1GB storage"],
       ctaText: "Get started free",
       ctaHref: "/auth/signup",
       isFeatured: false,
@@ -38,7 +44,7 @@ export default function PricingPage() {
   ]
 
   const compareFeatures = [
-    { label: "Documents per month", free: "5", pro: "Unlimited", business: "Unlimited" },
+    { label: "Documents per month", free: "500", pro: "Unlimited", business: "Unlimited" },
     { label: "Template uses", free: "3", pro: "Unlimited", business: "Unlimited" },
     { label: "Format conversions", free: "Basic", pro: "All 50+", business: "All 50+" },
     { label: "Storage", free: "1 GB", pro: "10 GB", business: "100 GB" },

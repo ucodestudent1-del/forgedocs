@@ -1,8 +1,14 @@
+import { Metadata } from "next"
 import Link from "next/link"
 import { Navbar } from "@/components/ui/navbar"
 import { Footer } from "@/components/marketing/footer"
 import { PageHeader } from "@/components/marketing/page-header"
 import { CTASection } from "@/components/marketing/cta-section"
+
+export const metadata: Metadata = {
+  title: "Features - Everything You Need to Manage Documents",
+  description: "ForgeDocs features: document management, templates, format conversion, team collaboration, security & compliance, API & integrations.",
+}
 
 export default function FeaturesPage() {
   return (

@@ -1,24 +1,16 @@
-"use client"
-
+import { Metadata } from "next"
 import Link from "next/link"
 import { Navbar } from "@/components/ui/navbar"
 import { Footer } from "@/components/marketing/footer"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Label } from "@/components/ui/label"
-import { Button } from "@/components/ui/button"
+import { ClientContactForm } from "@/components/client/ContactForm"
 import { Mail, DollarSign, Shield, Clock, Copy } from "lucide-react"
-import { useToast } from "@/components/ui/use-toast"
+
+export const metadata: Metadata = {
+  title: "Contact ForgeDocs - Get in Touch",
+  description: "Contact ForgeDocs for sales, support, security, or enterprise inquiries. Email hello@forgedocs.com or use our contact form.",
+}
 
 export default function ContactPage() {
-  const { toast } = useToast()
-
-  const handleCopyEmail = (email: string) => {
-    navigator.clipboard.writeText(email).then(() => {
-      toast({ title: "Email copied to clipboard", variant: "success" })
-    })
-  }
-
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
@@ -33,29 +25,14 @@ export default function ContactPage() {
                 Have questions about ForgeDocs? Want to discuss enterprise pricing or a custom integration? We'd love to hear from you.
               </p>
               <div className="space-y-6">
-                <ContactItem label="Email" value="hello@forgedocs.com" href="mailto:hello@forgedocs.com" icon={<Mail className="h-5 w-5" />} onCopy={() => handleCopyEmail("hello@forgedocs.com")} />
-                <ContactItem label="Sales" value="sales@forgedocs.com" href="mailto:sales@forgedocs.com" icon={<DollarSign className="h-5 w-5" />} onCopy={() => handleCopyEmail("sales@forgedocs.com")} />
-                <ContactItem label="Security" value="security@forgedocs.com" href="mailto:security@forgedocs.com" icon={<Shield className="h-5 w-5" />} onCopy={() => handleCopyEmail("security@forgedocs.com")} />
-                <ContactItem label="Hours" value="Mon–Fri, 9am–6pm EST" href="#" icon={<Clock className="h-5 w-5" />} />
+                <ContactItem label="Email" value="hello@forgedocs.com" href="mailto:hello@forgedocs.com" icon={<Mail className="h-5 w-5" />} />
+                <ContactItem label="Sales" value="sales@forgedocs.com" href="mailto:sales@forgedocs.com" icon={<DollarSign className="h-5 w-5" />} />
+                <ContactItem label="Security" value="security@forgedocs.com" href="mailto:security@forgedocs.com" icon={<Shield className="h-5 w-5" />} />
+                <ContactItem label="Hours" value="Mon–Fri, 9am–6pm EST" icon={<Clock className="h-5 w-5" />} />
               </div>
             </div>
             <div>
-              <form className="space-y-4" onSubmit={(e) => {
-                e.preventDefault()
-                const formData = new FormData(e.currentTarget)
-                console.log("Contact form submitted:", Object.fromEntries(formData))
-              }}>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <TextField label="Full name" placeholder="Jane Doe" name="fullName" />
-                  <TextField label="Work email" placeholder="jane@company.com" type="email" name="email" />
-                </div>
-                <TextField label="Company" placeholder="Acme Corporation" name="company" />
-                <TextField label="Subject" placeholder="How can we help?" name="subject" />
-                <TextAreaField label="Message" placeholder="Tell us about your needs..." rows={5} name="message" />
-                <button type="submit" className="w-full py-3 bg-primary text-primary-foreground font-medium rounded-lg hover:bg-primary/90 transition-colors">
-                  Send message
-                </button>
-              </form>
+              <ClientContactForm />
             </div>
           </div>
         </div>
@@ -75,64 +52,6 @@ export default function ContactPage() {
         </div>
       </section>
       <Footer />
-    </div>
-  )
-}
-
-function ContactItem({ label, value, href, icon, onCopy }: { label: string; value: string; href?: string; icon: React.ReactNode; onCopy?: () => void }) {
-  const Content = href ? "a" : "div"
-  return (
-    <>
-      {href ? (
-        <a
-          href={href}
-          className="flex items-center gap-3 p-3 rounded-lg hover:bg-accent transition-colors"
-        >
-          <span>{icon}</span>
-          <div className="flex-1">
-            <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">{label}</p>
-            <p className="text-sm font-medium text-foreground truncate">{value}</p>
-          </div>
-          {onCopy && (
-            <button
-              onClick={(e) => {
-                e.preventDefault()
-                onCopy()
-              }}
-              className="p-1.5 text-muted-foreground hover:text-primary transition-colors"
-              aria-label="Copy email"
-            >
-              <Copy className="h-4 w-4" />
-            </button>
-          )}
-        </a>
-      ) : (
-        <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-accent transition-colors">
-          <span>{icon}</span>
-          <div>
-            <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">{label}</p>
-            <p className="text-sm font-medium text-foreground">{value}</p>
-          </div>
-        </div>
-      )}
-    </>
-  )
-}
-
-function TextField({ label, placeholder, type, name }: { label: string; placeholder: string; type?: string; name?: string }) {
-  return (
-    <div className="space-y-2">
-      <Label htmlFor={name}>{label}</Label>
-      <Input id={name} type={type || "text"} name={name} placeholder={placeholder} />
-    </div>
-  )
-}
-
-function TextAreaField({ label, placeholder, rows, name }: { label: string; placeholder: string; rows: number; name?: string }) {
-  return (
-    <div className="space-y-2">
-      <Label htmlFor={name}>{label}</Label>
-      <Textarea id={name} name={name} placeholder={placeholder} rows={rows} />
     </div>
   )
 }

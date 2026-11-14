@@ -49,6 +49,50 @@ const UNIT_CATEGORIES = [
   { id: "time", name: "Time", icon: RefreshCw },
 ]
 
+const UNIT_CODE_MAP: Record<string, Record<string, string>> = {
+  length: {
+    meter: "m", kilometer: "km", centimeter: "cm", millimeter: "mm",
+    mile: "mi", yard: "yd", foot: "ft", inch: "in",
+  },
+  mass: {
+    kilogram: "kg", gram: "g", milligram: "mg", pound: "lb", ounce: "oz",
+  },
+  temperature: {
+    celsius: "c", fahrenheit: "f", kelvin: "k",
+  },
+  volume: {
+    liter: "l", milliliter: "ml", gallon: "gal", quart: "qt",
+    pint: "pt", cup: "cup", fluid_ounce: "fl oz",
+  },
+  area: {
+    square_meter: "m2", square_kilometer: "km2", square_foot: "ft2",
+    square_inch: "in2", acre: "acre", hectare: "hectare",
+  },
+  speed: {
+    meter_per_second: "m/s", kilometer_per_hour: "km/h",
+    mile_per_hour: "mph", knot: "knot",
+  },
+  "data-size": {
+    byte: "b", kilobyte: "kb", megabyte: "mb",
+    gigabyte: "gb", terabyte: "tb", bit: "bit",
+    kilobit: "kb", megabit: "mb", gigabit: "gb",
+  },
+  angle: {
+    degree: "deg", radian: "rad", gradian: "grad",
+  },
+  energy: {
+    joule: "j", kilojoule: "kj", calorie: "cal", kilocalorie: "kcal",
+    watt_hour: "wh",
+  },
+  pressure: {
+    pascal: "pa", kilopascal: "kpa", bar: "bar", psi: "psi", atm: "atm",
+  },
+  time: {
+    second: "s", minute: "min", hour: "h", day: "d",
+    week: "w", month: "mo", year: "y",
+  },
+}
+
 const UNIT_DEFINITIONS: Record<string, { value: string; label: string }[]> = {
   length: [
     { value: "meter", label: "Meter" },
@@ -170,6 +214,15 @@ export default function ConversionPage() {
    const [unitValue, setUnitValue] = useState("")
   const [unitOptions, setUnitOptions] = useState<{ value: string; label: string }[]>([])
 
+  // Auto-select first category on mount
+  useEffect(() => {
+    if (!unitCategory && UNIT_CATEGORIES.length > 0) {
+      const first = UNIT_CATEGORIES[0]
+      setUnitCategory(first.id)
+      setUnitOptions(UNIT_DEFINITIONS[first.id] || [])
+    }
+  }, [])
+
   // Metadata tab state
   const [metaSourceFormat, setMetaSourceFormat] = useState("json")
   const [metaTargetFormat, setMetaTargetFormat] = useState("yaml")
@@ -284,13 +337,15 @@ export default function ConversionPage() {
     }
     setConverting(true)
     try {
+      const fromCode = UNIT_CODE_MAP[unitCategory]?.[unitFrom] || unitFrom
+      const toCode = UNIT_CODE_MAP[unitCategory]?.[unitTo] || unitTo
       const res = await fetch("/api/conversion", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           type: "unit",
-          source_format: unitFrom,
-          target_format: unitTo,
+          source_format: fromCode,
+          target_format: toCode,
           value: unitValue,
         }),
       })

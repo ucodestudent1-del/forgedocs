@@ -1,9 +1,13 @@
-"use client"
-
-import { useState } from "react"
+import { Metadata } from "next"
 import Link from "next/link"
 import { Navbar } from "@/components/ui/navbar"
 import { Footer } from "@/components/marketing/footer"
+import { ClientFaqSection } from "@/components/client/FaqSection"
+
+export const metadata: Metadata = {
+  title: "FAQ - Frequently Asked Questions",
+  description: "Find answers to common questions about ForgeDocs pricing, security, features, and more.",
+}
 
 export default function FAQPage() {
   const faqs = [
@@ -59,12 +63,6 @@ export default function FAQPage() {
     },
   ]
 
-  const [openIds, setOpenIds] = useState<string[]>([])
-
-  const toggle = (id: string) => {
-    setOpenIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
-  }
-
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
@@ -78,11 +76,13 @@ export default function FAQPage() {
               Everything you need to know about ForgeDocs, from pricing to security to getting started.
             </p>
           </div>
-          <div className="max-w-3xl mx-auto space-y-3">
-            {faqs.map((faq) => (
-              <FaqItem key={faq.id} {...faq} isOpen={openIds.includes(faq.id)} onToggle={toggle} />
-            ))}
-          </div>
+          <ClientFaqSection
+            faqs={faqs.map((faq) => ({
+              index: parseInt(faq.id),
+              question: faq.question,
+              answer: faq.answer,
+            }))}
+          />
           <div className="mt-16 text-center">
             <p className="text-muted-foreground">Still have questions?</p>
             <Link href="/contact" className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline">
@@ -92,22 +92,6 @@ export default function FAQPage() {
         </div>
       </section>
       <Footer />
-    </div>
-  )
-}
-
-function FaqItem({ question, answer, isOpen, onToggle }: { question: string; answer: string; isOpen: boolean; onToggle: (id: string) => void }) {
-  return (
-    <div className="border-b border-input pb-6 last:border-b-0">
-      <button
-        onClick={() => onToggle(question)}
-        aria-expanded={isOpen}
-        className="w-full flex items-center justify-between text-left text-lg font-medium text-foreground hover:text-primary transition-colors"
-      >
-        <span>{question}</span>
-        <span className="text-muted-foreground">{isOpen ? "↑" : "→"}</span>
-      </button>
-      {isOpen && <p className="mt-4 text-sm text-muted-foreground leading-relaxed">{answer}</p>}
     </div>
   )
 }

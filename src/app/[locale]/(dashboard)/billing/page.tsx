@@ -21,9 +21,10 @@ interface PlanCardProps {
 
 export default function BillingPage() {
   // TEMPORARILY DISABLED: Auth check removed for development
-  const tier = "free"
+  const [tier, setTier] = useState<"free" | "pro" | "business">("free")
   const t = useTranslations(["common", "billing", "dashboard"])
   const { toast } = useToast()
+  const [mrr, setMrr] = useState(0)
 
   const tierInfo = {
     free: {
@@ -42,9 +43,17 @@ export default function BillingPage() {
       features: ["Unlimited documents", "Unlimited conversions", "100 GB storage", "Priority support", "Advanced templates", "Audit logs"],
       limits: { documents: null, conversions: null, storage: "100 GB" },
     },
+    business: {
+      name: "Business",
+      price: "$49",
+      priceId: "price_business_monthly",
+      description: "For established organizations",
+      features: ["Everything in Pro", "SSO / SAML authentication", "Advanced analytics & reporting", "Dedicated account manager", "Custom integrations", "Unlimited version history", "SLA guarantee"],
+      limits: { documents: null, conversions: null, storage: "500 GB" },
+    },
   }
 
-  const currentTier = tierInfo[tier as keyof typeof tierInfo] || tierInfo.free
+  const currentTier = tierInfo[tier]
 
   const handleChoosePlan = async (priceId: string | null) => {
     if (!priceId) return
@@ -112,10 +121,11 @@ export default function BillingPage() {
           <CardTitle className="text-foreground">Usage This Period</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <UsageStat title={t("documentsCreated")} value="0/500" icon={CreditCard} />
             <UsageStat title={t("conversions")} value="0/100" icon={DollarSign} />
             <UsageStat title={t("storage")} value="0 MB / 5 GB" icon={Users} />
+            <UsageStat title="MRR" value={`$${mrr}`} icon={Settings} />
           </div>
         </CardContent>
       </Card>
@@ -126,7 +136,7 @@ export default function BillingPage() {
           <CardTitle className="text-foreground">Choose a Plan</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <PlanCard
               name="Free"
               price="$0"
@@ -143,7 +153,17 @@ export default function BillingPage() {
               priceId={tierInfo.pro.priceId}
               description="For power users and growing teams"
               features={["Unlimited documents", "Unlimited conversions", "100 GB storage", "Priority support", "Advanced templates", "Audit logs"]}
-              popular={true}
+              popular={tier === "pro"}
+              currentTier={tier}
+              onChoosePlan={handleChoosePlan}
+            />
+            <PlanCard
+              name="Business"
+              price="$49"
+              priceId={tierInfo.business.priceId}
+              description="For established organizations"
+              features={tierInfo.business.features}
+              popular={tier === "business"}
               currentTier={tier}
               onChoosePlan={handleChoosePlan}
             />
