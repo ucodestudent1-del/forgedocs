@@ -18,10 +18,8 @@ export function CTASection({ title, description, ctaText, ctaHref }: CTASectionP
       {description && (
         <p className="text-primary-foreground/90 mb-8 max-w-lg mx-auto">{description}</p>
       )}
-      <Link href={ctaHref} className="inline-block">
-        <a className="px-8 py-4 bg-background text-primary font-semibold rounded-lg hover:bg-primary/90 transition-colors shadow-lg shadow-primary/30">
-          {ctaText}
-        </a>
+      <Link href={ctaHref} className="inline-block px-8 py-4 bg-background text-primary font-semibold rounded-lg hover:bg-primary/90 transition-colors shadow-lg shadow-primary/30">
+        {ctaText}
       </Link>
     </div>
   )

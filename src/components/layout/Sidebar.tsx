@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { useLocale, useTranslations } from "next-intl"
+import { useLocale, useTranslations } from "@/lib/i18n"
 import {
   LayoutDashboard,
   FileText,

@@ -1,5 +1,6 @@
 import { Metadata } from "next"
 import Link from "next/link"
+import { defaultLocale } from "@/i18n/locales"
 
 export const metadata: Metadata = {
   title: "Page not found",
@@ -18,8 +19,12 @@ export async function generateStaticParams() {
   ]
 }
 
-export default async function NotFound({ params }: { params: Promise<{ locale: string }> }) {
-  const { locale } = await params
+export default async function NotFound({
+  params,
+}: {
+  params: Promise<{ locale: string }> | undefined
+}) {
+  const locale = params ? (await params)?.locale || defaultLocale : defaultLocale
   const isRtl = locale === "ar"
 
   return (
