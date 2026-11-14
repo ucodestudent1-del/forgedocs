@@ -1,3 +1,4 @@
+import "server-only"
 import { getRouteClient } from "@/lib/supabase"
 import { NextResponse } from "next/server"
 import { z } from "zod"

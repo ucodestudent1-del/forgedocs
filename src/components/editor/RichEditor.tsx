@@ -59,7 +59,22 @@ interface EditorProps {
   onExport?: (format: "pdf" | "docx" | "html" | "md") => Promise<void>
 }
 
-const TOOLBAR_GROUPS = [
+interface ToolbarItem {
+  id: string
+  icon: React.ElementType
+  title: string
+  shortcut?: string
+  format?: string
+  value?: string
+  action?: string
+}
+
+interface ToolbarGroup {
+  name: string
+  items: ToolbarItem[]
+}
+
+const TOOLBAR_GROUPS: ToolbarGroup[] = [
   {
     name: "history",
     items: [
@@ -541,7 +556,7 @@ export function RichEditor({
         const range = selection.getRangeAt(0)
         range.deleteContents()
         range.insertNode(img)
-        range.collapseAfter(img)
+        range.collapse(false)
       }
       setShowImageDialog(false)
       setImageUrl("")
@@ -812,7 +827,7 @@ function ToolbarGroup({
   readOnly,
   executeFormat,
 }: {
-  group: typeof TOOLBAR_GROUPS[0]
+  group: ToolbarGroup
   readOnly: boolean
   executeFormat: (command: string, value?: string) => void
 }) {

@@ -55,3 +55,31 @@ export default function ContactPage() {
     </div>
   )
 }
+
+function ContactItem({ label, value, href, icon }: { label: string; value: string; href?: string; icon: React.ReactNode }) {
+  const Content = href ? "a" : "div"
+  return (
+    <>
+      {href ? (
+        <a
+          href={href}
+          className="flex items-center gap-3 p-3 rounded-lg hover:bg-accent transition-colors"
+        >
+          <span>{icon}</span>
+          <div className="flex-1">
+            <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">{label}</p>
+            <p className="text-sm font-medium text-foreground truncate">{value}</p>
+          </div>
+        </a>
+      ) : (
+        <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-accent transition-colors">
+          <span>{icon}</span>
+          <div>
+            <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">{label}</p>
+            <p className="text-sm font-medium text-foreground">{value}</p>
+          </div>
+        </div>
+      )}
+    </>
+  )
+}
