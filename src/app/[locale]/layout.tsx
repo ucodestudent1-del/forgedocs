@@ -1,6 +1,22 @@
 import { NextIntlClientProvider } from "next-intl"
-import { getMessages } from "next-intl/server"
-import { routing } from "@/i18n/routing"
+
+import messagesEn from "@/messages/en.json"
+import messagesEs from "@/messages/es.json"
+import messagesAr from "@/messages/ar.json"
+import messagesFr from "@/messages/fr.json"
+import messagesDe from "@/messages/de.json"
+import messagesJa from "@/messages/ja.json"
+import messagesZh from "@/messages/zh.json"
+
+const messagesMap: Record<string, Record<string, unknown>> = {
+  en: messagesEn,
+  es: messagesEs,
+  ar: messagesAr,
+  fr: messagesFr,
+  de: messagesDe,
+  ja: messagesJa,
+  zh: messagesZh,
+}
 
 interface LocaleLayoutProps {
   children: React.ReactNode
@@ -12,7 +28,7 @@ export default async function LocaleLayout({
   params,
 }: LocaleLayoutProps) {
   const { locale } = await params
-  const messages = await getMessages({ locale })
+  const messages = messagesMap[locale] || messagesEn
   const isRtl = locale === "ar"
 
   return (
