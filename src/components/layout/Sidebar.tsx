@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { useLocale, useTranslations } from "@/lib/i18n"
 import {
   LayoutDashboard,
@@ -69,6 +69,7 @@ export function Sidebar({
   const tCommon = useTranslations("common")
   const pathname = usePathname()
   const locale = useLocale()
+  const router = useRouter()
   const isRtl = locale === "ar"
   const [expandedSections, setExpandedSections] = useState<string[]>([])
   const { toast } = useToast()
@@ -138,16 +139,16 @@ export function Sidebar({
   const handleQuickAction = (action: string) => {
     switch (action) {
       case "create":
-        window.location.href = "/document-generator"
+        router.push(`/${locale}/document-generator`)
         break
       case "convert":
-        window.location.href = "/conversion"
+        router.push(`/${locale}/conversion`)
         break
       case "merge":
-        window.location.href = "/pdf-tools?tool=merge"
+        router.push(`/${locale}/pdf-tools?tool=merge`)
         break
       case "ai-generate":
-        window.location.href = "/ai-assistant"
+        router.push(`/${locale}/ai-assistant`)
         break
       default:
         break
@@ -359,7 +360,7 @@ export function Sidebar({
                 } catch {
                   // ignore
                 }
-                window.location.href = "/auth/login"
+                router.push(`/${locale}/auth/login`)
               }}
               className={`p-2 rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors ${
                 collapsed ? "mx-auto" : ""

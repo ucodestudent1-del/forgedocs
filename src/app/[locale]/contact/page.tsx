@@ -7,9 +7,18 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
-import { Mail, DollarSign, Shield, Clock } from "lucide-react"
+import { Mail, DollarSign, Shield, Clock, Copy } from "lucide-react"
+import { useToast } from "@/components/ui/use-toast"
 
 export default function ContactPage() {
+  const { toast } = useToast()
+
+  const handleCopyEmail = (email: string) => {
+    navigator.clipboard.writeText(email).then(() => {
+      toast({ title: "Email copied to clipboard", variant: "success" })
+    })
+  }
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
@@ -24,9 +33,9 @@ export default function ContactPage() {
                 Have questions about ForgeDocs? Want to discuss enterprise pricing or a custom integration? We'd love to hear from you.
               </p>
               <div className="space-y-6">
-                <ContactItem label="Email" value="hello@forgedocs.com" href="mailto:hello@forgedocs.com" icon={<Mail className="h-5 w-5" />} />
-                <ContactItem label="Sales" value="sales@forgedocs.com" href="mailto:sales@forgedocs.com" icon={<DollarSign className="h-5 w-5" />} />
-                <ContactItem label="Security" value="security@forgedocs.com" href="mailto:security@forgedocs.com" icon={<Shield className="h-5 w-5" />} />
+                <ContactItem label="Email" value="hello@forgedocs.com" href="mailto:hello@forgedocs.com" icon={<Mail className="h-5 w-5" />} onCopy={() => handleCopyEmail("hello@forgedocs.com")} />
+                <ContactItem label="Sales" value="sales@forgedocs.com" href="mailto:sales@forgedocs.com" icon={<DollarSign className="h-5 w-5" />} onCopy={() => handleCopyEmail("sales@forgedocs.com")} />
+                <ContactItem label="Security" value="security@forgedocs.com" href="mailto:security@forgedocs.com" icon={<Shield className="h-5 w-5" />} onCopy={() => handleCopyEmail("security@forgedocs.com")} />
                 <ContactItem label="Hours" value="Mon–Fri, 9am–6pm EST" href="#" icon={<Clock className="h-5 w-5" />} />
               </div>
             </div>
@@ -70,7 +79,7 @@ export default function ContactPage() {
   )
 }
 
-function ContactItem({ label, value, href, icon }: { label: string; value: string; href?: string; icon: React.ReactNode }) {
+function ContactItem({ label, value, href, icon, onCopy }: { label: string; value: string; href?: string; icon: React.ReactNode; onCopy?: () => void }) {
   const Content = href ? "a" : "div"
   return (
     <>
@@ -80,10 +89,22 @@ function ContactItem({ label, value, href, icon }: { label: string; value: strin
           className="flex items-center gap-3 p-3 rounded-lg hover:bg-accent transition-colors"
         >
           <span>{icon}</span>
-          <div>
+          <div className="flex-1">
             <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">{label}</p>
-            <p className="text-sm font-medium text-foreground">{value}</p>
+            <p className="text-sm font-medium text-foreground truncate">{value}</p>
           </div>
+          {onCopy && (
+            <button
+              onClick={(e) => {
+                e.preventDefault()
+                onCopy()
+              }}
+              className="p-1.5 text-muted-foreground hover:text-primary transition-colors"
+              aria-label="Copy email"
+            >
+              <Copy className="h-4 w-4" />
+            </button>
+          )}
         </a>
       ) : (
         <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-accent transition-colors">

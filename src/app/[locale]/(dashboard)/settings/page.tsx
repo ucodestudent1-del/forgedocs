@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { DashboardHeader } from "@/components/dashboard/header"
 import { useToast } from "@/components/ui/use-toast"
-import { updateProfileLanguage } from "@/app/actions/settings"
+import { updateProfile, updateProfileLanguage, updateNotificationPreferences } from "@/app/actions/settings"
 import { createBrowserSupabaseClient } from "@/lib/supabase-browser"
 import {
   User,
@@ -44,6 +44,10 @@ const TABS = [
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<string>("profile")
   const [saving, setSaving] = useState(false)
+  const [exporting, setExporting] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [importing, setImporting] = useState(false)
+  const [revoking, setRevoking] = useState(false)
   const { toast } = useToast()
 
   // Profile state
@@ -103,7 +107,13 @@ export default function SettingsPage() {
   const handleSaveProfile = async () => {
     setSaving(true)
     try {
-      const result = await updateProfileLanguage(profile.language)
+      const result = await updateProfile({
+        fullName: profile.fullName,
+        email: profile.email,
+        bio: profile.bio,
+        timezone: profile.timezone,
+        language: profile.language,
+      })
       if (result.error) {
         toast({ title: result.error, variant: "destructive" })
         return
@@ -146,6 +156,7 @@ export default function SettingsPage() {
   }
 
   const handleExportData = async () => {
+    setExporting(true)
     try {
       const supabase = createBrowserSupabaseClient() as any
       const { data: { user } } = await supabase.auth.getUser()
@@ -175,10 +186,13 @@ export default function SettingsPage() {
       toast({ title: "Data exported successfully", variant: "success" })
     } catch {
       toast({ title: "Failed to export data", variant: "destructive" })
+    } finally {
+      setExporting(false)
     }
   }
 
   const handleExportDocuments = async () => {
+    setExporting(true)
     try {
       const supabase = createBrowserSupabaseClient() as any
       const { data: { user } } = await supabase.auth.getUser()
@@ -205,6 +219,21 @@ export default function SettingsPage() {
       toast({ title: "Documents exported successfully", variant: "success" })
     } catch {
       toast({ title: "Failed to export documents", variant: "destructive" })
+    } finally {
+      setExporting(false)
+    }
+  }
+
+  const handleSaveNotificationPreferences = async () => {
+    try {
+      const result = await updateNotificationPreferences(notifSettings)
+      if (result.error) {
+        toast({ title: result.error, variant: "destructive" })
+        return
+      }
+      toast({ title: "Notification preferences saved", variant: "success" })
+    } catch {
+      toast({ title: "Failed to save notification preferences", variant: "destructive" })
     }
   }
 
@@ -212,31 +241,82 @@ export default function SettingsPage() {
     if (!confirm("Are you absolutely sure? This will permanently delete your account and all data. This action cannot be undone.")) {
       return
     }
+    setDeleting(true)
     try {
       const supabase = createBrowserSupabaseClient() as any
       const { error } = await supabase.auth.deleteUser()
       if (error) {
         toast({ title: error.message || "Failed to delete account", variant: "destructive" })
+        setDeleting(false)
         return
       }
-      toast({ title: "Account deleted successfully", variant: "success" })
-      setTimeout(() => {
-        window.location.href = "/auth/login"
-      }, 1500)
+    toast({ title: "Account deleted successfully", variant: "success" })
+    setTimeout(() => {
+      window.location.href = "/auth/login"
+    }, 1500)
+    setDeleting(false)
     } catch {
       toast({ title: "Failed to delete account", variant: "destructive" })
+      setDeleting(false)
     }
   }
 
-  const handleRevokeSession = (sessionId: string) => {
-    setSessions(sessions.filter((s) => s.id !== sessionId))
-    toast({ title: "Session revoked", variant: "success" })
+  const handleRevokeSession = async (sessionId: string) => {
+    setRevoking(true)
+    try {
+      const res = await fetch(`/api/auth/sessions/${sessionId}`, { method: "DELETE" })
+      if (!res.ok) throw new Error("Failed to revoke session")
+      setSessions(sessions.filter((s) => s.id !== sessionId))
+      toast({ title: "Session revoked", variant: "success" })
+    } catch {
+      toast({ title: "Failed to revoke session", variant: "destructive" })
+    } finally {
+      setRevoking(false)
+    }
   }
 
-  const handleRevokeAllSessions = () => {
+  const handleImportData = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    setImporting(true)
+    const file = e.target.files?.[0]
+    if (!file) {
+      setImporting(false)
+      return
+    }
+    try {
+      const text = await file.text()
+      const data = JSON.parse(text)
+      if (!data.documents && !data.templates && !data.profile) {
+        toast({ title: "Invalid export file format", variant: "destructive" })
+        setImporting(false)
+        return
+      }
+      const res = await fetch("/api/documents/import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      })
+      if (!res.ok) throw new Error("Import failed")
+      toast({ title: "Data imported successfully", variant: "success" })
+    } catch {
+      toast({ title: "Failed to import data", variant: "destructive" })
+    } finally {
+      setImporting(false)
+    }
+  }
+
+  const handleRevokeAllSessions = async () => {
     if (confirm("Revoke all other sessions? You'll be logged out everywhere except this device.")) {
-      setSessions(sessions.filter((s) => s.current))
-      toast({ title: "All other sessions revoked", variant: "success" })
+      setRevoking(true)
+      try {
+        const res = await fetch("/api/auth/sessions", { method: "DELETE" })
+        if (!res.ok) throw new Error("Failed to revoke sessions")
+        setSessions(sessions.filter((s) => s.current))
+        toast({ title: "All other sessions revoked", variant: "success" })
+      } catch {
+        toast({ title: "Failed to revoke sessions", variant: "destructive" })
+      } finally {
+        setRevoking(false)
+      }
     }
   }
 
@@ -411,7 +491,7 @@ export default function SettingsPage() {
                       <Key className="h-4 w-4 mr-2" />
                       View Backup Codes
                     </Button>
-                    <Button variant="outline" onClick={() => window.location.href = "/auth/mfa/disable"} className="text-destructive">
+                    <Button variant="destructive" onClick={() => window.location.href = "/auth/mfa/disable"}>
                       <Trash2 className="h-4 w-4 mr-2" />
                       Disable 2FA
                     </Button>
@@ -540,6 +620,7 @@ export default function SettingsPage() {
                             ...prev,
                             [section.key]: { ...prev[section.key as keyof typeof notifSettings], [key]: e.target.checked },
                           }))
+                          handleSaveNotificationPreferences()
                         }}
                       />
                     </label>
@@ -669,7 +750,7 @@ export default function SettingsPage() {
               <div className="p-4 border-2 border-dashed rounded-lg text-center">
                 <Upload className="h-12 w-12 mx-auto mb-3 text-muted-foreground" />
                 <p className="text-muted-foreground">Drag and drop a JSON export file here, or click to browse</p>
-                <Input type="file" accept=".json" className="max-w-xs mx-auto mt-3" />
+                <Input type="file" accept=".json" className="max-w-xs mx-auto mt-3" onChange={handleImportData} />
               </div>
             </CardContent>
           </Card>

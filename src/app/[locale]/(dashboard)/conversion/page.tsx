@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useState, useCallback } from "react"
+import React, { useEffect, useState, useCallback, useRef } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -20,6 +20,7 @@ import {
 } from "lucide-react"
 import { documentRateLimit } from "@/lib/rate-limit"
 import { validateCSRF } from "@/lib/csrf"
+import { useToast } from "@/components/ui/use-toast"
 
 type Tab = "document" | "unit" | "metadata"
 
@@ -48,11 +49,99 @@ const UNIT_CATEGORIES = [
   { id: "time", name: "Time", icon: RefreshCw },
 ]
 
+const UNIT_DEFINITIONS: Record<string, { value: string; label: string }[]> = {
+  length: [
+    { value: "meter", label: "Meter" },
+    { value: "kilometer", label: "Kilometer" },
+    { value: "centimeter", label: "Centimeter" },
+    { value: "millimeter", label: "Millimeter" },
+    { value: "mile", label: "Mile" },
+    { value: "yard", label: "Yard" },
+    { value: "foot", label: "Foot" },
+    { value: "inch", label: "Inch" },
+  ],
+  mass: [
+    { value: "kilogram", label: "Kilogram" },
+    { value: "gram", label: "Gram" },
+    { value: "milligram", label: "Milligram" },
+    { value: "pound", label: "Pound" },
+    { value: "ounce", label: "Ounce" },
+  ],
+  temperature: [
+    { value: "celsius", label: "Celsius" },
+    { value: "fahrenheit", label: "Fahrenheit" },
+    { value: "kelvin", label: "Kelvin" },
+  ],
+  volume: [
+    { value: "liter", label: "Liter" },
+    { value: "milliliter", label: "Milliliter" },
+    { value: "gallon", label: "Gallon" },
+    { value: "quart", label: "Quart" },
+    { value: "pint", label: "Pint" },
+    { value: "cup", label: "Cup" },
+    { value: "fluid_ounce", label: "Fluid Ounce" },
+  ],
+  area: [
+    { value: "square_meter", label: "Square Meter" },
+    { value: "square_kilometer", label: "Square Kilometer" },
+    { value: "square_foot", label: "Square Foot" },
+    { value: "square_inch", label: "Square Inch" },
+    { value: "acre", label: "Acre" },
+    { value: "hectare", label: "Hectare" },
+  ],
+  speed: [
+    { value: "meter_per_second", label: "Meter per Second" },
+    { value: "kilometer_per_hour", label: "Kilometer per Hour" },
+    { value: "mile_per_hour", label: "Mile per Hour" },
+    { value: "knot", label: "Knot" },
+  ],
+  "data-size": [
+    { value: "byte", label: "Byte" },
+    { value: "kilobyte", label: "Kilobyte" },
+    { value: "megabyte", label: "Megabyte" },
+    { value: "gigabyte", label: "Gigabyte" },
+    { value: "terabyte", label: "Terabyte" },
+    { value: "bit", label: "Bit" },
+    { value: "kilobit", label: "Kilobit" },
+    { value: "megabit", label: "Megabit" },
+    { value: "gigabit", label: "Gigabit" },
+  ],
+  angle: [
+    { value: "degree", label: "Degree" },
+    { value: "radian", label: "Radian" },
+    { value: "gradian", label: "Gradian" },
+  ],
+  energy: [
+    { value: "joule", label: "Joule" },
+    { value: "kilojoule", label: "Kilojoule" },
+    { value: "calorie", label: "Calorie" },
+    { value: "kilocalorie", label: "Kilocalorie" },
+    { value: "watt_hour", label: "Watt Hour" },
+  ],
+  pressure: [
+    { value: "pascal", label: "Pascal" },
+    { value: "kilopascal", label: "Kilopascal" },
+    { value: "bar", label: "Bar" },
+    { value: "psi", label: "PSI" },
+    { value: "atm", label: "Atmosphere" },
+  ],
+  time: [
+    { value: "second", label: "Second" },
+    { value: "minute", label: "Minute" },
+    { value: "hour", label: "Hour" },
+    { value: "day", label: "Day" },
+    { value: "week", label: "Week" },
+    { value: "month", label: "Month" },
+    { value: "year", label: "Year" },
+  ],
+}
+
 export default function ConversionPage() {
   const [jobs, setJobs] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [converting, setConverting] = useState(false)
   const [activeTab, setActiveTab] = useState<Tab>("document")
+  const { toast } = useToast()
 
   // Document tab state
   const [sourceFile, setSourceFile] = useState<File | null>(null)
@@ -60,6 +149,18 @@ export default function ConversionPage() {
   const [selectedTargetFormat, setSelectedTargetFormat] = useState("")
   const [uploadProgress, setUploadProgress] = useState(0)
   const [search, setSearch] = useState("")
+  const [debouncedSearch, setDebouncedSearch] = useState("")
+  const searchDebounceRef = useRef<NodeJS.Timeout | null>(null)
+
+  useEffect(() => {
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current)
+    searchDebounceRef.current = setTimeout(() => {
+      setDebouncedSearch(search)
+    }, 300)
+    return () => {
+      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current)
+    }
+  }, [search])
   const t = useTranslations(["conversion", "common", "errors"])
 
   // Unit tab state
@@ -67,6 +168,7 @@ export default function ConversionPage() {
   const [unitFrom, setUnitFrom] = useState("")
   const [unitTo, setUnitTo] = useState("")
    const [unitValue, setUnitValue] = useState("")
+  const [unitOptions, setUnitOptions] = useState<{ value: string; label: string }[]>([])
 
   // Metadata tab state
   const [metaSourceFormat, setMetaSourceFormat] = useState("json")
@@ -110,11 +212,11 @@ export default function ConversionPage() {
 
   async function handleDocumentConvert() {
     if (!sourceFile && !selectedSourceUrl) {
-      alert("Please select a file or enter a URL")
+      toast({ title: "Please select a file or enter a URL", variant: "destructive" })
       return
     }
     if (!selectedTargetFormat) {
-      alert("Please select a target format")
+      toast({ title: "Please select a target format", variant: "destructive" })
       return
     }
     setConverting(true)
@@ -170,14 +272,14 @@ export default function ConversionPage() {
       setConverting(false)
     } catch (e) {
       console.error(e)
-      alert(t("conversionFailed"))
+      toast({ title: t("conversionFailed"), variant: "destructive" })
       setConverting(false)
     }
   }
 
   async function handleUnitConvert() {
     if (!unitCategory || !unitFrom || !unitTo || !unitValue) {
-      alert(t("errors.validationError"))
+      toast({ title: t("errors.validationError"), variant: "destructive" })
       return
     }
     setConverting(true)
@@ -197,10 +299,10 @@ export default function ConversionPage() {
         throw new Error(err.error || "Unit conversion failed")
       }
       const data = await res.json()
-      alert(`${unitValue} ${unitFrom} = ${data.result} ${unitTo}`)
+      toast({ title: `${unitValue} ${unitFrom} = ${data.result} ${unitTo}`, variant: "success" })
     } catch (e) {
       console.error(e)
-      alert(t("conversionFailed"))
+      toast({ title: t("conversionFailed"), variant: "destructive" })
     } finally {
       setConverting(false)
     }
@@ -227,17 +329,38 @@ export default function ConversionPage() {
       setMetaResult(data.output)
     } catch (e) {
       console.error(e)
-      alert(t("conversionFailed"))
+      toast({ title: t("conversionFailed"), variant: "destructive" })
     } finally {
       setConverting(false)
     }
   }
 
-  const handleDownload = (url: string) => {
-    const a = document.createElement("a")
-    a.href = url
-    a.download = "converted-document"
-    a.click()
+  const handleDownload = async (url: string, targetFormat?: string) => {
+    try {
+      const res = await fetch(url)
+      if (!res.ok) throw new Error("Download failed")
+      const blob = await res.blob()
+      const disposition = res.headers.get("Content-Disposition")
+      let filename = `converted-document`
+      if (disposition) {
+        const match = disposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/)
+        if (match) filename = match[1].replace(/['"]/g, "")
+      }
+      if (targetFormat && !filename.includes(".")) {
+        filename += `.${targetFormat.toLowerCase()}`
+      }
+      const downloadUrl = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = downloadUrl
+      a.download = filename
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(downloadUrl)
+    } catch (e) {
+      console.error(e)
+      toast({ title: "Download failed", variant: "destructive" })
+    }
   }
 
   const statusBadge = (status: string) => {
@@ -405,6 +528,7 @@ export default function ConversionPage() {
                         setUnitCategory(cat.id)
                         setUnitFrom("")
                         setUnitTo("")
+                        setUnitOptions(UNIT_DEFINITIONS[cat.id] || [])
                       }}
                       className={`px-3 py-1.5 rounded-md text-sm border transition-colors ${
                         unitCategory === cat.id
@@ -429,6 +553,11 @@ export default function ConversionPage() {
                         className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                       >
                         <option value="">Select unit</option>
+                        {unitOptions.map((opt) => (
+                          <option key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </option>
+                        ))}
                       </select>
                     </div>
                     <div className="flex flex-col gap-2">
@@ -439,6 +568,11 @@ export default function ConversionPage() {
                         className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                       >
                         <option value="">Select unit</option>
+                        {unitOptions.map((opt) => (
+                          <option key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </option>
+                        ))}
                       </select>
                     </div>
                   </div>
@@ -586,9 +720,9 @@ export default function ConversionPage() {
                 </div>
               ) : (
                 jobs.filter((job) =>
-                  (job.source_url || "").toLowerCase().includes(search.toLowerCase()) ||
-                  job.target_format.toLowerCase().includes(search.toLowerCase()) ||
-                  job.status.toLowerCase().includes(search.toLowerCase())
+                  (job.source_url || "").toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+                  job.target_format.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+                  job.status.toLowerCase().includes(debouncedSearch.toLowerCase())
                 ).map((job) => (
                   <div key={job.id} className="flex items-center justify-between px-3 py-2 text-sm border-b">
                     <div className="flex items-center gap-3 w-1/3">
@@ -608,7 +742,7 @@ export default function ConversionPage() {
                             job.download_url ||
                             job.output_url ||
                             `/api/conversion/${job.id}?download=true`
-                          handleDownload(downloadUrl)
+                          handleDownload(downloadUrl, job.target_format)
                         }}
                         className="ml-4 text-sm text-primary hover:underline"
                       >

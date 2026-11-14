@@ -8,10 +8,12 @@ import { TEMPLATE_LIBRARY, getTemplateById } from "@/lib/templateLibrary"
 import { DocumentGenerator } from "@/lib/documentGenerator"
 import { useTranslations } from "@/lib/i18n"
 import { useRouter, useSearchParams } from "next/navigation"
+import { useToast } from "@/components/ui/use-toast"
 
 export default function DocumentGeneratorPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { toast } = useToast()
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null)
   const [templateData, setTemplateData] = useState<Record<string, string>>({})
   const t = useTranslations(["errors", "common"])
@@ -53,7 +55,7 @@ export default function DocumentGeneratorPage() {
       URL.revokeObjectURL(url)
     } catch (e) {
       console.error("Generation failed:", e)
-      alert(t("documentGenerationFailed") + ": " + (e instanceof Error ? e.message : String(e)))
+      toast({ title: t("documentGenerationFailed"), description: e instanceof Error ? e.message : String(e), variant: "destructive" })
     } finally {
       setIsGenerating(false)
     }
