@@ -1,45 +1,25 @@
 import ReaderPage from "@/components/reader/ReaderPage"
+import { getDocumentWithTranslation } from "@/app/actions/translations"
 
 export const dynamic = "force-dynamic"
 
 export default async function ReaderPageRoute({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
   const { id } = await params
+  const { locale } = await searchParams
 
-  // TEMPORARILY DISABLED: Auth check removed for development
-  // const supabase = await createRouteClient()
-  // const { data: { user } } = await supabase.auth.getUser()
-  // if (!user) {
-  //   return redirect("/auth/login")
-  // }
+  // Resolve user locale from query param (set by reader based on user's preference)
+  const userLocale = locale && typeof locale === "string" ? locale : "en"
 
-  // const { data: doc, error } = await supabase
-  //   .from("documents")
-  //   .select("id, title, content, mime_type, version, updated_at, user_id")
-  //   .eq("id", id)
-  //   .single()
+  const doc = await getDocumentWithTranslation(id, userLocale)
 
-  // if (error || !doc) {
-  //   return <ReaderPage document={{ error: "Document not found" }} />
-  // }
-
-  // Only the owner may read the document
-  // if (user && doc.user_id !== user.id) {
-  //   return <ReaderPage document={{ error: "You do not have access to this document" }} />
-  // }
-
-  // Mock document for demo
-  const doc = {
-    id,
-    title: "Demo Document",
-    content: "# Welcome to ForgeDocs\n\nThis is a demo document for the reader view.",
-    mime_type: "text/markdown",
-    version: 1,
-    updated_at: new Date().toISOString(),
-    user_id: "demo-user"
+  if (!doc) {
+    return <ReaderPage document={{ error: "Document not found" } as any} />
   }
 
   return <ReaderPage document={doc} />

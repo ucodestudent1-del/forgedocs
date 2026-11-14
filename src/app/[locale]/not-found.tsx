@@ -1,6 +1,5 @@
 import { Metadata } from "next"
 import Link from "next/link"
-import { I18nProvider } from "@/lib/i18n"
 
 export const metadata: Metadata = {
   title: "Page not found",
@@ -21,26 +20,25 @@ export async function generateStaticParams() {
 
 export default async function NotFound({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params
+  const isRtl = locale === "ar"
 
   return (
-    <I18nProvider locale={locale}>
-      <html lang={locale} dir={locale === "ar" ? "rtl" : "ltr"}>
-        <body>
-          <div className="flex min-h-screen items-center justify-center px-4">
-            <div className="text-center">
-              <h1 className="text-6xl font-bold text-foreground">404</h1>
-              <p className="mt-4 text-lg text-muted-foreground">Page not found</p>
-              <p className="mt-2 text-muted-foreground">The page you're looking for doesn't exist.</p>
-              <Link
-                href={`/${locale}`}
-                className="mt-6 inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-primary-foreground bg-primary rounded-lg hover:bg-primary/90 transition-colors"
-              >
-                Go home
-              </Link>
-            </div>
+    <html lang={locale} dir={isRtl ? "rtl" : "ltr"}>
+      <body>
+        <div className="flex min-h-screen items-center justify-center px-4">
+          <div className="text-center">
+            <h1 className="text-6xl font-bold text-foreground">404</h1>
+            <p className="mt-4 text-lg text-muted-foreground">Page not found</p>
+            <p className="mt-2 text-muted-foreground">The page you're looking for doesn't exist.</p>
+            <Link
+              href={`/${locale}`}
+              className="mt-6 inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-primary-foreground bg-primary rounded-lg hover:bg-primary/90 transition-colors"
+            >
+              Go home
+            </Link>
           </div>
-        </body>
-      </html>
-    </I18nProvider>
+        </div>
+      </body>
+    </html>
   )
 }

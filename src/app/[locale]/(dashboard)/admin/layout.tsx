@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input"
 import { Shield, Settings, TrendingUp, Users, CreditCard, FileText, AlertTriangle, Clock, Download, Search, Filter, Activity } from "lucide-react"
 import Link from "next/link"
 import { format } from "date-fns"
-import { useTranslations } from "@/lib/i18n"
+import { useTranslations } from "next-intl"
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const t = useTranslations("navigation")

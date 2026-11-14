@@ -1,6 +1,6 @@
 "use client"
 
-import { useTranslations } from "@/lib/i18n"
+import { useTranslations } from "next-intl"
 import { useRouter, usePathname } from "next/navigation"
 import { useState } from "react"
 import { Globe, ChevronDown, Check } from "lucide-react"

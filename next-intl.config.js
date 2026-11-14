@@ -1,6 +1,8 @@
 /** @type {import('next-intl/config').Config} */
+const { locales, defaultLocale } = require("./src/i18n/locales")
+
 module.exports = {
-  locales: ["en", "es", "ar", "fr", "de", "ja", "zh"],
-  defaultLocale: "en",
+  locales,
+  defaultLocale,
   localePrefix: "as-needed",
 }

@@ -127,6 +127,35 @@
   }
 }
 
+/* RTL layout utilities */
+[dir="rtl"] {
+  .text-right {
+    text-align: left;
+  }
+  .text-left {
+    text-align: right;
+  }
+  .ml-auto,
+  .margin-inline-start-auto {
+    margin-inline-start: auto !important;
+  }
+  .mr-auto,
+  .margin-inline-end-auto {
+    margin-inline-end: auto !important;
+  }
+  .pl-3 {
+    padding-inline-start: unset;
+    padding-inline-end: 0.75rem;
+  }
+  .pr-3 {
+    padding-inline-end: unset;
+    padding-inline-start: 0.75rem;
+  }
+  .space-x-reverse > * {
+    --tw-space-x-reverse: 1;
+  }
+}
+
 @keyframes slide-down {
   from {
     opacity: 0;

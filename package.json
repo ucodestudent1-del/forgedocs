@@ -17,6 +17,8 @@
     "db:reset": "supabase db reset",
     "verify:isolation": "node scripts/verify-isolation.js",
     "verify:backup": "node scripts/verify-backup.js",
+    "i18n:extract": "node scripts/i18n/extract.js",
+    "i18n:validate": "node scripts/i18n/extract.js --validate",
     "worker": "node src/worker/index.js"
   },
   "dependencies": {

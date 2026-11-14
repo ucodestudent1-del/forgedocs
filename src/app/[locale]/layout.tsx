@@ -1,4 +1,4 @@
-import { I18nProvider } from "@/lib/i18n"
+import { NextIntlClientProvider } from "next-intl"
 
 interface LocaleLayoutProps {
   children: React.ReactNode
@@ -13,10 +13,10 @@ export default async function LocaleLayout({
   const isRtl = locale === "ar"
 
   return (
-    <I18nProvider locale={locale}>
+    <NextIntlClientProvider locale={locale}>
       <div dir={isRtl ? "rtl" : "ltr"} className="min-h-screen">
         {children}
       </div>
-    </I18nProvider>
+    </NextIntlClientProvider>
   )
 }

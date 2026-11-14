@@ -2,14 +2,14 @@
 
 import { useState, useEffect } from "react"
 import { usePathname } from "next/navigation"
-import { useLocale } from "@/lib/i18n"
+import { useLocale } from "next-intl"
 import { Search, Bell, ChevronLeft, ChevronRight, Menu } from "lucide-react"
 import { Sidebar } from "@/components/layout/Sidebar"
 import { DashboardHeader } from "@/components/dashboard/header"
 import { useToast } from "@/components/ui/use-toast"
 import { ThemeToggle } from "@/components/theme/ThemeToggle"
 import { LanguageSwitcher } from "@/components/ui/language-switcher"
-import { useTranslations } from "@/lib/i18n"
+import { useTranslations } from "next-intl"
 
 interface DashboardClientProps {
   userEmail: string | null

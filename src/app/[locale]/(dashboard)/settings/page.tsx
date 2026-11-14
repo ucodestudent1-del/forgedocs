@@ -1,12 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { DashboardHeader } from "@/components/dashboard/header"
 import { useToast } from "@/components/ui/use-toast"
+import { updateProfileLanguage } from "@/app/actions/settings"
 import {
   User,
   Mail,
@@ -95,6 +96,11 @@ export default function SettingsPage() {
   const handleSaveProfile = async () => {
     setSaving(true)
     try {
+      const result = await updateProfileLanguage(profile.language)
+      if (result.error) {
+        toast({ title: result.error, variant: "destructive" })
+        return
+      }
       await new Promise((resolve) => setTimeout(resolve, 1000))
       toast({ title: "Profile saved", variant: "success" })
     } catch (e) {
