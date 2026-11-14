@@ -1,8 +1,24 @@
 import { Metadata } from "next"
 import Link from "next/link"
-import { getMessages } from "next-intl/server"
 import { NextIntlClientProvider } from "next-intl"
-import { routing } from "@/i18n/routing"
+
+import messagesEn from "@/messages/en.json"
+import messagesEs from "@/messages/es.json"
+import messagesAr from "@/messages/ar.json"
+import messagesFr from "@/messages/fr.json"
+import messagesDe from "@/messages/de.json"
+import messagesJa from "@/messages/ja.json"
+import messagesZh from "@/messages/zh.json"
+
+const messagesMap: Record<string, Record<string, unknown>> = {
+  en: messagesEn,
+  es: messagesEs,
+  ar: messagesAr,
+  fr: messagesFr,
+  de: messagesDe,
+  ja: messagesJa,
+  zh: messagesZh,
+}
 
 export const metadata: Metadata = {
   title: "Page not found",
@@ -10,12 +26,20 @@ export const metadata: Metadata = {
 }
 
 export async function generateStaticParams() {
-  return routing.locales.map((locale) => ({ locale }))
+  return [
+    { locale: "en" },
+    { locale: "es" },
+    { locale: "ar" },
+    { locale: "fr" },
+    { locale: "de" },
+    { locale: "ja" },
+    { locale: "zh" },
+  ]
 }
 
 export default async function NotFound({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params
-  const messages = await getMessages({ locale })
+  const messages = messagesMap[locale] || messagesEn
 
   return (
     <NextIntlClientProvider messages={messages} locale={locale}>
