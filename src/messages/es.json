@@ -1,0 +1,153 @@
+{
+  "common": {
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "create": "Crear",
+    "search": "Buscar",
+    "loading": "Cargando...",
+    "error": "Error",
+    "success": "Éxito",
+    "confirm": "Confirmar",
+    "close": "Cerrar",
+    "open": "Abrir",
+    "settings": "Configuración",
+    "help": "Ayuda",
+    "signOut": "Cerrar sesión",
+    "language": "Idioma",
+    "theme": "Tema",
+    "light": "Claro",
+    "dark": "Oscuro",
+    "system": "Sistema"
+  },
+  "navigation": {
+    "dashboard": "Panel",
+    "documents": "Documentos",
+    "myFiles": "Mis Archivos",
+    "editor": "Editor de Documentos",
+    "templates": "Plantillas",
+    "tools": "Herramientas",
+    "conversion": "Conversión",
+    "aiAssistant": "Asistente IA",
+    "pdfTools": "Herramientas PDF",
+    "eSignatures": "Firmas Electrónicas",
+    "shared": "Documentos Compartidos",
+    "activity": "Historial de Actividad",
+    "notifications": "Notificaciones",
+    "usage": "Uso y Límites",
+    "workspace": "Espacio de Trabajo",
+    "conversionAI": "Conversión e IA",
+    "manage": "Gestionar",
+    "other": "Otros",
+    "quickActions": "Acciones Rápidas",
+    "createDocument": "Crear Documento",
+    "convertFile": "Convertir Archivo",
+    "mergePDFs": "Combinar PDFs",
+    "aiGenerate": "Generar con IA",
+    "users": "Usuarios",
+    "subscriptions": "Suscripciones",
+    "auditLogs": "Registros de Auditoría",
+    "systemHealth": "Salud del Sistema",
+    "solutions": "Soluciones",
+    "testimonials": "Testimonios",
+    "faq": "Preguntas Frecuentes",
+    "pricing": "Precios"
+  },
+  "dashboard": {
+    "welcome": "Bienvenido de nuevo, {name}",
+    "welcomeGuest": "Bienvenido a ForgeDocs",
+    "stats": {
+      "documents": "{count, plural, one {# documento} other {# documentos}}",
+      "templates": "{count, plural, one {# plantilla} other {# plantillas}}",
+      "storage": "{used} de {total} usado"
+    },
+    "recentDocuments": "Documentos Recientes",
+    "noDocuments": "Aún no hay documentos",
+    "createFirst": "Crea tu primer documento"
+  },
+  "sidebar": {
+    "open": "Abrir barra lateral",
+    "close": "Cerrar barra lateral",
+    "collapse": "Colapsar barra lateral",
+    "expand": "Expandir barra lateral",
+    "signedIn": "Sesión iniciada"
+  },
+  "header": {
+    "searchPlaceholder": "Buscar documentos, plantillas, herramientas...",
+    "notifications": "Notificaciones",
+    "userMenu": "Menú de usuario"
+  },
+  "auth": {
+    "signIn": "Iniciar sesión",
+    "signUp": "Registrarse",
+    "forgotPassword": "¿Olvidaste la contraseña?",
+    "resetPassword": "Restablecer contraseña",
+    "verifyEmail": "Verificar email",
+    "mfaSetup": "Configurar MFA",
+    "mfaVerify": "Verificar MFA"
+  },
+  "editor": {
+    "newDocument": "Nuevo Documento",
+    "saveDraft": "Guardar Borrador",
+    "publish": "Publicar",
+    "preview": "Vista Previa",
+    "wordCount": "{count, plural, one {# palabra} other {# palabras}}",
+    "lastSaved": "Guardado por última vez: {date, datetime, medium}",
+    "unsavedChanges": "Tienes cambios sin guardar"
+  },
+  "conversion": {
+    "uploadFile": "Subir archivo para convertir",
+    "selectFormat": "Seleccionar formato de salida",
+    "convert": "Convertir",
+    "download": "Descargar",
+    "converting": "Convirtiendo...",
+    "converted": "Convertido exitosamente"
+  },
+  "pdfTools": {
+    "merge": "Combinar PDFs",
+    "split": "Dividir PDF",
+    "compress": "Comprimir PDF",
+    "rotate": "Rotar Páginas",
+    "addWatermark": "Agregar Marca de Agua"
+  },
+  "eSignatures": {
+    "signDocument": "Firmar Documento",
+    "requestSignature": "Solicitar Firma",
+    "signed": "Firmado",
+    "pending": "Pendiente",
+    "expired": "Expirado"
+  },
+  "aiAssistant": {
+    "askQuestion": "Haz una pregunta...",
+    "generating": "Generando...",
+    "regenerate": "Regenerar",
+    "copy": "Copiar",
+    "copied": "¡Copiado!"
+  },
+  "settings": {
+    "profile": "Perfil",
+    "account": "Cuenta",
+    "billing": "Facturación",
+    "security": "Seguridad",
+    "notifications": "Notificaciones",
+    "preferences": "Preferencias",
+    "language": "Idioma",
+    "timezone": "Zona Horaria",
+    "dateFormat": "Formato de Fecha"
+  },
+  "errors": {
+    "unauthorized": "Inicia sesión para continuar",
+    "forbidden": "No tienes permiso para acceder",
+    "notFound": "Página no encontrada",
+    "serverError": "Algo salió mal. Intenta de nuevo.",
+    "networkError": "Error de red. Verifica tu conexión.",
+    "validationError": "Revisa tu entrada"
+  },
+  "toast": {
+    "saved": "Guardado exitosamente",
+    "deleted": "Eliminado exitosamente",
+    "copied": "Copiado al portapapeles",
+    "failed": "La operación falló"
+  }
+}

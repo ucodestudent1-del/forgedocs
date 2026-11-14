@@ -104,6 +104,27 @@
   .animate-scale-in {
     animation: scale-in 0.2s ease-out;
   }
+
+  /* RTL Support */
+  [dir="rtl"] {
+    direction: rtl;
+  }
+
+  [dir="rtl"] .rtl-flip {
+    transform: scaleX(-1);
+  }
+
+  [dir="rtl"] .rtl-no-flip {
+    transform: none;
+  }
+
+  /* Logical property fallbacks for older browsers */
+  .margin-inline-start-auto {
+    margin-inline-start: auto;
+  }
+  .margin-inline-end-auto {
+    margin-inline-end: auto;
+  }
 }
 
 @keyframes slide-down {

@@ -5,15 +5,19 @@ import { Input } from "@/components/ui/input"
 import { Shield, Settings, TrendingUp, Users, CreditCard, FileText, AlertTriangle, Clock, Download, Search, Filter, Activity } from "lucide-react"
 import Link from "next/link"
 import { format } from "date-fns"
+import { useTranslations } from "next-intl"
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
+  const t = useTranslations("navigation")
+  const tCommon = useTranslations("common")
+
   // TEMPORARILY DISABLED: Auth check removed for development
   const navItems = [
-    { href: "/admin", label: "Dashboard", icon: TrendingUp },
-    { href: "/admin/users", label: "Users", icon: Users },
-    { href: "/admin/subscriptions", label: "Subscriptions", icon: CreditCard },
-    { href: "/admin/audit-logs", label: "Audit Logs", icon: FileText },
-    { href: "/admin/system-health", label: "System Health", icon: Activity },
+    { href: "/admin", labelKey: "dashboard", icon: TrendingUp },
+    { href: "/admin/users", labelKey: "users", icon: Users },
+    { href: "/admin/subscriptions", labelKey: "subscriptions", icon: CreditCard },
+    { href: "/admin/audit-logs", labelKey: "auditLogs", icon: FileText },
+    { href: "/admin/system-health", labelKey: "systemHealth", icon: Activity },
   ]
 
   return (
@@ -26,12 +30,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
           <nav className="flex items-center gap-4 flex-wrap">
             <Link href="/dashboard" className="text-sm text-muted-foreground hover:text-foreground">
-              Back to App
+              {t("dashboard")}
             </Link>
             {navItems.map((item) => (
               <Link key={item.href} href={item.href} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
                 <item.icon className="h-4 w-4" />
-                {item.label}
+                {t(item.labelKey as any)}
               </Link>
             ))}
           </nav>

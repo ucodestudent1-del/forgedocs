@@ -1,0 +1,153 @@
+{
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "search": "Search",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "confirm": "Confirm",
+    "close": "Close",
+    "open": "Open",
+    "settings": "Settings",
+    "help": "Help",
+    "signOut": "Sign out",
+    "language": "Language",
+    "theme": "Theme",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  },
+  "navigation": {
+    "dashboard": "Dashboard",
+    "documents": "Documents",
+    "myFiles": "My Files",
+    "editor": "Document Editor",
+    "templates": "Templates",
+    "tools": "Tools",
+    "conversion": "Conversion",
+    "aiAssistant": "AI Assistant",
+    "pdfTools": "PDF Tools",
+    "eSignatures": "E-Signatures",
+    "shared": "Shared Documents",
+    "activity": "Activity History",
+    "notifications": "Notifications",
+    "usage": "Usage & Limits",
+    "workspace": "Workspace",
+    "conversionAI": "Conversion & AI",
+    "manage": "Manage",
+    "other": "Other",
+    "quickActions": "Quick Actions",
+    "createDocument": "Create Document",
+    "convertFile": "Convert File",
+    "mergePDFs": "Merge PDFs",
+    "aiGenerate": "AI Generate",
+    "users": "Users",
+    "subscriptions": "Subscriptions",
+    "auditLogs": "Audit Logs",
+    "systemHealth": "System Health",
+    "solutions": "Solutions",
+    "testimonials": "Testimonials",
+    "faq": "FAQ",
+    "pricing": "Pricing"
+  },
+  "dashboard": {
+    "welcome": "Welcome back, {name}",
+    "welcomeGuest": "Welcome to ForgeDocs",
+    "stats": {
+      "documents": "{count, plural, one {# document} other {# documents}}",
+      "templates": "{count, plural, one {# template} other {# templates}}",
+      "storage": "{used} of {total} used"
+    },
+    "recentDocuments": "Recent Documents",
+    "noDocuments": "No documents yet",
+    "createFirst": "Create your first document"
+  },
+  "sidebar": {
+    "open": "Open sidebar",
+    "close": "Close sidebar",
+    "collapse": "Collapse sidebar",
+    "expand": "Expand sidebar",
+    "signedIn": "Signed in"
+  },
+  "header": {
+    "searchPlaceholder": "Search documents, templates, tools...",
+    "notifications": "Notifications",
+    "userMenu": "User menu"
+  },
+  "auth": {
+    "signIn": "Sign in",
+    "signUp": "Sign up",
+    "forgotPassword": "Forgot password?",
+    "resetPassword": "Reset password",
+    "verifyEmail": "Verify email",
+    "mfaSetup": "MFA Setup",
+    "mfaVerify": "Verify MFA"
+  },
+  "editor": {
+    "newDocument": "New Document",
+    "saveDraft": "Save Draft",
+    "publish": "Publish",
+    "preview": "Preview",
+    "wordCount": "{count, plural, one {# word} other {# words}}",
+    "lastSaved": "Last saved: {date, datetime, medium}",
+    "unsavedChanges": "You have unsaved changes"
+  },
+  "conversion": {
+    "uploadFile": "Upload file to convert",
+    "selectFormat": "Select output format",
+    "convert": "Convert",
+    "download": "Download",
+    "converting": "Converting...",
+    "converted": "Converted successfully"
+  },
+  "pdfTools": {
+    "merge": "Merge PDFs",
+    "split": "Split PDF",
+    "compress": "Compress PDF",
+    "rotate": "Rotate Pages",
+    "addWatermark": "Add Watermark"
+  },
+  "eSignatures": {
+    "signDocument": "Sign Document",
+    "requestSignature": "Request Signature",
+    "signed": "Signed",
+    "pending": "Pending",
+    "expired": "Expired"
+  },
+  "aiAssistant": {
+    "askQuestion": "Ask a question...",
+    "generating": "Generating...",
+    "regenerate": "Regenerate",
+    "copy": "Copy",
+    "copied": "Copied!"
+  },
+  "settings": {
+    "profile": "Profile",
+    "account": "Account",
+    "billing": "Billing",
+    "security": "Security",
+    "notifications": "Notifications",
+    "preferences": "Preferences",
+    "language": "Language",
+    "timezone": "Timezone",
+    "dateFormat": "Date Format"
+  },
+  "errors": {
+    "unauthorized": "Please sign in to continue",
+    "forbidden": "You don't have permission to access this",
+    "notFound": "Page not found",
+    "serverError": "Something went wrong. Please try again.",
+    "networkError": "Network error. Check your connection.",
+    "validationError": "Please check your input"
+  },
+  "toast": {
+    "saved": "Saved successfully",
+    "deleted": "Deleted successfully",
+    "copied": "Copied to clipboard",
+    "failed": "Operation failed"
+  }
+}

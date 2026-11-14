@@ -1,0 +1,153 @@
+{
+  "common": {
+    "save": "保存",
+    "cancel": "取消",
+    "delete": "删除",
+    "edit": "编辑",
+    "create": "创建",
+    "search": "搜索",
+    "loading": "加载中...",
+    "error": "错误",
+    "success": "成功",
+    "confirm": "确认",
+    "close": "关闭",
+    "open": "打开",
+    "settings": "设置",
+    "help": "帮助",
+    "signOut": "退出登录",
+    "language": "语言",
+    "theme": "主题",
+    "light": "浅色",
+    "dark": "深色",
+    "system": "系统"
+  },
+  "navigation": {
+    "dashboard": "仪表盘",
+    "documents": "文档",
+    "myFiles": "我的文件",
+    "editor": "文档编辑器",
+    "templates": "模板",
+    "tools": "工具",
+    "conversion": "转换",
+    "aiAssistant": "AI助手",
+    "pdfTools": "PDF工具",
+    "eSignatures": "电子签名",
+    "shared": "共享文档",
+    "activity": "活动历史",
+    "notifications": "通知",
+    "usage": "使用量和限制",
+    "workspace": "工作区",
+    "conversionAI": "转换和AI",
+    "manage": "管理",
+    "other": "其他",
+    "quickActions": "快速操作",
+    "createDocument": "创建文档",
+    "convertFile": "转换文件",
+    "mergePDFs": "合并PDF",
+    "aiGenerate": "AI生成",
+    "users": "用户",
+    "subscriptions": "订阅",
+    "auditLogs": "审计日志",
+    "systemHealth": "系统健康",
+    "solutions": "解决方案",
+    "testimonials": "用户评价",
+    "faq": "常见问题",
+    "pricing": "定价"
+  },
+  "dashboard": {
+    "welcome": "欢迎回来，{name}",
+    "welcomeGuest": "欢迎使用ForgeDocs",
+    "stats": {
+      "documents": "{count, plural, one {# 个文档} other {# 个文档}}",
+      "templates": "{count, plural, one {# 个模板} other {# 个模板}}",
+      "storage": "已用 {used} / {total}"
+    },
+    "recentDocuments": "最近的文档",
+    "noDocuments": "暂无文档",
+    "createFirst": "创建您的第一个文档"
+  },
+  "sidebar": {
+    "open": "打开侧边栏",
+    "close": "关闭侧边栏",
+    "collapse": "折叠侧边栏",
+    "expand": "展开侧边栏",
+    "signedIn": "已登录"
+  },
+  "header": {
+    "searchPlaceholder": "搜索文档、模板、工具...",
+    "notifications": "通知",
+    "userMenu": "用户菜单"
+  },
+  "auth": {
+    "signIn": "登录",
+    "signUp": "注册",
+    "forgotPassword": "忘记密码？",
+    "resetPassword": "重置密码",
+    "verifyEmail": "验证邮箱",
+    "mfaSetup": "MFA设置",
+    "mfaVerify": "MFA验证"
+  },
+  "editor": {
+    "newDocument": "新建文档",
+    "saveDraft": "保存草稿",
+    "publish": "发布",
+    "preview": "预览",
+    "wordCount": "{count, plural, one {# 字} other {# 字}}",
+    "lastSaved": "上次保存：{date, datetime, medium}",
+    "unsavedChanges": "您有未保存的更改"
+  },
+  "conversion": {
+    "uploadFile": "上传文件进行转换",
+    "selectFormat": "选择输出格式",
+    "convert": "转换",
+    "download": "下载",
+    "converting": "转换中...",
+    "converted": "转换成功"
+  },
+  "pdfTools": {
+    "merge": "合并PDF",
+    "split": "拆分PDF",
+    "compress": "压缩PDF",
+    "rotate": "旋转页面",
+    "addWatermark": "添加水印"
+  },
+  "eSignatures": {
+    "signDocument": "签署文档",
+    "requestSignature": "请求签名",
+    "signed": "已签署",
+    "pending": "待处理",
+    "expired": "已过期"
+  },
+  "aiAssistant": {
+    "askQuestion": "输入问题...",
+    "generating": "生成中...",
+    "regenerate": "重新生成",
+    "copy": "复制",
+    "copied": "已复制！"
+  },
+  "settings": {
+    "profile": "个人资料",
+    "account": "账户",
+    "billing": "账单",
+    "security": "安全",
+    "notifications": "通知",
+    "preferences": "偏好设置",
+    "language": "语言",
+    "timezone": "时区",
+    "dateFormat": "日期格式"
+  },
+  "errors": {
+    "unauthorized": "请登录以继续",
+    "forbidden": "您没有权限访问此页面",
+    "notFound": "页面未找到",
+    "serverError": "发生错误，请重试。",
+    "networkError": "网络错误，请检查连接。",
+    "validationError": "请检查您的输入"
+  },
+  "toast": {
+    "saved": "保存成功",
+    "deleted": "删除成功",
+    "copied": "已复制到剪贴板",
+    "failed": "操作失败"
+  }
+}

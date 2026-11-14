@@ -1,0 +1,153 @@
+{
+  "common": {
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "delete": "حذف",
+    "edit": "تعديل",
+    "create": "إنشاء",
+    "search": "بحث",
+    "loading": "جاري التحميل...",
+    "error": "خطأ",
+    "success": "نجاح",
+    "confirm": "تأكيد",
+    "close": "إغلاق",
+    "open": "فتح",
+    "settings": "الإعدادات",
+    "help": "مساعدة",
+    "signOut": "تسجيل الخروج",
+    "language": "اللغة",
+    "theme": "السمة",
+    "light": "فاتح",
+    "dark": "داكن",
+    "system": "النظام"
+  },
+  "navigation": {
+    "dashboard": "لوحة التحكم",
+    "documents": "المستندات",
+    "myFiles": "ملفاتي",
+    "editor": "محرر المستندات",
+    "templates": "القوالب",
+    "tools": "الأدوات",
+    "conversion": "التحويل",
+    "aiAssistant": "مساعد الذكاء الاصطناعي",
+    "pdfTools": "أدوات PDF",
+    "eSignatures": "التوقيعات الإلكترونية",
+    "shared": "المستندات المشتركة",
+    "activity": "سجل النشاط",
+    "notifications": "الإشعارات",
+    "usage": "الاستخدام والحدود",
+    "workspace": "مساحة العمل",
+    "conversionAI": "التحويل والذكاء الاصطناعي",
+    "manage": "إدارة",
+    "other": "أخرى",
+    "quickActions": "إجراءات سريعة",
+    "createDocument": "إنشاء مستند",
+    "convertFile": "تحويل ملف",
+    "mergePDFs": "دمج PDFs",
+    "aiGenerate": "توليد بالذكاء الاصطناعي",
+    "users": "المستخدمين",
+    "subscriptions": "الاشتراكات",
+    "auditLogs": "سجلات التدقيق",
+    "systemHealth": "صحة النظام",
+    "solutions": "الحلول",
+    "testimonials": "الشهادات",
+    "faq": "الأسئلة الشائعة",
+    "pricing": "التسعير"
+  },
+  "dashboard": {
+    "welcome": "مرحباً بعودتك، {name}",
+    "welcomeGuest": "مرحباً بك في ForgeDocs",
+    "stats": {
+      "documents": "{count, plural, one {# مستند} other {# مستندات}}",
+      "templates": "{count, plural, one {# قالب} other {# قوالب}}",
+      "storage": "{used} من {total} مستخدم"
+    },
+    "recentDocuments": "المستندات الحديثة",
+    "noDocuments": "لا توجد مستندات بعد",
+    "createFirst": "أنشئ أول مستند لك"
+  },
+  "sidebar": {
+    "open": "فتح الشريط الجانبي",
+    "close": "إغلاق الشريط الجانبي",
+    "collapse": "طي الشريط الجانبي",
+    "expand": "توسيع الشريط الجانبي",
+    "signedIn": "مسجل الدخول"
+  },
+  "header": {
+    "searchPlaceholder": "البحث في المستندات، القوالب، الأدوات...",
+    "notifications": "الإشعارات",
+    "userMenu": "قائمة المستخدم"
+  },
+  "auth": {
+    "signIn": "تسجيل الدخول",
+    "signUp": "إنشاء حساب",
+    "forgotPassword": "نسيت كلمة المرور؟",
+    "resetPassword": "إعادة تعيين كلمة المرور",
+    "verifyEmail": "التحقق من البريد الإلكتروني",
+    "mfaSetup": "إعداد MFA",
+    "mfaVerify": "التحقق من MFA"
+  },
+  "editor": {
+    "newDocument": "مستند جديد",
+    "saveDraft": "حفظ مسودة",
+    "publish": "نشر",
+    "preview": "معاينة",
+    "wordCount": "{count, plural, one {# كلمة} other {# كلمات}}",
+    "lastSaved": "آخر حفظ: {date, datetime, medium}",
+    "unsavedChanges": "لديك تغييرات غير محفوظة"
+  },
+  "conversion": {
+    "uploadFile": "تحميل ملف للتحويل",
+    "selectFormat": "اختيار تنسيق الإخراج",
+    "convert": "تحويل",
+    "download": "تحميل",
+    "converting": "جاري التحويل...",
+    "converted": "تم التحويل بنجاح"
+  },
+  "pdfTools": {
+    "merge": "دمج PDFs",
+    "split": "تقسيم PDF",
+    "compress": "ضغط PDF",
+    "rotate": "تدوير الصفحات",
+    "addWatermark": "إضافة علامة مائية"
+  },
+  "eSignatures": {
+    "signDocument": "توقيع مستند",
+    "requestSignature": "طلب توقيع",
+    "signed": "موقع",
+    "pending": "قيد الانتظار",
+    "expired": "منتهي الصلاحية"
+  },
+  "aiAssistant": {
+    "askQuestion": "اطرح سؤالاً...",
+    "generating": "جاري التوليد...",
+    "regenerate": "إعادة التوليد",
+    "copy": "نسخ",
+    "copied": "تم النسخ!"
+  },
+  "settings": {
+    "profile": "الملف الشخصي",
+    "account": "الحساب",
+    "billing": "الفوترة",
+    "security": "الأمان",
+    "notifications": "الإشعارات",
+    "preferences": "التفضيلات",
+    "language": "اللغة",
+    "timezone": "المنطقة الزمنية",
+    "dateFormat": "تنسيق التاريخ"
+  },
+  "errors": {
+    "unauthorized": "يرجى تسجيل الدخول للمتابعة",
+    "forbidden": "ليس لديك صلاحية للوصول",
+    "notFound": "الصفحة غير موجودة",
+    "serverError": "حدث خطأ. يرجى المحاولة مرة أخرى.",
+    "networkError": "خطأ في الشبكة. تحقق من اتصالك.",
+    "validationError": "يرجى التحقق من مدخلاتك"
+  },
+  "toast": {
+    "saved": "تم الحفظ بنجاح",
+    "deleted": "تم الحذف بنجاح",
+    "copied": "تم النسخ إلى الحافظة",
+    "failed": "فشلت العملية"
+  }
+}

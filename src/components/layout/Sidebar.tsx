@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { useLocale, useTranslations } from "next-intl"
 import {
   LayoutDashboard,
   FileText,
@@ -37,68 +38,16 @@ import { useToast } from "@/components/ui/use-toast"
 
 interface NavItem {
   href: string
-  label: string
+  labelKey: string
   icon: React.ElementType
   badge?: string
   children?: NavItem[]
 }
 
 interface NavSection {
-  title: string
+  titleKey: string
   icon?: React.ElementType
   items: NavItem[]
-}
-
-const NAV_SECTIONS: NavSection[] = [
-  {
-    title: "Workspace",
-    icon: Home,
-    items: [
-      { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-      { href: "/documents", label: "Documents", icon: FileText },
-      { href: "/files", label: "My Files", icon: FolderOpen },
-      { href: "/editor", label: "Document Editor", icon: FilePen },
-      { href: "/templates", label: "Templates", icon: FileStack },
-      { href: "/tools", label: "Tools", icon: Wrench },
-    ],
-  },
-  {
-    title: "Conversion & AI",
-    icon: Zap,
-    items: [
-      { href: "/conversion", label: "Conversion", icon: RefreshCw },
-      { href: "/ai-assistant", label: "AI Assistant", icon: Bot },
-      { href: "/pdf-tools", label: "PDF Tools", icon: FileImage },
-      { href: "/e-signatures", label: "E-Signatures", icon: FileSignature },
-    ],
-  },
-  {
-    title: "Manage",
-    icon: Users,
-    items: [
-      { href: "/shared", label: "Shared Documents", icon: Share2 },
-      { href: "/activity", label: "Activity History", icon: History },
-      { href: "/notifications", label: "Notifications", icon: Bell, badge: "3" },
-      { href: "/usage", label: "Usage & Limits", icon: CreditCard },
-    ],
-  },
-  {
-    title: "Other",
-    icon: Shield,
-    items: [
-      { href: "/settings", label: "Settings", icon: Settings },
-      { href: "/help", label: "Help & Support", icon: HelpCircle },
-    ],
-  },
-]
-
-interface SidebarProps {
-  isOpen: boolean
-  onClose: () => void
-  collapsed: boolean
-  onToggleCollapse: () => void
-  userEmail?: string | null
-  userInitial?: string
 }
 
 export function Sidebar({
@@ -108,12 +57,68 @@ export function Sidebar({
   onToggleCollapse,
   userEmail,
   userInitial = "U",
-}: SidebarProps) {
+}: {
+  isOpen: boolean
+  onClose: () => void
+  collapsed: boolean
+  onToggleCollapse: () => void
+  userEmail?: string | null
+  userInitial?: string
+}) {
+  const t = useTranslations("navigation")
+  const tCommon = useTranslations("common")
   const pathname = usePathname()
-  const [expandedSections, setExpandedSections] = useState<string[]>(
-    NAV_SECTIONS.map((s) => s.title)
-  )
+  const locale = useLocale()
+  const isRtl = locale === "ar"
+  const [expandedSections, setExpandedSections] = useState<string[]>([])
   const { toast } = useToast()
+
+  const NAV_SECTIONS: NavSection[] = [
+    {
+      titleKey: "workspace",
+      icon: Home,
+      items: [
+        { href: "/dashboard", labelKey: "dashboard", icon: LayoutDashboard },
+        { href: "/documents", labelKey: "documents", icon: FileText },
+        { href: "/files", labelKey: "myFiles", icon: FolderOpen },
+        { href: "/editor", labelKey: "editor", icon: FilePen },
+        { href: "/templates", labelKey: "templates", icon: FileStack },
+        { href: "/tools", labelKey: "tools", icon: Wrench },
+      ],
+    },
+    {
+      titleKey: "conversionAI",
+      icon: Zap,
+      items: [
+        { href: "/conversion", labelKey: "conversion", icon: RefreshCw },
+        { href: "/ai-assistant", labelKey: "aiAssistant", icon: Bot },
+        { href: "/pdf-tools", labelKey: "pdfTools", icon: FileImage },
+        { href: "/e-signatures", labelKey: "eSignatures", icon: FileSignature },
+      ],
+    },
+    {
+      titleKey: "manage",
+      icon: Users,
+      items: [
+        { href: "/shared", labelKey: "shared", icon: Share2 },
+        { href: "/activity", labelKey: "activity", icon: History },
+        { href: "/notifications", labelKey: "notifications", icon: Bell, badge: "3" },
+        { href: "/usage", labelKey: "usage", icon: CreditCard },
+      ],
+    },
+    {
+      titleKey: "other",
+      icon: Shield,
+      items: [
+        { href: "/settings", labelKey: "settings", icon: Settings },
+        { href: "/help", labelKey: "help", icon: HelpCircle },
+      ],
+    },
+  ]
+
+  useEffect(() => {
+    setExpandedSections(NAV_SECTIONS.map((s) => s.titleKey))
+  }, [])
 
   useEffect(() => {
     if (pathname) onClose()
@@ -150,14 +155,12 @@ export function Sidebar({
     onClose()
   }
 
-  // Mobile-only view: sidebar is controlled by header hamburger button
   if (!isOpen && typeof window !== "undefined" && window.innerWidth < 1024) {
     return null
   }
 
   return (
     <>
-      {/* Mobile backdrop */}
       {!collapsed && (
         <div
           className="fixed inset-0 z-40 bg-black/50 lg:hidden"
@@ -166,14 +169,12 @@ export function Sidebar({
         />
       )}
 
-      {/* Desktop & Mobile Sidebar */}
       <aside
         className={`
           fixed lg:static left-0 top-0 z-50 h-full border-r bg-card flex flex-col transition-all duration-300 ease-in-out lg:z-auto
           ${collapsed ? "w-16" : "w-64"}
         `}
       >
-        {/* Header */}
         <div className="flex items-center justify-between h-16 px-3 border-b">
           <div className="flex items-center gap-2">
             {!collapsed && (
@@ -189,7 +190,7 @@ export function Sidebar({
             <button
               onClick={onClose}
               className="lg:hidden p-2 rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-              aria-label="Close sidebar"
+              aria-label={t("sidebar.close" as any)}
             >
               <X className="h-5 w-5" />
             </button>
@@ -198,34 +199,33 @@ export function Sidebar({
             <button
               onClick={onToggleCollapse}
               className="p-2 rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-              aria-label="Expand sidebar"
+              aria-label={t("sidebar.expand" as any)}
             >
               <ChevronRight className="h-5 w-5" />
             </button>
           )}
         </div>
 
-        {/* Navigation */}
         <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-6" aria-label="Main navigation">
           {NAV_SECTIONS.map((section) => {
-            const isExpanded = expandedSections.includes(section.title)
+            const isExpanded = expandedSections.includes(section.titleKey)
             return (
-              <div key={section.title} className="space-y-1">
+              <div key={section.titleKey} className="space-y-1">
                 <button
-                  onClick={() => toggleSection(section.title)}
+                  onClick={() => toggleSection(section.titleKey)}
                   className={`flex items-center gap-2 w-full px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors`}
                   aria-expanded={isExpanded}
                 >
                   {section.icon && (
                     <section.icon className={`h-4 w-4 ${collapsed ? "mx-auto" : ""}`} />
                   )}
-                  {!collapsed && section.title}
+                  {!collapsed && t(section.titleKey as any)}
                   {!collapsed && (
                     <span className="ml-auto flex items-center gap-1">
                       {isExpanded ? (
-                        <ChevronDown className="h-4 w-4 transition-transform" />
+                        <ChevronDown className={`h-4 w-4 transition-transform ${isRtl ? "rtl-flip" : ""}`} />
                       ) : (
-                        <ChevronRight className="h-4 w-4 transition-transform" />
+                        <ChevronRight className={`h-4 w-4 transition-transform ${isRtl ? "rtl-flip" : ""}`} />
                       )}
                     </span>
                   )}
@@ -258,7 +258,7 @@ export function Sidebar({
                       />
                       {!collapsed && (
                         <>
-                          <span className="truncate">{item.label}</span>
+                          <span className="truncate">{t(item.labelKey as any)}</span>
                           {item.badge && (
                             <span className="ml-auto px-1.5 py-0.5 text-xs font-medium bg-primary/10 text-primary rounded-full">
                               {item.badge}
@@ -273,10 +273,9 @@ export function Sidebar({
             )
           })}
 
-          {/* Quick Actions */}
           <div className="pt-4 border-t space-y-2">
             <p className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Quick Actions
+              {t("quickActions")}
             </p>
             <div className="px-2 space-y-1">
               <button
@@ -286,7 +285,7 @@ export function Sidebar({
                 }`}
               >
                 <FilePen className={`h-5 w-5 ${collapsed ? "mx-0" : ""}`} />
-                {!collapsed && <span>Create Document</span>}
+                {!collapsed && <span>{t("createDocument")}</span>}
               </button>
               <button
                 onClick={() => handleQuickAction("convert")}
@@ -295,7 +294,7 @@ export function Sidebar({
                 }`}
               >
                 <RefreshCw className={`h-5 w-5 ${collapsed ? "mx-0" : ""}`} />
-                {!collapsed && <span>Convert File</span>}
+                {!collapsed && <span>{t("convertFile")}</span>}
               </button>
               <button
                 onClick={() => handleQuickAction("merge")}
@@ -304,7 +303,7 @@ export function Sidebar({
                 }`}
               >
                 <FileImage className={`h-5 w-5 ${collapsed ? "mx-0" : ""}`} />
-                {!collapsed && <span>Merge PDFs</span>}
+                {!collapsed && <span>{t("mergePDFs")}</span>}
               </button>
               <button
                 onClick={() => handleQuickAction("ai-generate")}
@@ -313,13 +312,12 @@ export function Sidebar({
                 }`}
               >
                 <Bot className={`h-5 w-5 ${collapsed ? "mx-0" : ""}`} />
-                {!collapsed && <span>AI Generate</span>}
+                {!collapsed && <span>{t("aiGenerate")}</span>}
               </button>
             </div>
           </div>
         </nav>
 
-        {/* User Profile */}
         <div className="p-3 border-t">
           <div className="flex items-center gap-3 px-2 py-2">
             <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium text-primary">
@@ -330,7 +328,7 @@ export function Sidebar({
                 <p className="text-sm font-medium text-foreground truncate">
                   {userEmail || "User"}
                 </p>
-                <p className="text-xs text-muted-foreground truncate">Signed in</p>
+                <p className="text-xs text-muted-foreground truncate">{t("sidebar.signedIn" as any)}</p>
               </div>
             )}
           </div>
@@ -342,14 +340,14 @@ export function Sidebar({
                 className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground rounded-lg transition-colors"
               >
                 <Settings className="h-4 w-4" />
-                Settings
+                {tCommon("settings")}
               </Link>
             )}
             {collapsed && (
               <button
                 onClick={() => onClose()}
                 className="p-2 rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-                aria-label="Settings"
+                aria-label={tCommon("settings")}
               >
                 <Settings className="h-4 w-4" />
               </button>
@@ -361,7 +359,7 @@ export function Sidebar({
               className={`p-2 rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors ${
                 collapsed ? "mx-auto" : ""
               }`}
-              aria-label="Sign out"
+              aria-label={tCommon("signOut")}
             >
               <Download className="h-4 w-4" />
             </button>

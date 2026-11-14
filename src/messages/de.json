@@ -1,0 +1,153 @@
+{
+  "common": {
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "delete": "Löschen",
+    "edit": "Bearbeiten",
+    "create": "Erstellen",
+    "search": "Suchen",
+    "loading": "Laden...",
+    "error": "Fehler",
+    "success": "Erfolg",
+    "confirm": "Bestätigen",
+    "close": "Schließen",
+    "open": "Öffnen",
+    "settings": "Einstellungen",
+    "help": "Hilfe",
+    "signOut": "Abmelden",
+    "language": "Sprache",
+    "theme": "Design",
+    "light": "Hell",
+    "dark": "Dunkel",
+    "system": "System"
+  },
+  "navigation": {
+    "dashboard": "Dashboard",
+    "documents": "Dokumente",
+    "myFiles": "Meine Dateien",
+    "editor": "Dokument-Editor",
+    "templates": "Vorlagen",
+    "tools": "Tools",
+    "conversion": "Konvertierung",
+    "aiAssistant": "KI-Assistent",
+    "pdfTools": "PDF-Tools",
+    "eSignatures": "E-Signaturen",
+    "shared": "Geteilte Dokumente",
+    "activity": "Aktivitätsverlauf",
+    "notifications": "Benachrichtigungen",
+    "usage": "Nutzung & Limits",
+    "workspace": "Arbeitsbereich",
+    "conversionAI": "Konvertierung & KI",
+    "manage": "Verwalten",
+    "other": "Sonstiges",
+    "quickActions": "Schnellaktionen",
+    "createDocument": "Dokument erstellen",
+    "convertFile": "Datei konvertieren",
+    "mergePDFs": "PDFs zusammenführen",
+    "aiGenerate": "KI generieren",
+    "users": "Benutzer",
+    "subscriptions": "Abos",
+    "auditLogs": "Audit-Logs",
+    "systemHealth": "Systemzustand",
+    "solutions": "Lösungen",
+    "testimonials": "Referenzen",
+    "faq": "FAQ",
+    "pricing": "Preise"
+  },
+  "dashboard": {
+    "welcome": "Willkommen zurück, {name}",
+    "welcomeGuest": "Willkommen bei ForgeDocs",
+    "stats": {
+      "documents": "{count, plural, one {# Dokument} other {# Dokumente}}",
+      "templates": "{count, plural, one {# Vorlage} other {# Vorlagen}}",
+      "storage": "{used} von {total} verwendet"
+    },
+    "recentDocuments": "Kürzliche Dokumente",
+    "noDocuments": "Noch keine Dokumente",
+    "createFirst": "Erstellen Sie Ihr erstes Dokument"
+  },
+  "sidebar": {
+    "open": "Seitenleiste öffnen",
+    "close": "Seitenleiste schließen",
+    "collapse": "Seitenleiste einklappen",
+    "expand": "Seitenleiste erweitern",
+    "signedIn": "Angemeldet"
+  },
+  "header": {
+    "searchPlaceholder": "Dokumente, Vorlagen, Tools suchen...",
+    "notifications": "Benachrichtigungen",
+    "userMenu": "Benutzermenü"
+  },
+  "auth": {
+    "signIn": "Anmelden",
+    "signUp": "Registrieren",
+    "forgotPassword": "Passwort vergessen?",
+    "resetPassword": "Passwort zurücksetzen",
+    "verifyEmail": "E-Mail verifizieren",
+    "mfaSetup": "MFA einrichten",
+    "mfaVerify": "MFA verifizieren"
+  },
+  "editor": {
+    "newDocument": "Neues Dokument",
+    "saveDraft": "Entwurf speichern",
+    "publish": "Veröffentlichen",
+    "preview": "Vorschau",
+    "wordCount": "{count, plural, one {# Wort} other {# Wörter}}",
+    "lastSaved": "Zuletzt gespeichert: {date, datetime, medium}",
+    "unsavedChanges": "Sie haben ungespeicherte Änderungen"
+  },
+  "conversion": {
+    "uploadFile": "Datei zum Konvertieren hochladen",
+    "selectFormat": "Ausgabeformat wählen",
+    "convert": "Konvertieren",
+    "download": "Herunterladen",
+    "converting": "Konvertiere...",
+    "converted": "Erfolgreich konvertiert"
+  },
+  "pdfTools": {
+    "merge": "PDFs zusammenführen",
+    "split": "PDF teilen",
+    "compress": "PDF komprimieren",
+    "rotate": "Seiten drehen",
+    "addWatermark": "Wasserzeichen hinzufügen"
+  },
+  "eSignatures": {
+    "signDocument": "Dokument unterschreiben",
+    "requestSignature": "Unterschrift anfordern",
+    "signed": "Unterschrieben",
+    "pending": "Ausstehend",
+    "expired": "Abgelaufen"
+  },
+  "aiAssistant": {
+    "askQuestion": "Frage stellen...",
+    "generating": "Generiere...",
+    "regenerate": "Neu generieren",
+    "copy": "Kopieren",
+    "copied": "Kopiert!"
+  },
+  "settings": {
+    "profile": "Profil",
+    "account": "Konto",
+    "billing": "Abrechnung",
+    "security": "Sicherheit",
+    "notifications": "Benachrichtigungen",
+    "preferences": "Einstellungen",
+    "language": "Sprache",
+    "timezone": "Zeitzone",
+    "dateFormat": "Datumsformat"
+  },
+  "errors": {
+    "unauthorized": "Bitte melden Sie sich an, um fortzufahren",
+    "forbidden": "Sie haben keine Berechtigung für den Zugriff",
+    "notFound": "Seite nicht gefunden",
+    "serverError": "Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut.",
+    "networkError": "Netzwerkfehler. Prüfen Sie Ihre Verbindung.",
+    "validationError": "Bitte überprüfen Sie Ihre Eingabe"
+  },
+  "toast": {
+    "saved": "Erfolgreich gespeichert",
+    "deleted": "Erfolgreich gelöscht",
+    "copied": "In Zwischenablage kopiert",
+    "failed": "Vorgang fehlgeschlagen"
+  }
+}

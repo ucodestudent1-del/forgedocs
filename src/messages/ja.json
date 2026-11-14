@@ -1,0 +1,153 @@
+{
+  "common": {
+    "save": "保存",
+    "cancel": "キャンセル",
+    "delete": "削除",
+    "edit": "編集",
+    "create": "作成",
+    "search": "検索",
+    "loading": "読み込み中...",
+    "error": "エラー",
+    "success": "成功",
+    "confirm": "確認",
+    "close": "閉じる",
+    "open": "開く",
+    "settings": "設定",
+    "help": "ヘルプ",
+    "signOut": "ログアウト",
+    "language": "言語",
+    "theme": "テーマ",
+    "light": "ライト",
+    "dark": "ダーク",
+    "system": "システム"
+  },
+  "navigation": {
+    "dashboard": "ダッシュボード",
+    "documents": "ドキュメント",
+    "myFiles": "マイファイル",
+    "editor": "ドキュメントエディタ",
+    "templates": "テンプレート",
+    "tools": "ツール",
+    "conversion": "変換",
+    "aiAssistant": "AIアシスタント",
+    "pdfTools": "PDFツール",
+    "eSignatures": "電子署名",
+    "shared": "共有ドキュメント",
+    "activity": "アクティビティ履歴",
+    "notifications": "通知",
+    "usage": "使用量と制限",
+    "workspace": "ワークスペース",
+    "conversionAI": "変換とAI",
+    "manage": "管理",
+    "other": "その他",
+    "quickActions": "クイックアクション",
+    "createDocument": "ドキュメント作成",
+    "convertFile": "ファイル変換",
+    "mergePDFs": "PDFを結合",
+    "aiGenerate": "AI生成",
+    "users": "ユーザー",
+    "subscriptions": "サブスクリプション",
+    "auditLogs": "監査ログ",
+    "systemHealth": "システムヘルス",
+    "solutions": "ソリューション",
+    "testimonials": "お客様の声",
+    "faq": "よくある質問",
+    "pricing": "料金"
+  },
+  "dashboard": {
+    "welcome": "おかえりなさい、{name}さん",
+    "welcomeGuest": "ForgeDocsへようこそ",
+    "stats": {
+      "documents": "{count, plural, one {# ドキュメント} other {# ドキュメント}}",
+      "templates": "{count, plural, one {# テンプレート} other {# テンプレート}}",
+      "storage": "{used} / {total} 使用中"
+    },
+    "recentDocuments": "最近のドキュメント",
+    "noDocuments": "まだドキュメントがありません",
+    "createFirst": "最初のドキュメントを作成"
+  },
+  "sidebar": {
+    "open": "サイドバーを開く",
+    "close": "サイドバーを閉じる",
+    "collapse": "サイドバーを折りたたむ",
+    "expand": "サイドバーを展開",
+    "signedIn": "ログイン中"
+  },
+  "header": {
+    "searchPlaceholder": "ドキュメント、テンプレート、ツールを検索...",
+    "notifications": "通知",
+    "userMenu": "ユーザーメニュー"
+  },
+  "auth": {
+    "signIn": "ログイン",
+    "signUp": "サインアップ",
+    "forgotPassword": "パスワードをお忘れですか？",
+    "resetPassword": "パスワードをリセット",
+    "verifyEmail": "メールを確認",
+    "mfaSetup": "MFA設定",
+    "mfaVerify": "MFA確認"
+  },
+  "editor": {
+    "newDocument": "新しいドキュメント",
+    "saveDraft": "下書き保存",
+    "publish": "公開",
+    "preview": "プレビュー",
+    "wordCount": "{count, plural, one {# 語} other {# 語}}",
+    "lastSaved": "最終保存: {date, datetime, medium}",
+    "unsavedChanges": "未保存の変更があります"
+  },
+  "conversion": {
+    "uploadFile": "変換するファイルをアップロード",
+    "selectFormat": "出力形式を選択",
+    "convert": "変換",
+    "download": "ダウンロード",
+    "converting": "変換中...",
+    "converted": "正常に変換されました"
+  },
+  "pdfTools": {
+    "merge": "PDFを結合",
+    "split": "PDFを分割",
+    "compress": "PDFを圧縮",
+    "rotate": "ページを回転",
+    "addWatermark": "透かしを追加"
+  },
+  "eSignatures": {
+    "signDocument": "ドキュメントに署名",
+    "requestSignature": "署名を依頼",
+    "signed": "署名済み",
+    "pending": "保留中",
+    "expired": "期限切れ"
+  },
+  "aiAssistant": {
+    "askQuestion": "質問を入力...",
+    "generating": "生成中...",
+    "regenerate": "再生成",
+    "copy": "コピー",
+    "copied": "コピーしました！"
+  },
+  "settings": {
+    "profile": "プロフィール",
+    "account": "アカウント",
+    "billing": "請求",
+    "security": "セキュリティ",
+    "notifications": "通知",
+    "preferences": "設定",
+    "language": "言語",
+    "timezone": "タイムゾーン",
+    "dateFormat": "日付形式"
+  },
+  "errors": {
+    "unauthorized": "続行するにはログインしてください",
+    "forbidden": "このページへのアクセス権限がありません",
+    "notFound": "ページが見つかりません",
+    "serverError": "エラーが発生しました。再試行してください。",
+    "networkError": "ネットワークエラー。接続を確認してください。",
+    "validationError": "入力を確認してください"
+  },
+  "toast": {
+    "saved": "保存しました",
+    "deleted": "削除しました",
+    "copied": "クリップボードにコピーしました",
+    "failed": "操作に失敗しました"
+  }
+}

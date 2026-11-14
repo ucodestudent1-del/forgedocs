@@ -1,18 +1,50 @@
 "use client"
 
 import { useState } from "react"
-import { X, Menu } from "lucide-react"
+import { X, Menu, Globe, ChevronDown, Check } from "lucide-react"
+import { useTranslations, useLocale } from "next-intl"
+import { useRouter, usePathname } from "next/navigation"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+
+const locales = [
+  { code: "en", name: "English", nativeName: "English", rtl: false },
+  { code: "es", name: "Spanish", nativeName: "Español", rtl: false },
+  { code: "ar", name: "Arabic", nativeName: "العربية", rtl: true },
+  { code: "fr", name: "French", nativeName: "Français", rtl: false },
+  { code: "de", name: "German", nativeName: "Deutsch", rtl: false },
+  { code: "ja", name: "Japanese", nativeName: "日本語", rtl: false },
+  { code: "zh", name: "Chinese", nativeName: "中文", rtl: false },
+] as const
 
 export function Navbar() {
+  const t = useTranslations("navigation")
+  const tCommon = useTranslations("common")
+  const locale = useLocale()
+  const router = useRouter()
+  const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
 
+  const currentLocale = pathname.split("/")[1] || "en"
+  const currentLanguage = locales.find((l) => l.code === currentLocale) || locales[0]
+
+  const handleLocaleChange = (newLocale: string) => {
+    const newPath = pathname.replace(`/${currentLocale}`, `/${newLocale}`)
+    router.push(newPath)
+    router.refresh()
+  }
+
   const navLinks = [
-    { href: "/", label: "Home" },
-    { href: "#features", label: "Features" },
-    { href: "#solutions", label: "Solutions" },
-    { href: "#testimonials", label: "Testimonials" },
-    { href: "#pricing", label: "Pricing" },
-    { href: "#faq", label: "FAQ" },
+    { href: `/${currentLocale}`, label: t("dashboard") },
+    { href: `/${currentLocale}#features`, label: t("documents") },
+    { href: `/${currentLocale}#solutions`, label: t("solutions") },
+    { href: `/${currentLocale}#testimonials`, label: t("testimonials") },
+    { href: `/${currentLocale}#pricing`, label: t("pricing") },
+    { href: `/${currentLocale}#faq`, label: t("faq") },
   ]
 
   return (
@@ -25,7 +57,7 @@ export function Navbar() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
             <div className="flex items-center gap-2">
-              <a href="/" className="flex items-center gap-2">
+              <a href={`/${currentLocale}`} className="flex items-center gap-2">
                 <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center text-white font-bold text-sm">
                   F
                 </div>
@@ -42,6 +74,38 @@ export function Navbar() {
                   {link.label}
                 </a>
               ))}
+            </div>
+            <div className="hidden sm:flex items-center gap-4">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    className="flex items-center gap-2 p-2 rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                    aria-label={tCommon("language")}
+                  >
+                    <Globe className="h-4 w-4" />
+                    <span className="hidden sm:inline-flex">{currentLanguage.nativeName}</span>
+                    <ChevronDown className="h-4 w-4" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  {locales.map((l) => (
+                    <DropdownMenuItem
+                      key={l.code}
+                      className="flex items-center gap-2"
+                      onClick={() => handleLocaleChange(l.code)}
+                      role="menuitemradio"
+                      aria-checked={l.code === currentLocale}
+                    >
+                      <span className="flex-1 text-left" dir={l.rtl ? "rtl" : "ltr"}>
+                        {l.nativeName}
+                      </span>
+                      {l.code === currentLocale && (
+                        <Check className="h-4 w-4 text-primary" />
+                      )}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
             <button
               onClick={() => setMobileOpen((prev) => !prev)}
@@ -80,6 +144,41 @@ export function Navbar() {
                 {link.label}
               </a>
             ))}
+            <div className="pt-6 border-t border-input">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    className="flex items-center gap-2 p-2 rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors w-full justify-center"
+                    aria-label={tCommon("language")}
+                  >
+                    <Globe className="h-4 w-4" />
+                    <span>{currentLanguage.nativeName}</span>
+                    <ChevronDown className="h-4 w-4" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  {locales.map((l) => (
+                    <DropdownMenuItem
+                      key={l.code}
+                      className="flex items-center gap-2"
+                      onClick={() => {
+                        handleLocaleChange(l.code)
+                        setMobileOpen(false)
+                      }}
+                      role="menuitemradio"
+                      aria-checked={l.code === currentLocale}
+                    >
+                      <span className="flex-1 text-left" dir={l.rtl ? "rtl" : "ltr"}>
+                        {l.nativeName}
+                      </span>
+                      {l.code === currentLocale && (
+                        <Check className="h-4 w-4 text-primary" />
+                      )}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </nav>
         </div>
       )}
