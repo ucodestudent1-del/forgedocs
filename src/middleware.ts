@@ -1,62 +1,12 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
+import nextIntlMiddleware from "next-intl/middleware"
+import { routing } from "@/i18n/routing"
 import { createRouteClient } from "@/lib/supabase"
-import { locales, defaultLocale } from "@/i18n/locales"
 
-const ADMIN_PATH_PREFIXES = ["/admin", `/${defaultLocale}/admin`]
+const intlMiddleware = nextIntlMiddleware(routing)
 
-function getLocale(request: NextRequest): string {
-  const pathname = request.nextUrl.pathname
-
-  // 1. Check if pathname already starts with a locale
-  const pathnameLocale = locales.find(
-    (l) => pathname.startsWith(`/${l}/`) || pathname === `/${l}`
-  )
-  if (pathnameLocale) {
-    return pathnameLocale
-  }
-
-  // 2. Check cookie (set by client language switcher / settings)
-  const cookieLocale = request.cookies.get("locale")?.value
-  if (cookieLocale && locales.includes(cookieLocale as any)) {
-    return cookieLocale
-  }
-
-  // 3. Check Accept-Language header
-  const acceptLanguage = request.headers.get("accept-language")
-  if (acceptLanguage) {
-    const preferred = acceptLanguage
-      .split(",")
-      .map((l) => l.split(";")[0].trim().toLowerCase().split("-")[0])
-      .find((l) => locales.includes(l as any))
-    if (preferred) {
-      return preferred
-    }
-  }
-
-  return defaultLocale
-}
-
-async function getProfileLocale(request: NextRequest): Promise<string | null> {
-  try {
-    const supabase = await createRouteClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return null
-
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("language")
-      .eq("id", user.id)
-      .single()
-
-    if (profile?.language && locales.includes(profile.language as any)) {
-      return profile.language
-    }
-  } catch {
-    // Fail closed: fall back to cookie / Accept-Language / default
-  }
-  return null
-}
+const ADMIN_PATH_PREFIXES = ["/en/admin", "/es/admin", "/ar/admin", "/fr/admin", "/de/admin", "/ja/admin", "/zh/admin", "/admin"]
 
 function isAdminPath(pathname: string): boolean {
   return ADMIN_PATH_PREFIXES.some(
@@ -64,7 +14,7 @@ function isAdminPath(pathname: string): boolean {
   )
 }
 
-export async function middleware(request: NextRequest) {
+export default async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
 
   // Skip API, static assets, and internal Next.js routes
@@ -78,14 +28,20 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // Admin route protection
+  // Run next-intl middleware first (locale detection / redirect)
+  const intlResponse = intlMiddleware(request)
+  if (intlResponse.status !== 200) {
+    return intlResponse
+  }
+
+  // Admin route protection - runs after locale is established
   if (isAdminPath(pathname)) {
     const supabase = await createRouteClient()
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
       const loginUrl = request.nextUrl.clone()
-      loginUrl.pathname = `/${defaultLocale}/auth/login`
+      loginUrl.pathname = "/en/auth/login"
       loginUrl.searchParams.set("callbackUrl", pathname)
       return NextResponse.redirect(loginUrl)
     }
@@ -97,47 +53,11 @@ export async function middleware(request: NextRequest) {
       .single()
 
     if (!profile || !["admin"].includes(profile.role)) {
-      return NextResponse.redirect(new URL("/dashboard", request.url))
+      return NextResponse.redirect(new URL("/en/dashboard", request.url))
     }
   }
 
-  // Resolve locale: profile (DB) > cookie > Accept-Language > default
-  let locale = await getProfileLocale(request)
-  if (!locale) {
-    locale = getLocale(request)
-  }
-
-  // Check if pathname already has a locale
-  const hasLocale = locales.some(
-    (l) => pathname === `/${l}` || pathname.startsWith(`/${l}/`)
-  )
-
-  if (!hasLocale) {
-    const url = request.nextUrl.clone()
-    url.pathname = `/${locale}${pathname}`
-    const response = NextResponse.redirect(url)
-    // Set locale cookie so subsequent requests pick it up without a DB hit
-    response.cookies.set("locale", locale, {
-      path: "/",
-      maxAge: 31536000,
-      sameSite: "lax",
-    })
-    return response
-  }
-
-  // Ensure cookie matches resolved locale for consistency
-  const currentCookie = request.cookies.get("locale")?.value
-  if (currentCookie !== locale) {
-    const response = NextResponse.next()
-    response.cookies.set("locale", locale, {
-      path: "/",
-      maxAge: 31536000,
-      sameSite: "lax",
-    })
-    return response
-  }
-
-  return NextResponse.next()
+  return intlResponse
 }
 
 export const config = {
