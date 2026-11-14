@@ -6,6 +6,7 @@ import { Search, Bell, ChevronLeft, ChevronRight, Menu } from "lucide-react"
 import { Sidebar } from "@/components/layout/Sidebar"
 import { DashboardHeader } from "@/components/dashboard/header"
 import { useToast } from "@/components/ui/use-toast"
+import { ThemeToggle } from "@/components/theme/ThemeToggle"
 
 interface DashboardClientProps {
   userEmail: string | null
@@ -88,6 +89,7 @@ export default function DashboardClient({
           </div>
 
           <div className="flex items-center gap-2">
+            <ThemeToggle />
             <Bell className="h-5 w-5 text-muted-foreground hover:text-primary transition-colors cursor-pointer relative" />
             <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium text-primary">
               {userInitial}
