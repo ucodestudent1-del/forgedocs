@@ -263,12 +263,218 @@ export function RichEditor({
 
   const executeFormat = (command: string, value?: string) => {
     editorRef.current?.focus()
-    document.execCommand(command, false, value)
+    const selection = window.getSelection()
+    if (!selection || selection.rangeCount === 0) return
+
+    const range = selection.getRangeAt(0)
+
+    switch (command) {
+      case "bold":
+        wrapSelectionWithTag("strong")
+        break
+      case "italic":
+        wrapSelectionWithTag("em")
+        break
+      case "underline":
+        wrapSelectionWithTag("u")
+        break
+      case "strikeThrough":
+        wrapSelectionWithTag("s")
+        break
+      case "inlineCode":
+        wrapSelectionWithTag("code")
+        break
+      case "heading":
+        if (value === "h1" || value === "h2" || value === "h3") {
+          setBlockFormat(value)
+        }
+        break
+      case "paragraph":
+        setBlockFormat("p")
+        break
+      case "blockquote":
+        setBlockFormat("blockquote")
+        break
+      case "codeBlock":
+        setBlockFormat("pre")
+        break
+      case "bulletList":
+        setListFormat("ul")
+        break
+      case "orderedList":
+        setListFormat("ol")
+        break
+      case "taskList":
+        insertTaskList()
+        break
+      case "horizontalRule":
+        insertHTML("<hr>")
+        break
+      case "align":
+        if (value) setTextAlign(value)
+        break
+      case "highlight":
+        wrapSelectionWithTag("mark")
+        break
+      case "superscript":
+        wrapSelectionWithTag("sup")
+        break
+      case "subscript":
+        wrapSelectionWithTag("sub")
+        break
+      case "removeFormat":
+        removeFormatting()
+        break
+      case "createLink":
+        if (value) {
+          createLink(value)
+        }
+        break
+      case "insertHTML":
+        if (value) {
+          insertHTML(value)
+        }
+        break
+      default:
+        document.execCommand(command, false, value)
+    }
     updateContent()
   }
 
   const updateContent = () => {
     setContent(getEditorHTML())
+  }
+
+  const wrapSelectionWithTag = (tag: string) => {
+    const selection = window.getSelection()
+    if (!selection || selection.rangeCount === 0) return
+
+    const range = selection.getRangeAt(0)
+    const selectedText = range.toString()
+
+    if (!selectedText) return
+
+    const element = document.createElement(tag)
+    element.textContent = selectedText
+
+    range.deleteContents()
+    range.insertNode(element)
+    range.selectNodeContents(element)
+    selection.removeAllRanges()
+    selection.addRange(range)
+  }
+
+  const createLink = (url: string) => {
+    const selection = window.getSelection()
+    if (!selection || selection.rangeCount === 0) return
+
+    const range = selection.getRangeAt(0)
+    const selectedText = range.toString() || url
+
+    const element = document.createElement("a")
+    element.href = url
+    element.textContent = selectedText
+
+    range.deleteContents()
+    range.insertNode(element)
+    range.selectNodeContents(element)
+    selection.removeAllRanges()
+    selection.addRange(range)
+  }
+
+  const removeFormatting = () => {
+    const selection = window.getSelection()
+    if (!selection || selection.rangeCount === 0) return
+
+    const range = selection.getRangeAt(0)
+    const selectedText = range.toString()
+
+    if (!selectedText) return
+
+    const textNode = document.createTextNode(selectedText)
+    range.deleteContents()
+    range.insertNode(textNode)
+    range.selectNodeContents(textNode)
+    selection.removeAllRanges()
+    selection.addRange(range)
+  }
+
+  const setBlockFormat = (tag: string) => {
+    const selection = window.getSelection()
+    if (!selection || selection.rangeCount === 0) return
+
+    const range = selection.getRangeAt(0)
+    const element = document.createElement(tag)
+    element.textContent = range.toString() || ""
+
+    range.deleteContents()
+    range.insertNode(element)
+    range.selectNodeContents(element)
+    selection.removeAllRanges()
+    selection.addRange(range)
+  }
+
+  const setListFormat = (tag: "ul" | "ol") => {
+    const selection = window.getSelection()
+    if (!selection || selection.rangeCount === 0) return
+
+    const range = selection.getRangeAt(0)
+    const selectedText = range.toString()
+    const lines = selectedText.split("\n").filter(Boolean)
+
+    const list = document.createElement(tag)
+    lines.forEach((line) => {
+      const li = document.createElement("li")
+      li.textContent = line
+      list.appendChild(li)
+    })
+
+    range.deleteContents()
+    range.insertNode(list)
+    range.selectNodeContents(list)
+    selection.removeAllRanges()
+    selection.addRange(range)
+  }
+
+  const insertTaskList = () => {
+    const selection = window.getSelection()
+    if (!selection || selection.rangeCount === 0) return
+
+    const range = selection.getRangeAt(0)
+    const selectedText = range.toString()
+    const lines = selectedText.split("\n").filter(Boolean)
+
+    const ul = document.createElement("ul")
+    lines.forEach((line) => {
+      const li = document.createElement("li")
+      const checkbox = document.createElement("input")
+      checkbox.type = "checkbox"
+      li.appendChild(checkbox)
+      li.appendChild(document.createTextNode(" " + line))
+      ul.appendChild(li)
+    })
+
+    range.deleteContents()
+    range.insertNode(ul)
+    range.selectNodeContents(ul)
+    selection.removeAllRanges()
+    selection.addRange(range)
+  }
+
+  const setTextAlign = (align: string) => {
+    const selection = window.getSelection()
+    if (!selection || selection.rangeCount === 0) return
+
+    const range = selection.getRangeAt(0)
+    const element = document.createElement("div")
+    element.style.textAlign = align
+    element.textContent = range.toString() || ""
+
+    range.deleteContents()
+    range.insertNode(element)
+    range.selectNodeContents(element)
+    selection.removeAllRanges()
+    selection.addRange(range)
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -379,16 +585,24 @@ export function RichEditor({
   const handleExport = async (format: "pdf" | "docx" | "html" | "md") => {
     if (onExport) {
       await onExport(format)
-    } else {
-      // Fallback: download as HTML
-      const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${title}</title></head><body>${content}</body></html>`
-      const blob = new Blob([html], { type: "text/html" })
+    } else if (format === "html" || format === "md") {
+      // Fallback: download as HTML or Markdown
+      const plainText = content.replace(/<[^>]*>/g, "")
+      const fileContent = format === "md" ? plainText : `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${title}</title></head><body>${content}</body></html>`
+      const blob = new Blob([fileContent], { type: format === "md" ? "text/markdown" : "text/html" })
       const url = URL.createObjectURL(blob)
       const a = document.createElement("a")
       a.href = url
-      a.download = `${title.replace(/\s+/g, "-")}.html`
+      a.download = `${title.replace(/\s+/g, "-")}.${format === "md" ? "md" : "html"}`
       a.click()
       URL.revokeObjectURL(url)
+    } else {
+      // PDF/DOCX require server-side conversion - redirect to export endpoint
+      if (documentId) {
+        window.location.href = `/api/documents/${documentId}/export?format=${format}`
+      } else {
+        toast({ title: "Export not available", variant: "destructive" })
+      }
     }
   }
 

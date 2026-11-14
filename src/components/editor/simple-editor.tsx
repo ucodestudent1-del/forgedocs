@@ -44,7 +44,7 @@ export function SimpleEditor({
     if (!documentId) return
     setSaving(true)
     try {
-      await fetch(`/api/documents/${documentId}/content`, {
+      const res = await fetch(`/api/documents/${documentId}/content`, {
         method: "PUT",
         headers: { 
           "Content-Type": "application/json",
@@ -52,8 +52,17 @@ export function SimpleEditor({
         },
         body: JSON.stringify({ content: editorContent }),
       })
-    } catch (e) {
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.error || `Save failed: ${res.status}`)
+      }
+      const data = await res.json()
+      if (data.error) {
+        throw new Error(data.error)
+      }
+    } catch (e: unknown) {
       console.error("Save failed", e)
+      alert(e instanceof Error ? e.message : "Save failed. Please try again.")
     } finally {
       setSaving(false)
     }
