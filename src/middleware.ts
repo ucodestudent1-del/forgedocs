@@ -1,5 +1,10 @@
 import nextIntlMiddleware from "next-intl/middleware"
-import { routing } from "@/i18n/routing"
+
+const routing = {
+  locales: ["en", "es", "ar", "fr", "de", "ja", "zh"],
+  defaultLocale: "en",
+  localePrefix: "as-needed",
+}
 
 export default nextIntlMiddleware(routing)
 
