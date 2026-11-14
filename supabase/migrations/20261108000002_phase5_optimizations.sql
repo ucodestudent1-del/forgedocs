@@ -70,6 +70,13 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_usage_records_user_metric_day
   ON usage_records(user_id, metric, date_trunc('day', recorded_at));
 
 -- ============================================
+-- Add onboarding columns to profiles
+-- ============================================
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS onboarding_step INTEGER DEFAULT 1;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS onboarding_completed BOOLEAN DEFAULT FALSE;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS onboarding_completed_at TIMESTAMPTZ;
+
+-- ============================================
 -- Add missing columns to profiles for MFA
 -- ============================================
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS mfa_secret TEXT;

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { getRedisClient, cacheGet, cacheSet } from "@/lib/cache"
+import { cacheGet, cacheSet } from "@/lib/cache"
 
 interface RateLimitEntry {
   count: number
@@ -13,6 +13,16 @@ interface RateLimitConfig {
 
 // In-memory fallback store (used when Redis is unavailable)
 export const rateLimitStore = new Map<string, RateLimitEntry>()
+const RATE_LIMIT_STORE_MAX_SIZE = 10000
+
+function evictIfOverLimit() {
+  if (rateLimitStore.size > RATE_LIMIT_STORE_MAX_SIZE) {
+    const keysToDelete = Array.from(rateLimitStore.keys()).slice(0, rateLimitStore.size - RATE_LIMIT_STORE_MAX_SIZE)
+    for (const key of keysToDelete) {
+      rateLimitStore.delete(key)
+    }
+  }
+}
 
 function getClientIdentifier(req: Request): string {
   const forwarded = req.headers.get("x-forwarded-for")
@@ -76,6 +86,7 @@ export function rateLimit(config: RateLimitConfig) {
 
     if (!entry || now > entry.resetTime) {
       rateLimitStore.set(identifier, { count: 1, resetTime: now + config.windowMs })
+      evictIfOverLimit()
       return null
     }
 

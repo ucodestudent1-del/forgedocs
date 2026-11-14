@@ -10,8 +10,6 @@ import { useTranslations } from "@/lib/i18n"
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const t = useTranslations("navigation")
   const tCommon = useTranslations("common")
-
-  // TEMPORARILY DISABLED: Auth check removed for development
   const navItems = [
     { href: "/admin", labelKey: "dashboard", icon: TrendingUp },
     { href: "/admin/users", labelKey: "users", icon: Users },

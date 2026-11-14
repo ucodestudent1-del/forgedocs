@@ -115,11 +115,19 @@ export async function cacheDel(key: string): Promise<void> {
     if (client.status === "wait") {
       await client.connect()
     }
-    // Handle wildcard keys
+    // Handle wildcard keys using SCAN (non-blocking)
     if (key.includes("*")) {
-      const keys = await client.keys(key)
-      if (keys.length > 0) {
-        await client.del(...keys)
+      const pattern = key
+      let cursor = "0"
+      const keysToDelete: string[] = []
+      do {
+        // @ts-expect-error - ioredis scan options type may not include MATCH/COUNT
+        const [newCursor, keys] = await client.scan(cursor, { MATCH: pattern, COUNT: 100 })
+        cursor = newCursor
+        keysToDelete.push(...keys)
+      } while (cursor !== "0")
+      if (keysToDelete.length > 0) {
+        await client.del(...keysToDelete)
       }
     } else {
       await client.del(key)

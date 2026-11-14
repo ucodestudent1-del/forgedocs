@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
+import { createRouteClient } from "@/lib/supabase"
 
 const locales = ["en", "es", "ar", "fr", "de", "ja", "zh"]
 const defaultLocale = "en"
+
+const ADMIN_PATH_PREFIXES = ["/admin", `/${defaultLocale}/admin`]
 
 function getLocale(request: NextRequest): string {
   const pathname = request.nextUrl.pathname
@@ -34,7 +37,11 @@ function getLocale(request: NextRequest): string {
   return defaultLocale
 }
 
-export function middleware(request: NextRequest) {
+function isAdminPath(pathname: string): boolean {
+  return ADMIN_PATH_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(prefix + "/"))
+}
+
+export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
 
   // Skip API, static assets, and internal Next.js routes
@@ -46,6 +53,29 @@ export function middleware(request: NextRequest) {
     pathname.includes(".")
   ) {
     return NextResponse.next()
+  }
+
+  // Admin route protection
+  if (isAdminPath(pathname)) {
+    const supabase = await createRouteClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+      const loginUrl = request.nextUrl.clone()
+      loginUrl.pathname = `/${defaultLocale}/auth/login`
+      loginUrl.searchParams.set("callbackUrl", pathname)
+      return NextResponse.redirect(loginUrl)
+    }
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single()
+
+    if (!profile || !["admin"].includes(profile.role)) {
+      return NextResponse.redirect(new URL("/dashboard", request.url))
+    }
   }
 
   // Check if pathname already has a locale

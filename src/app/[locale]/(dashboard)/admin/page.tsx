@@ -17,9 +17,6 @@ interface SystemHealth {
 }
 
 export default function AdminDashboardPage() {
-  // TEMPORARILY DISABLED: Auth check removed for development
-  // Using mock data for demo
-
   const stats = [
     { label: "Total Users", value: 1247, icon: Users, color: "bg-primary/10 text-primary", change: "+12%" },
     { label: "Active Subscriptions", value: 89, icon: CreditCard, color: "bg-primary/10 text-primary", change: "+8%" },

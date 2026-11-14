@@ -37,6 +37,7 @@ export async function GET(
 
 const updateContentSchema = z.object({
   content: z.string().max(1000000),
+  expected_version: z.number().int().nonnegative().optional(),
 })
 
 export async function PUT(
@@ -64,7 +65,7 @@ export async function PUT(
     }
 
     const body = await req.json()
-    const { content } = updateContentSchema.parse(body)
+    const { content, expected_version } = updateContentSchema.parse(body)
     const sanitizedContent = sanitizeHtml(content)
 
     const { id } = await params
@@ -80,6 +81,14 @@ export async function PUT(
       return NextResponse.json({ error: "Document not found" }, { status: 404 })
     }
 
+    // Optimistic locking: reject if expected_version provided and doesn't match
+    if (expected_version !== undefined && currentDoc.version !== expected_version) {
+      return NextResponse.json(
+        { error: "Document has been modified by another user. Please reload and try again." },
+        { status: 409 }
+      )
+    }
+
     await (supabase as any).from("document_versions").insert({
       document_id: id,
       version: (currentDoc as any).version,
@@ -92,11 +101,19 @@ export async function PUT(
       .update({ content: sanitizedContent, version: (currentDoc as any).version + 1 })
       .eq("id", id)
       .eq("user_id", user.id)
+      .eq("version", (currentDoc as any).version)
       .select()
       .single()
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    if (!data) {
+      return NextResponse.json(
+        { error: "Document has been modified by another user. Please reload and try again." },
+        { status: 409 }
+      )
     }
 
     return NextResponse.json({ document: data })

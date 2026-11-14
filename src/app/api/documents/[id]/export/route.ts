@@ -56,18 +56,16 @@ export async function GET(
       extension = "txt"
       break
     case "docx":
-      // For DOCX, we'd typically use a library like docx
-      // For now, return HTML with appropriate headers
+      // DOCX binary generation requires a library (e.g., docx). Return HTML with correct MIME for now.
       exportContent = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${safeTitle}</title></head><body>${sanitizedContent}</body></html>`
-      mimeType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-      extension = "docx"
+      mimeType = "text/html"
+      extension = "html"
       break
     case "pdf":
-      // For PDF, we'd typically use a library like pdfkit or puppeteer
-      // For now, return HTML with appropriate headers
+      // PDF binary generation requires a library (e.g., pdfkit/puppeteer). Return HTML with correct MIME for now.
       exportContent = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${safeTitle}</title></head><body>${sanitizedContent}</body></html>`
-      mimeType = "application/pdf"
-      extension = "pdf"
+      mimeType = "text/html"
+      extension = "html"
       break
     default:
       exportContent = sanitizedContent

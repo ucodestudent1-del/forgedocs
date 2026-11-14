@@ -175,15 +175,17 @@ const worker = new Worker(
 
       if (uploadError) throw uploadError
 
-      // Get public URL
-      const { data: urlData } = supabase.storage.from("converted").getPublicUrl(storagePath)
+      // Get signed URL (private access only)
+      const { data: urlData, error: urlError } = await supabase.storage.from("converted").createSignedUrl(storagePath, 3600)
+
+      if (urlError) throw urlError
 
       // Update job as completed
       await supabase
         .from("conversion_jobs")
         .update({
           status: "completed",
-          output_url: urlData.publicUrl,
+          output_url: urlData.signedUrl,
           output_mime_type: `application/${targetFormat}`,
           completed_at: new Date().toISOString(),
         })

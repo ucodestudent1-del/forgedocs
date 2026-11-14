@@ -23,7 +23,7 @@ export async function GET(req: Request): Promise<NextResponse> {
     startOfMonth.setDate(1)
     startOfMonth.setHours(0, 0, 0, 0)
 
-    const [documentsUsage, conversionsUsage, storageUsage] = await Promise.all([
+    const [documentsUsage, conversionsUsage] = await Promise.all([
       supabase
         .from("usage_records")
         .select("*", { count: "exact", head: true })
@@ -35,12 +35,6 @@ export async function GET(req: Request): Promise<NextResponse> {
         .select("*", { count: "exact", head: true })
         .eq("user_id", user.id)
         .eq("metric", "conversions")
-        .gte("recorded_at", startOfMonth.toISOString()),
-      supabase
-        .from("usage_records")
-        .select("*", { count: "exact", head: true })
-        .eq("user_id", user.id)
-        .eq("metric", "storage_bytes")
         .gte("recorded_at", startOfMonth.toISOString()),
     ])
 

@@ -1,6 +1,6 @@
 import { generateSecret as otpGenerateSecret, generateURI, verifySync } from "otplib"
 import QRCode from "qrcode"
-import { randomBytes } from "crypto"
+import { randomBytes, createHash } from "crypto"
 
 export const MFA_ISSUER = "ForgeDocs"
 
@@ -38,7 +38,7 @@ export function verifyToken(secret: string, token: string): boolean {
 }
 
 export function hashBackupCode(code: string): string {
-  return Buffer.from(code).toString("base64")
+  return createHash("sha256").update(code).digest("hex")
 }
 
 export function verifyBackupCode(hashedCode: string, providedCode: string): boolean {
