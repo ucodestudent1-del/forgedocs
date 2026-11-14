@@ -18,12 +18,14 @@ import {
   ChevronDown,
 } from "lucide-react"
 import { Navbar } from "@/components/ui/navbar"
+import { ScrollIndicator } from "@/components/ui/scroll-indicator"
 
 export default function LandingPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null)
 
   return (
     <div className="flex flex-col [scroll-behavior:smooth] [scroll-padding-top:80px]">
+      <ScrollIndicator position="top" />
       <Navbar />
 
       <a id="main-content" tabIndex={-1} className="sr-only"></a>

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Copy, Printer, FileText, ArrowLeft, Pen, Check } from "lucide-react"
 import { formatDate } from "@/lib/utils"
+import { ScrollIndicator } from "@/components/ui/scroll-indicator"
 
 interface InlineSegment {
   type: "text" | "bold" | "italic" | "code" | "link"
@@ -232,7 +233,8 @@ export default function ReaderPage({ document }: ReaderPageProps) {
         </div>
       </header>
 
-      <main className="flex-1 max-w-3xl mx-auto px-6 py-10 overflow-y-auto">
+      <main className="flex-1 max-w-3xl mx-auto px-6 py-10 overflow-y-auto relative">
+        <ScrollIndicator position="right" className="opacity-50" />
         {document?.error ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <FileText className="h-16 w-16 mb-3 opacity-50" />

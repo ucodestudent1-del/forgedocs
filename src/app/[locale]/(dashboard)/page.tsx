@@ -33,6 +33,7 @@ import {
   Zap,
 } from "lucide-react"
 import { DashboardHeader } from "@/components/dashboard/header"
+import { ScrollIndicator } from "@/components/ui/scroll-indicator"
 import { useToast } from "@/components/ui/use-toast"
 
 function formatFileSize(bytes: number): string {
@@ -309,7 +310,8 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative">
+      <ScrollIndicator position="top" className="opacity-50" />
       <DashboardHeader
         title="Dashboard"
         description="Overview of your workspace activity and usage"

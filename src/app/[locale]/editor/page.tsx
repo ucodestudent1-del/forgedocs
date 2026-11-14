@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { FileText, Plus, Download, Share2, Loader2, AlertTriangle } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
+import { ScrollIndicator } from "@/components/ui/scroll-indicator"
 
 export default function EditorPage() {
   const [documentId, setDocumentId] = useState<string | null>(null)
@@ -157,7 +158,8 @@ export default function EditorPage() {
 
   return (
     <div className="flex h-screen bg-background">
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 overflow-auto relative">
+        <ScrollIndicator position="right" className="opacity-50" />
         {documentId ? (
           <RichEditor
             documentId={documentId}
