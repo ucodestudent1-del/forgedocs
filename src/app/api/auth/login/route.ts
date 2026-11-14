@@ -1,6 +1,7 @@
 import { getRouteClient } from "@/lib/supabase"
 import { NextResponse } from "next/server"
-import { validateCSRF } from "@/lib/csrf"
+import { cookies } from "next/headers"
+import { validateCSRF, generateCSRFToken } from "@/lib/csrf"
 import { authRateLimit } from "@/lib/rate-limit"
 import { checkLoginAttempts, recordFailedAttempt, clearFailedAttempts, validatePassword } from "@/lib/auth"
 
@@ -9,7 +10,7 @@ export async function POST(req: Request): Promise<NextResponse> {
     const rateLimitError = await authRateLimit(req)
     if (rateLimitError) return rateLimitError
 
-    validateCSRF(req)
+    await validateCSRF(req)
 
     const identifier = getClientIdentifier(req)
     const attemptCheck = await checkLoginAttempts(identifier)
@@ -40,7 +41,18 @@ export async function POST(req: Request): Promise<NextResponse> {
     }
 
     await clearFailedAttempts(identifier)
-    return NextResponse.json({ success: true })
+
+    // Rotate CSRF token after successful authentication to prevent session fixation
+    const newCsrfToken = generateCSRFToken()
+    const cookieStore = await cookies()
+    cookieStore.set("csrf_token", newCsrfToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+    })
+
+    return NextResponse.json({ success: true, csrf_token: newCsrfToken })
   } catch (error) {
     if (error instanceof Error && error.name === "CSRFError") {
       return NextResponse.json({ error: "Invalid CSRF token" }, { status: 403 })

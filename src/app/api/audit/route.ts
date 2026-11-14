@@ -24,7 +24,7 @@ export async function POST(req: Request) {
   const body = await req.json()
   const { action, documentId, details } = body
 
-  await supabase.from("audit_log").insert({
+  await supabase.from("audit_logs").insert({
     user_id: user.id,
     action,
     document_id: documentId,

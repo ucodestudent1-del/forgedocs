@@ -1,7 +1,7 @@
 import { getRouteClient } from "@/lib/supabase"
 import { NextResponse } from "next/server"
 import { documentRateLimit } from "@/lib/rate-limit"
-import { getTierLimits, checkTierLimit } from "@/lib/tierLimits"
+import { getTierLimits } from "@/lib/tierLimits"
 
 export async function GET(req: Request): Promise<NextResponse> {
   const rateLimitError = await documentRateLimit(req)
@@ -56,11 +56,8 @@ export async function GET(req: Request): Promise<NextResponse> {
       totalStorageBytes = docs.reduce((sum, doc) => sum + (doc.file_size || 0), 0)
     }
 
-    // Get storage used this month from usage_records (for uploads)
-    const storageThisMonth = storageUsage.count ?? 0
-
-    // Total storage = existing documents + this month's uploads
-    const currentStorage = totalStorageBytes + storageThisMonth
+    // Total storage = existing documents only
+    const currentStorage = totalStorageBytes
 
     const storageLimitBytes = limits.storage_gb * 1024 * 1024 * 1024
 

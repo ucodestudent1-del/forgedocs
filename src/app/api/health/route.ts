@@ -1,5 +1,4 @@
 import { createServerClient } from "@supabase/ssr"
-import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
 import { getRedisClient } from "@/lib/cache"
 import Stripe from "stripe"
@@ -10,14 +9,14 @@ export async function GET() {
   // ---- Database (Supabase) check ----
   const dbStart = Date.now()
   try {
-    const cookieStore = await cookies()
+    // Use service role key for health check to bypass RLS (no user context)
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
       {
         cookies: {
           getAll() {
-            return cookieStore.getAll()
+            return []
           },
         },
       },
@@ -39,7 +38,9 @@ export async function GET() {
     if (!redis) {
       checks.redis = { status: "unhealthy", error: "Redis not configured" }
     } else {
-      await redis.connect()
+      if (redis.status === "wait") {
+        await redis.connect()
+      }
       await redis.ping()
       const redisLatency = Date.now() - redisStart
       checks.redis = { status: "healthy", latency: redisLatency }

@@ -1,6 +1,5 @@
-import { createRouteClient } from "@/lib/supabase"
+import { createServiceRoleClient } from "@/lib/supabase"
 import { NextResponse } from "next/server"
-import { cookies } from "next/headers"
 import { sendEmail } from "@/lib/email"
 import { getPaymentFailedHtml, getTrialEndingHtml, getSubscriptionCanceledHtml } from "@/lib/emailTemplates"
 
@@ -34,9 +33,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 })
   }
 
-  // Use service role client for webhook operations
-  const cookieStore = await cookies()
-  const supabase = await createRouteClient()
+  // Use service role client for webhook operations (no user cookies in webhook context)
+  const supabase = await createServiceRoleClient()
 
   // Idempotency check
   const eventId = `stripe_${event.id}`
@@ -64,12 +62,23 @@ export async function POST(req: Request) {
     const userId = session.metadata?.userId
 
     if (userId) {
+      // Determine tier from line items price, default to free
+      let tier = "free"
+      try {
+        const lineItems = await stripe.checkout.sessions.listLineItems(session.id, { limit: 10 })
+        const priceId = lineItems.data[0]?.price?.id || ""
+        if (priceId.includes("pro")) tier = "pro"
+        else if (priceId.includes("business")) tier = "business"
+      } catch {
+        // tier remains "free" if lookup fails
+      }
+
       const { error } = await (supabase as any).from("subscriptions").upsert({
         user_id: userId,
         stripe_customer_id: session.customer,
         stripe_subscription_id: session.subscription,
         status: "active",
-        tier: "pro",
+        tier,
         current_period_start: new Date(session.created * 1000).toISOString(),
         current_period_end: new Date(
           session.created * 1000 + 30 * 24 * 60 * 60 * 1000

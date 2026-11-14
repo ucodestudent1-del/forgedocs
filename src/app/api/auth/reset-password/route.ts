@@ -39,6 +39,9 @@ export async function POST(req: Request): Promise<NextResponse> {
       return NextResponse.json({ error: error.message }, { status: 400 })
     }
 
+    // Invalidate all existing sessions after password change
+    await supabase.auth.signOut()
+
     const { data: { user } } = await supabase.auth.getUser()
     if (user?.email) {
       await sendEmail({

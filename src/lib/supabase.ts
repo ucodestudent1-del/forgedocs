@@ -64,3 +64,20 @@ export async function createRouteClient() {
 export async function getRouteClient() {
   return createRouteClient()
 }
+
+export async function createServiceRoleClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+  if (!url || !serviceKey) {
+    return createMockClient()
+  }
+
+  return createServerClient(url, serviceKey, {
+    cookies: {
+      getAll() {
+        return []
+      },
+    },
+  })
+}
