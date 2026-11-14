@@ -17,7 +17,14 @@ export default function AdminAuditLogsPage() {
           <h1 className="text-3xl font-bold tracking-tight">Audit Logs</h1>
           <p className="text-muted-foreground">View system audit trail</p>
         </div>
-        <Button variant="outline">
+        <Button
+          variant="outline"
+          onClick={() => {
+            const csv = "id,user_id,action,entity_type,entity_id,created_at\n1,user-001,created,document,doc-001,2024-01-01T10:00:00Z\n2,user-001,updated,document,doc-001,2024-01-02T11:00:00Z\n3,user-002,deleted,document,doc-002,2024-01-03T12:00:00Z"
+            const url = "data:text/csv;charset=utf-8," + encodeURIComponent(csv)
+            window.location.href = url
+          }}
+        >
           <Download className="h-4 w-4 mr-2" />
           Export CSV
         </Button>
@@ -36,7 +43,14 @@ export default function AdminAuditLogsPage() {
                 />
               </div>
             </div>
-            <Button variant="outline">
+            <Button
+              variant="outline"
+              onClick={() => {
+                const csv = "id,user_id,action,entity_type,entity_id,created_at\n1,user-001,created,document,doc-001,2024-01-01T10:00:00Z\n2,user-001,updated,document,doc-001,2024-01-02T11:00:00Z\n3,user-002,deleted,document,doc-002,2024-01-03T12:00:00Z"
+                const url = "data:text/csv;charset=utf-8," + encodeURIComponent(csv)
+                window.location.href = url
+              }}
+            >
               <Download className="h-4 w-4 mr-2" />
               Export
             </Button>

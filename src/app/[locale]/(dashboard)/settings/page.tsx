@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { DashboardHeader } from "@/components/dashboard/header"
 import { useToast } from "@/components/ui/use-toast"
 import { updateProfileLanguage } from "@/app/actions/settings"
+import { createBrowserSupabaseClient } from "@/lib/supabase-browser"
 import {
   User,
   Mail,
@@ -62,6 +63,12 @@ export default function SettingsPage() {
     { id: "2", device: "Firefox on Windows", location: "New York, NY", current: false, lastActive: "2 hours ago" },
     { id: "3", device: "Mobile App (iOS)", location: "San Francisco, CA", current: false, lastActive: "1 day ago" },
   ])
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  })
+  const [passwordChanging, setPasswordChanging] = useState(false)
 
   // Notifications state
   const [notifSettings, setNotifSettings] = useState({
@@ -107,6 +114,117 @@ export default function SettingsPage() {
       toast({ title: "Failed to save", variant: "destructive" })
     } finally {
       setSaving(false)
+    }
+  }
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault()
+    const { currentPassword, newPassword, confirmPassword } = passwordForm
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      toast({ title: "Please fill in all fields", variant: "destructive" })
+      return
+    }
+    if (newPassword !== confirmPassword) {
+      toast({ title: "New password and confirmation do not match", variant: "destructive" })
+      return
+    }
+    setPasswordChanging(true)
+    try {
+      const supabase = createBrowserSupabaseClient() as any
+      const { error } = await supabase.auth.updateUser({ password: newPassword })
+      if (error) {
+        toast({ title: error.message || "Failed to change password", variant: "destructive" })
+        return
+      }
+      setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" })
+      toast({ title: "Password updated successfully", variant: "success" })
+    } catch {
+      toast({ title: "Failed to change password", variant: "destructive" })
+    } finally {
+      setPasswordChanging(false)
+    }
+  }
+
+  const handleExportData = async () => {
+    try {
+      const supabase = createBrowserSupabaseClient() as any
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      const [profileResult, documentsResult, templatesResult] = await Promise.all([
+        supabase.from("profiles").select("*").eq("id", user.id).single(),
+        supabase.from("documents").select("*").eq("user_id", user.id),
+        supabase.from("templates").select("*").eq("user_id", user.id),
+      ])
+
+      const exportData = {
+        exportedAt: new Date().toISOString(),
+        user: { id: user.id, email: user.email },
+        profile: profileResult.data || null,
+        documents: documentsResult.data || [],
+        templates: templatesResult.data || [],
+      }
+
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = `forgedocs-export-${new Date().toISOString().split("T")[0]}.json`
+      a.click()
+      URL.revokeObjectURL(url)
+      toast({ title: "Data exported successfully", variant: "success" })
+    } catch {
+      toast({ title: "Failed to export data", variant: "destructive" })
+    }
+  }
+
+  const handleExportDocuments = async () => {
+    try {
+      const supabase = createBrowserSupabaseClient() as any
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      const { data: documents } = await supabase
+        .from("documents")
+        .select("*")
+        .eq("user_id", user.id)
+
+      const exportData = {
+        exportedAt: new Date().toISOString(),
+        user: { id: user.id, email: user.email },
+        documents: documents || [],
+      }
+
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = `forgedocs-documents-${new Date().toISOString().split("T")[0]}.json`
+      a.click()
+      URL.revokeObjectURL(url)
+      toast({ title: "Documents exported successfully", variant: "success" })
+    } catch {
+      toast({ title: "Failed to export documents", variant: "destructive" })
+    }
+  }
+
+  const handleDeleteAccount = async () => {
+    if (!confirm("Are you absolutely sure? This will permanently delete your account and all data. This action cannot be undone.")) {
+      return
+    }
+    try {
+      const supabase = createBrowserSupabaseClient() as any
+      const { error } = await supabase.auth.deleteUser()
+      if (error) {
+        toast({ title: error.message || "Failed to delete account", variant: "destructive" })
+        return
+      }
+      toast({ title: "Account deleted successfully", variant: "success" })
+      setTimeout(() => {
+        window.location.href = "/auth/login"
+      }, 1500)
+    } catch {
+      toast({ title: "Failed to delete account", variant: "destructive" })
     }
   }
 
@@ -355,22 +473,37 @@ export default function SettingsPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-0">
-              <form className="space-y-4 max-w-md">
+              <form onSubmit={handleChangePassword} className="space-y-4 max-w-md">
                 <div className="space-y-2">
                   <label className="block text-sm font-medium">Current Password</label>
-                  <Input type="password" placeholder="Enter current password" />
+                  <Input
+                    type="password"
+                    placeholder="Enter current password"
+                    value={passwordForm.currentPassword}
+                    onChange={(e) => setPasswordForm((prev) => ({ ...prev, currentPassword: e.target.value }))}
+                  />
                 </div>
                 <div className="space-y-2">
                   <label className="block text-sm font-medium">New Password</label>
-                  <Input type="password" placeholder="Enter new password" />
+                  <Input
+                    type="password"
+                    placeholder="Enter new password"
+                    value={passwordForm.newPassword}
+                    onChange={(e) => setPasswordForm((prev) => ({ ...prev, newPassword: e.target.value }))}
+                  />
                 </div>
                 <div className="space-y-2">
                   <label className="block text-sm font-medium">Confirm New Password</label>
-                  <Input type="password" placeholder="Confirm new password" />
+                  <Input
+                    type="password"
+                    placeholder="Confirm new password"
+                    value={passwordForm.confirmPassword}
+                    onChange={(e) => setPasswordForm((prev) => ({ ...prev, confirmPassword: e.target.value }))}
+                  />
                 </div>
-                <Button>
+                <Button type="submit" disabled={passwordChanging}>
                   <Lock className="h-4 w-4 mr-2" />
-                  Update Password
+                  {passwordChanging ? "Updating..." : "Update Password"}
                 </Button>
               </form>
             </CardContent>
@@ -506,7 +639,7 @@ export default function SettingsPage() {
                   <p className="font-medium">Export All Data</p>
                   <p className="text-sm text-muted-foreground">Download a JSON file with all your documents, templates, and settings</p>
                 </div>
-                <Button onClick={() => toast({ title: "Export started", variant: "success" })}>
+                <Button onClick={handleExportData}>
                   <Download className="h-4 w-4 mr-2" />
                   Export Data
                 </Button>
@@ -516,7 +649,7 @@ export default function SettingsPage() {
                   <p className="font-medium">Export Documents</p>
                   <p className="text-sm text-muted-foreground">Download your documents as a ZIP archive</p>
                 </div>
-                <Button variant="outline" onClick={() => toast({ title: "Export started", variant: "success" })}>
+                <Button variant="outline" onClick={handleExportDocuments}>
                   <Download className="h-4 w-4 mr-2" />
                   Export Documents
                 </Button>
@@ -562,11 +695,7 @@ export default function SettingsPage() {
                     Permanently delete your account and all associated data. This action cannot be undone.
                   </p>
                 </div>
-                <Button variant="destructive" onClick={() => {
-                  if (confirm("Are you absolutely sure? This will permanently delete your account and all data.")) {
-                    toast({ title: "Account deletion initiated", variant: "destructive" })
-                  }
-                }}>
+                <Button variant="destructive" onClick={handleDeleteAccount}>
                   <Trash2 className="h-4 w-4 mr-2" />
                   Delete Account
                 </Button>

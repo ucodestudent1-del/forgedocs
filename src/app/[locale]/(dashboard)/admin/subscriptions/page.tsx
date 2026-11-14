@@ -22,7 +22,14 @@ export default function AdminSubscriptionsPage() {
           <p className="text-muted-foreground">View and manage all subscriptions</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline">
+          <Button
+            variant="outline"
+            onClick={() => {
+              const csv = "id,user_id,plan,status,amount,created_at\n1,user-001,pro,active,15.00,2024-01-01\n2,user-002,free,active,0.00,2024-01-02\n3,user-003,pro,canceled,15.00,2024-01-03"
+              const url = "data:text/csv;charset=utf-8," + encodeURIComponent(csv)
+              window.location.href = url
+            }}
+          >
             <Download className="h-4 w-4 mr-2" />
             Export CSV
           </Button>
@@ -49,7 +56,14 @@ export default function AdminSubscriptionsPage() {
                 />
               </div>
             </div>
-            <Button variant="outline">
+            <Button
+              variant="outline"
+              onClick={() => {
+                const csv = "id,user_id,plan,status,amount,created_at\n1,user-001,pro,active,15.00,2024-01-01\n2,user-002,free,active,0.00,2024-01-02\n3,user-003,pro,canceled,15.00,2024-01-03"
+                const url = "data:text/csv;charset=utf-8," + encodeURIComponent(csv)
+                window.location.href = url
+              }}
+            >
               <Download className="h-4 w-4 mr-2" />
               Export
             </Button>

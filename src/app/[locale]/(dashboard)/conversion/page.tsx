@@ -605,7 +605,7 @@ export default function ConversionPage() {
                           const downloadUrl =
                             job.download_url ||
                             job.output_url ||
-                            `/api/conversion/${job.id}`
+                            `/api/conversion/${job.id}?download=true`
                           handleDownload(downloadUrl)
                         }}
                         className="ml-4 text-sm text-primary hover:underline"

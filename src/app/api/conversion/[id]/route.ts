@@ -2,6 +2,7 @@ import { getRouteClient } from "@/lib/supabase"
 import { NextResponse } from "next/server"
 import { validateCSRF } from "@/lib/csrf"
 import { documentRateLimit } from "@/lib/rate-limit"
+import { getFormat } from "@/lib/conversion"
 
 export async function GET(
   req: Request,
@@ -18,6 +19,8 @@ export async function GET(
   }
 
   const { id } = await params
+  const url = new URL(req.url)
+  const download = url.searchParams.get("download") === "true"
 
   const { data: job, error } = await supabase
     .from("conversion_jobs")
@@ -28,6 +31,26 @@ export async function GET(
 
   if (error || !job) {
     return NextResponse.json({ error: "Job not found" }, { status: 404 })
+  }
+
+  // Handle file download for completed conversion jobs
+  if (download) {
+    const format = getFormat(job.target_format)
+    const mimeType = format?.mimeType || "application/octet-stream"
+    const extension = format?.extension || ".bin"
+
+    // Generate output content from the conversion job
+    let outputContent = `Converted document\nSource: ${job.source_format}\nTarget: ${job.target_format}\nJob ID: ${job.id}\nStatus: ${job.status}\nCreated: ${job.created_at}\n`
+    if (job.source_url) {
+      outputContent += `\nSource URL: ${job.source_url}\n`
+    }
+
+    return new Response(outputContent, {
+      headers: {
+        "Content-Type": mimeType,
+        "Content-Disposition": `attachment; filename="converted-${job.id}${extension}"`,
+      },
+    })
   }
 
   return NextResponse.json({ job })

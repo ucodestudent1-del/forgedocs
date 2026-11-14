@@ -442,9 +442,34 @@ function FileGridItem({
         </div>
       </div>
       <div className="flex items-center justify-end gap-1 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
-        <button className="p-1 rounded hover:bg-accent" aria-label="View"><Eye className="h-4 w-4" /></button>
-        <button className="p-1 rounded hover:bg-accent" aria-label="Download"><Download className="h-4 w-4" /></button>
-        <button className="p-1 rounded hover:bg-accent" aria-label="More"><MoreVertical className="h-4 w-4" /></button>
+        <button
+          className="p-1 rounded hover:bg-accent"
+          aria-label="View"
+          onClick={() => {
+            window.location.href = `/reader/${file.id}`
+          }}
+        >
+          <Eye className="h-4 w-4" />
+        </button>
+        <button
+          className="p-1 rounded hover:bg-accent"
+          aria-label="Download"
+          onClick={() => {
+            window.location.href = `/api/documents/${file.id}/export`
+          }}
+        >
+          <Download className="h-4 w-4" />
+        </button>
+        <button
+          className="p-1 rounded hover:bg-accent"
+          aria-label="More"
+          onClick={(e) => {
+            e.stopPropagation()
+            console.log("More options for", file.name)
+          }}
+        >
+          <MoreVertical className="h-4 w-4" />
+        </button>
       </div>
     </div>
   )

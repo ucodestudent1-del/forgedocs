@@ -1,15 +1,33 @@
+"use client"
+
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { CreditCard, DollarSign, Clock, Users, Settings } from "lucide-react"
+import { useToast } from "@/components/ui/use-toast"
+import { useState } from "react"
+
+interface PlanCardProps {
+  name: string
+  price: string
+  priceId: string | null
+  description: string
+  features: string[]
+  popular: boolean
+  currentTier: string
+  onChoosePlan: (priceId: string | null) => void
+}
 
 export default function BillingPage() {
   // TEMPORARILY DISABLED: Auth check removed for development
   const tier = "free"
+  const { toast } = useToast()
+
   const tierInfo = {
     free: {
       name: "Free",
       price: "$0",
+      priceId: null,
       description: "For individuals and small teams",
       features: ["500 documents/month", "100 conversions/month", "5 GB storage", "Community support", "Team collaboration"],
       limits: { documents: 500, conversions: 100, storage: "5 GB" },
@@ -17,6 +35,7 @@ export default function BillingPage() {
     pro: {
       name: "Pro",
       price: "$15",
+      priceId: "price_pro_monthly",
       description: "For power users and growing teams",
       features: ["Unlimited documents", "Unlimited conversions", "100 GB storage", "Priority support", "Advanced templates", "Audit logs"],
       limits: { documents: null, conversions: null, storage: "100 GB" },
@@ -24,6 +43,37 @@ export default function BillingPage() {
   }
 
   const currentTier = tierInfo[tier as keyof typeof tierInfo] || tierInfo.free
+
+  const handleChoosePlan = async (priceId: string | null) => {
+    if (!priceId) return
+    try {
+      // Get CSRF token
+      const csrfRes = await fetch("/api/csrf")
+      const csrfData = await csrfRes.json()
+
+      const res = await fetch("/api/billing", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(csrfData.csrf_token ? { "X-CSRF-Token": csrfData.csrf_token } : {}),
+        },
+        body: JSON.stringify({ priceId }),
+      })
+
+      if (!res.ok) {
+        const err = await res.json()
+        toast({ title: err.error || "Checkout failed", variant: "destructive" })
+        return
+      }
+
+      const data = await res.json()
+      if (data.checkoutUrl) {
+        window.location.href = data.checkoutUrl
+      }
+    } catch (e) {
+      toast({ title: "Checkout failed", variant: "destructive" })
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -78,18 +128,22 @@ export default function BillingPage() {
             <PlanCard
               name="Free"
               price="$0"
+              priceId={tierInfo.free.priceId}
               description="For individuals and small teams"
               features={["500 documents/month", "100 conversions/month", "5 GB storage", "Community support", "Team collaboration"]}
               popular={false}
               currentTier={tier}
+              onChoosePlan={handleChoosePlan}
             />
             <PlanCard
               name="Pro"
               price="$15"
+              priceId={tierInfo.pro.priceId}
               description="For power users and growing teams"
               features={["Unlimited documents", "Unlimited conversions", "100 GB storage", "Priority support", "Advanced templates", "Audit logs"]}
               popular={true}
               currentTier={tier}
+              onChoosePlan={handleChoosePlan}
             />
           </div>
         </CardContent>
@@ -110,8 +164,9 @@ function UsageStat({ title, value, icon: Icon }: { title: string; value: string;
   )
 }
 
-function PlanCard({ name, price, description, features, popular, currentTier }: { name: string; price: string; description: string; features: string[]; popular: boolean; currentTier: string }) {
+function PlanCard({ name, price, priceId, description, features, popular, currentTier, onChoosePlan }: PlanCardProps) {
   const isCurrent = name.toLowerCase() === currentTier
+
   return (
     <Card className={`relative flex flex-col border ${popular ? "border-primary ring-1 ring-primary" : ""}`}>
       {popular && (
@@ -135,9 +190,14 @@ function PlanCard({ name, price, description, features, popular, currentTier }: 
         </ul>
       </CardContent>
       <CardFooter className="pt-4">
-          <Button className="w-full" variant="outline" disabled={isCurrent}>
-            {isCurrent ? "Current Plan" : "Choose Plan"}
-          </Button>
+        <Button
+          className="w-full"
+          variant="outline"
+          disabled={isCurrent || !priceId}
+          onClick={() => onChoosePlan(priceId)}
+        >
+          {isCurrent ? "Current Plan" : "Choose Plan"}
+        </Button>
       </CardFooter>
     </Card>
   )

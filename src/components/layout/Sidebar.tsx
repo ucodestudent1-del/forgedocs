@@ -353,8 +353,13 @@ export function Sidebar({
               </button>
             )}
             <button
-              onClick={() => {
-                window.location.href = "/api/auth/signout"
+              onClick={async () => {
+                try {
+                  await fetch("/api/auth/login", { method: "DELETE" })
+                } catch {
+                  // ignore
+                }
+                window.location.href = "/auth/login"
               }}
               className={`p-2 rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors ${
                 collapsed ? "mx-auto" : ""

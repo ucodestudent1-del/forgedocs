@@ -69,7 +69,7 @@ export default function DocumentGeneratorPage() {
             <h1 className="text-2xl font-bold tracking-tight">Document Generator</h1>
             <p className="text-muted-foreground">Generate professional documents from templates</p>
           </div>
-          <Button className="flex items-center gap-2">
+          <Button className="flex items-center gap-2" onClick={() => setSelectedTemplateId(null)}>
             <Plus className="h-4 w-4" />
             New Document
           </Button>
@@ -118,7 +118,7 @@ export default function DocumentGeneratorPage() {
               <h1 className="text-2xl font-bold tracking-tight">Document Generator</h1>
               <p className="text-muted-foreground">Generate professional documents from templates</p>
             </div>
-            <Button className="flex items-center gap-2">
+            <Button className="flex items-center gap-2" onClick={() => setSelectedTemplateId(null)}>
               <Plus className="h-4 w-4" />
               New Document
             </Button>

@@ -37,7 +37,7 @@ export default function TemplatesPage() {
           <h1 className="text-2xl font-bold tracking-tight text-foreground">Templates</h1>
           <p className="text-muted-foreground">Generate documents from templates</p>
         </div>
-        <Button className="flex items-center gap-2">
+        <Button className="flex items-center gap-2" onClick={() => window.location.href = "/document-generator"}>
           <Plus className="h-4 w-4" />
           New Template
         </Button>
@@ -94,7 +94,7 @@ function TemplateCard({ template }: { template: any }) {
         <p className="text-xs text-muted-foreground mb-3">
           {template.category || "General"} • {template.placeholder_schema?.length || 0} fields
         </p>
-        <Button size="sm" className="w-full">
+        <Button size="sm" className="w-full" onClick={() => window.location.href = `/document-generator?template=${template.id}`}>
           Generate Document
         </Button>
       </CardContent>
