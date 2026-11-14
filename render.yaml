@@ -1,0 +1,17 @@
+# Render Configuration
+# Deploy to Render with: render deploy
+# Or connect GitHub repo to Render dashboard
+
+services:
+  - type: web
+    name: forgedocs
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "3000"
+    healthCheckPath: /api/health
+    autoDeploy: true
