@@ -58,6 +58,7 @@ COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/next-intl.config.js ./next-intl.config.js
 COPY --from=builder /app/src/i18n/routing.ts ./src/i18n/routing.ts
+COPY --from=builder /app/src/messages ./src/messages
 
 EXPOSE 3000
 CMD ["node_modules/.bin/next", "start"]
