@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { X, Menu, Globe, ChevronDown, Check } from "lucide-react"
-import { useTranslations, useLocale } from "next-intl"
+import { useTranslations, useLocale } from "@/lib/i18n"
 import { useRouter, usePathname } from "next/navigation"
 import {
   DropdownMenu,

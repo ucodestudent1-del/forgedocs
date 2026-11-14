@@ -1,24 +1,6 @@
 import { Metadata } from "next"
 import Link from "next/link"
-import { NextIntlClientProvider } from "next-intl"
-
-import messagesEn from "@/messages/en.json"
-import messagesEs from "@/messages/es.json"
-import messagesAr from "@/messages/ar.json"
-import messagesFr from "@/messages/fr.json"
-import messagesDe from "@/messages/de.json"
-import messagesJa from "@/messages/ja.json"
-import messagesZh from "@/messages/zh.json"
-
-const messagesMap: Record<string, Record<string, unknown>> = {
-  en: messagesEn,
-  es: messagesEs,
-  ar: messagesAr,
-  fr: messagesFr,
-  de: messagesDe,
-  ja: messagesJa,
-  zh: messagesZh,
-}
+import { I18nProvider } from "@/lib/i18n"
 
 export const metadata: Metadata = {
   title: "Page not found",
@@ -39,10 +21,9 @@ export async function generateStaticParams() {
 
 export default async function NotFound({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params
-  const messages = messagesMap[locale] || messagesEn
 
   return (
-    <NextIntlClientProvider messages={messages} locale={locale}>
+    <I18nProvider locale={locale}>
       <html lang={locale} dir={locale === "ar" ? "rtl" : "ltr"}>
         <body>
           <div className="flex min-h-screen items-center justify-center px-4">
@@ -60,6 +41,6 @@ export default async function NotFound({ params }: { params: Promise<{ locale: s
           </div>
         </body>
       </html>
-    </NextIntlClientProvider>
+    </I18nProvider>
   )
 }
