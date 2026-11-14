@@ -6,7 +6,12 @@ const routing = {
   localePrefix: "as-needed",
 }
 
-export default nextIntlMiddleware(routing)
+// Safety: ensure nextIntlMiddleware is a function before calling
+const middlewareFn = typeof nextIntlMiddleware === "function" 
+  ? nextIntlMiddleware(routing)
+  : (() => { throw new Error("nextIntlMiddleware failed to load"); })()
+
+export default middlewareFn
 
 export const config = {
   matcher: ["/((?!api|_next|_vercel|_not-found|.*\\..*).*)"],
