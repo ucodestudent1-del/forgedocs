@@ -4,6 +4,7 @@ import React, { useEffect, useState, useCallback } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { useTranslations } from "@/lib/i18n"
 import {
   FileText,
   FileSpreadsheet,
@@ -59,6 +60,7 @@ export default function ConversionPage() {
   const [selectedTargetFormat, setSelectedTargetFormat] = useState("")
   const [uploadProgress, setUploadProgress] = useState(0)
   const [search, setSearch] = useState("")
+  const t = useTranslations(["conversion", "common", "errors"])
 
   // Unit tab state
   const [unitCategory, setUnitCategory] = useState<string | null>(null)
@@ -168,14 +170,14 @@ export default function ConversionPage() {
       setConverting(false)
     } catch (e) {
       console.error(e)
-      alert(e instanceof Error ? e.message : "Conversion failed")
+      alert(t("conversionFailed"))
       setConverting(false)
     }
   }
 
   async function handleUnitConvert() {
     if (!unitCategory || !unitFrom || !unitTo || !unitValue) {
-      alert("Please fill all unit conversion fields")
+      alert(t("errors.validationError"))
       return
     }
     setConverting(true)
@@ -198,7 +200,7 @@ export default function ConversionPage() {
       alert(`${unitValue} ${unitFrom} = ${data.result} ${unitTo}`)
     } catch (e) {
       console.error(e)
-      alert(e instanceof Error ? e.message : "Unit conversion failed")
+      alert(t("conversionFailed"))
     } finally {
       setConverting(false)
     }
@@ -225,7 +227,7 @@ export default function ConversionPage() {
       setMetaResult(data.output)
     } catch (e) {
       console.error(e)
-      alert(e instanceof Error ? e.message : "Metadata conversion failed")
+      alert(t("conversionFailed"))
     } finally {
       setConverting(false)
     }
@@ -555,7 +557,7 @@ export default function ConversionPage() {
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input
               type="search"
-              placeholder="Search jobs..."
+              placeholder={t("searchJobs")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="h-10 pl-10 pr-4 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary w-full"

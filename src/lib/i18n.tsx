@@ -9,6 +9,7 @@ import messagesFr from "@/messages/fr.json"
 import messagesDe from "@/messages/de.json"
 import messagesJa from "@/messages/ja.json"
 import messagesZh from "@/messages/zh.json"
+import messagesZhTw from "@/messages/zh-tw.json"
 
 const messagesMap: Record<string, Record<string, unknown>> = {
   en: messagesEn,
@@ -18,16 +19,33 @@ const messagesMap: Record<string, Record<string, unknown>> = {
   de: messagesDe,
   ja: messagesJa,
   zh: messagesZh,
+  "zh-TW": messagesZhTw,
 }
 
-const locales = ["en", "es", "ar", "fr", "de", "ja", "zh"]
+const locales = ["en", "es", "ar", "fr", "de", "ja", "zh", "zh-TW"]
 const defaultLocale = "en"
+
+// Number formats per locale (e.g. Arabic-Indic digits for ar-SA)
+const numberFormatLocales: Record<string, string> = {
+  ar: "ar-SA",
+  en: "en-US",
+  es: "es-ES",
+  fr: "fr-FR",
+  de: "de-DE",
+  ja: "ja-JP",
+  zh: "zh-CN",
+  "zh-TW": "zh-TW",
+}
+
+const numberFormatOptions: Intl.NumberFormatOptions = { useGrouping: true }
 
 interface I18nContextType {
   locale: string
   messages: Record<string, unknown>
   setLocale: (locale: string) => void
-  t: (key: string) => string
+  t: (key: string, vars?: Record<string, string | number>) => string
+  formatNumber: (value: number) => string
+  formatDate: (value: Date | string, options?: Intl.DateTimeFormatOptions) => string
 }
 
 const I18nContext = createContext<I18nContextType | undefined>(undefined)
@@ -43,29 +61,67 @@ export function I18nProvider({ children, locale = defaultLocale }: { children: R
     }
   }
 
-  const t = (key: string): string => {
+  const resolve = (key: string): string | undefined => {
     const keys = key.split(".")
     let value: any = messages
     for (const k of keys) {
       value = value?.[k]
     }
-    return typeof value === "string" ? value : key
+    return typeof value === "string" ? value : undefined
+  }
+
+  const t = (key: string, vars?: Record<string, string | number>): string => {
+    let value = resolve(key)
+    if (!value) return key
+    if (vars) {
+      for (const [varName, varValue] of Object.entries(vars)) {
+        value = value.replace(new RegExp(`\\{${varName}\\}`, "g"), String(varValue))
+      }
+    }
+    return value
+  }
+
+  const formatNumber = (value: number): string => {
+    const locale = numberFormatLocales[currentLocale] || numberFormatLocales[defaultLocale]
+    return new Intl.NumberFormat(locale, numberFormatOptions).format(value)
+  }
+
+  const formatDate = (value: Date | string, options?: Intl.DateTimeFormatOptions): string => {
+    const d = typeof value === "string" ? new Date(value) : value
+    return new Intl.DateTimeFormat(currentLocale, options).format(d)
   }
 
   return (
-    <I18nContext.Provider value={{ locale: currentLocale, messages, setLocale, t }}>
+    <I18nContext.Provider value={{ locale: currentLocale, messages, setLocale, t, formatNumber, formatDate }}>
       {children}
     </I18nContext.Provider>
   )
 }
 
-export function useTranslations(namespace: string) {
-  const { t } = useContext(I18nContext) as I18nContextType
+export function useTranslations(namespaces: string | string[]) {
+  const { t, messages } = useContext(I18nContext) as I18nContextType
   if (!t) throw new Error("useTranslations must be used within I18nProvider")
 
-  return (key: string) => {
-    const fullKey = namespace ? `${namespace}.${key}` : key
-    return t(fullKey)
+  const nsList = Array.isArray(namespaces) ? namespaces : [namespaces]
+
+  function resolveInMessages(key: string): unknown {
+    const keys = key.split(".")
+    let value: any = messages
+    for (const k of keys) {
+      value = value?.[k]
+    }
+    return value
+  }
+
+  return (key: string, vars?: Record<string, string | number>) => {
+    // Try each namespace in order
+    for (const ns of nsList) {
+      const fullKey = `${ns}.${key}`
+      const value = resolveInMessages(fullKey)
+      if (typeof value === "string") return t(fullKey, vars)
+    }
+    // Fallback: try key directly
+    return t(key, vars)
   }
 }
 
@@ -74,3 +130,11 @@ export function useLocale() {
   if (!locale) throw new Error("useLocale must be used within I18nProvider")
   return locale
 }
+
+export function useFormatNumber() {
+  const { formatNumber } = useContext(I18nContext) as I18nContextType
+  if (!formatNumber) throw new Error("useFormatNumber must be used within I18nProvider")
+  return formatNumber
+}
+
+export { locales, defaultLocale }

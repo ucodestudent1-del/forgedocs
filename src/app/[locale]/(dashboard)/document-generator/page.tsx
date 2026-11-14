@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { FileText, Save, Download, Plus, FileText as FileTextIcon } from "lucide-react"
 import { TEMPLATE_LIBRARY, getTemplateById } from "@/lib/templateLibrary"
 import { DocumentGenerator } from "@/lib/documentGenerator"
+import { useTranslations } from "@/lib/i18n"
 import { useRouter, useSearchParams } from "next/navigation"
 
 export default function DocumentGeneratorPage() {
@@ -13,6 +14,7 @@ export default function DocumentGeneratorPage() {
   const searchParams = useSearchParams()
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null)
   const [templateData, setTemplateData] = useState<Record<string, string>>({})
+  const t = useTranslations(["errors", "common"])
   const [generatedDocument, setGeneratedDocument] = useState<string | null>(null)
   const [isGenerating, setIsGenerating] = useState(false)
 
@@ -51,7 +53,7 @@ export default function DocumentGeneratorPage() {
       URL.revokeObjectURL(url)
     } catch (e) {
       console.error("Generation failed:", e)
-      alert("Failed to generate document: " + (e instanceof Error ? e.message : String(e)))
+      alert(t("documentGenerationFailed") + ": " + (e instanceof Error ? e.message : String(e)))
     } finally {
       setIsGenerating(false)
     }

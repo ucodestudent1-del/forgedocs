@@ -58,8 +58,8 @@
     "welcome": "مرحباً بعودتك، {name}",
     "welcomeGuest": "مرحباً بك في ForgeDocs",
     "stats": {
-      "documents": "{count, plural, one {# مستند} other {# مستندات}}",
-      "templates": "{count, plural, one {# قالب} other {# قوالب}}",
+      "documents": "{count, plural, zero {# مستندات} one {# مستند} two {# مستندان} few {# مستندات} many {# مستندات} other {# مستندات}}",
+      "templates": "{count, plural, zero {# قوالب} one {# قالب} two {# قالبان} few {# قوالب} many {# قوالب} other {# قوالب}}",
       "storage": "{used} من {total} مستخدم"
     },
     "recentDocuments": "المستندات الحديثة",
@@ -92,7 +92,7 @@
     "saveDraft": "حفظ مسودة",
     "publish": "نشر",
     "preview": "معاينة",
-    "wordCount": "{count, plural, one {# كلمة} other {# كلمات}}",
+    "wordCount": "{count, plural, zero {# كلمات} one {# كلمة} two {# كلمتان} few {# كلمات} many {# كلمات} other {# كلمات}}",
     "lastSaved": "آخر حفظ: {date, datetime, medium}",
     "unsavedChanges": "لديك تغييرات غير محفوظة"
   },
@@ -149,5 +149,61 @@
     "deleted": "تم الحذف بنجاح",
     "copied": "تم النسخ إلى الحافظة",
     "failed": "فشلت العملية"
+  },
+  "editor": {
+    "promptImageUrl": "أدخل عنوان URL للصورة",
+    "promptLinkText": "نص الرابط",
+    "promptUrl": "عنوان URL",
+    "createNewDocument": "إنشاء مستند جديد"
+  },
+  "billing": {
+    "documentsCreated": "المستندات التي تم إنشاؤها",
+    "conversions": "التحويلات"
+  },
+  "activity": {
+    "filter": {
+      "all": "جميع الإجراءات",
+      "created": "تم الإنشاء",
+      "updated": "تم التحديث",
+      "deleted": "تم الحذف",
+      "uploaded": "تم الرفع",
+      "downloaded": "تم التحميل",
+      "viewed": "تم العرض",
+      "shared": "تم المشاركة",
+      "converted": "تم التحويل",
+      "signed": "تم التوقيع",
+      "generated": "تم التوليد بواسطة الذكاء الاصطناعي",
+      "placeholder": "تصفية حسب الإجراء",
+      "placeholderType": "تصفية حسب النوع",
+      "allTypes": "جميع الأنواع",
+      "last24Hours": "آخر 24 ساعة",
+      "last7Days": "آخر 7 أيام",
+      "last30Days": "آخر 30 يومًا",
+      "lastYear": "العام الماضي",
+      "newestFirst": "الأحدث أولاً",
+      "oldestFirst": "الأقدم أولاً"
+    },
+    "searchActivity": "البحث في النشاط..."
+  },
+  "admin": {
+    "searchUsers": "البحث عن المستخدمين...",
+    "searchSubscriptions": "البحث عن الاشتراكات...",
+    "searchLogs": "البحث في السجلات..."
+  },
+  "conversion": {
+    "searchJobs": "البحث في الوظائف..."
+  },
+  "errors": {
+    "editorError": "خطأ في المحرر",
+    "conversionFailed": "فشل التحويل",
+    "documentGenerationFailed": "فشل في إنشاء المستند",
+    "saveFailed": "فشل الحفظ"
+  },
+  "common": {
+    "documents": "المستندات",
+    "templates": "القوالب",
+    "conversion": "التحويل",
+    "eSignatures": "التوقيعات الإلكترونية",
+    "shared": "مشتركة"
   }
 }

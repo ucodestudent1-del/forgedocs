@@ -1,3 +1,5 @@
+"use client"
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -5,9 +7,11 @@ import { Input } from "@/components/ui/input"
 import { Users, CreditCard, FileText, AlertTriangle, TrendingUp, Clock, Download, Search, Shield, Database, User } from "lucide-react"
 import Link from "next/link"
 import { format } from "date-fns"
+import { useTranslations } from "@/lib/i18n"
 import { AuditLogsTable } from "@/components/admin/AuditLogsTable"
 
 export default function AdminAuditLogsPage() {
+  const t = useTranslations(["admin", "common"])
   // TEMPORARILY DISABLED: Auth check removed for development
 
   return (
@@ -38,7 +42,7 @@ export default function AdminAuditLogsPage() {
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   type="search"
-                  placeholder="Search logs..."
+                  placeholder={t("searchLogs")}
                   className="h-10 pl-10 pr-4 w-full md:w-80"
                 />
               </div>

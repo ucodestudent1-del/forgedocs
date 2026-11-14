@@ -1,0 +1,201 @@
+{
+  "common": {
+    "save": "儲存",
+    "cancel": "取消",
+    "delete": "刪除",
+    "edit": "編輯",
+    "create": "建立",
+    "search": "搜尋",
+    "loading": "載入中...",
+    "error": "錯誤",
+    "success": "成功",
+    "confirm": "確認",
+    "close": "關閉",
+    "open": "打開",
+    "settings": "設定",
+    "help": "幫助",
+    "signOut": "登出",
+    "language": "語言",
+    "theme": "主題",
+    "light": "淺色",
+    "dark": "深色",
+    "system": "系統",
+    "documents": "文件",
+    "templates": "範本",
+    "conversion": "轉換",
+    "eSignatures": "電子簽名",
+    "shared": "共享"
+  },
+  "navigation": {
+    "dashboard": "儀表板",
+    "documents": "文件",
+    "myFiles": "我的檔案",
+    "editor": "文件編輯器",
+    "templates": "範本",
+    "tools": "工具",
+    "conversion": "轉換",
+    "aiAssistant": "AI助手",
+    "pdfTools": "PDF工具",
+    "eSignatures": "電子簽名",
+    "shared": "共享文件",
+    "activity": "活動歷史",
+    "notifications": "通知",
+    "usage": "使用量和限制",
+    "workspace": "工作區",
+    "conversionAI": "轉換和AI",
+    "manage": "管理",
+    "other": "其他",
+    "quickActions": "快速操作",
+    "createDocument": "建立文件",
+    "convertFile": "轉換檔案",
+    "mergePDFs": "合併PDF",
+    "aiGenerate": "AI生成",
+    "users": "用戶",
+    "subscriptions": "訂閱",
+    "auditLogs": "稽核日誌",
+    "systemHealth": "系統健康",
+    "solutions": "解決方案",
+    "testimonials": "用戶評價",
+    "faq": "常見問題",
+    "pricing": "定價"
+  },
+  "dashboard": {
+    "welcome": "歡迎回來，{name}",
+    "welcomeGuest": "歡迎使用ForgeDocs",
+    "stats": {
+      "documents": "{count, plural, other {# 個文件}}",
+      "templates": "{count, plural, other {# 個範本}}",
+      "storage": "已用 {used} / {total}"
+    },
+    "recentDocuments": "最近的文件",
+    "noDocuments": "暫無文件",
+    "createFirst": "建立您的第一個文件"
+  },
+  "sidebar": {
+    "open": "打開側邊欄",
+    "close": "關閉側邊欄",
+    "collapse": "摺疊側邊欄",
+    "expand": "展開側邊欄",
+    "signedIn": "已登入"
+  },
+  "header": {
+    "searchPlaceholder": "搜尋文件、範本、工具...",
+    "notifications": "通知",
+    "userMenu": "用戶選單"
+  },
+  "auth": {
+    "signIn": "登入",
+    "signUp": "註冊",
+    "forgotPassword": "忘記密碼？",
+    "resetPassword": "重設密碼",
+    "verifyEmail": "驗證電子郵件",
+    "mfaSetup": "MFA設定",
+    "mfaVerify": "MFA驗證"
+  },
+  "editor": {
+    "newDocument": "新建文件",
+    "saveDraft": "儲存草稿",
+    "publish": "發布",
+    "preview": "預覽",
+    "wordCount": "{count, plural, other {# 字}}",
+    "lastSaved": "上次儲存：{date, datetime, medium}",
+    "unsavedChanges": "您有未儲存的變更",
+    "promptImageUrl": "輸入圖片URL",
+    "promptLinkText": "連結文字",
+    "promptUrl": "URL",
+    "createNewDocument": "建立新文件"
+  },
+  "conversion": {
+    "uploadFile": "上傳檔案進行轉換",
+    "selectFormat": "選擇輸出格式",
+    "convert": "轉換",
+    "download": "下載",
+    "converting": "轉換中...",
+    "converted": "轉換成功",
+    "searchJobs": "搜尋任務..."
+  },
+  "pdfTools": {
+    "merge": "合併PDF",
+    "split": "拆分PDF",
+    "compress": "壓縮PDF",
+    "rotate": "旋轉頁面",
+    "addWatermark": "新增浮水印"
+  },
+  "eSignatures": {
+    "signDocument": "簽署文件",
+    "requestSignature": "請求簽名",
+    "signed": "已簽署",
+    "pending": "待處理",
+    "expired": "已過期"
+  },
+  "aiAssistant": {
+    "askQuestion": "輸入問題...",
+    "generating": "生成中...",
+    "regenerate": "重新生成",
+    "copy": "複製",
+    "copied": "已複製！"
+  },
+  "settings": {
+    "profile": "個人檔案",
+    "account": "帳戶",
+    "billing": "帳單",
+    "security": "安全",
+    "notifications": "通知",
+    "preferences": "偏好設定",
+    "language": "語言",
+    "timezone": "時區",
+    "dateFormat": "日期格式"
+  },
+  "errors": {
+    "unauthorized": "請登入以繼續",
+    "forbidden": "您沒有權限存取此頁面",
+    "notFound": "頁面未找到",
+    "serverError": "發生錯誤，請重試。",
+    "networkError": "網路錯誤，請檢查連線。",
+    "validationError": "請檢查您的輸入",
+    "editorError": "編輯器錯誤",
+    "conversionFailed": "轉換失敗",
+    "documentGenerationFailed": "文件生成失敗",
+    "saveFailed": "儲存失敗"
+  },
+  "toast": {
+    "saved": "儲存成功",
+    "deleted": "刪除成功",
+    "copied": "已複製到剪貼簿",
+    "failed": "操作失敗"
+  },
+  "billing": {
+    "documentsCreated": "已建立文件",
+    "conversions": "轉換次數"
+  },
+  "activity": {
+    "filter": {
+      "all": "所有操作",
+      "created": "已建立",
+      "updated": "已更新",
+      "deleted": "已刪除",
+      "uploaded": "已上傳",
+      "downloaded": "已下載",
+      "viewed": "已檢視",
+      "shared": "已共用",
+      "converted": "已轉換",
+      "signed": "已簽署",
+      "generated": "AI生成",
+      "placeholder": "依操作篩選",
+      "placeholderType": "依類型篩選",
+      "allTypes": "所有類型",
+      "last24Hours": "過去24小時",
+      "last7Days": "過去7天",
+      "last30Days": "過去30天",
+      "lastYear": "過去一年",
+      "newestFirst": "最新優先",
+      "oldestFirst": "最舊優先"
+    },
+    "searchActivity": "搜尋活動..."
+  },
+  "admin": {
+    "searchUsers": "搜尋用戶...",
+    "searchSubscriptions": "搜尋訂閱...",
+    "searchLogs": "搜尋日誌..."
+  }
+}

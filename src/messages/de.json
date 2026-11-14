@@ -46,11 +46,11 @@
     "mergePDFs": "PDFs zusammenführen",
     "aiGenerate": "KI generieren",
     "users": "Benutzer",
-    "subscriptions": "Abos",
+    "subscriptions": "Abonnements",
     "auditLogs": "Audit-Logs",
     "systemHealth": "Systemzustand",
     "solutions": "Lösungen",
-    "testimonials": "Referenzen",
+    "testimonials": "Kundenstimmen",
     "faq": "FAQ",
     "pricing": "Preise"
   },
@@ -149,5 +149,61 @@
     "deleted": "Erfolgreich gelöscht",
     "copied": "In Zwischenablage kopiert",
     "failed": "Vorgang fehlgeschlagen"
+  },
+  "editor": {
+    "promptImageUrl": "Bild-URL eingeben",
+    "promptLinkText": "Linktext",
+    "promptUrl": "URL",
+    "createNewDocument": "Neues Dokument Erstellen"
+  },
+  "billing": {
+    "documentsCreated": "Dokumente Erstellt",
+    "conversions": "Konvertierungen"
+  },
+  "activity": {
+    "filter": {
+      "all": "Alle Aktionen",
+      "created": "Erstellt",
+      "updated": "Aktualisiert",
+      "deleted": "Gelöscht",
+      "uploaded": "Hochgeladen",
+      "downloaded": "Heruntergeladen",
+      "viewed": "Angesehen",
+      "shared": "Geteilt",
+      "converted": "Konvertiert",
+      "signed": "Unterschrieben",
+      "generated": "KI-generiert",
+      "placeholder": "Nach Aktion filtern",
+      "placeholderType": "Nach Typ filtern",
+      "allTypes": "Alle Typen",
+      "last24Hours": "Letzte 24 Stunden",
+      "last7Days": "Letzte 7 Tage",
+      "last30Days": "Letzte 30 Tage",
+      "lastYear": "Letztes Jahr",
+      "newestFirst": "Neueste Zuerst",
+      "oldestFirst": "Älteste Zuerst"
+    },
+    "searchActivity": "Aktivität suchen..."
+  },
+  "admin": {
+    "searchUsers": "Benutzer suchen...",
+    "searchSubscriptions": "Abonnements suchen...",
+    "searchLogs": "Protokolle suchen..."
+  },
+  "conversion": {
+    "searchJobs": "Aufträge suchen..."
+  },
+  "errors": {
+    "editorError": "Editor-Fehler",
+    "conversionFailed": "Konvertierung fehlgeschlagen",
+    "documentGenerationFailed": "Dokumentenerstellung fehlgeschlagen",
+    "saveFailed": "Speichern fehlgeschlagen"
+  },
+  "common": {
+    "documents": "Dokumente",
+    "templates": "Vorlagen",
+    "conversion": "Konvertierung",
+    "eSignatures": "E-Signaturen",
+    "shared": "Geteilt"
   }
 }

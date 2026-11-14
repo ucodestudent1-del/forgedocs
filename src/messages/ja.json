@@ -58,8 +58,8 @@
     "welcome": "おかえりなさい、{name}さん",
     "welcomeGuest": "ForgeDocsへようこそ",
     "stats": {
-      "documents": "{count, plural, one {# ドキュメント} other {# ドキュメント}}",
-      "templates": "{count, plural, one {# テンプレート} other {# テンプレート}}",
+      "documents": "{count, plural, other {# ドキュメント}}",
+      "templates": "{count, plural, other {# テンプレート}}",
       "storage": "{used} / {total} 使用中"
     },
     "recentDocuments": "最近のドキュメント",
@@ -92,7 +92,7 @@
     "saveDraft": "下書き保存",
     "publish": "公開",
     "preview": "プレビュー",
-    "wordCount": "{count, plural, one {# 語} other {# 語}}",
+    "wordCount": "{count, plural, other {# 語}}",
     "lastSaved": "最終保存: {date, datetime, medium}",
     "unsavedChanges": "未保存の変更があります"
   },
@@ -149,5 +149,61 @@
     "deleted": "削除しました",
     "copied": "クリップボードにコピーしました",
     "failed": "操作に失敗しました"
+  },
+  "editor": {
+    "promptImageUrl": "画像URLを入力",
+    "promptLinkText": "リンクテキスト",
+    "promptUrl": "URL",
+    "createNewDocument": "新しいドキュメントを作成"
+  },
+  "billing": {
+    "documentsCreated": "作成済みドキュメント",
+    "conversions": "変換回数"
+  },
+  "activity": {
+    "filter": {
+      "all": "すべてのアクティビティ",
+      "created": "作成済み",
+      "updated": "更新済み",
+      "deleted": "削除済み",
+      "uploaded": "アップロード済み",
+      "downloaded": "ダウンロード済み",
+      "viewed": "閲覧済み",
+      "shared": "共有済み",
+      "converted": "変換済み",
+      "signed": "署名済み",
+      "generated": "AI生成",
+      "placeholder": "アクティビティでフィルタ",
+      "placeholderType": "タイプでフィルタ",
+      "allTypes": "すべてのタイプ",
+      "last24Hours": "過去24時間",
+      "last7Days": "過去7日間",
+      "last30Days": "過去30日間",
+      "lastYear": "過去1年間",
+      "newestFirst": "新しい順",
+      "oldestFirst": "古い順"
+    },
+    "searchActivity": "アクティビティを検索..."
+  },
+  "admin": {
+    "searchUsers": "ユーザーを検索...",
+    "searchSubscriptions": "サブスクリプションを検索...",
+    "searchLogs": "ログを検索..."
+  },
+  "conversion": {
+    "searchJobs": "ジョブを検索..."
+  },
+  "errors": {
+    "editorError": "エディターエラー",
+    "conversionFailed": "変換に失敗しました",
+    "documentGenerationFailed": "ドキュメント生成に失敗しました",
+    "saveFailed": "保存に失敗しました"
+  },
+  "common": {
+    "documents": "ドキュメント",
+    "templates": "テンプレート",
+    "conversion": "変換",
+    "eSignatures": "電子署名",
+    "shared": "共有"
   }
 }

@@ -149,5 +149,61 @@
     "deleted": "Deleted successfully",
     "copied": "Copied to clipboard",
     "failed": "Operation failed"
+  },
+  "editor": {
+    "promptImageUrl": "Enter image URL",
+    "promptLinkText": "Link text",
+    "promptUrl": "URL",
+    "createNewDocument": "Create New Document"
+  },
+  "billing": {
+    "documentsCreated": "Documents Created",
+    "conversions": "Conversions"
+  },
+  "activity": {
+    "filter": {
+      "all": "All Actions",
+      "created": "Created",
+      "updated": "Updated",
+      "deleted": "Deleted",
+      "uploaded": "Uploaded",
+      "downloaded": "Downloaded",
+      "viewed": "Viewed",
+      "shared": "Shared",
+      "converted": "Converted",
+      "signed": "Signed",
+      "generated": "AI Generated",
+      "placeholder": "Filter by action",
+      "placeholderType": "Filter by type",
+      "allTypes": "All Types",
+      "last24Hours": "Last 24 Hours",
+      "last7Days": "Last 7 Days",
+      "last30Days": "Last 30 Days",
+      "lastYear": "Last Year",
+      "newestFirst": "Newest First",
+      "oldestFirst": "Oldest First"
+    },
+    "searchActivity": "Search activity..."
+  },
+  "admin": {
+    "searchUsers": "Search users...",
+    "searchSubscriptions": "Search subscriptions...",
+    "searchLogs": "Search logs..."
+  },
+  "conversion": {
+    "searchJobs": "Search jobs..."
+  },
+  "errors": {
+    "editorError": "Editor Error",
+    "conversionFailed": "Conversion failed",
+    "documentGenerationFailed": "Failed to generate document",
+    "saveFailed": "Save failed"
+  },
+  "common": {
+    "documents": "Documents",
+    "templates": "Templates",
+    "conversion": "Conversion",
+    "eSignatures": "E-Signatures",
+    "shared": "Shared"
   }
 }

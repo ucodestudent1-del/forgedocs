@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { DashboardHeader } from "@/components/dashboard/header"
 import { useToast } from "@/components/ui/use-toast"
+import { useTranslations } from "@/lib/i18n"
 import {
   Clock,
   Search,
@@ -91,6 +92,7 @@ export default function ActivityPage() {
   const [dateRange, setDateRange] = useState<string>("week")
   const [sortOrder, setSortOrder] = useState<"desc" | "asc">("desc")
   const { toast } = useToast()
+  const t = useTranslations(["activity", "common"])
 
   useEffect(() => {
     if (typeof window === "undefined") return
@@ -185,7 +187,7 @@ export default function ActivityPage() {
             <div className="relative flex-1 min-w-[250px] max-w-md">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="Search activity..."
+                placeholder={t("searchActivity")}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="pl-10"
@@ -194,34 +196,34 @@ export default function ActivityPage() {
 
             <Select value={filterAction} onValueChange={setFilterAction}>
               <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Filter by action" />
+                <SelectValue placeholder={t("filter.placeholder")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Actions</SelectItem>
-                <SelectItem value="created">Created</SelectItem>
-                <SelectItem value="updated">Updated</SelectItem>
-                <SelectItem value="deleted">Deleted</SelectItem>
-                <SelectItem value="uploaded">Uploaded</SelectItem>
-                <SelectItem value="downloaded">Downloaded</SelectItem>
-                <SelectItem value="viewed">Viewed</SelectItem>
-                <SelectItem value="shared">Shared</SelectItem>
-                <SelectItem value="converted">Converted</SelectItem>
-                <SelectItem value="signed">Signed</SelectItem>
-                <SelectItem value="generated">AI Generated</SelectItem>
+                <SelectItem value="all">{t("filter.all")}</SelectItem>
+                <SelectItem value="created">{t("filter.created")}</SelectItem>
+                <SelectItem value="updated">{t("filter.updated")}</SelectItem>
+                <SelectItem value="deleted">{t("filter.deleted")}</SelectItem>
+                <SelectItem value="uploaded">{t("filter.uploaded")}</SelectItem>
+                <SelectItem value="downloaded">{t("filter.downloaded")}</SelectItem>
+                <SelectItem value="viewed">{t("filter.viewed")}</SelectItem>
+                <SelectItem value="shared">{t("filter.shared")}</SelectItem>
+                <SelectItem value="converted">{t("filter.converted")}</SelectItem>
+                <SelectItem value="signed">{t("filter.signed")}</SelectItem>
+                <SelectItem value="generated">{t("filter.generated")}</SelectItem>
               </SelectContent>
             </Select>
 
             <Select value={filterEntity} onValueChange={setFilterEntity}>
               <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Filter by type" />
+                <SelectValue placeholder={t("filter.placeholderType")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
-                <SelectItem value="document">Document</SelectItem>
-                <SelectItem value="template">Template</SelectItem>
-                <SelectItem value="conversion_job">Conversion</SelectItem>
-                <SelectItem value="signature_request">E-Signature</SelectItem>
-                <SelectItem value="share">Share</SelectItem>
+                <SelectItem value="all">{t("filter.allTypes")}</SelectItem>
+                <SelectItem value="document">{t("documents")}</SelectItem>
+                <SelectItem value="template">{t("templates")}</SelectItem>
+                <SelectItem value="conversion_job">{t("conversion")}</SelectItem>
+                <SelectItem value="signature_request">{t("eSignatures")}</SelectItem>
+                <SelectItem value="share">{t("shared")}</SelectItem>
               </SelectContent>
             </Select>
 
@@ -230,10 +232,10 @@ export default function ActivityPage() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="day">Last 24 Hours</SelectItem>
-                <SelectItem value="week">Last 7 Days</SelectItem>
-                <SelectItem value="month">Last 30 Days</SelectItem>
-                <SelectItem value="year">Last Year</SelectItem>
+                <SelectItem value="day">{t("filter.last24Hours")}</SelectItem>
+                <SelectItem value="week">{t("filter.last7Days")}</SelectItem>
+                <SelectItem value="month">{t("filter.last30Days")}</SelectItem>
+                <SelectItem value="year">{t("filter.lastYear")}</SelectItem>
               </SelectContent>
             </Select>
 
@@ -242,17 +244,17 @@ export default function ActivityPage() {
               size="sm"
               onClick={() => setSortOrder((prev) => (prev === "desc" ? "asc" : "desc"))}
             >
-              {sortOrder === "desc" ? (
-                <>
-                  <ChevronDown className="h-4 w-4 mr-2" />
-                  Newest First
-                </>
-              ) : (
-                <>
-                  <ChevronUp className="h-4 w-4 mr-2" />
-                  Oldest First
-                </>
-              )}
+{sortOrder === "desc" ? (
+                  <>
+                    <ChevronDown className="h-4 w-4 mr-2" />
+                    {t("filter.newestFirst")}
+                  </>
+                ) : (
+                  <>
+                    <ChevronUp className="h-4 w-4 mr-2" />
+                    {t("filter.oldestFirst")}
+                  </>
+                )}
             </Button>
           </div>
         </CardContent>

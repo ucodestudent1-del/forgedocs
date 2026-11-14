@@ -149,5 +149,61 @@
     "deleted": "Supprimé avec succès",
     "copied": "Copié dans le presse-papiers",
     "failed": "L'opération a échoué"
+  },
+  "editor": {
+    "promptImageUrl": "Entrez l'URL de l'image",
+    "promptLinkText": "Texte du lien",
+    "promptUrl": "URL",
+    "createNewDocument": "Créer un Nouveau Document"
+  },
+  "billing": {
+    "documentsCreated": "Documents Créés",
+    "conversions": "Conversions"
+  },
+  "activity": {
+    "filter": {
+      "all": "Toutes les Actions",
+      "created": "Créé",
+      "updated": "Mis à jour",
+      "deleted": "Supprimé",
+      "uploaded": "Téléversé",
+      "downloaded": "Téléchargé",
+      "viewed": "Consulté",
+      "shared": "Partagé",
+      "converted": "Converti",
+      "signed": "Signé",
+      "generated": "Généré par IA",
+      "placeholder": "Filtrer par action",
+      "placeholderType": "Filtrer par type",
+      "allTypes": "Tous les Types",
+      "last24Hours": "24 Dernières Heures",
+      "last7Days": "7 Derniers Jours",
+      "last30Days": "30 Derniers Jours",
+      "lastYear": "Dernière Année",
+      "newestFirst": "Plus Récents D'abord",
+      "oldestFirst": "Plus Anciens D'abord"
+    },
+    "searchActivity": "Rechercher une activité..."
+  },
+  "admin": {
+    "searchUsers": "Rechercher des utilisateurs...",
+    "searchSubscriptions": "Rechercher des abonnements...",
+    "searchLogs": "Rechercher dans les journaux..."
+  },
+  "conversion": {
+    "searchJobs": "Rechercher des tâches..."
+  },
+  "errors": {
+    "editorError": "Erreur de l'Éditeur",
+    "conversionFailed": "Échec de la Conversion",
+    "documentGenerationFailed": "Échec de la Génération du Document",
+    "saveFailed": "Échec de l'Enregistrement"
+  },
+  "common": {
+    "documents": "Documents",
+    "templates": "Modèles",
+    "conversion": "Conversion",
+    "eSignatures": "Signatures électroniques",
+    "shared": "Partagés"
   }
 }

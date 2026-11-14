@@ -149,5 +149,61 @@
     "deleted": "Eliminado exitosamente",
     "copied": "Copiado al portapapeles",
     "failed": "La operación falló"
+  },
+  "editor": {
+    "promptImageUrl": "Ingrese la URL de la imagen",
+    "promptLinkText": "Texto del enlace",
+    "promptUrl": "URL",
+    "createNewDocument": "Crear Nuevo Documento"
+  },
+  "billing": {
+    "documentsCreated": "Documentos Creados",
+    "conversions": "Conversiones"
+  },
+  "activity": {
+    "filter": {
+      "all": "Todas las Acciones",
+      "created": "Creado",
+      "updated": "Actualizado",
+      "deleted": "Eliminado",
+      "uploaded": "Subido",
+      "downloaded": "Descargado",
+      "viewed": "Visto",
+      "shared": "Compartido",
+      "converted": "Convertido",
+      "signed": "Firmado",
+      "generated": "Generado por IA",
+      "placeholder": "Filtrar por acción",
+      "placeholderType": "Filtrar por tipo",
+      "allTypes": "Todos los Tipos",
+      "last24Hours": "Últimas 24 Horas",
+      "last7Days": "Últimos 7 Días",
+      "last30Days": "Últimos 30 Días",
+      "lastYear": "Último Año",
+      "newestFirst": "Más Recientes Primero",
+      "oldestFirst": "Más Antiguos Primero"
+    },
+    "searchActivity": "Buscar actividad..."
+  },
+  "admin": {
+    "searchUsers": "Buscar usuarios...",
+    "searchSubscriptions": "Buscar suscripciones...",
+    "searchLogs": "Buscar registros..."
+  },
+  "conversion": {
+    "searchJobs": "Buscar trabajos..."
+  },
+  "errors": {
+    "editorError": "Error del Editor",
+    "conversionFailed": "Fallo en la Conversión",
+    "documentGenerationFailed": "Falló la Generación del Documento",
+    "saveFailed": "Fallo al Guardar"
+  },
+  "common": {
+    "documents": "Documentos",
+    "templates": "Plantillas",
+    "conversion": "Conversión",
+    "eSignatures": "Firmas Electrónicas",
+    "shared": "Compartidos"
   }
 }
