@@ -1,7 +1,3 @@
-# Railway Configuration
-# Deploy to Railway with: railway up
-# Or connect GitHub repo to Railway dashboard
-
 {
   "$schema": "https://railway.app/railway.schema.json",
   "build": {

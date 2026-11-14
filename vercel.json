@@ -1,7 +1,3 @@
-# Vercel Configuration
-# Deploy to Vercel with: vercel --prod
-# Or connect GitHub repo to Vercel dashboard
-
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "buildCommand": "npm run build",
