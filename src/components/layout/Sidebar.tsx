@@ -23,7 +23,6 @@ import {
   HelpCircle,
   ChevronDown,
   ChevronRight,
-  Menu,
   X,
   Home,
   Upload,
@@ -151,19 +150,9 @@ export function Sidebar({
     onClose()
   }
 
-  // Mobile-only view: show hamburger button only when sidebar is closed
+  // Mobile-only view: sidebar is controlled by header hamburger button
   if (!isOpen && typeof window !== "undefined" && window.innerWidth < 1024) {
-    return (
-      <>
-        <button
-          onClick={() => onClose()}
-          className="fixed top-4 left-4 z-50 p-2 rounded-md bg-card border shadow-lg text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-          aria-label="Open sidebar"
-        >
-          <Menu className="h-5 w-5" />
-        </button>
-      </>
-    )
+    return null
   }
 
   return (
