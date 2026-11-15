@@ -3,7 +3,7 @@ import { NextResponse } from "next/server"
 import { validateCSRF } from "@/lib/csrf"
 import { authRateLimit } from "@/lib/rate-limit"
 import { z } from "zod"
-import { verifyToken, hashBackupCode, generateBackupCodes } from "@/lib/mfa"
+import { verifyToken, hashBackupCode, generateBackupCodes, encryptSecret, isEncryptedSecret, resolveStoredSecret } from "@/lib/mfa"
 
 const verifySchema = z.object({
   token: z.string().length(6, "Token must be 6 digits"),
@@ -42,7 +42,8 @@ export async function POST(req: Request): Promise<NextResponse> {
       return NextResponse.json({ error: "MFA not set up" }, { status: 400 })
     }
 
-    const mfaSecret = secret || profile.mfa_secret
+    const storedSecret = profile.mfa_secret
+    const mfaSecret = secret || resolveStoredSecret(storedSecret)
 
     if (!mfaSecret) {
       return NextResponse.json({ error: "MFA not set up" }, { status: 400 })
@@ -52,6 +53,14 @@ export async function POST(req: Request): Promise<NextResponse> {
 
     if (!isValid) {
       return NextResponse.json({ error: "Invalid token" }, { status: 400 })
+    }
+
+    // Lazily re-encrypt any legacy plaintext MFA secret on first successful verify.
+    if (storedSecret && !isEncryptedSecret(storedSecret) && !secret) {
+      void supabase
+        .from("profiles")
+        .update({ mfa_secret: encryptSecret(mfaSecret) })
+        .eq("id", user.id)
     }
 
     // If this is the initial enrollment (pending), generate and return backup codes once

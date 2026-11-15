@@ -50,6 +50,12 @@ async function checkRateLimit(identifier: string, config: RateLimitConfig): Prom
     return { limited: true, remaining: 0, resetTime: now + config.windowMs, total: config.maxRequests }
   }
 
+  // cacheIncrement returns 0 only when Redis is unavailable (INCR never returns 0).
+  // Fail closed: reject all requests when the backing store is down.
+  if (count === 0) {
+    return { limited: true, remaining: 0, resetTime: now + config.windowMs, total: config.maxRequests }
+  }
+
   const limited = count > config.maxRequests
   const remaining = Math.max(0, config.maxRequests - count)
   const resetTime = now + config.windowMs

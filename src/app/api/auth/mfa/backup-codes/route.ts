@@ -3,7 +3,7 @@ import { NextResponse } from "next/server"
 import { validateCSRF } from "@/lib/csrf"
 import { authRateLimit } from "@/lib/rate-limit"
 import { z } from "zod"
-import { verifyToken, generateBackupCodes, hashBackupCode } from "@/lib/mfa"
+import { verifyToken, generateBackupCodes, hashBackupCode, resolveStoredSecret } from "@/lib/mfa"
 
 const backupCodesSchema = z.object({
   token: z.string().length(6, "Token must be 6 digits"),
@@ -36,7 +36,7 @@ export async function POST(req: Request): Promise<NextResponse> {
       return NextResponse.json({ error: "MFA not enabled" }, { status: 400 })
     }
 
-    const isValid = verifyToken(profile.mfa_secret!, token)
+    const isValid = verifyToken(resolveStoredSecret(profile.mfa_secret)!, token)
 
     if (!isValid) {
       return NextResponse.json({ error: "Invalid token" }, { status: 400 })

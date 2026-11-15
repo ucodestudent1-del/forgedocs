@@ -3,7 +3,7 @@ import { NextResponse } from "next/server"
 import { validateCSRF } from "@/lib/csrf"
 import { authRateLimit } from "@/lib/rate-limit"
 import { z } from "zod"
-import { generateSecret, getTotpUri, generateQrCode, generateBackupCodes, hashBackupCode } from "@/lib/mfa"
+import { generateSecret, getTotpUri, generateQrCode, generateBackupCodes, hashBackupCode, encryptSecret } from "@/lib/mfa"
 
 export async function POST(req: Request): Promise<NextResponse> {
   try {
@@ -38,7 +38,7 @@ export async function POST(req: Request): Promise<NextResponse> {
     await supabase
       .from("profiles")
       .update({
-        mfa_secret: secret,
+        mfa_secret: encryptSecret(secret),
         mfa_backup_codes: hashedBackupCodes,
         mfa_enabled: false,
         mfa_pending: true,
