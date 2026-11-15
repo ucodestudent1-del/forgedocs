@@ -175,7 +175,14 @@ export default function UsagePage() {
             {isDanger && <AlertTriangle className="h-5 w-5 text-red-500" />}
           </div>
           {!isUnlimited && (
-            <div className="h-2 bg-muted rounded-full overflow-hidden">
+            <div 
+              className="h-2 bg-muted rounded-full overflow-hidden"
+              role="progressbar"
+              aria-valuenow={percentage}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label={`${title} usage: ${percentage}%`}
+            >
               <div
                 className={`h-full rounded-full transition-all duration-500 ${getProgressColor(percentage)}`}
                 style={{ width: `${percentage}%` }}

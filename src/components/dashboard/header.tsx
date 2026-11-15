@@ -41,7 +41,9 @@ export function DashboardHeader({
       <div className="flex flex-col lg:flex-row items-end justify-between gap-4 w-full lg:w-auto">
         {showSearch && (
           <div className="relative w-full md:w-64">
+            <label htmlFor="dashboard-search" className="sr-only">Search dashboard</label>
             <input
+              id="dashboard-search"
               type="search"
               placeholder="Search..."
               className="h-9 pl-9 pr-3 rounded-md border border-input bg-background text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-primary"

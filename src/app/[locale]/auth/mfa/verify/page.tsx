@@ -25,7 +25,7 @@ export default function MfaVerifyPage() {
     }
     setLoading(true)
     try {
-      const supabase = createBrowserSupabaseClient() as any
+      const supabase = createBrowserSupabaseClient()
       const { data: { user } } = await supabase.auth.getUser()
       if (!user?.user_metadata?.mfa_secret) {
         toast({ title: "2FA not configured. Please set up 2FA first.", variant: "destructive" })

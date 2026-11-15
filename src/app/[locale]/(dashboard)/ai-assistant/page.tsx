@@ -169,7 +169,9 @@ export default function AIAssistantPage() {
         ].map((tab) => (
           <button
             key={tab.key}
+            role="tab"
             onClick={() => setActiveTab(tab.key)}
+            aria-selected={activeTab === tab.key}
             className={`flex items-center gap-2 -mb-px border-b-2 px-4 py-2 text-sm font-medium transition-colors ${
               activeTab === tab.key
                 ? "border-primary text-primary"

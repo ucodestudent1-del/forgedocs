@@ -207,12 +207,12 @@ export default function ConversionPage() {
   }, [search])
   const t = useTranslations(["conversion", "common", "errors"])
 
-  // Unit tab state
-  const [unitCategory, setUnitCategory] = useState<string | null>(null)
+// Unit tab state
+  const [unitCategory, setUnitCategory] = useState<string | null>(() => UNIT_CATEGORIES[0]?.id || null)
   const [unitFrom, setUnitFrom] = useState("")
   const [unitTo, setUnitTo] = useState("")
-   const [unitValue, setUnitValue] = useState("")
-  const [unitOptions, setUnitOptions] = useState<{ value: string; label: string }[]>([])
+  const [unitValue, setUnitValue] = useState("")
+  const [unitOptions, setUnitOptions] = useState<{ value: string; label: string }[]>(() => UNIT_CATEGORIES[0] ? UNIT_DEFINITIONS[UNIT_CATEGORIES[0].id] || [] : [])
 
   // Auto-select first category on mount
   useEffect(() => {
@@ -442,7 +442,7 @@ export default function ConversionPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-input">
+      <div className="flex border-b border-input" role="tablist">
         {[
           { key: "document" as Tab, label: "Document" },
           { key: "unit" as Tab, label: "Unit" },
@@ -450,7 +450,9 @@ export default function ConversionPage() {
         ].map((tab) => (
           <button
             key={tab.key}
+            role="tab"
             onClick={() => setActiveTab(tab.key)}
+            aria-selected={activeTab === tab.key}
             className={`-mb-px border-b-2 px-4 py-2 text-sm font-medium transition-colors ${
               activeTab === tab.key
                 ? "border-primary text-primary"

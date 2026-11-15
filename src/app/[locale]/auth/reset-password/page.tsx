@@ -10,11 +10,12 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useToast } from "@/components/ui/use-toast"
 import { createBrowserSupabaseClient } from "@/lib/supabase-browser"
 import { validatePassword } from "@/lib/validation"
-import { Mail, Lock, AlertTriangle, ArrowLeft } from "lucide-react"
+import { Mail, Lock, AlertTriangle, ArrowLeft, Eye, EyeOff } from "lucide-react"
 
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -37,7 +38,7 @@ export default function ResetPasswordPage() {
     }
     setLoading(true)
     try {
-      const supabase = createBrowserSupabaseClient() as any
+      const supabase = createBrowserSupabaseClient()
       const { error } = await supabase.auth.updateUser({ password })
       if (error) {
         toast({ title: error.message, variant: "destructive" })
@@ -69,15 +70,26 @@ export default function ResetPasswordPage() {
           <form onSubmit={handleReset} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="password">New password</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="w-full"
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="w-full pr-10"
+                  autoComplete="new-password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                </button>
+              </div>
               <p className="text-xs text-muted-foreground">
                 Must be 8+ characters with uppercase, lowercase, number, and special character
               </p>
@@ -86,12 +98,13 @@ export default function ResetPasswordPage() {
               <Label htmlFor="confirmPassword">Confirm new password</Label>
               <Input
                 id="confirmPassword"
-                type="password"
+                type={showPassword ? "text" : "password"}
                 placeholder="••••••••"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
                 className="w-full"
+                autoComplete="new-password"
               />
             </div>
             <Button type="submit" disabled={loading} className="w-full">

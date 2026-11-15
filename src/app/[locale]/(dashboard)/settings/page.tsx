@@ -329,11 +329,13 @@ export default function SettingsPage() {
       />
 
       {/* Tab Navigation */}
-      <div className="flex flex-wrap gap-2 border-b border-input pb-2">
+      <div className="flex flex-wrap gap-2 border-b border-input pb-2" role="tablist">
         {TABS.map((tab) => (
           <button
             key={tab.id}
+            role="tab"
             onClick={() => setActiveTab(tab.id)}
+            aria-selected={activeTab === tab.id}
             className={`flex items-center gap-2 -mb-px border-b-2 px-4 py-2 text-sm font-medium transition-colors ${
               activeTab === tab.id
                 ? "border-primary text-primary"
@@ -616,10 +618,10 @@ export default function SettingsPage() {
                       <span className="text-sm capitalize">{key.replace("_", " ")}</span>
                       <Switch
                         checked={enabled as boolean}
-                        onChange={(e) => {
+                        onChange={(checked) => {
                           setNotifSettings((prev) => ({
                             ...prev,
-                            [section.key]: { ...prev[section.key as keyof typeof notifSettings], [key]: e.target.checked },
+                            [section.key]: { ...prev[section.key as keyof typeof notifSettings], [key]: checked },
                           }))
                           handleSaveNotificationPreferences()
                         }}
@@ -790,12 +792,12 @@ export default function SettingsPage() {
   )
 }
 
-function Switch({ checked, onChange }: { checked: boolean; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void }) {
+function Switch({ checked, onChange }: { checked: boolean; onChange: (checked: boolean) => void }) {
   return (
     <button
       role="switch"
       aria-checked={checked}
-      onClick={(e) => onChange({ target: { checked: !checked } } as any)}
+      onClick={() => onChange(!checked)}
       className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
         checked ? "bg-primary" : "bg-muted"
       }`}

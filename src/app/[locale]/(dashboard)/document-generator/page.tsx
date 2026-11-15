@@ -142,7 +142,7 @@ export default function DocumentGeneratorPage() {
                       {isGenerating ? <Save className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4" />}
                       Generate Document
                     </Button>
-                    <Button onClick={() => setSelectedTemplateId(null)} variant="outline">
+                    <Button variant="outline" onClick={() => setSelectedTemplateId(null)} className="flex-1">
                       Back to Templates
                     </Button>
                   </div>

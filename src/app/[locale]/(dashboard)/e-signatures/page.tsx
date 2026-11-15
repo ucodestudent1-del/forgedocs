@@ -141,7 +141,7 @@ export default function ESignaturesPage() {
                       {new Date(request.createdAt).toLocaleDateString()}
                     </div>
                     <div className="col-span-1">
-                      <Button variant="ghost" size="icon" className="h-7 w-7">
+                      <Button variant="ghost" size="icon" className="h-7 w-7" aria-label="View signature request">
                         <Eye className="h-4 w-4" />
                       </Button>
                     </div>
@@ -287,7 +287,7 @@ export default function ESignaturesPage() {
                     }} />
                   </div>
                   {signers.length > 1 && (
-                    <Button variant="ghost" size="icon" onClick={() => removeSigner(index)}>
+                    <Button variant="ghost" size="icon" onClick={() => removeSigner(index)} aria-label="Remove signer">
                       <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
                   )}
@@ -373,9 +373,9 @@ export default function ESignaturesPage() {
                     {new Date(request.createdAt).toLocaleDateString()}
                   </div>
                   <div className="col-span-2 flex items-center gap-2">
-                    <Button variant="ghost" size="icon"><Eye className="h-4 w-4" /></Button>
-                    <Button variant="ghost" size="icon"><Download className="h-4 w-4" /></Button>
-                    {request.status === "pending" && <Button variant="ghost" size="icon" className="text-destructive"><XCircle className="h-4 w-4" /></Button>}
+                    <Button variant="ghost" size="icon" aria-label="View document"><Eye className="h-4 w-4" /></Button>
+                    <Button variant="ghost" size="icon" aria-label="Download document"><Download className="h-4 w-4" /></Button>
+                    {request.status === "pending" && <Button variant="ghost" size="icon" className="text-destructive" aria-label="Cancel signature request"><XCircle className="h-4 w-4" /></Button>}
                   </div>
                 </div>
               ))}

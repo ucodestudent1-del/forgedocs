@@ -177,8 +177,10 @@ export default function SharedDocumentsPage() {
       {/* Search & Filter */}
       <div className="flex flex-wrap items-center gap-4">
         <div className="relative flex-1 max-w-md">
+          <label htmlFor="shared-search" className="sr-only">Search shared documents</label>
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
+            id="shared-search"
             placeholder="Search documents, emails..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -284,7 +286,7 @@ export default function SharedDocumentsPage() {
                           <Button variant="ghost" size="icon" onClick={() => handleCopyLink(doc.link)}>
                             <Copy className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="icon" onClick={() => window.open(doc.link, "_blank")}>
+                          <Button variant="ghost" size="icon" onClick={() => window.open(doc.link, "_blank", "noopener,noreferrer")}>
                             <ExternalLink className="h-4 w-4" />
                           </Button>
                           <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleRevoke(doc.id)}>

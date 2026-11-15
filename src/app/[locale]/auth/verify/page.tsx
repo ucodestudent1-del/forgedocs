@@ -30,7 +30,7 @@ export default function VerifyEmailPage() {
 
   const verifyEmail = async (tokenHash: string, type: string) => {
     try {
-      const supabase = createBrowserSupabaseClient() as any
+      const supabase = createBrowserSupabaseClient()
       const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type })
       if (error) {
         setError(error.message)

@@ -72,7 +72,7 @@ export default function MfaSetupPage() {
     }
     setLoading(true)
     try {
-      const supabase = createBrowserSupabaseClient() as any
+      const supabase = createBrowserSupabaseClient()
       const { error } = await supabase.auth.updateUser({
         data: { mfa_enabled: true, mfa_secret: secret },
       })

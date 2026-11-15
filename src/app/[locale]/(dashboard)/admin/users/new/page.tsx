@@ -18,10 +18,15 @@ export default function AdminInviteUserPage() {
     if (!email) return
     setInviting(true)
     try {
+      // Generate a cryptographically secure random password
+      const password = Array.from(crypto.getRandomValues(new Uint8Array(16)))
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('')
+      
       const res = await fetch("/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password: crypto.randomUUID(), full_name: email, role }),
+        body: JSON.stringify({ email, password, full_name: email, role }),
       })
       if (!res.ok) {
         const err = await res.json()

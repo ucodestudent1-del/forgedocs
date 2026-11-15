@@ -531,5 +531,3 @@ function ToolOptions({ toolId }: { toolId: string }) {
       return <p className="text-muted-foreground">Select a tool to see options</p>
   }
 }
-
-// Import Select for tool options

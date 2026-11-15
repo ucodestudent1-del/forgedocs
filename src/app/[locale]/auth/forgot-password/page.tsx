@@ -24,7 +24,7 @@ export default function ForgotPasswordPage() {
     }
     setLoading(true)
     try {
-      const supabase = createBrowserSupabaseClient() as any
+      const supabase = createBrowserSupabaseClient()
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/auth/reset-password`,
       })
@@ -82,6 +82,7 @@ export default function ForgotPasswordPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 className="w-full"
+                autoComplete="email"
               />
             </div>
             <Button type="submit" disabled={loading} className="w-full">

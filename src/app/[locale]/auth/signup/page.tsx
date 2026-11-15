@@ -10,12 +10,13 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useToast } from "@/components/ui/use-toast"
 import { createBrowserSupabaseClient } from "@/lib/supabase-browser"
 import { validatePassword } from "@/lib/validation"
-import { Mail, Lock, AlertTriangle } from "lucide-react"
+import { Mail, Lock, AlertTriangle, Eye, EyeOff } from "lucide-react"
 
 export default function SignupPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const [fullName, setFullName] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -24,8 +25,12 @@ export default function SignupPage() {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!email || !password || !fullName) {
+    if (!email || !password || !confirmPassword) {
       toast({ title: "Please fill in all fields", variant: "destructive" })
+      return
+    }
+    if (password !== confirmPassword) {
+      toast({ title: "Passwords do not match", variant: "destructive" })
       return
     }
     const { valid, errors } = validatePassword(password)
@@ -35,11 +40,11 @@ export default function SignupPage() {
     }
     setLoading(true)
     try {
-      const supabase = createBrowserSupabaseClient() as any
+      const supabase = createBrowserSupabaseClient()
       const { error } = await supabase.auth.signUp({
         email,
         password,
-        options: { data: { full_name: fullName } },
+        options: { data: { full_name: email.split("@")[0] } },
       })
       if (error) {
         toast({ title: error.message, variant: "destructive" })
@@ -70,18 +75,6 @@ export default function SignupPage() {
         <CardContent>
           <form onSubmit={handleSignup} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="fullName">Full name</Label>
-              <Input
-                id="fullName"
-                type="text"
-                placeholder="Jane Doe"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                required
-                className="w-full"
-              />
-            </div>
-            <div className="space-y-2">
               <Label htmlFor="email">Email address</Label>
               <Input
                 id="email"
@@ -91,22 +84,47 @@ export default function SignupPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 className="w-full"
+                autoComplete="email"
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="w-full"
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="w-full pr-10"
+                  autoComplete="new-password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                </button>
+              </div>
               <p className="text-xs text-muted-foreground">
                 Must be 8+ characters with uppercase, lowercase, number, and special character
               </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">Confirm password</Label>
+              <Input
+                id="confirmPassword"
+                type={showPassword ? "text" : "password"}
+                placeholder="••••••••"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+                className="w-full"
+                autoComplete="new-password"
+              />
             </div>
             <Button type="submit" disabled={loading} className="w-full">
               {loading ? <Mail className="h-4 w-4 animate-spin mr-2" /> : <Lock className="h-4 w-4 mr-2" />}
