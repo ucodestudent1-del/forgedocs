@@ -79,7 +79,13 @@ export default async function LocaleLayout({
 
   return (
     <I18nProvider locale={locale}>
-      <div dir={isRtl ? "rtl" : "ltr"} className="min-h-screen">
+      <div dir={isRtl ? "rtl" : "ltr"} lang={locale} className="min-h-screen">
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-primary focus:text-primary-foreground focus:rounded-md"
+        >
+          Skip to main content
+        </a>
         <ErrorBoundary>{children}</ErrorBoundary>
       </div>
     </I18nProvider>

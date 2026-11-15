@@ -131,4 +131,6 @@ const cleanupInterval = setInterval(() => {
 }, 60 * 1000)
 
 // Don't keep the Node process alive (e.g. Jest) after work is done
-cleanupInterval.unref()
+if (typeof cleanupInterval.unref === "function") {
+  cleanupInterval.unref()
+}

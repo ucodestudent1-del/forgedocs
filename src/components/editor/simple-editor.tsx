@@ -25,8 +25,11 @@ export function SimpleEditor({
   const { toast } = useToast()
   const [editorContent, setEditorContent] = useState(content)
   const [saving, setSaving] = useState(false)
+  const [lastSaved, setLastSaved] = useState<string | null>(null)
+  const [dirty, setDirty] = useState(false)
   const [csrfToken, setCsrfToken] = useState<string | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const autosaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     setEditorContent(content)
@@ -39,18 +42,19 @@ export function SimpleEditor({
       .catch(() => {})
   }, [])
 
-  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setEditorContent(e.target.value)
-    onChange?.(e.target.value)
-  }
+  useEffect(() => {
+    if (editorContent !== content) {
+      setDirty(true)
+    }
+  }, [editorContent, content])
 
-  const handleSave = async () => {
+  const performSave = async (): Promise<void> => {
     if (!documentId) return
     setSaving(true)
     try {
       const res = await fetch(`/api/documents/${documentId}/content`, {
         method: "PUT",
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
           ...(csrfToken ? { "X-CSRF-Token": csrfToken } : {}),
         },
@@ -64,12 +68,39 @@ export function SimpleEditor({
       if (data.error) {
         throw new Error(data.error)
       }
+      setLastSaved(new Date().toISOString())
+      setDirty(false)
     } catch (e: unknown) {
       console.error("Save failed", e)
       toast({ title: "Save failed", description: e instanceof Error ? e.message : "Please try again.", variant: "destructive" })
     } finally {
       setSaving(false)
     }
+  }
+
+  const handleSave = async () => {
+    if (autosaveTimer.current) {
+      clearTimeout(autosaveTimer.current)
+      autosaveTimer.current = null
+    }
+    await performSave()
+  }
+
+  useEffect(() => {
+    if (!dirty || !documentId) return
+    autosaveTimer.current = setTimeout(() => {
+      performSave()
+    }, 2000)
+    return () => {
+      if (autosaveTimer.current) {
+        clearTimeout(autosaveTimer.current)
+      }
+    }
+  }, [dirty, documentId, editorContent])
+
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setEditorContent(e.target.value)
+    onChange?.(e.target.value)
   }
 
   const insertAtCursor = (text: string) => {
@@ -100,40 +131,49 @@ export function SimpleEditor({
   return (
     <div className="flex flex-col h-full min-h-[400px]">
       {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-2 px-3 py-2 border-b bg-background/50 z-10">
+      <div
+        role="toolbar"
+        aria-label="Editor formatting toolbar"
+        className="flex flex-wrap items-center gap-2 px-3 py-2 border-b bg-background/50 z-10"
+      >
         <button
           onClick={() => wrapSelection("**", "**")}
           className="p-1.5 rounded hover:bg-muted transition-colors"
+          aria-label="Bold"
           title="Bold"
         >
-          <Bold className="h-4 w-4" />
+          <Bold className="h-4 w-4" aria-hidden="true" />
         </button>
         <button
           onClick={() => wrapSelection("*")}
           className="p-1.5 rounded hover:bg-muted transition-colors"
+          aria-label="Italic"
           title="Italic"
         >
-          <Italic className="h-4 w-4" />
+          <Italic className="h-4 w-4" aria-hidden="true" />
         </button>
         <button
           onClick={() => wrapSelection("__", "__")}
           className="p-1.5 rounded hover:bg-muted transition-colors"
+          aria-label="Underline"
           title="Underline"
         >
-          <Underline className="h-4 w-4" />
+          <Underline className="h-4 w-4" aria-hidden="true" />
         </button>
         <div className="h-4 w-px bg-border mx-1" />
         <button
           onClick={() => insertAtCursor("\n- ")}
           className="p-1.5 rounded hover:bg-muted transition-colors"
+          aria-label="Unordered list"
         >
-          <List className="h-4 w-4" />
+          <List className="h-4 w-4" aria-hidden="true" />
         </button>
         <button
           onClick={() => insertAtCursor("\n1. ")}
           className="p-1.5 rounded hover:bg-muted transition-colors"
+          aria-label="Ordered list"
         >
-          <ListOrdered className="h-4 w-4" />
+          <ListOrdered className="h-4 w-4" aria-hidden="true" />
         </button>
         <div className="h-4 w-px bg-border mx-1" />
         <button
@@ -142,9 +182,10 @@ export function SimpleEditor({
             if (url) insertAtCursor(`![Image](${url})`)
           }}
           className="p-1.5 rounded hover:bg-muted transition-colors"
+          aria-label="Insert image"
           title="Image"
         >
-          <Image className="h-4 w-4" />
+          <Image className="h-4 w-4" aria-hidden="true" />
         </button>
         <button
           onClick={() => {
@@ -153,19 +194,32 @@ export function SimpleEditor({
             if (text && url) insertAtCursor(`[${text}](${url})`)
           }}
           className="p-1.5 rounded hover:bg-muted transition-colors"
+          aria-label="Insert link"
           title="Link"
         >
-          <Link className="h-4 w-4" />
+          <Link className="h-4 w-4" aria-hidden="true" />
         </button>
         <div className="ml-auto" />
-        <span className="text-xs text-muted-foreground">
+        <span
+          id="editor-char-count"
+          aria-live="polite"
+          className="text-xs text-muted-foreground"
+        >
           {editorContent.length} chars
         </span>
       </div>
 
       {/* Editor content */}
       <div className="flex-1 overflow-auto p-4">
+        <label
+          id="editor-textarea-label"
+          htmlFor="editor-textarea"
+          className="sr-only"
+        >
+          Document content
+        </label>
         <textarea
+          id="editor-textarea"
           ref={textareaRef}
           value={editorContent}
           onChange={handleChange}
@@ -173,19 +227,43 @@ export function SimpleEditor({
           readOnly={readOnly}
           className="w-full h-full bg-background text-foreground border-none outline-none resize-none font-sans text-sm leading-relaxed"
           spellCheck={true}
+          aria-describedby="editor-char-count"
         />
       </div>
 
       {!readOnly && (
         <div className="px-4 py-2 border-t bg-background/50 flex items-center justify-between text-xs text-muted-foreground">
-          <span>Markdown supported</span>
+          <div className="flex items-center gap-2">
+            <span>Markdown supported</span>
+            {dirty && (
+              <span className="flex items-center gap-1 text-warning-foreground">
+                <span className="h-1.5 w-1.5 rounded-full bg-warning-foreground animate-pulse" aria-hidden="true" />
+                Unsaved changes
+              </span>
+            )}
+            {lastSaved && (
+              <span className="flex items-center gap-1">
+                Last saved {new Date(lastSaved).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+              </span>
+            )}
+          </div>
           <Button
             variant="outline"
             size="sm"
-            disabled={saving}
+            disabled={saving || !dirty}
             onClick={handleSave}
           >
-            {saving ? <Save className="h-3 w-3 animate-spin mr-2" /> : <Save className="h-3 w-3 mr-2" />} Save
+            {saving ? (
+              <>
+                <Save className="h-3 w-3 animate-spin mr-2" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <Save className="h-3 w-3 mr-2" />
+                Save
+              </>
+            )}
           </Button>
         </div>
       )}

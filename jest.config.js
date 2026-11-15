@@ -18,6 +18,7 @@ module.exports = {
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
     '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
+    '^server-only$': '<rootDir>/__tests__/mocks/server-only.ts',
   },
   transform: {
     '^.+\\.(ts|tsx)$': ['ts-jest', {

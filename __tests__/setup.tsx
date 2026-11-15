@@ -107,14 +107,36 @@ global.IntersectionObserver = jest.fn().mockImplementation(() => ({
 global.Request = class MockRequest {
   url: string
   headers: Map<string, string>
-  
+
   constructor(url: string, options: { headers?: Record<string, string> } = {}) {
     this.url = url
     this.headers = new Map(Object.entries(options.headers || {}))
   }
-  
+
   get(name: string): string | null {
     return this.headers.get(name.toLowerCase()) || null
+  }
+} as any
+
+global.Response = class MockResponse {
+  status: number
+  statusText: string
+  headers: Headers
+  body: any
+
+  constructor(body: any = null, init: { status?: number; statusText?: string; headers?: Record<string, string> } = {}) {
+    this.body = body
+    this.status = init.status ?? 200
+    this.statusText = init.statusText ?? "OK"
+    this.headers = new Headers(init.headers)
+  }
+
+  async json() {
+    return this.body
+  }
+
+  async text() {
+    return typeof this.body === "string" ? this.body : JSON.stringify(this.body)
   }
 } as any
 

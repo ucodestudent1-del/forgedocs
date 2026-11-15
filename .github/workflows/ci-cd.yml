@@ -184,6 +184,32 @@ jobs:
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
+  load-test:
+    name: Load Test (k6)
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run k6 load test
+        uses: grafana/k6-action@v0.4.0
+        with:
+          filename: k6/load-test.js
+        env:
+          BASE_URL: ${{ secrets.K6_BASE_URL || 'http://localhost:3000' }}
+
+  rollback-drill:
+    name: Rollback Drill
+    runs-on: ubuntu-latest
+    needs: [lint-and-typecheck]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run rollback drill
+        run: bash scripts/rollback-drill.sh
+
   dependency-update:
     name: Dependency Update Check
     runs-on: ubuntu-latest
