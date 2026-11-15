@@ -4,6 +4,7 @@ import { validateCSRF } from "@/lib/csrf"
 import { documentRateLimit } from "@/lib/rate-limit"
 import { z } from "zod"
 import { sanitizeHtml } from "@/lib/sanitize"
+import { cacheDel } from "@/lib/cache"
 
 export async function GET(
   req: Request,
@@ -115,6 +116,9 @@ export async function PUT(
         { status: 409 }
       )
     }
+
+    // Invalidate document list cache so clients see updated content
+    await cacheDel(`documents:${user.id}:*`)
 
     return NextResponse.json({ document: data })
   } catch (error) {

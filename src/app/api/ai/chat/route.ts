@@ -37,15 +37,19 @@ export async function POST(request: NextRequest) {
 
     const openai = getOpenAI()
 
+    const MAX_HISTORY_MESSAGES = 20
+
     const messages = [
       { 
         role: "system" as const, 
         content: "You are a helpful AI assistant for ForgeDocs, a document management platform. Help users with document-related questions, writing, editing, and workflow questions." 
       },
-      ...(history || []).map((msg: { role: string; content: string }) => ({
-        role: msg.role as "user" | "assistant",
-        content: msg.content,
-      })),
+      ...(history || [])
+        .slice(-MAX_HISTORY_MESSAGES)
+        .map((msg: { role: string; content: string }) => ({
+          role: msg.role as "user" | "assistant",
+          content: msg.content,
+        })),
       { role: "user" as const, content: message },
     ]
 

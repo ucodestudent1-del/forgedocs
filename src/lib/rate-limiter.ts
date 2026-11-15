@@ -91,8 +91,8 @@ async function checkRateLimit(
     return { limited: false, remaining: config.maxRequests - data.count - 1, resetTime: new Date(data.expires_at).getTime(), total: config.maxRequests }
   } catch (error) {
     console.error("Rate limit error:", error)
-    // Fail open - allow request through if rate limiter fails
-    return { limited: false, remaining: config.maxRequests, resetTime: now + config.windowMs, total: config.maxRequests }
+    // Fail closed - reject request if rate limiter is unavailable
+    return { limited: true, remaining: 0, resetTime: now + config.windowMs, total: config.maxRequests }
   }
 }
 

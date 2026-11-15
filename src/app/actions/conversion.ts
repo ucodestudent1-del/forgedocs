@@ -25,11 +25,18 @@ export async function processConversionJob(jobId: string) {
     throw new Error(`Job ${jobId} is not in pending status`)
   }
 
-  // Mark as processing
-  await supabase
+  // Mark as processing (atomic compare-and-swap to prevent double-processing)
+  const { data: processingJob, error: processingError } = await supabase
     .from("conversion_jobs")
     .update({ status: "processing" })
     .eq("id", jobId)
+    .eq("status", "pending")
+    .select()
+    .single()
+
+  if (processingError || !processingJob) {
+    throw new Error(`Job ${jobId} is not in pending status or is already being processed`)
+  }
 
   try {
     let sourceContent = ""

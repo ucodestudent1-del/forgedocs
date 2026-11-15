@@ -45,10 +45,10 @@ export async function POST(req: Request): Promise<NextResponse> {
       })
       .eq("id", user.id)
 
+    // Return QR code only; secret is embedded in QR code and not exposed in response.
+    // Backup codes are returned only after successful verification in the verify endpoint.
     return NextResponse.json({
-      secret,
       qr_code: qrCode,
-      backup_codes: backupCodes,
       otp_uri: otpUri,
     })
   } catch (error) {

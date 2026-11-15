@@ -15,7 +15,15 @@ export async function POST(request: NextRequest) {
     // 3. Send confirmation email to user
 
     // For now, just log and return success
-    console.log("Contact form submission:", { fullName, email, company, subject, message })
+    // Sanitize values before logging to prevent log injection
+    const safeLog = {
+      fullName: String(fullName || "").replace(/[\r\n]/g, " "),
+      email: String(email || "").replace(/[\r\n]/g, " "),
+      company: String(company || "").replace(/[\r\n]/g, " "),
+      subject: String(subject || "").replace(/[\r\n]/g, " "),
+      message: String(message || "").replace(/[\r\n]/g, " "),
+    }
+    console.log("Contact form submission:", safeLog)
 
     return NextResponse.json({ 
       message: "Message sent successfully" 

@@ -2,8 +2,44 @@ import { NextRequest, NextResponse } from "next/server"
 import { getRouteClient } from "@/lib/supabase"
 import { v4 as uuidv4 } from "uuid"
 import { Resend } from "resend"
+import { validateCSRF } from "@/lib/csrf"
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
+
+/**
+ * Validate a signing token and check expiration.
+ * To be used by the /sign/[token] route handler.
+ */
+async function validateSigningToken(supabase: any, signingToken: string): Promise<{
+  valid: boolean
+  signerId?: string
+  signatureRequestId?: string
+  expired?: boolean
+}> {
+  const { data: signer, error } = await supabase
+    .from("signature_request_signers")
+    .select("id, signature_request_id, signing_token, status, expires_at")
+    .eq("signing_token", signingToken)
+    .single()
+
+  if (error || !signer) {
+    return { valid: false }
+  }
+
+  if (signer.status !== "pending") {
+    return { valid: false }
+  }
+
+  if (signer.expires_at && new Date(signer.expires_at) < new Date()) {
+    return { valid: false, expired: true }
+  }
+
+  return {
+    valid: true,
+    signerId: signer.id,
+    signatureRequestId: signer.signature_request_id,
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,6 +48,15 @@ export async function POST(request: NextRequest) {
     
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    try {
+      await validateCSRF(request)
+    } catch (error) {
+      if (error instanceof Error && error.name === "CSRFError") {
+        return NextResponse.json({ error: "Invalid CSRF token" }, { status: 403 })
+      }
+      throw error
     }
 
     const formData = await request.formData()

@@ -3,6 +3,7 @@ import { NextResponse } from "next/server"
 import { validateCSRF } from "@/lib/csrf"
 import { documentRateLimit } from "@/lib/rate-limit"
 import { checkTierLimit, trackUsage } from "@/lib/tierLimits"
+import { validateFileMagicBytes } from "@/lib/security"
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50MB
 const ALLOWED_MIME_TYPES = [
@@ -24,6 +25,8 @@ const ALLOWED_MIME_TYPES = [
   "application/vnd.oasis.opendocument.spreadsheet",
   "application/vnd.oasis.opendocument.presentation",
 ]
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 export async function POST(req: Request): Promise<NextResponse> {
   const rateLimitError = await documentRateLimit(req)
@@ -73,6 +76,25 @@ export async function POST(req: Request): Promise<NextResponse> {
       return NextResponse.json({ error: "File type not allowed" }, { status: 400 })
     }
 
+    // Validate folderId is a UUID if provided (prevents path traversal)
+    if (folderId && !UUID_REGEX.test(folderId)) {
+      return NextResponse.json({ error: "Invalid folder ID" }, { status: 400 })
+    }
+
+    // Verify parent folder exists and belongs to user
+    if (folderId) {
+      const { data: parent, error: parentError } = await supabase
+        .from("documents")
+        .select("id")
+        .eq("id", folderId)
+        .eq("user_id", user.id)
+        .single()
+
+      if (parentError || !parent) {
+        return NextResponse.json({ error: "Parent folder not found" }, { status: 404 })
+      }
+    }
+
     // Check storage limit
     const storageCheck = await checkTierLimit(user.id, "storage_bytes", file.size)
     if (!storageCheck.allowed) {
@@ -86,6 +108,13 @@ export async function POST(req: Request): Promise<NextResponse> {
     const fileId = crypto.randomUUID()
     const ext = file.name.split(".").pop() || ""
     const storagePath = `documents/${user.id}/${folderId ? folderId + "/" : ""}${fileId}.${ext}`
+
+    // Validate file magic bytes (content inspection, not just MIME type from client)
+    const arrayBuffer = await file.arrayBuffer()
+    const fileBytes = new Uint8Array(arrayBuffer)
+    if (!validateFileMagicBytes(fileBytes, file.type)) {
+      return NextResponse.json({ error: "File content does not match declared type" }, { status: 400 })
+    }
 
     // Upload to Supabase Storage
     const { error: uploadError } = await supabase.storage

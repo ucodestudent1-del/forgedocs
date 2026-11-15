@@ -48,12 +48,12 @@ export async function POST(req: Request): Promise<NextResponse> {
     const cookieStore = await cookies()
     cookieStore.set("csrf_token", newCsrfToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      secure: true,
+      sameSite: "strict",
       path: "/",
     })
 
-    return NextResponse.json({ success: true, csrf_token: newCsrfToken })
+    return NextResponse.json({ success: true })
   } catch (error) {
     if (error instanceof Error && error.name === "CSRFError") {
       return NextResponse.json({ error: "Invalid CSRF token" }, { status: 403 })

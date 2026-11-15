@@ -4,6 +4,7 @@ import type { NextRequest } from "next/server"
 import { locales, defaultLocale } from "@/i18n/locales"
 import { validateCSRF } from "@/lib/csrf"
 import { rateLimitMiddleware } from "@/lib/rate-limiter"
+import { randomUUID } from "crypto"
 
 const ADMIN_PATH_PREFIXES = ["/admin"]
 
@@ -93,6 +94,9 @@ async function getCachedAdminRole(supabase: any, userId: string): Promise<string
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
 
+  // Generate request ID for distributed tracing
+  const requestId = request.headers.get("x-request-id") || randomUUID()
+
   // Skip API routes - they have their own rate limiting
   if (
     pathname.startsWith("/api") ||
@@ -102,7 +106,9 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith("/_not-found") ||
     pathname.includes(".")
   ) {
-    return NextResponse.next()
+    const response = NextResponse.next()
+    response.headers.set("x-request-id", requestId)
+    return response
   }
 
   // Apply general rate limiting to all routes
@@ -124,7 +130,9 @@ export async function middleware(request: NextRequest) {
       const loginUrl = request.nextUrl.clone()
       loginUrl.pathname = `/${defaultLocale}/auth/login`
       loginUrl.searchParams.set("callbackUrl", pathname)
-      return NextResponse.redirect(loginUrl)
+      const response = NextResponse.redirect(loginUrl)
+      response.headers.set("x-request-id", requestId)
+      return response
     }
 
     const role = await getCachedAdminRole(supabase, user.id)
@@ -136,7 +144,9 @@ export async function middleware(request: NextRequest) {
       if (searchParams.toString()) {
         redirectUrl.search = searchParams.toString()
       }
-      return NextResponse.redirect(redirectUrl)
+      const response = NextResponse.redirect(redirectUrl)
+      response.headers.set("x-request-id", requestId)
+      return response
     }
   }
 
@@ -158,6 +168,7 @@ export async function middleware(request: NextRequest) {
       const url = request.nextUrl.clone()
       url.pathname = `/${locale}${pathname}`
       const response = NextResponse.redirect(url)
+      response.headers.set("x-request-id", requestId)
       response.cookies.set("locale", locale, {
         path: "/",
         maxAge: 31536000,
@@ -170,6 +181,7 @@ export async function middleware(request: NextRequest) {
   const currentCookie = request.cookies.get("locale")?.value
   if (currentCookie !== locale) {
     const response = NextResponse.next()
+    response.headers.set("x-request-id", requestId)
     response.cookies.set("locale", locale, {
       path: "/",
       maxAge: 31536000,
@@ -178,7 +190,9 @@ export async function middleware(request: NextRequest) {
     return response
   }
 
-  return NextResponse.next()
+  const response = NextResponse.next()
+  response.headers.set("x-request-id", requestId)
+  return response
 }
 
 export const config = {

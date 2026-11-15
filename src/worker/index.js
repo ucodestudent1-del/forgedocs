@@ -6,20 +6,21 @@ const fs = require("fs")
 const path = require("path")
 const { createClient } = require("@supabase/supabase-js")
 
-const supabaseUrl = process.env.SUPABASE_URL
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.warn("Supabase env vars missing - worker will not function correctly")
+}
+
+// Use anon key instead of service role key to enforce RLS policies.
+// Configure RLS policies on conversion_jobs and documents tables for the worker's access.
+const supabase = createClient(supabaseUrl, supabaseAnonKey)
+
 const redisConnection = {
   host: process.env.REDIS_HOST || "localhost",
   port: parseInt(process.env.REDIS_PORT || "6379"),
 }
-
-if (!supabaseUrl || !supabaseServiceKey) {
-  console.warn("Supabase env vars missing - worker will not function correctly")
-}
-
-const supabase = createClient(supabaseUrl, supabaseServiceKey)
-
-const conversionQueue = new Queue("document-conversion", { connection: redisConnection })
 
 const ALLOWED_LIBREOFFICE_FORMATS = new Set([
   "pdf", "docx", "doc", "xlsx", "xls", "pptx", "ppt", "odt", "ods", "odp",
@@ -208,7 +209,7 @@ const worker = new Worker(
           })
           .eq("id", jobId)
 
-        return { success: true, outputUrl: urlData.publicUrl }
+        return { success: true, outputUrl: urlData.signedUrl }
       } catch (err) {
         await supabase
           .from("conversion_jobs")
@@ -225,7 +226,7 @@ const worker = new Worker(
         try { if (resultPath) fs.unlinkSync(resultPath) } catch {}
       }
   },
-  { connection: redisConnection, concurrency: 5, maxAttempts: 3, backoff: { type: "exponential", delay: 1000 }, removeOnComplete: 100, removeOnFail: 50 }
+  { connection: redisConnection, concurrency: parseInt(process.env.WORKER_CONCURRENCY || "5", 10), maxAttempts: 3, backoff: { type: "exponential", delay: 1000 }, removeOnComplete: 100, removeOnFail: 50 }
 )
 
 worker.on("completed", (job) => {

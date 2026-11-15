@@ -16,5 +16,6 @@ export function validatePassword(password: string): { valid: boolean; errors: st
   if (result.success) {
     return { valid: true, errors: [] }
   }
-  return { valid: false, errors: result.error.issues.map((e) => e.message) }
+  // Return generic error to avoid revealing password policy to attackers
+  return { valid: false, errors: ["Password does not meet security requirements"] }
 }

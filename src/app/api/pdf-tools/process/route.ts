@@ -24,9 +24,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid tool" }, { status: 400 })
     }
 
+    // Validate file size per file (max 25MB per PDF to prevent memory exhaustion)
+    const MAX_PDF_SIZE = 25 * 1024 * 1024
     for (const file of files) {
       if (file.type !== "application/pdf") {
         return NextResponse.json({ error: "All files must be PDF" }, { status: 400 })
+      }
+      if (file.size > MAX_PDF_SIZE) {
+        return NextResponse.json({ error: `PDF file too large (max ${MAX_PDF_SIZE / (1024 * 1024)}MB)` }, { status: 400 })
       }
     }
 

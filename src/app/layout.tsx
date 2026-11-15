@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
 import "@/app/env-check"
+import "@/lib/shutdown"
 import { Toast } from "@/components/ui/use-toast"
 import { ThemeProvider } from "@/components/theme/ThemeProvider"
 import { ThemeInitializer } from "@/components/theme/ThemeInitializer"
@@ -66,10 +67,6 @@ export const metadata: Metadata = {
     title: "ForgeDocs - Professional Document Management",
     description: "Create, organize, generate, and convert documents in the cloud.",
     images: ["/og-image.png"],
-  },
-  robots: {
-    index: true,
-    follow: true,
   },
   icons: {
     icon: "/favicon.svg",

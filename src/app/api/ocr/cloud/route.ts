@@ -21,6 +21,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Missing file" }, { status: 400 })
     }
 
+    // Server-side file size check (defense in depth against bypassed client limits)
     if (file.size > 50 * 1024 * 1024) {
       return NextResponse.json({ error: "File too large (max 50MB)" }, { status: 400 })
     }

@@ -64,39 +64,24 @@ export default function sitemap(): MetadataRoute.Sitemap {
         },
       })
     }
-
-    // Dashboard pages (authenticated)
-    for (const locale of locales) {
-      for (const page of dashboardPages) {
-        urls.push({
-          url: `${baseUrl}/${locale}${page}`,
-          lastModified: new Date(),
-          changeFrequency: "weekly",
-          priority: 0.6,
-          alternates: {
-            languages: Object.fromEntries(
-              locales.map(l => [l, `${baseUrl}/${l}${page}`])
-            ),
-          },
-        })
-      }
-
-      // Admin pages
-      for (const page of adminPages) {
-        urls.push({
-          url: `${baseUrl}/${locale}${page}`,
-          lastModified: new Date(),
-          changeFrequency: "weekly",
-          priority: 0.4,
-          alternates: {
-            languages: Object.fromEntries(
-              locales.map(l => [l, `${baseUrl}/${l}${page}`])
-            ),
-          },
-        })
-      }
-    }
-
-    return urls
   }
+
+  // Dashboard pages (authenticated)
+  for (const locale of locales) {
+    for (const page of dashboardPages) {
+      urls.push({
+        url: `${baseUrl}/${locale}${page}`,
+        lastModified: new Date(),
+        changeFrequency: "weekly",
+        priority: 0.6,
+        alternates: {
+          languages: Object.fromEntries(
+            locales.map(l => [l, `${baseUrl}/${l}${page}`])
+          ),
+        },
+      })
+    }
+  }
+
+  return urls
 }

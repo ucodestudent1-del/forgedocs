@@ -38,25 +38,23 @@ export async function POST(req: Request) {
   // Use service role client for webhook operations (no user cookies in webhook context)
   const supabase = await createServiceRoleClient()
 
-  // Idempotency check
+  // Idempotency check - atomic INSERT ON CONFLICT to prevent race conditions
   const eventId = `stripe_${event.id}`
-  const { data: existingEvent } = await (supabase as any)
+  const { error: insertError } = await (supabase as any)
     .from("webhook_events")
+    .insert({
+      event_id: eventId,
+      event_type: event.type,
+      processed_at: new Date().toISOString(),
+    })
     .select("id")
-    .eq("event_id", eventId)
     .single()
 
-  if (existingEvent) {
+  if (insertError) {
+    // Duplicate event - already processed
     console.log(`Duplicate webhook event ignored: ${eventId}`)
     return NextResponse.json({ received: true })
   }
-
-  // Record webhook event for idempotency
-  await (supabase as any).from("webhook_events").insert({
-    event_id: `stripe_${event.id}`,
-    event_type: event.type,
-    processed_at: new Date().toISOString(),
-  })
 
   // Handle checkout.session.completed
   if (event.type === "checkout.session.completed") {

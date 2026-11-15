@@ -1,11 +1,15 @@
 import { getRouteClient } from "@/lib/supabase"
 import { NextResponse } from "next/server"
 import { sanitizeForExport } from "@/lib/sanitize"
+import { documentRateLimit } from "@/lib/rate-limit"
 
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const rateLimitError = await documentRateLimit(req)
+  if (rateLimitError) return rateLimitError
+
   const supabase = await getRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
 

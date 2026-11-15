@@ -5,6 +5,7 @@ import { authRateLimit } from "@/lib/rate-limit"
 import { validatePassword } from "@/lib/password"
 import { sendEmail } from "@/lib/email"
 import { getPasswordChangedHtml } from "@/lib/emailTemplates"
+import { createServiceRoleClient } from "@/lib/supabase"
 
 export async function POST(req: Request): Promise<NextResponse> {
   try {
@@ -29,12 +30,15 @@ export async function POST(req: Request): Promise<NextResponse> {
       return NextResponse.json({ error: error.message }, { status: 400 })
     }
 
-    // Note: We intentionally do NOT call signOut() here. The user's current
-    // session remains valid since they just authenticated to change their password.
-    // Other devices with valid refresh tokens will continue to work until their
-    // tokens expire or are explicitly revoked.
-
+    // Invalidate all existing sessions after password change to prevent
+    // an attacker who compromised the account from retaining access via
+    // existing refresh tokens on other devices.
     const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      const serviceSupabase = await createServiceRoleClient()
+      await serviceSupabase.auth.admin.signOut(user.id)
+    }
+
     if (user?.email) {
       await sendEmail({
         to: user.email,

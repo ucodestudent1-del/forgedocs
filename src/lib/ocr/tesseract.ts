@@ -90,6 +90,17 @@ export async function performOCR(
   } catch (error) {
     console.error('[OCR] Recognition failed:', error)
     throw error
+  } finally {
+    // Terminate worker after each OCR operation to prevent memory accumulation
+    // in long-running serverless environments
+    if (worker) {
+      try {
+        await worker.terminate()
+      } catch {
+        // Ignore termination errors
+      }
+      worker = null
+    }
   }
 }
 

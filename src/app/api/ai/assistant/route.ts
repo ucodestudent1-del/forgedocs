@@ -24,6 +24,9 @@ const SYSTEM_PROMPTS: Record<string, string> = {
   translate: "You are a translator. Translate the text to the target language while preserving meaning and tone.",
 }
 
+const VALID_TONES = ["professional", "casual", "friendly", "formal", "urgent", "apologetic"]
+const VALID_LANGUAGES = ["en", "es", "fr", "de", "ja", "zh", "ar", "pt", "it", "ru", "ko", "hi"]
+
 export async function POST(request: NextRequest) {
   try {
     const supabase = await getRouteClient()
@@ -39,6 +42,12 @@ export async function POST(request: NextRequest) {
     if (!action || (!input && action !== "generate")) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
+
+    // Validate tone against allowlist to prevent prompt injection
+    const resolvedTone = VALID_TONES.includes(tone) ? tone : "professional"
+
+    // Validate target language against allowlist to prevent prompt injection
+    const resolvedLanguage = VALID_LANGUAGES.includes(targetLanguage) ? targetLanguage : "en"
 
     if (!process.env.OPENAI_API_KEY) {
       return NextResponse.json({ 
@@ -67,13 +76,13 @@ export async function POST(request: NextRequest) {
         userPrompt = `Condense this text while preserving key information: ${input}`
         break
       case "tone":
-        userPrompt = `Rewrite in ${tone || "professional"} tone: ${input}`
+        userPrompt = `Rewrite in ${resolvedTone} tone: ${input}`
         break
       case "grammar":
         userPrompt = `Fix all grammar, punctuation, and syntax errors: ${input}`
         break
       case "translate":
-        userPrompt = `Translate to ${targetLanguage || "English"}: ${input}`
+        userPrompt = `Translate to ${resolvedLanguage}: ${input}`
         break
       default:
         userPrompt = `${action.charAt(0).toUpperCase() + action.slice(1)} this text: ${input}`

@@ -3,7 +3,7 @@ import { NextResponse } from "next/server"
 import { validateCSRF } from "@/lib/csrf"
 import { authRateLimit } from "@/lib/rate-limit"
 import { z } from "zod"
-import { verifyToken } from "@/lib/mfa"
+import { verifyToken, hashBackupCode, generateBackupCodes } from "@/lib/mfa"
 
 const verifySchema = z.object({
   token: z.string().length(6, "Token must be 6 digits"),
@@ -29,7 +29,7 @@ export async function POST(req: Request): Promise<NextResponse> {
 
     const { data: profile } = await supabase
       .from("profiles")
-      .select("mfa_secret, mfa_enabled")
+      .select("mfa_secret, mfa_enabled, mfa_backup_codes, mfa_pending")
       .eq("id", user.id)
       .single()
 
@@ -54,6 +54,28 @@ export async function POST(req: Request): Promise<NextResponse> {
       return NextResponse.json({ error: "Invalid token" }, { status: 400 })
     }
 
+    // If this is the initial enrollment (pending), generate and return backup codes once
+    if (profile.mfa_pending && !profile.mfa_enabled) {
+      const backupCodes = generateBackupCodes(10)
+      const hashedBackupCodes = backupCodes.map(hashBackupCode)
+
+      await supabase
+        .from("profiles")
+        .update({
+          mfa_enabled: true,
+          mfa_pending: false,
+          mfa_backup_codes: hashedBackupCodes,
+        })
+        .eq("id", user.id)
+
+      return NextResponse.json({
+        success: true,
+        mfa_enabled: true,
+        backup_codes: backupCodes,
+      })
+    }
+
+    // Re-verification for already-enabled MFA
     await supabase
       .from("profiles")
       .update({ mfa_enabled: true, mfa_pending: false })

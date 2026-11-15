@@ -17,7 +17,7 @@ const RATE_LIMIT_STORE_MAX_SIZE = 10000
 
 function evictIfOverLimit() {
   if (rateLimitStore.size > RATE_LIMIT_STORE_MAX_SIZE) {
-    const keysToDelete = Array.from(rateLimitStore.keys()).slice(0, rateLimitStore.size - RATE_LIMIT_STORE_MAX_SIZE)
+    const keysToDelete = Array.from(rateLimitStore.keys()).slice(RATE_LIMIT_STORE_MAX_SIZE)
     for (const key of keysToDelete) {
       rateLimitStore.delete(key)
     }
@@ -120,7 +120,7 @@ export const documentRateLimit = rateLimit({
   maxRequests: 30, // 30 requests per minute
 })
 
-// Cleanup old in-memory entries every 5 minutes
+// Cleanup old in-memory entries every 1 minute
 setInterval(() => {
   const now = Date.now()
   for (const [key, entry] of rateLimitStore.entries()) {
@@ -128,4 +128,4 @@ setInterval(() => {
       rateLimitStore.delete(key)
     }
   }
-}, 5 * 60 * 1000)
+}, 60 * 1000)
