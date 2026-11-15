@@ -47,7 +47,7 @@ export async function GET(req: Request): Promise<NextResponse> {
 
     let totalStorageBytes = 0
     if (!docsError && docs) {
-      totalStorageBytes = docs.reduce((sum, doc) => sum + (doc.file_size || 0), 0)
+      totalStorageBytes = docs.reduce((sum: number, doc: { file_size?: number }) => sum + (doc.file_size || 0), 0)
     }
 
     // Total storage = existing documents only

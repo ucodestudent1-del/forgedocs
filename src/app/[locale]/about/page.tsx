@@ -28,8 +28,13 @@ export default function AboutPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
               <div className="flex justify-center">
                 <div className="rounded-xl border border-input bg-card p-8 max-w-md w-full">
-                  <div className="h-64 rounded-lg bg-muted flex items-center justify-center text-muted-foreground text-sm font-medium">
-                    Document workflow platform
+                  <div className="h-64 rounded-lg bg-gradient-to-br from-primary/10 to-primary/20 flex items-center justify-center">
+                    <img
+                      src="/placeholder-about-story.svg"
+                      alt="Document workflow platform showing document creation, editing, and management interface"
+                      className="max-w-full max-h-full object-contain"
+                      loading="lazy"
+                    />
                   </div>
                 </div>
               </div>
@@ -79,8 +84,13 @@ export default function AboutPage() {
               </div>
               <div className="flex justify-center">
                 <div className="rounded-xl border border-input bg-card p-8 max-w-md w-full">
-                  <div className="h-64 rounded-lg bg-muted flex items-center justify-center text-muted-foreground text-sm font-medium">
-                    Our values in action
+                  <div className="h-64 rounded-lg bg-gradient-to-br from-primary/10 to-primary/20 flex items-center justify-center">
+                    <img
+                      src="/placeholder-about-values.svg"
+                      alt="Our values in action: security, developer experience, team collaboration, and reliability"
+                      className="max-w-full max-h-full object-contain"
+                      loading="lazy"
+                    />
                   </div>
                 </div>
               </div>
