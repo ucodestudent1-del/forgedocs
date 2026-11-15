@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getRouteClient } from "@/lib/supabase"
 import { v4 as uuidv4 } from "uuid"
+import { Resend } from "resend"
+
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
 
 export async function POST(request: NextRequest) {
   try {
@@ -20,7 +23,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Missing document or signers" }, { status: 400 })
     }
 
-    // Validate signers
     for (const signer of signers) {
       if (!signer.name || !signer.email) {
         return NextResponse.json({ error: "All signers must have name and email" }, { status: 400 })
@@ -43,11 +45,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Failed to upload document" }, { status: 500 })
     }
 
-    // Create signature request record in database
+    // Create signature request record
     const signatureRequestId = uuidv4()
     const signingLinks: Array<{ signer: typeof signers[0]; link: string }> = []
 
-    // Create signature request record
     const { error: requestError } = await supabase
       .from("signature_requests")
       .insert({
@@ -58,6 +59,7 @@ export async function POST(request: NextRequest) {
         document_path: documentPath,
         message: message || "",
         status: "pending",
+        expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
         created_at: new Date().toISOString(),
       })
 
@@ -90,23 +92,39 @@ export async function POST(request: NextRequest) {
         continue
       }
 
-      // Generate signing link (in production, this would be a secure URL)
       const signingLink = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/sign/${signingToken}`
       signingLinks.push({ signer, link: signingLink })
     }
 
-    // Send emails to signers (in production, use a proper email service)
-    // For now, we'll log the emails that would be sent
-    for (const { signer, link } of signingLinks) {
-      console.log(`[E-SIGNATURE] Would send email to ${signer.email} with signing link: ${link}`)
-      
-      // In production, integrate with email service (SendGrid, Resend, etc.)
-      // await sendEmail({
-      //   to: signer.email,
-      //   subject: `Signature Request: ${document.name}`,
-      //   template: "signature-request",
-      //   data: { signerName: signer.name, documentName: document.name, message, link }
-      // })
+    // Send emails to signers
+    if (resend) {
+      for (const { signer, link } of signingLinks) {
+        try {
+          await resend.emails.send({
+            from: "ForgeDocs <signatures@forgedocs.com>",
+            to: signer.email,
+            subject: `Signature Request: ${document.name}`,
+            html: `
+              <div style="font-family: system-ui, sans-serif; max-width: 600px; margin: 0 auto;">
+                <h1 style="color: #1a1a1a;">Signature Request</h1>
+                <p>Hi ${signer.name},</p>
+                <p>You've been requested to sign <strong>${document.name}</strong> by ${user.email}.</p>
+                ${message ? `<p style="background: #f5f5f5; padding: 16px; border-radius: 8px;">${message}</p>` : ''}
+                <div style="text-align: center; margin: 32px 0;">
+                  <a href="${link}" style="background: #3b82f6; color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; display: inline-block;">
+                    Review & Sign Document
+                  </a>
+                </div>
+                <p style="color: #666; font-size: 14px;">This link expires in 30 days. If you didn't expect this request, please ignore this email.</p>
+                <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;" />
+                <p style="color: #999; font-size: 12px;">Sent via ForgeDocs - Professional Document Management</p>
+              </div>
+            `,
+          })
+        } catch (emailError) {
+          console.error(`Failed to send email to ${signer.email}:`, emailError)
+        }
+      }
     }
 
     return NextResponse.json({ 

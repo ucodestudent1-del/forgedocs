@@ -42,19 +42,25 @@ export interface OCRResult {
 }
 
 export interface OCROptions {
+  provider?: 'auto' | 'tesseract' | 'aws' | 'google' | 'azure'
   language?: string
   onProgress?: (progress: number) => void
   signal?: AbortSignal
+  fallbackToCloud?: boolean
 }
 
 export async function performOCR(
-  file: File | Blob,
-  options: OCROptions = {}
+  file: File,
+  options: {
+    language?: string
+    onProgress?: (progress: number) => void
+    signal?: AbortSignal
+  } = {}
 ): Promise<OCRResult> {
   const { language = 'eng', onProgress, signal } = options
   
   if (!worker) {
-    await initializeOCR(language)
+    await initializeOCR()
   }
   
   if (!worker) {
@@ -75,10 +81,10 @@ export async function performOCR(
     } as any)
     
     return {
-      text: (result as any).text,
-      confidence: (result as any).confidence,
-      data: result as any,
-      pages: ((result as any).pages?.length || 1),
+      text: result.text,
+      confidence: result.confidence,
+      data: result,
+      pages: result.pages?.length || 1,
       language
     }
   } catch (error) {
@@ -95,7 +101,6 @@ export async function terminateOCR(): Promise<void> {
   }
 }
 
-// Auto-cleanup on page unload
 if (typeof window !== 'undefined') {
   window.addEventListener('beforeunload', () => {
     if (worker) {

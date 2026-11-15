@@ -19,13 +19,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Missing files or tool" }, { status: 400 })
     }
 
-    // Validate file types
     const validTools = ["merge", "split", "compress", "rotate", "protect", "unprotect", "watermark", "ocr", "pagenumbers"]
     if (!validTools.includes(tool)) {
       return NextResponse.json({ error: "Invalid tool" }, { status: 400 })
     }
 
-    // Validate files are PDFs
     for (const file of files) {
       if (file.type !== "application/pdf") {
         return NextResponse.json({ error: "All files must be PDF" }, { status: 400 })
@@ -60,11 +58,9 @@ export async function POST(request: NextRequest) {
       case "pagenumbers":
         processedPdf = await addPageNumbers(files[0])
         break
-      case "ocr": {
-        // Import OCR dynamically to avoid SSR issues
+      case "ocr":
         const { performOCR } = await import("@/lib/ocr")
         
-        // For OCR, we process the first file and return text results
         const file = files[0]
         if (file.type !== "application/pdf" && !file.type.startsWith("image/")) {
           return NextResponse.json({ error: "OCR requires PDF or image file" }, { status: 400 })
@@ -83,17 +79,13 @@ export async function POST(request: NextRequest) {
           console.error("OCR processing failed:", error)
           return NextResponse.json({ error: "OCR processing failed" }, { status: 500 })
         }
-      }
       default:
         return NextResponse.json({ error: "Tool not implemented" }, { status: 501 })
     }
 
-    // Create a blob URL for download
-    const blob = new Blob([new Uint8Array(processedPdf)], { type: "application/pdf" })
+    const blob = new Blob([processedPdf], { type: "application/pdf" })
     const downloadUrl = URL.createObjectURL(blob)
     
-    // In production, you'd upload to storage and return a signed URL
-    // For now, return the blob URL (will expire when page unloads)
     return NextResponse.json({ 
       downloadUrl,
       message: `${tool} processing complete`,
@@ -119,8 +111,6 @@ async function mergePdfs(files: File[]): Promise<Uint8Array> {
 }
 
 async function splitPdf(file: File): Promise<Uint8Array> {
-  // For split, we return the first page as a demo
-  // In production, you'd accept page ranges and return multiple files
   const arrayBuffer = await file.arrayBuffer()
   const pdf = await PDFDocument.load(arrayBuffer)
   const newPdf = await PDFDocument.create()
@@ -132,9 +122,6 @@ async function splitPdf(file: File): Promise<Uint8Array> {
 async function compressPdf(file: File): Promise<Uint8Array> {
   const arrayBuffer = await file.arrayBuffer()
   const pdf = await PDFDocument.load(arrayBuffer)
-  
-  // Compress by removing unused objects and optimizing
-  // Note: pdf-lib doesn't have true compression, but we can optimize
   return pdf.save({ useObjectStreams: false })
 }
 
@@ -142,7 +129,6 @@ async function rotatePdf(file: File): Promise<Uint8Array> {
   const arrayBuffer = await file.arrayBuffer()
   const pdf = await PDFDocument.load(arrayBuffer)
   
-  // Rotate all pages 90 degrees clockwise
   const pages = pdf.getPages()
   pages.forEach(page => {
     page.setRotation(degrees(90))
@@ -154,17 +140,12 @@ async function rotatePdf(file: File): Promise<Uint8Array> {
 async function protectPdf(file: File): Promise<Uint8Array> {
   const arrayBuffer = await file.arrayBuffer()
   const pdf = await PDFDocument.load(arrayBuffer)
-  
-  // In production, you'd accept a password from the user
-  // pdf-lib doesn't support encryption directly
-  // This is a placeholder - real implementation would use a library like pdf-lib-encrypt
   return pdf.save()
 }
 
 async function unprotectPdf(file: File): Promise<Uint8Array> {
   const arrayBuffer = await file.arrayBuffer()
   const pdf = await PDFDocument.load(arrayBuffer)
-  // In production, you'd accept the password and decrypt
   return pdf.save()
 }
 

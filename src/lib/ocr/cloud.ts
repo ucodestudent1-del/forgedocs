@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 
-export interface CloudOCRResult {
+interface CloudOCRResult {
   text: string
   confidence: number
   pages: number
@@ -10,7 +10,6 @@ export interface CloudOCRResult {
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
-// Server-side client for storage operations
 function getServerClient() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -46,30 +45,93 @@ async function cleanupTempFile(path: string): Promise<void> {
 }
 
 async function callAWS_Textract(signedUrl: string): Promise<{ text: string; confidence: number; pages: number }> {
-  // This would use @aws-sdk/client-textract in production
-  // For now, return a structured response indicating the provider
-  return {
-    text: '[AWS Textract] OCR processing would occur here. Configure AWS credentials and implement Textract client.',
-    confidence: 0,
-    pages: 1
+  try {
+    const response = await fetch(`${process.env.AWS_TEXTRACT_ENDPOINT}/analyze-document`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.AWS_TEXTRACT_API_KEY}`,
+      },
+      body: JSON.stringify({
+        document: { s3Object: { url: signedUrl } },
+        featureTypes: ['TEXT', 'FORMS', 'TABLES'],
+      }),
+    })
+
+    if (!response.ok) throw new Error('AWS Textract failed')
+    const data = await response.json()
+    
+    return {
+      text: data.blocks?.filter((b: any) => b.blockType === 'LINE').map((b: any) => b.text).join('\n') || '',
+      confidence: data.blocks?.reduce((sum: number, b: any) => sum + (b.confidence || 0), 0) / (data.blocks?.length || 1) || 0,
+      pages: data.documentMetadata?.pages || 1,
+    }
+  } catch (error) {
+    console.error('AWS Textract error:', error)
+    throw error
   }
 }
 
 async function callGoogleVision(signedUrl: string): Promise<{ text: string; confidence: number; pages: number }> {
-  // This would use @google-cloud/vision in production
-  return {
-    text: '[Google Vision] OCR processing would occur here. Configure Google Cloud credentials.',
-    confidence: 0,
-    pages: 1
+  try {
+    const response = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${process.env.GOOGLE_VISION_API_KEY}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        requests: [{
+          image: { source: { imageUri: signedUrl } },
+          features: [{ type: 'DOCUMENT_TEXT_DETECTION' }],
+        }],
+      }),
+    })
+
+    if (!response.ok) throw new Error('Google Vision failed')
+    const data = await response.json()
+    
+    const annotations = data.responses?.[0]?.fullTextAnnotation
+    return {
+      text: annotations?.text || '',
+      confidence: annotations?.pages?.reduce((sum: number, p: any) => sum + (p.confidence || 0), 0) / (annotations?.pages?.length || 1) || 0,
+      pages: annotations?.pages?.length || 1,
+    }
+  } catch (error) {
+    console.error('Google Vision error:', error)
+    throw error
   }
 }
 
 async function callAzureVision(signedUrl: string): Promise<{ text: string; confidence: number; pages: number }> {
-  // This would use @azure/cognitiveservices-computervision
-  return {
-    text: '[Azure Vision] OCR processing would occur here. Configure Azure credentials.',
-    confidence: 0,
-    pages: 1
+  try {
+    const response = await fetch(`${process.env.AZURE_VISION_ENDPOINT}/vision/v3.2/read/analyze`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Ocp-Apim-Subscription-Key': process.env.AZURE_VISION_KEY!,
+      },
+      body: JSON.stringify({ url: signedUrl }),
+    })
+
+    if (!response.ok) throw new Error('Azure Vision failed')
+    
+    const operationUrl = response.headers.get('operation-location')
+    if (!operationUrl) throw new Error('No operation URL from Azure')
+
+    for (let i = 0; i < 30; i++) {
+      await new Promise(r => setTimeout(r, 1000))
+      const result = await fetch(operationUrl, {
+        headers: { 'Ocp-Apim-Subscription-Key': process.env.AZURE_VISION_KEY! }
+      })
+      const data = await result.json()
+      if (data.status === 'succeeded') {
+        const text = data.analyzeResult?.readResults?.flatMap((r: any) => r.lines?.map((l: any) => l.text).join('\n') || '').join('\n') || ''
+        const confidence = data.analyzeResult?.readResults?.flatMap((r: any) => l.words?.map((w: any) => w.confidence || 0) || []).reduce((a: number, b: number) => a + b, 0) / (data.analyzeResult?.readResults?.flatMap((r: any) => r.words?.length || 0).reduce((a: number, b: number) => a + b, 0) || 1) || 0
+        return { text, confidence, pages: data.analyzeResult?.readResults?.length || 1 }
+      }
+    }
+    throw new Error('Azure Vision timeout')
+  } catch (error) {
+    console.error('Azure Vision error:', error)
+    throw error
   }
 }
 
@@ -103,17 +165,14 @@ export async function performCloudOCR(
     
     return { ...result, provider }
   } finally {
-    // Cleanup temp file
     await cleanupTempFile(path)
   }
 }
 
-// Client-side helper for browser uploads
 export async function performClientCloudOCR(
   file: File,
   provider: 'aws' | 'google' | 'azure' = 'aws'
 ): Promise<{ text: string; confidence: number; pages: number; provider: string }> {
-  // In a real implementation, this would call an API route
   const formData = new FormData()
   formData.append('file', file)
   formData.append('provider', provider)

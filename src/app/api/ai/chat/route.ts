@@ -35,7 +35,8 @@ export async function POST(request: NextRequest) {
       }, { status: 503 })
     }
 
-    // Build conversation history
+    const openai = getOpenAI()
+
     const messages = [
       { 
         role: "system" as const, 
@@ -48,7 +49,7 @@ export async function POST(request: NextRequest) {
       { role: "user" as const, content: message },
     ]
 
-    const completion = await getOpenAI().chat.completions.create({
+    const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages,
       temperature: 0.7,

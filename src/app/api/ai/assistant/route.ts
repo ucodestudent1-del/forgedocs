@@ -40,13 +40,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
-    // Check if OpenAI API key is configured
     if (!process.env.OPENAI_API_KEY) {
       return NextResponse.json({ 
         error: "AI provider not configured. Please set OPENAI_API_KEY environment variable." 
       }, { status: 503 })
     }
 
+    const openai = getOpenAI()
     const systemPrompt = SYSTEM_PROMPTS[action] || SYSTEM_PROMPTS.generate
     
     let userPrompt = ""
@@ -54,8 +54,23 @@ export async function POST(request: NextRequest) {
       case "generate":
         userPrompt = `Generate content for: ${input || "general document"}`
         break
+      case "rewrite":
+        userPrompt = `Rewrite this text with improved clarity and flow: ${input}`
+        break
+      case "summarize":
+        userPrompt = `Summarize this text concisely: ${input}`
+        break
+      case "expand":
+        userPrompt = `Expand this text with more detail and examples: ${input}`
+        break
+      case "shorten":
+        userPrompt = `Condense this text while preserving key information: ${input}`
+        break
       case "tone":
         userPrompt = `Rewrite in ${tone || "professional"} tone: ${input}`
+        break
+      case "grammar":
+        userPrompt = `Fix all grammar, punctuation, and syntax errors: ${input}`
         break
       case "translate":
         userPrompt = `Translate to ${targetLanguage || "English"}: ${input}`
@@ -64,7 +79,7 @@ export async function POST(request: NextRequest) {
         userPrompt = `${action.charAt(0).toUpperCase() + action.slice(1)} this text: ${input}`
     }
 
-    const completion = await getOpenAI().chat.completions.create({
+    const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
         { role: "system", content: systemPrompt },
@@ -80,7 +95,6 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("AI assistant error:", error)
     
-    // Fallback to mock if API fails
     if (error instanceof Error && error.message.includes("API key")) {
       return NextResponse.json({ 
         error: "AI provider not configured. Please set OPENAI_API_KEY environment variable." 
