@@ -60,11 +60,30 @@ export async function POST(request: NextRequest) {
       case "pagenumbers":
         processedPdf = await addPageNumbers(files[0])
         break
-      case "ocr":
-        // OCR requires external service (Tesseract.js or cloud API)
-        return NextResponse.json({ 
-          error: "OCR requires external service. Use Tesseract.js or cloud OCR API." 
-        }, { status: 501 })
+      case "ocr": {
+        // Import OCR dynamically to avoid SSR issues
+        const { performOCR } = await import("@/lib/ocr")
+        
+        // For OCR, we process the first file and return text results
+        const file = files[0]
+        if (file.type !== "application/pdf" && !file.type.startsWith("image/")) {
+          return NextResponse.json({ error: "OCR requires PDF or image file" }, { status: 400 })
+        }
+        
+        try {
+          const result = await performOCR(file, { provider: 'auto', fallbackToCloud: true })
+          return NextResponse.json({ 
+            text: result.text,
+            confidence: result.confidence,
+            pages: result.pages,
+            provider: result.provider,
+            message: `OCR complete (${result.confidence}% confidence)`
+          })
+        } catch (error) {
+          console.error("OCR processing failed:", error)
+          return NextResponse.json({ error: "OCR processing failed" }, { status: 500 })
+        }
+      }
       default:
         return NextResponse.json({ error: "Tool not implemented" }, { status: 501 })
     }

@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useRef, useCallback } from "react"
+import React, { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -212,16 +212,16 @@ export function RichEditor({
       // Check for various formats
       const checkFormat = (tag: string, style?: string, value?: string) => {
         let node = range.commonAncestorContainer
-        if (node.nodeType === Node.TEXT_NODE) node = node.parentNode!
-        while (node && node !== editorRef.current) {
-          if (node.nodeName.toLowerCase() === tag) {
-            if (!style || (node as HTMLElement).style[style as any] === value) {
-              return true
-            }
+      if (node.nodeType === Node.TEXT_NODE) node = node.parentNode!
+      while (node && node !== editorRef.current) {
+        if (node.nodeName.toLowerCase() === tag) {
+          if (!style || (node as HTMLElement).style[style as keyof CSSStyleDeclaration] === value) {
+            return true
           }
-          node = node.parentNode!
         }
-        return false
+        node = node.parentNode!
+      }
+      return false
       }
 
       formats.bold = checkFormat("strong") || checkFormat("b") || document.queryCommandState("bold")

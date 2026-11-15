@@ -17,10 +17,24 @@ import {
   Settings,
   BarChart3,
   Layout,
+  ArrowLeftRight,
 } from "lucide-react"
 import { documentRateLimit } from "@/lib/rate-limit"
 import { validateCSRF } from "@/lib/csrf"
 import { useToast } from "@/components/ui/use-toast"
+import {
+  getUnitsForCategory,
+  getCategories,
+  getUnitLabel,
+  convertUnit,
+  UNIT_CATEGORIES,
+  UNIT_DEFINITIONS,
+  getCategories as getUnitCategories,
+  getUnitsForCategory as getUnits,
+  UNIT_LABELS,
+  convertCurrency,
+  getSupportedCurrencies,
+} from "@/lib/unit-converter"
 
 type Tab = "document" | "unit" | "metadata"
 
@@ -34,151 +48,6 @@ const DOCUMENT_PAIRS = [
   { source: "DOCX", target: "TXT", icon: FileText, color: "bg-primary/10 text-primary" },
   { source: "XLSX", target: "PDF", icon: FileSpreadsheet, color: "bg-primary/10 text-primary" },
 ]
-
-const UNIT_CATEGORIES = [
-  { id: "length", name: "Length", icon: Layout },
-  { id: "mass", name: "Mass / Weight", icon: BarChart3 },
-  { id: "temperature", name: "Temperature", icon: Settings },
-  { id: "volume", name: "Volume", icon: BarChart3 },
-  { id: "area", name: "Area", icon: Layout },
-  { id: "speed", name: "Speed", icon: RefreshCw },
-  { id: "data-size", name: "Data Size", icon: BarChart3 },
-  { id: "angle", name: "Angle", icon: Layout },
-  { id: "energy", name: "Energy", icon: BarChart3 },
-  { id: "pressure", name: "Pressure", icon: Settings },
-  { id: "time", name: "Time", icon: RefreshCw },
-]
-
-const UNIT_CODE_MAP: Record<string, Record<string, string>> = {
-  length: {
-    meter: "m", kilometer: "km", centimeter: "cm", millimeter: "mm",
-    mile: "mi", yard: "yd", foot: "ft", inch: "in",
-  },
-  mass: {
-    kilogram: "kg", gram: "g", milligram: "mg", pound: "lb", ounce: "oz",
-  },
-  temperature: {
-    celsius: "c", fahrenheit: "f", kelvin: "k",
-  },
-  volume: {
-    liter: "l", milliliter: "ml", gallon: "gal", quart: "qt",
-    pint: "pt", cup: "cup", fluid_ounce: "fl oz",
-  },
-  area: {
-    square_meter: "m2", square_kilometer: "km2", square_foot: "ft2",
-    square_inch: "in2", acre: "acre", hectare: "hectare",
-  },
-  speed: {
-    meter_per_second: "m/s", kilometer_per_hour: "km/h",
-    mile_per_hour: "mph", knot: "knot",
-  },
-  "data-size": {
-    byte: "b", kilobyte: "kb", megabyte: "mb",
-    gigabyte: "gb", terabyte: "tb", bit: "bit",
-    kilobit: "kb", megabit: "mb", gigabit: "gb",
-  },
-  angle: {
-    degree: "deg", radian: "rad", gradian: "grad",
-  },
-  energy: {
-    joule: "j", kilojoule: "kj", calorie: "cal", kilocalorie: "kcal",
-    watt_hour: "wh",
-  },
-  pressure: {
-    pascal: "pa", kilopascal: "kpa", bar: "bar", psi: "psi", atm: "atm",
-  },
-  time: {
-    second: "s", minute: "min", hour: "h", day: "d",
-    week: "w", month: "mo", year: "y",
-  },
-}
-
-const UNIT_DEFINITIONS: Record<string, { value: string; label: string }[]> = {
-  length: [
-    { value: "meter", label: "Meter" },
-    { value: "kilometer", label: "Kilometer" },
-    { value: "centimeter", label: "Centimeter" },
-    { value: "millimeter", label: "Millimeter" },
-    { value: "mile", label: "Mile" },
-    { value: "yard", label: "Yard" },
-    { value: "foot", label: "Foot" },
-    { value: "inch", label: "Inch" },
-  ],
-  mass: [
-    { value: "kilogram", label: "Kilogram" },
-    { value: "gram", label: "Gram" },
-    { value: "milligram", label: "Milligram" },
-    { value: "pound", label: "Pound" },
-    { value: "ounce", label: "Ounce" },
-  ],
-  temperature: [
-    { value: "celsius", label: "Celsius" },
-    { value: "fahrenheit", label: "Fahrenheit" },
-    { value: "kelvin", label: "Kelvin" },
-  ],
-  volume: [
-    { value: "liter", label: "Liter" },
-    { value: "milliliter", label: "Milliliter" },
-    { value: "gallon", label: "Gallon" },
-    { value: "quart", label: "Quart" },
-    { value: "pint", label: "Pint" },
-    { value: "cup", label: "Cup" },
-    { value: "fluid_ounce", label: "Fluid Ounce" },
-  ],
-  area: [
-    { value: "square_meter", label: "Square Meter" },
-    { value: "square_kilometer", label: "Square Kilometer" },
-    { value: "square_foot", label: "Square Foot" },
-    { value: "square_inch", label: "Square Inch" },
-    { value: "acre", label: "Acre" },
-    { value: "hectare", label: "Hectare" },
-  ],
-  speed: [
-    { value: "meter_per_second", label: "Meter per Second" },
-    { value: "kilometer_per_hour", label: "Kilometer per Hour" },
-    { value: "mile_per_hour", label: "Mile per Hour" },
-    { value: "knot", label: "Knot" },
-  ],
-  "data-size": [
-    { value: "byte", label: "Byte" },
-    { value: "kilobyte", label: "Kilobyte" },
-    { value: "megabyte", label: "Megabyte" },
-    { value: "gigabyte", label: "Gigabyte" },
-    { value: "terabyte", label: "Terabyte" },
-    { value: "bit", label: "Bit" },
-    { value: "kilobit", label: "Kilobit" },
-    { value: "megabit", label: "Megabit" },
-    { value: "gigabit", label: "Gigabit" },
-  ],
-  angle: [
-    { value: "degree", label: "Degree" },
-    { value: "radian", label: "Radian" },
-    { value: "gradian", label: "Gradian" },
-  ],
-  energy: [
-    { value: "joule", label: "Joule" },
-    { value: "kilojoule", label: "Kilojoule" },
-    { value: "calorie", label: "Calorie" },
-    { value: "kilocalorie", label: "Kilocalorie" },
-    { value: "watt_hour", label: "Watt Hour" },
-  ],
-  pressure: [
-    { value: "pascal", label: "Pascal" },
-    { value: "kilopascal", label: "Kilopascal" },
-    { value: "bar", label: "Bar" },
-    { value: "psi", label: "PSI" },
-    { value: "atm", label: "Atmosphere" },
-  ],
-  time: [
-    { value: "second", label: "Second" },
-    { value: "minute", label: "Minute" },
-    { value: "hour", label: "Hour" },
-    { value: "day", label: "Day" },
-    { value: "week", label: "Week" },
-    { value: "month", label: "Month" },
-    { value: "year", label: "Year" },
-  ],
-}
 
 export default function ConversionPage() {
   const [jobs, setJobs] = useState<any[]>([])
@@ -207,19 +76,20 @@ export default function ConversionPage() {
   }, [search])
   const t = useTranslations(["conversion", "common", "errors"])
 
-// Unit tab state
-  const [unitCategory, setUnitCategory] = useState<string | null>(() => UNIT_CATEGORIES[0]?.id || null)
+  // Unit tab state
+  const [unitCategory, setUnitCategory] = useState<string | null>(() => getCategories()[0]?.id || null)
   const [unitFrom, setUnitFrom] = useState("")
   const [unitTo, setUnitTo] = useState("")
   const [unitValue, setUnitValue] = useState("")
-  const [unitOptions, setUnitOptions] = useState<{ value: string; label: string }[]>(() => UNIT_CATEGORIES[0] ? UNIT_DEFINITIONS[UNIT_CATEGORIES[0].id] || [] : [])
 
   // Auto-select first category on mount
   useEffect(() => {
-    if (!unitCategory && UNIT_CATEGORIES.length > 0) {
-      const first = UNIT_CATEGORIES[0]
-      setUnitCategory(first.id)
-      setUnitOptions(UNIT_DEFINITIONS[first.id] || [])
+    if (!unitCategory) {
+      const categories = getCategories()
+      if (categories.length > 0) {
+        const first = categories[0]
+        setUnitCategory(first.id)
+      }
     }
   }, [])
 
@@ -337,24 +207,20 @@ export default function ConversionPage() {
     }
     setConverting(true)
     try {
-      const fromCode = UNIT_CODE_MAP[unitCategory]?.[unitFrom] || unitFrom
-      const toCode = UNIT_CODE_MAP[unitCategory]?.[unitTo] || unitTo
-      const res = await fetch("/api/conversion", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          type: "unit",
-          source_format: fromCode,
-          target_format: toCode,
-          value: unitValue,
-        }),
-      })
-      if (!res.ok) {
-        const err = await res.json()
-        throw new Error(err.error || "Unit conversion failed")
+      const value = parseFloat(unitValue)
+      if (isNaN(value)) {
+        toast({ title: "Please enter a valid number", variant: "destructive" })
+        return
       }
-      const data = await res.json()
-      toast({ title: `${unitValue} ${unitFrom} = ${data.result} ${unitTo}`, variant: "success" })
+      
+      let result: number
+      if (unitCategory === 'currency') {
+        const result = await convertCurrency(value, unitFrom, unitTo)
+        toast({ title: `${unitValue} ${unitFrom} = ${result.result.toFixed(4)} ${unitTo}`, variant: "success" })
+      } else {
+        result = convertUnit(value, unitFrom, unitTo, unitCategory)
+        toast({ title: `${unitValue} ${UNIT_LABELS[unitFrom] || unitFrom} = ${result.toFixed(4)} ${UNIT_LABELS[unitTo] || unitTo}`, variant: "success" })
+      }
     } catch (e) {
       console.error(e)
       toast({ title: t("conversionFailed"), variant: "destructive" })
@@ -477,12 +343,12 @@ export default function ConversionPage() {
                 <div className="flex flex-col gap-2">
                   <label className="text-sm font-medium text-foreground">Source</label>
                   <div className="flex gap-2">
-                      <button
-                        onClick={() => document.getElementById("file-input")?.click()}
-                        className={`flex-1 flex flex-col items-center justify-center p-3 rounded-lg border-2 border-dashed ${
-                          sourceFile ? "bg-primary/10 border-primary" : "border-input hover:border-primary/50"
-                        }`}
-                      >
+                    <button
+                      onClick={() => document.getElementById("file-input")?.click()}
+                      className={`flex-1 flex flex-col items-center justify-center p-3 rounded-lg border-2 border-dashed ${
+                        sourceFile ? "bg-primary/10 border-primary" : "border-input hover:border-primary/50"
+                      }`}
+                    >
                       <Upload className="h-5 w-5 mb-2 text-primary" />
                       <span className="text-sm">Upload File</span>
                       <input
@@ -578,14 +444,13 @@ export default function ConversionPage() {
               <div className="flex flex-col gap-2">
                 <label className="text-sm font-medium text-foreground">Category</label>
                 <div className="flex flex-wrap gap-2">
-                  {UNIT_CATEGORIES.map((cat) => (
+                  {getCategories().map((cat) => (
                     <button
                       key={cat.id}
                       onClick={() => {
                         setUnitCategory(cat.id)
                         setUnitFrom("")
                         setUnitTo("")
-                        setUnitOptions(UNIT_DEFINITIONS[cat.id] || [])
                       }}
                       className={`px-3 py-1.5 rounded-md text-sm border transition-colors ${
                         unitCategory === cat.id
@@ -596,62 +461,133 @@ export default function ConversionPage() {
                       {cat.name}
                     </button>
                   ))}
+                  {/* Currency category */}
+                  <button
+                    key="currency"
+                    onClick={() => {
+                      setUnitCategory("currency")
+                      setUnitFrom("")
+                      setUnitTo("")
+                    }}
+                    className={`px-3 py-1.5 rounded-md text-sm border transition-colors ${
+                      unitCategory === "currency"
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "border-input bg-background text-muted-foreground hover:border-primary/50"
+                    }`}
+                  >
+                    Currency
+                  </button>
                 </div>
               </div>
 
               {unitCategory && (
-                <>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="flex flex-col gap-2">
-                      <label className="text-sm font-medium text-foreground">From</label>
-                      <select
-                        value={unitFrom}
-                        onChange={(e) => setUnitFrom(e.target.value)}
-                        className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                      >
-                        <option value="">Select unit</option>
-                        {unitOptions.map((opt) => (
-                          <option key={opt.value} value={opt.value}>
-                            {opt.label}
-                          </option>
-                        ))}
-                      </select>
+                unitCategory === "currency" ? (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="flex flex-col gap-2">
+                        <label className="text-sm font-medium text-foreground">From</label>
+                        <select
+                          value={unitFrom}
+                          onChange={(e) => setUnitFrom(e.target.value)}
+                          className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                        >
+                          <option value="">Select currency</option>
+                          {getSupportedCurrencies().map((opt) => (
+                            <option key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        <label className="text-sm font-medium text-foreground">To</label>
+                        <select
+                          value={unitTo}
+                          onChange={(e) => setUnitTo(e.target.value)}
+                          className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                        >
+                          <option value="">Select currency</option>
+                          {getSupportedCurrencies().map((opt) => (
+                            <option key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
                     <div className="flex flex-col gap-2">
-                      <label className="text-sm font-medium text-foreground">To</label>
-                      <select
-                        value={unitTo}
-                        onChange={(e) => setUnitTo(e.target.value)}
+                      <label className="text-sm font-medium text-foreground">Value</label>
+                      <input
+                        type="number"
+                        step="any"
+                        placeholder="Enter value"
+                        value={unitValue}
+                        onChange={(e) => setUnitValue(e.target.value)}
                         className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                      >
-                        <option value="">Select unit</option>
-                        {unitOptions.map((opt) => (
-                          <option key={opt.value} value={opt.value}>
-                            {opt.label}
-                          </option>
-                        ))}
-                      </select>
+                      />
                     </div>
+                    <Button
+                      onClick={handleConvert}
+                      disabled={!unitFrom || !unitTo || !unitValue || converting}
+                      className="w-full"
+                    >
+                      {converting ? "Converting..." : "Convert Currency"}
+                    </Button>
                   </div>
-                  <div className="flex flex-col gap-2">
-                    <label className="text-sm font-medium text-foreground">Value</label>
-                    <input
-                      type="number"
-                      step="any"
-                      placeholder="Enter value"
-                      value={unitValue}
-                      onChange={(e) => setUnitValue(e.target.value)}
-                      className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                    />
-                  </div>
-                  <Button
-                    onClick={handleConvert}
-                    disabled={!unitCategory || !unitFrom || !unitTo || !unitValue || converting}
-                    className="w-full"
-                  >
-                    {converting ? "Converting..." : "Convert Unit"}
-                  </Button>
-                </>
+                ) : (
+                  <>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="flex flex-col gap-2">
+                        <label className="text-sm font-medium text-foreground">From</label>
+                        <select
+                          value={unitFrom}
+                          onChange={(e) => setUnitFrom(e.target.value)}
+                          className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                        >
+                          <option value="">Select unit</option>
+                          {getUnitsForCategory(unitCategory).map((opt) => (
+                            <option key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        <label className="text-sm font-medium text-foreground">To</label>
+                        <select
+                          value={unitTo}
+                          onChange={(e) => setUnitTo(e.target.value)}
+                          className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                        >
+                          <option value="">Select unit</option>
+                          {getUnitsForCategory(unitCategory).map((opt) => (
+                            <option key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <label className="text-sm font-medium text-foreground">Value</label>
+                      <input
+                        type="number"
+                        step="any"
+                        placeholder="Enter value"
+                        value={unitValue}
+                        onChange={(e) => setUnitValue(e.target.value)}
+                        className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                      />
+                    </div>
+                    <Button
+                      onClick={handleConvert}
+                      disabled={!unitFrom || !unitTo || !unitValue || converting}
+                      className="w-full"
+                    >
+                      {converting ? "Converting..." : "Convert Unit"}
+                    </Button>
+                  </>
+                )
               )}
             </div>
           </CardContent>
