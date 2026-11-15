@@ -1,6 +1,6 @@
 import { performOCR as performTesseractOCR, terminateOCR } from './tesseract'
 export { performOCR as performTesseractOCR, terminateOCR } from './tesseract'
-export type { OCRResult as TesseractResult, OCROptions } from './tesseract'
+export type TesseractResult = OCRResult
 export type { CloudOCRResult } from './cloud'
 
 export interface OCRResult {
@@ -160,6 +160,3 @@ export async function performOCR(
     throw error
   }
 }
-
-export type { OCRResult as TesseractResult, OCROptions } from './tesseract'
-export type { CloudOCRResult } from './cloud'

@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "Tool not implemented" }, { status: 501 })
     }
 
-    const blob = new Blob([processedPdf], { type: "application/pdf" })
+    const blob = new Blob([processedPdf as unknown as BlobPart], { type: "application/pdf" })
     const downloadUrl = URL.createObjectURL(blob)
     
     return NextResponse.json({ 

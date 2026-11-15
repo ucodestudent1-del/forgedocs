@@ -241,7 +241,6 @@ async function gracefulShutdown(signal) {
   console.log(`Received ${signal}, shutting down worker gracefully...`)
   try {
     await worker.close()
-    await conversionQueue.close()
     console.log("Worker shutdown complete")
     process.exit(0)
   } catch (err) {
@@ -253,4 +252,4 @@ async function gracefulShutdown(signal) {
 process.on("SIGTERM", () => gracefulShutdown("SIGTERM"))
 process.on("SIGINT", () => gracefulShutdown("SIGINT"))
 
-module.exports = { conversionQueue }
+module.exports = { worker }

@@ -148,6 +148,59 @@ export async function middleware(request: NextRequest) {
       response.headers.set("x-request-id", requestId)
       return response
     }
+    const { data: adminProfile } = await supabase
+      .from("profiles")
+      .select("mfa_enabled")
+      .eq("id", user.id)
+      .single()
+    if (adminProfile?.mfa_enabled && !pathname.startsWith("/auth/mfa")) {
+      const mfaUrl = new URL(`/${defaultLocale}/auth/mfa/verify`, request.url)
+      const response = NextResponse.redirect(mfaUrl)
+      response.headers.set("x-request-id", requestId)
+      return response
+    }
+  }
+
+  const protectedPrefixes = [
+    "/dashboard", "/admin", "/editor", "/billing", "/conversion",
+    "/documents", "/files", "/templates", "/security", "/settings", "/onboarding",
+  ]
+  const isProtectedRoute = protectedPrefixes.some(
+    (p) => pathname === p || pathname.startsWith(p + "/")
+  )
+  const isAuthRoute = pathname.startsWith("/auth/") || pathname === "/auth"
+
+  if (isProtectedRoute && !isAuthRoute) {
+    const supabase = await createRouteClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+      const loginUrl = request.nextUrl.clone()
+      loginUrl.pathname = `/${defaultLocale}/auth/login`
+      loginUrl.searchParams.set("callbackUrl", pathname)
+      const response = NextResponse.redirect(loginUrl)
+      response.headers.set("x-request-id", requestId)
+      return response
+    }
+
+    if (!user.email_confirmed_at && !pathname.startsWith("/auth/verify")) {
+      const verifyUrl = new URL(`/${defaultLocale}/auth/verify`, request.url)
+      const response = NextResponse.redirect(verifyUrl)
+      response.headers.set("x-request-id", requestId)
+      return response
+    }
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("mfa_enabled")
+      .eq("id", user.id)
+      .single()
+    if (profile?.mfa_enabled && !pathname.startsWith("/auth/mfa")) {
+      const mfaUrl = new URL(`/${defaultLocale}/auth/mfa/verify`, request.url)
+      const response = NextResponse.redirect(mfaUrl)
+      response.headers.set("x-request-id", requestId)
+      return response
+    }
   }
 
   let locale = await getProfileLocale(request)

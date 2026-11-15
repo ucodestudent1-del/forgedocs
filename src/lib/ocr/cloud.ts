@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 
-interface CloudOCRResult {
+export interface CloudOCRResult {
   text: string
   confidence: number
   pages: number
@@ -124,7 +124,7 @@ async function callAzureVision(signedUrl: string): Promise<{ text: string; confi
       const data = await result.json()
       if (data.status === 'succeeded') {
         const text = data.analyzeResult?.readResults?.flatMap((r: any) => r.lines?.map((l: any) => l.text).join('\n') || '').join('\n') || ''
-        const confidence = data.analyzeResult?.readResults?.flatMap((r: any) => l.words?.map((w: any) => w.confidence || 0) || []).reduce((a: number, b: number) => a + b, 0) / (data.analyzeResult?.readResults?.flatMap((r: any) => r.words?.length || 0).reduce((a: number, b: number) => a + b, 0) || 1) || 0
+        const confidence = data.analyzeResult?.readResults?.flatMap((r: any) => r.lines?.flatMap((l: any) => l.words?.map((w: any) => w.confidence || 0) || []) || []).reduce((a: number, b: number) => a + b, 0) / (data.analyzeResult?.readResults?.flatMap((r: any) => r.lines?.flatMap((l: any) => l.words?.length || 0) || []).reduce((a: number, b: number) => a + b, 0) || 1) || 0
         return { text, confidence, pages: data.analyzeResult?.readResults?.length || 1 }
       }
     }

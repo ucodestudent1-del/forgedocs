@@ -121,7 +121,7 @@ export const documentRateLimit = rateLimit({
 })
 
 // Cleanup old in-memory entries every 1 minute
-setInterval(() => {
+const cleanupInterval = setInterval(() => {
   const now = Date.now()
   for (const [key, entry] of rateLimitStore.entries()) {
     if (now > entry.resetTime) {
@@ -129,3 +129,6 @@ setInterval(() => {
     }
   }
 }, 60 * 1000)
+
+// Don't keep the Node process alive (e.g. Jest) after work is done
+cleanupInterval.unref()
