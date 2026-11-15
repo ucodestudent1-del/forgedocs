@@ -19,7 +19,12 @@
     "theme": "Theme",
     "light": "Light",
     "dark": "Dark",
-    "system": "System"
+    "system": "System",
+    "documents": "Documents",
+    "templates": "Templates",
+    "conversion": "Conversion",
+    "eSignatures": "E-Signatures",
+    "shared": "Shared"
   },
   "navigation": {
     "dashboard": "Dashboard",
@@ -60,7 +65,7 @@
     "stats": {
       "documents": "{count, plural, one {# document} other {# documents}}",
       "templates": "{count, plural, one {# template} other {# templates}}",
-      "storage": "{used} of {total} used"
+      "storage": "{used} of {total}"
     },
     "recentDocuments": "Recent Documents",
     "noDocuments": "No documents yet",
@@ -94,7 +99,11 @@
     "preview": "Preview",
     "wordCount": "{count, plural, one {# word} other {# words}}",
     "lastSaved": "Last saved: {date, datetime, medium}",
-    "unsavedChanges": "You have unsaved changes"
+    "unsavedChanges": "You have unsaved changes",
+    "promptImageUrl": "Enter image URL",
+    "promptLinkText": "Link text",
+    "promptUrl": "URL",
+    "createNewDocument": "Create New Document"
   },
   "conversion": {
     "uploadFile": "Upload file to convert",
@@ -102,7 +111,8 @@
     "convert": "Convert",
     "download": "Download",
     "converting": "Converting...",
-    "converted": "Converted successfully"
+    "converted": "Converted successfully",
+    "searchJobs": "Search jobs..."
   },
   "pdfTools": {
     "merge": "Merge PDFs",
@@ -133,28 +143,26 @@
     "notifications": "Notifications",
     "preferences": "Preferences",
     "language": "Language",
-    "timezone": "Timezone",
+    "timezone": "Time Zone",
     "dateFormat": "Date Format"
   },
   "errors": {
     "unauthorized": "Please sign in to continue",
-    "forbidden": "You don't have permission to access this",
+    "forbidden": "You don't have permission to access this page",
     "notFound": "Page not found",
     "serverError": "Something went wrong. Please try again.",
     "networkError": "Network error. Check your connection.",
-    "validationError": "Please check your input"
+    "validationError": "Please check your input",
+    "editorError": "Editor Error",
+    "conversionFailed": "Conversion failed",
+    "documentGenerationFailed": "Failed to generate document",
+    "saveFailed": "Save failed"
   },
   "toast": {
     "saved": "Saved successfully",
     "deleted": "Deleted successfully",
     "copied": "Copied to clipboard",
     "failed": "Operation failed"
-  },
-  "editor": {
-    "promptImageUrl": "Enter image URL",
-    "promptLinkText": "Link text",
-    "promptUrl": "URL",
-    "createNewDocument": "Create New Document"
   },
   "billing": {
     "documentsCreated": "Documents Created",
@@ -189,21 +197,5 @@
     "searchUsers": "Search users...",
     "searchSubscriptions": "Search subscriptions...",
     "searchLogs": "Search logs..."
-  },
-  "conversion": {
-    "searchJobs": "Search jobs..."
-  },
-  "errors": {
-    "editorError": "Editor Error",
-    "conversionFailed": "Conversion failed",
-    "documentGenerationFailed": "Failed to generate document",
-    "saveFailed": "Save failed"
-  },
-  "common": {
-    "documents": "Documents",
-    "templates": "Templates",
-    "conversion": "Conversion",
-    "eSignatures": "E-Signatures",
-    "shared": "Shared"
   }
 }

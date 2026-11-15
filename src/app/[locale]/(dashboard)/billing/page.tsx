@@ -48,7 +48,7 @@ export default function BillingPage() {
       price: "$49",
       priceId: "price_business_monthly",
       description: "For established organizations",
-      features: ["Everything in Pro", "SSO / SAML authentication", "Advanced analytics & reporting", "Dedicated account manager", "Custom integrations", "Unlimited version history", "SLA guarantee"],
+      features: ["Everything in Pro", "SSO/SAML authentication", "Advanced analytics & reporting", "Dedicated account manager", "Custom integrations", "Unlimited version history", "SLA guarantee"],
       limits: { documents: null, conversions: null, storage: "500 GB" },
     },
   }

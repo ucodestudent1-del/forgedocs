@@ -19,7 +19,12 @@
     "theme": "主题",
     "light": "浅色",
     "dark": "深色",
-    "system": "系统"
+    "system": "系统",
+    "documents": "文档",
+    "templates": "模板",
+    "conversion": "转换",
+    "eSignatures": "电子签名",
+    "shared": "共享"
   },
   "navigation": {
     "dashboard": "仪表盘",
@@ -94,7 +99,11 @@
     "preview": "预览",
     "wordCount": "{count, plural, other {# 字}}",
     "lastSaved": "上次保存：{date, datetime, medium}",
-    "unsavedChanges": "您有未保存的更改"
+    "unsavedChanges": "您有未保存的更改",
+    "promptImageUrl": "输入图片URL",
+    "promptLinkText": "链接文本",
+    "promptUrl": "URL",
+    "createNewDocument": "创建新文档"
   },
   "conversion": {
     "uploadFile": "上传文件进行转换",
@@ -102,7 +111,8 @@
     "convert": "转换",
     "download": "下载",
     "converting": "转换中...",
-    "converted": "转换成功"
+    "converted": "转换成功",
+    "searchJobs": "搜索任务..."
   },
   "pdfTools": {
     "merge": "合并PDF",
@@ -142,19 +152,17 @@
     "notFound": "页面未找到",
     "serverError": "发生错误，请重试。",
     "networkError": "网络错误，请检查连接。",
-    "validationError": "请检查您的输入"
+    "validationError": "请检查您的输入",
+    "editorError": "编辑器错误",
+    "conversionFailed": "转换失败",
+    "documentGenerationFailed": "文档生成失败",
+    "saveFailed": "保存失败"
   },
   "toast": {
     "saved": "保存成功",
     "deleted": "删除成功",
     "copied": "已复制到剪贴板",
     "failed": "操作失败"
-  },
-  "editor": {
-    "promptImageUrl": "输入图片URL",
-    "promptLinkText": "链接文本",
-    "promptUrl": "URL",
-    "createNewDocument": "创建新文档"
   },
   "billing": {
     "documentsCreated": "已创建文档",
@@ -189,21 +197,5 @@
     "searchUsers": "搜索用户...",
     "searchSubscriptions": "搜索订阅...",
     "searchLogs": "搜索日志..."
-  },
-  "conversion": {
-    "searchJobs": "搜索任务..."
-  },
-  "errors": {
-    "editorError": "编辑器错误",
-    "conversionFailed": "转换失败",
-    "documentGenerationFailed": "文档生成失败",
-    "saveFailed": "保存失败"
-  },
-  "common": {
-    "documents": "文档",
-    "templates": "模板",
-    "conversion": "转换",
-    "eSignatures": "电子签名",
-    "shared": "共享"
   }
 }

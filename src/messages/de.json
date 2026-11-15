@@ -19,7 +19,12 @@
     "theme": "Design",
     "light": "Hell",
     "dark": "Dunkel",
-    "system": "System"
+    "system": "System",
+    "documents": "Dokumente",
+    "templates": "Vorlagen",
+    "conversion": "Konvertierung",
+    "eSignatures": "E-Signaturen",
+    "shared": "Geteilt"
   },
   "navigation": {
     "dashboard": "Dashboard",
@@ -94,7 +99,11 @@
     "preview": "Vorschau",
     "wordCount": "{count, plural, one {# Wort} other {# Wörter}}",
     "lastSaved": "Zuletzt gespeichert: {date, datetime, medium}",
-    "unsavedChanges": "Sie haben ungespeicherte Änderungen"
+    "unsavedChanges": "Sie haben ungespeicherte Änderungen",
+    "promptImageUrl": "Bild-URL eingeben",
+    "promptLinkText": "Linktext",
+    "promptUrl": "URL",
+    "createNewDocument": "Neues Dokument Erstellen"
   },
   "conversion": {
     "uploadFile": "Datei zum Konvertieren hochladen",
@@ -102,7 +111,8 @@
     "convert": "Konvertieren",
     "download": "Herunterladen",
     "converting": "Konvertiere...",
-    "converted": "Erfolgreich konvertiert"
+    "converted": "Erfolgreich konvertiert",
+    "searchJobs": "Aufträge suchen..."
   },
   "pdfTools": {
     "merge": "PDFs zusammenführen",
@@ -142,19 +152,17 @@
     "notFound": "Seite nicht gefunden",
     "serverError": "Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut.",
     "networkError": "Netzwerkfehler. Prüfen Sie Ihre Verbindung.",
-    "validationError": "Bitte überprüfen Sie Ihre Eingabe"
+    "validationError": "Bitte überprüfen Sie Ihre Eingabe",
+    "editorError": "Editor-Fehler",
+    "conversionFailed": "Konvertierung fehlgeschlagen",
+    "documentGenerationFailed": "Dokumentenerstellung fehlgeschlagen",
+    "saveFailed": "Speichern fehlgeschlagen"
   },
   "toast": {
     "saved": "Erfolgreich gespeichert",
     "deleted": "Erfolgreich gelöscht",
     "copied": "In Zwischenablage kopiert",
     "failed": "Vorgang fehlgeschlagen"
-  },
-  "editor": {
-    "promptImageUrl": "Bild-URL eingeben",
-    "promptLinkText": "Linktext",
-    "promptUrl": "URL",
-    "createNewDocument": "Neues Dokument Erstellen"
   },
   "billing": {
     "documentsCreated": "Dokumente Erstellt",
@@ -189,21 +197,5 @@
     "searchUsers": "Benutzer suchen...",
     "searchSubscriptions": "Abonnements suchen...",
     "searchLogs": "Protokolle suchen..."
-  },
-  "conversion": {
-    "searchJobs": "Aufträge suchen..."
-  },
-  "errors": {
-    "editorError": "Editor-Fehler",
-    "conversionFailed": "Konvertierung fehlgeschlagen",
-    "documentGenerationFailed": "Dokumentenerstellung fehlgeschlagen",
-    "saveFailed": "Speichern fehlgeschlagen"
-  },
-  "common": {
-    "documents": "Dokumente",
-    "templates": "Vorlagen",
-    "conversion": "Konvertierung",
-    "eSignatures": "E-Signaturen",
-    "shared": "Geteilt"
   }
 }

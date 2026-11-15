@@ -19,7 +19,12 @@
     "theme": "Tema",
     "light": "Claro",
     "dark": "Oscuro",
-    "system": "Sistema"
+    "system": "Sistema",
+    "documents": "Documentos",
+    "templates": "Plantillas",
+    "conversion": "Conversión",
+    "eSignatures": "Firmas Electrónicas",
+    "shared": "Compartidos"
   },
   "navigation": {
     "dashboard": "Panel",
@@ -94,7 +99,11 @@
     "preview": "Vista Previa",
     "wordCount": "{count, plural, one {# palabra} other {# palabras}}",
     "lastSaved": "Guardado por última vez: {date, datetime, medium}",
-    "unsavedChanges": "Tienes cambios sin guardar"
+    "unsavedChanges": "Tienes cambios sin guardar",
+    "promptImageUrl": "Ingrese la URL de la imagen",
+    "promptLinkText": "Texto del enlace",
+    "promptUrl": "URL",
+    "createNewDocument": "Crear Nuevo Documento"
   },
   "conversion": {
     "uploadFile": "Subir archivo para convertir",
@@ -102,7 +111,8 @@
     "convert": "Convertir",
     "download": "Descargar",
     "converting": "Convirtiendo...",
-    "converted": "Convertido exitosamente"
+    "converted": "Convertido exitosamente",
+    "searchJobs": "Buscar trabajos..."
   },
   "pdfTools": {
     "merge": "Combinar PDFs",
@@ -140,21 +150,19 @@
     "unauthorized": "Inicia sesión para continuar",
     "forbidden": "No tienes permiso para acceder",
     "notFound": "Página no encontrada",
-    "serverError": "Algo salió mal. Intenta de nuevo.",
+    "serverError": "Algo salió mal. Inténtelo de nuevo.",
     "networkError": "Error de red. Verifica tu conexión.",
-    "validationError": "Revisa tu entrada"
+    "validationError": "Revisa tu entrada",
+    "editorError": "Error del Editor",
+    "conversionFailed": "Fallo en la conversión",
+    "documentGenerationFailed": "Falló la generación del documento",
+    "saveFailed": "Fallo al guardar"
   },
   "toast": {
     "saved": "Guardado exitosamente",
     "deleted": "Eliminado exitosamente",
     "copied": "Copiado al portapapeles",
     "failed": "La operación falló"
-  },
-  "editor": {
-    "promptImageUrl": "Ingrese la URL de la imagen",
-    "promptLinkText": "Texto del enlace",
-    "promptUrl": "URL",
-    "createNewDocument": "Crear Nuevo Documento"
   },
   "billing": {
     "documentsCreated": "Documentos Creados",
@@ -189,21 +197,5 @@
     "searchUsers": "Buscar usuarios...",
     "searchSubscriptions": "Buscar suscripciones...",
     "searchLogs": "Buscar registros..."
-  },
-  "conversion": {
-    "searchJobs": "Buscar trabajos..."
-  },
-  "errors": {
-    "editorError": "Error del Editor",
-    "conversionFailed": "Fallo en la Conversión",
-    "documentGenerationFailed": "Falló la Generación del Documento",
-    "saveFailed": "Fallo al Guardar"
-  },
-  "common": {
-    "documents": "Documentos",
-    "templates": "Plantillas",
-    "conversion": "Conversión",
-    "eSignatures": "Firmas Electrónicas",
-    "shared": "Compartidos"
   }
 }

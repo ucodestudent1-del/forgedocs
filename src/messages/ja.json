@@ -19,7 +19,12 @@
     "theme": "テーマ",
     "light": "ライト",
     "dark": "ダーク",
-    "system": "システム"
+    "system": "システム",
+    "documents": "ドキュメント",
+    "templates": "テンプレート",
+    "conversion": "変換",
+    "eSignatures": "電子署名",
+    "shared": "共有"
   },
   "navigation": {
     "dashboard": "ダッシュボード",
@@ -94,7 +99,11 @@
     "preview": "プレビュー",
     "wordCount": "{count, plural, other {# 語}}",
     "lastSaved": "最終保存: {date, datetime, medium}",
-    "unsavedChanges": "未保存の変更があります"
+    "unsavedChanges": "未保存の変更があります",
+    "promptImageUrl": "画像URLを入力",
+    "promptLinkText": "リンクテキスト",
+    "promptUrl": "URL",
+    "createNewDocument": "新しいドキュメントを作成"
   },
   "conversion": {
     "uploadFile": "変換するファイルをアップロード",
@@ -102,7 +111,8 @@
     "convert": "変換",
     "download": "ダウンロード",
     "converting": "変換中...",
-    "converted": "正常に変換されました"
+    "converted": "正常に変換されました",
+    "searchJobs": "ジョブを検索..."
   },
   "pdfTools": {
     "merge": "PDFを結合",
@@ -142,19 +152,17 @@
     "notFound": "ページが見つかりません",
     "serverError": "エラーが発生しました。再試行してください。",
     "networkError": "ネットワークエラー。接続を確認してください。",
-    "validationError": "入力を確認してください"
+    "validationError": "入力を確認してください",
+    "editorError": "エディターエラー",
+    "conversionFailed": "変換に失敗しました",
+    "documentGenerationFailed": "ドキュメント生成に失敗しました",
+    "saveFailed": "保存に失敗しました"
   },
   "toast": {
     "saved": "保存しました",
     "deleted": "削除しました",
     "copied": "クリップボードにコピーしました",
     "failed": "操作に失敗しました"
-  },
-  "editor": {
-    "promptImageUrl": "画像URLを入力",
-    "promptLinkText": "リンクテキスト",
-    "promptUrl": "URL",
-    "createNewDocument": "新しいドキュメントを作成"
   },
   "billing": {
     "documentsCreated": "作成済みドキュメント",
@@ -189,21 +197,5 @@
     "searchUsers": "ユーザーを検索...",
     "searchSubscriptions": "サブスクリプションを検索...",
     "searchLogs": "ログを検索..."
-  },
-  "conversion": {
-    "searchJobs": "ジョブを検索..."
-  },
-  "errors": {
-    "editorError": "エディターエラー",
-    "conversionFailed": "変換に失敗しました",
-    "documentGenerationFailed": "ドキュメント生成に失敗しました",
-    "saveFailed": "保存に失敗しました"
-  },
-  "common": {
-    "documents": "ドキュメント",
-    "templates": "テンプレート",
-    "conversion": "変換",
-    "eSignatures": "電子署名",
-    "shared": "共有"
   }
 }

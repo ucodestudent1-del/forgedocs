@@ -19,7 +19,12 @@
     "theme": "Thème",
     "light": "Clair",
     "dark": "Sombre",
-    "system": "Système"
+    "system": "Système",
+    "documents": "Documents",
+    "templates": "Modèles",
+    "conversion": "Conversion",
+    "eSignatures": "Signatures électroniques",
+    "shared": "Partagés"
   },
   "navigation": {
     "dashboard": "Tableau de bord",
@@ -93,8 +98,12 @@
     "publish": "Publier",
     "preview": "Aperçu",
     "wordCount": "{count, plural, one {# mot} other {# mots}}",
-    "lastSaved": "Dernière sauvegarde : {date, datetime, medium}",
-    "unsavedChanges": "Vous avez des modifications non sauvegardées"
+    "lastSaved": "Dernière sauvegarde\u00a0: {date, datetime, medium}",
+    "unsavedChanges": "Vous avez des modifications non sauvegardées",
+    "promptImageUrl": "Entrez l'URL de l'image",
+    "promptLinkText": "Texte du lien",
+    "promptUrl": "URL",
+    "createNewDocument": "Créer un Nouveau Document"
   },
   "conversion": {
     "uploadFile": "Téléverser un fichier à convertir",
@@ -102,7 +111,8 @@
     "convert": "Convertir",
     "download": "Télécharger",
     "converting": "Conversion en cours...",
-    "converted": "Converti avec succès"
+    "converted": "Converti avec succès",
+    "searchJobs": "Rechercher des tâches..."
   },
   "pdfTools": {
     "merge": "Fusionner des PDF",
@@ -142,19 +152,17 @@
     "notFound": "Page non trouvée",
     "serverError": "Une erreur est survenue. Veuillez réessayer.",
     "networkError": "Erreur réseau. Vérifiez votre connexion.",
-    "validationError": "Veuillez vérifier votre saisie"
+    "validationError": "Veuillez vérifier votre saisie",
+    "editorError": "Erreur de l'Éditeur",
+    "conversionFailed": "Échec de la Conversion",
+    "documentGenerationFailed": "Échec de la Génération du Document",
+    "saveFailed": "Échec de l'Enregistrement"
   },
   "toast": {
     "saved": "Enregistré avec succès",
     "deleted": "Supprimé avec succès",
     "copied": "Copié dans le presse-papiers",
     "failed": "L'opération a échoué"
-  },
-  "editor": {
-    "promptImageUrl": "Entrez l'URL de l'image",
-    "promptLinkText": "Texte du lien",
-    "promptUrl": "URL",
-    "createNewDocument": "Créer un Nouveau Document"
   },
   "billing": {
     "documentsCreated": "Documents Créés",
@@ -176,12 +184,12 @@
       "placeholder": "Filtrer par action",
       "placeholderType": "Filtrer par type",
       "allTypes": "Tous les Types",
-      "last24Hours": "24 Dernières Heures",
-      "last7Days": "7 Derniers Jours",
-      "last30Days": "30 Derniers Jours",
-      "lastYear": "Dernière Année",
-      "newestFirst": "Plus Récents D'abord",
-      "oldestFirst": "Plus Anciens D'abord"
+      "last24Hours": "24 dernières heures",
+      "last7Days": "7 derniers jours",
+      "last30Days": "30 derniers jours",
+      "lastYear": "Dernière année",
+      "newestFirst": "Plus récents d'abord",
+      "oldestFirst": "Plus anciens d'abord"
     },
     "searchActivity": "Rechercher une activité..."
   },
@@ -189,21 +197,5 @@
     "searchUsers": "Rechercher des utilisateurs...",
     "searchSubscriptions": "Rechercher des abonnements...",
     "searchLogs": "Rechercher dans les journaux..."
-  },
-  "conversion": {
-    "searchJobs": "Rechercher des tâches..."
-  },
-  "errors": {
-    "editorError": "Erreur de l'Éditeur",
-    "conversionFailed": "Échec de la Conversion",
-    "documentGenerationFailed": "Échec de la Génération du Document",
-    "saveFailed": "Échec de l'Enregistrement"
-  },
-  "common": {
-    "documents": "Documents",
-    "templates": "Modèles",
-    "conversion": "Conversion",
-    "eSignatures": "Signatures électroniques",
-    "shared": "Partagés"
   }
 }
