@@ -4,6 +4,7 @@ import "./globals.css"
 import "@/app/env-check"
 import { Toast } from "@/components/ui/use-toast"
 import { ThemeProvider } from "@/components/theme/ThemeProvider"
+import { ThemeInitializer } from "@/components/theme/ThemeInitializer"
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" })
 
@@ -23,22 +24,10 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: `
-          (function() {
-            try {
-              var stored = localStorage.getItem("theme");
-              var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-              var shouldBeDark = false;
-              if (stored === "dark") shouldBeDark = true;
-              else if (stored === "light") shouldBeDark = false;
-              else if (stored === "system" || stored === null) shouldBeDark = prefersDark;
-              document.documentElement.classList.toggle("dark", shouldBeDark);
-            } catch (e) {}
-          })();
-        `}} />
         <meta name="color-scheme" content="light dark" />
       </head>
       <body className={`${inter.variable} font-sans antialiased min-h-screen bg-background text-foreground`}>
+        <ThemeInitializer />
         <ThemeProvider>
           <Toast>{children}</Toast>
         </ThemeProvider>

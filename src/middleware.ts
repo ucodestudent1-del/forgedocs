@@ -2,6 +2,8 @@ import { createRouteClient } from "@/lib/supabase"
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { locales, defaultLocale } from "@/i18n/locales"
+import { validateCSRF } from "@/lib/csrf"
+import { authRateLimit } from "@/lib/rate-limit"
 
 const ADMIN_PATH_PREFIXES = ["/admin"]
 
@@ -36,6 +38,11 @@ function getLocale(request: NextRequest): string {
 
 async function getProfileLocale(request: NextRequest): Promise<string | null> {
   try {
+    // Only query Supabase if there's an auth session cookie
+    const hasSessionCookie = request.cookies.get("sb-access-token")?.value ||
+      request.cookies.get("sb-refresh-token")?.value
+    if (!hasSessionCookie) return null
+
     const supabase = await createRouteClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return null
@@ -61,6 +68,28 @@ function isAdminPath(pathname: string): boolean {
   )
 }
 
+// Simple in-memory cache for admin role checks (per middleware instance)
+const adminRoleCache = new Map<string, { role: string | null; expiresAt: number }>()
+const ADMIN_CACHE_TTL = 60 * 1000 // 1 minute
+
+async function getCachedAdminRole(supabase: any, userId: string): Promise<string | null> {
+  const now = Date.now()
+  const cached = adminRoleCache.get(userId)
+  if (cached && cached.expiresAt > now) {
+    return cached.role
+  }
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", userId)
+    .single()
+
+  const role = profile?.role || null
+  adminRoleCache.set(userId, { role, expiresAt: now + ADMIN_CACHE_TTL })
+  return role
+}
+
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
 
@@ -74,6 +103,12 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
+  // Rate limit auth pages (login, signup, etc.)
+  if (pathname.startsWith(`/${defaultLocale}/auth/`) || pathname.startsWith("/auth/")) {
+    const rateLimitError = await authRateLimit(request)
+    if (rateLimitError) return rateLimitError
+  }
+
   if (isAdminPath(pathname)) {
     const supabase = await createRouteClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -85,14 +120,16 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(loginUrl)
     }
 
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .single()
+    const role = await getCachedAdminRole(supabase, user.id)
 
-    if (!profile || !["admin"].includes(profile.role)) {
-      return NextResponse.redirect(new URL("/dashboard", request.url))
+    if (!role || !["admin"].includes(role)) {
+      const redirectUrl = new URL("/dashboard", request.url)
+      // Preserve original query params
+      const searchParams = request.nextUrl.searchParams
+      if (searchParams.toString()) {
+        redirectUrl.search = searchParams.toString()
+      }
+      return NextResponse.redirect(redirectUrl)
     }
   }
 
@@ -105,16 +142,22 @@ export async function middleware(request: NextRequest) {
     (l) => pathname === `/${l}` || pathname.startsWith(`/${l}/`)
   )
 
+  // Prevent redirect loops: if we're already on a locale-prefixed path and
+  // the locale hasn't changed, don't redirect again
   if (!hasLocale) {
-    const url = request.nextUrl.clone()
-    url.pathname = `/${locale}${pathname}`
-    const response = NextResponse.redirect(url)
-    response.cookies.set("locale", locale, {
-      path: "/",
-      maxAge: 31536000,
-      sameSite: "lax",
-    })
-    return response
+    // Detect loop: if pathname already starts with a locale, don't re-redirect
+    const alreadyHasLocale = locales.some(l => pathname.startsWith(`/${l}/`) || pathname === `/${l}`)
+    if (!alreadyHasLocale) {
+      const url = request.nextUrl.clone()
+      url.pathname = `/${locale}${pathname}`
+      const response = NextResponse.redirect(url)
+      response.cookies.set("locale", locale, {
+        path: "/",
+        maxAge: 31536000,
+        sameSite: "strict",
+      })
+      return response
+    }
   }
 
   const currentCookie = request.cookies.get("locale")?.value
@@ -123,7 +166,7 @@ export async function middleware(request: NextRequest) {
     response.cookies.set("locale", locale, {
       path: "/",
       maxAge: 31536000,
-      sameSite: "lax",
+      sameSite: "strict",
     })
     return response
   }

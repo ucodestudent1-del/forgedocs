@@ -1,20 +1,8 @@
 import { createRouteClient } from "@/lib/supabase"
 import { NextResponse } from "next/server"
-import { z } from "zod"
 import { validateCSRF, CSRFError } from "@/lib/csrf"
 import { authRateLimit } from "@/lib/rate-limit"
-
-const signupSchema = z.object({
-  email: z.string().email("Invalid email address"),
-  password: z.string()
-    .min(8, "Password must be at least 8 characters")
-    .max(128, "Password must be less than 128 characters")
-    .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
-    .regex(/[a-z]/, "Password must contain at least one lowercase letter")
-    .regex(/[0-9]/, "Password must contain at least one number")
-    .regex(/[^A-Za-z0-9]/, "Password must contain at least one special character"),
-  full_name: z.string().min(1).max(100).optional(),
-})
+import { validatePassword } from "@/lib/password"
 
 export async function POST(req: Request) {
   try {
@@ -26,7 +14,18 @@ export async function POST(req: Request) {
     const supabase = await createRouteClient()
     const body = await req.json()
 
-    const { email, password, full_name } = signupSchema.parse(body)
+    const { email, password, full_name } = body
+
+    // Validate email
+    if (!email || !String(email).includes("@")) {
+      return NextResponse.json({ error: "Invalid email address" }, { status: 400 })
+    }
+
+    // Validate password using shared schema
+    const pwValidation = validatePassword(password)
+    if (!pwValidation.valid) {
+      return NextResponse.json({ error: pwValidation.errors.join(", ") }, { status: 400 })
+    }
 
     const { data, error } = await supabase.auth.signUp({
       email,

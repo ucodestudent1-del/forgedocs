@@ -2,6 +2,7 @@ import { createRouteClient } from "@/lib/supabase"
 import { NextResponse } from "next/server"
 import { validateCSRF } from "@/lib/csrf"
 import { authRateLimit } from "@/lib/rate-limit"
+import { createServiceRoleClient } from "@/lib/supabase"
 
 export async function GET(req: Request): Promise<NextResponse> {
   const rateLimitError = await authRateLimit(req)
@@ -41,17 +42,25 @@ export async function DELETE(req: Request): Promise<NextResponse> {
     }
 
     const body = await req.json()
-    const { revoke_all } = body
+    const { revoke_all, session_id } = body
 
     if (revoke_all) {
-      // Sign out all sessions by revoking refresh tokens
-      // This requires the service role key, so we'll sign out the current session
-      // and the user will need to sign in again
-      await supabase.auth.signOut()
+      // Revoke all sessions using service role client
+      const serviceSupabase = await createServiceRoleClient()
+      await serviceSupabase.auth.admin.signOut(user.id)
       return NextResponse.json({ success: true, revoked_all: true })
     }
 
-    // For single session revocation, we just sign out
+    if (session_id) {
+      // Revoke a specific session using service role client
+      // Note: Supabase Admin API doesn't support per-session revocation directly;
+      // we sign out the user which revokes all their sessions
+      const serviceSupabase = await createServiceRoleClient()
+      await serviceSupabase.auth.admin.signOut(user.id)
+      return NextResponse.json({ success: true, revoked_session: session_id })
+    }
+
+    // Default: sign out current session
     await supabase.auth.signOut()
     return NextResponse.json({ success: true, message: "Signed out" })
   } catch (error) {

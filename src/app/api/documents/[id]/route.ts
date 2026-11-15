@@ -3,6 +3,7 @@ import { NextResponse } from "next/server"
 import { z } from "zod"
 import { validateCSRF } from "@/lib/csrf"
 import { documentRateLimit } from "@/lib/rate-limit"
+import { cacheDel } from "@/lib/cache"
 
 export async function GET(
   req: Request,
@@ -80,6 +81,9 @@ export async function PATCH(
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
+  // Invalidate document list cache
+  await cacheDel(`documents:${user.id}:*`)
+
   return NextResponse.json({ document: data })
 }
 
@@ -117,6 +121,9 @@ export async function DELETE(
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
+
+  // Invalidate document list cache
+  await cacheDel(`documents:${user.id}:*`)
 
   return NextResponse.json({ success: true })
 }

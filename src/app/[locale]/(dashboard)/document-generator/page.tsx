@@ -7,10 +7,12 @@ import { FileText, Save, Download, Plus } from "lucide-react"
 import { TEMPLATE_LIBRARY, getTemplateById } from "@/lib/templateLibrary"
 import { DocumentGenerator } from "@/lib/documentGenerator"
 import { useRouter, useSearchParams } from "next/navigation"
+import { useToast } from "@/components/ui/use-toast"
 
 export default function DocumentGeneratorPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { toast } = useToast()
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null)
   const [templateData, setTemplateData] = useState<Record<string, string>>({})
   const [generatedDocument, setGeneratedDocument] = useState<string | null>(null)
@@ -45,7 +47,7 @@ export default function DocumentGeneratorPage() {
       setDocumentName(`${selectedTemplateId.replace(/_/g, "-")}-document`)
     } catch (e) {
       console.error("Generation failed:", e)
-      alert("Failed to generate document: " + (e instanceof Error ? e.message : String(e)))
+      toast({ title: "Failed to generate document", description: e instanceof Error ? e.message : String(e), variant: "destructive" })
     } finally {
       setIsGenerating(false)
     }

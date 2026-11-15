@@ -41,6 +41,7 @@ export async function POST(req: Request): Promise<NextResponse> {
         mfa_secret: secret,
         mfa_backup_codes: hashedBackupCodes,
         mfa_enabled: false,
+        mfa_pending: true,
       })
       .eq("id", user.id)
 

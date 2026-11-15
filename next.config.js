@@ -13,10 +13,43 @@ const nextConfig = {
     "/app/**": [".env.local", ".next/static/**/*"],
   },
   eslint: {
-    ignoreDuringBuilds: true,
+    ignoreDuringBuilds: false,
   },
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
+  },
+  async headers() {
+    return [
+      {
+        source: "/api/:path*",
+        headers: [
+          { key: "Access-Control-Allow-Credentials", value: "true" },
+          { key: "Access-Control-Allow-Origin", value: process.env.NEXT_PUBLIC_APP_URL || "*" },
+          { key: "Access-Control-Allow-Methods", value: "GET,DELETE,PATCH,POST,PUT" },
+          { key: "Access-Control-Allow-Headers", value: "Content-Type, Authorization, X-CSRF-Token, X-Requested-With" },
+        ],
+      },
+      {
+        source: "/:path*",
+        headers: [
+          { key: "X-Frame-Options", value: "DENY" },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          {
+            key: "Content-Security-Policy",
+            value: [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+              "style-src 'self' 'unsafe-inline'",
+              "img-src 'self' data: https:",
+              "font-src 'self'",
+              "connect-src 'self' https:",
+              "frame-ancestors 'none'",
+            ].join("; "),
+          },
+        ],
+      },
+    ]
   },
   transpilePackages: ["tslib", "react-remove-scroll", "use-sidecar", "@radix-ui/react-select", "@radix-ui/react-dropdown-menu", "@radix-ui/react-menu"],
   webpack: (config, { dev, isServer }) => {
@@ -25,6 +58,21 @@ const nextConfig = {
       ...config.resolve.alias,
       "next-intl/config": path.resolve(__dirname, "next-intl.config.js"),
       tslib: require.resolve("tslib"),
+    }
+
+    // Handle node: protocol modules (ioredis uses node:diagnostics_channel)
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      "next-intl/config": path.resolve(__dirname, "next-intl.config.js"),
+      tslib: require.resolve("tslib"),
+      "node:diagnostics_channel": path.resolve(__dirname, "src/lib/empty-module.ts"),
+    }
+
+    if (isServer) {
+      config.externals = [
+        ...(Array.isArray(config.externals) ? config.externals : [config.externals].filter(Boolean)),
+        "ioredis",
+      ]
     }
 
     if (!dev && process.env.NODE_ENV === "production" && !isServer && process.env.SENTRY_ORG && process.env.SENTRY_PROJECT) {

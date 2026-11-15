@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { useTranslations } from "@/lib/i18n"
+import { useToast } from "@/components/ui/use-toast"
 import { FileText, Save, Undo, Redo, Bold, Italic, Underline, List, ListOrdered, Image, Link, Maximize, MoreHorizontal } from "lucide-react"
 
 interface SimpleEditorProps {
@@ -21,6 +22,7 @@ export function SimpleEditor({
   placeholder = "Start typing...",
 }: SimpleEditorProps) {
   const t = useTranslations("editor")
+  const { toast } = useToast()
   const [editorContent, setEditorContent] = useState(content)
   const [saving, setSaving] = useState(false)
   const [csrfToken, setCsrfToken] = useState<string | null>(null)
@@ -64,7 +66,7 @@ export function SimpleEditor({
       }
     } catch (e: unknown) {
       console.error("Save failed", e)
-      alert(e instanceof Error ? e.message : "Save failed. Please try again.")
+      toast({ title: "Save failed", description: e instanceof Error ? e.message : "Please try again.", variant: "destructive" })
     } finally {
       setSaving(false)
     }

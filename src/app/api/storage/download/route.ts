@@ -34,6 +34,11 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Path parameter required" }, { status: 400 })
   }
 
+  // Prevent path traversal: reject paths with .. or absolute paths
+  if (path.includes("..") || path.startsWith("/") || path.includes("\\")) {
+    return NextResponse.json({ error: "Invalid path" }, { status: 400 })
+  }
+
   // Verify user owns this file (path should start with user.id)
   if (!path.startsWith(`${user.id}/`)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })

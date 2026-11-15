@@ -8,6 +8,11 @@ export function createBrowserSupabaseClient() {
         getUser: async () => ({ data: { user: null }, error: null }),
         getSession: async () => ({ data: { session: null }, error: null }),
         signInWithOAuth: async () => ({ data: { url: "" }, error: null }),
+        signInWithPassword: async () => ({ data: { user: null }, error: { message: "Build mode" } }),
+        signUp: async () => ({ data: { user: null }, error: { message: "Build mode" } }),
+        updateUser: async () => ({ data: { user: null }, error: { message: "Build mode" } }),
+        resetPasswordForEmail: async () => ({ error: null }),
+        verifyOtp: async () => ({ data: { user: null }, error: null }),
         signOut: async () => ({ error: null }),
       },
       from: () => ({
@@ -26,6 +31,11 @@ export function createBrowserSupabaseClient() {
         getUser: async () => ({ data: { user: null }, error: null }),
         getSession: async () => ({ data: { session: null }, error: null }),
         signInWithOAuth: async () => ({ data: { url: "" }, error: null }),
+        signInWithPassword: async () => ({ data: { user: null }, error: { message: "Build mode" } }),
+        signUp: async () => ({ data: { user: null }, error: { message: "Build mode" } }),
+        updateUser: async () => ({ data: { user: null }, error: { message: "Build mode" } }),
+        resetPasswordForEmail: async () => ({ error: null }),
+        verifyOtp: async () => ({ data: { user: null }, error: null }),
         signOut: async () => ({ error: null }),
       },
       from: () => ({

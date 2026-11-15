@@ -37,6 +37,11 @@ export async function POST(req: Request): Promise<NextResponse> {
       return NextResponse.json({ error: "Profile not found" }, { status: 404 })
     }
 
+    // Only allow verification if MFA is pending (enable was started but not completed)
+    if (!profile.mfa_pending && !profile.mfa_enabled) {
+      return NextResponse.json({ error: "MFA not set up" }, { status: 400 })
+    }
+
     const mfaSecret = secret || profile.mfa_secret
 
     if (!mfaSecret) {
@@ -49,12 +54,10 @@ export async function POST(req: Request): Promise<NextResponse> {
       return NextResponse.json({ error: "Invalid token" }, { status: 400 })
     }
 
-    if (!profile.mfa_enabled) {
-      await supabase
-        .from("profiles")
-        .update({ mfa_enabled: true })
-        .eq("id", user.id)
-    }
+    await supabase
+      .from("profiles")
+      .update({ mfa_enabled: true, mfa_pending: false })
+      .eq("id", user.id)
 
     return NextResponse.json({ success: true, mfa_enabled: true })
   } catch (error) {

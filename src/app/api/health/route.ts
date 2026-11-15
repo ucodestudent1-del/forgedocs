@@ -9,10 +9,10 @@ export async function GET() {
   // ---- Database (Supabase) check ----
   const dbStart = Date.now()
   try {
-    // Use service role key for health check to bypass RLS (no user context)
+    // Use anon key for health check - we only need connectivity, not RLS bypass
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
         cookies: {
           getAll() {

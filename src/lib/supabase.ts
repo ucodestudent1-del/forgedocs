@@ -26,6 +26,7 @@ function createMockClient() {
       resend: async () => ({ error: { message: "Build mode" } }),
       signOut: async () => ({ error: null }),
       resetPasswordForEmail: async () => ({ error: null }),
+      verifyOtp: async () => ({ data: { user: null }, error: null }),
     },
     from: () => createMockQueryBuilder(),
     rpc: async () => ({ data: null, error: { message: "Build mode - no DB" } }),
@@ -42,18 +43,25 @@ function createMockClient() {
 }
 
 export async function createRouteClient() {
-  // Return mock client during build
+  // Return mock client during build only when env vars are explicitly missing
   if (typeof window === "undefined" && process.env.NEXT_PHASE === "phase-production-build") {
-    return createMockClient()
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    if (!url || !key || url.includes("placeholder") || key.includes("placeholder")) {
+      // During build, return mock to allow static generation
+      return createMockClient()
+    }
   }
 
   const cookieStore = await cookies()
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-  // Return mock if env vars are placeholder/missing
+  // Throw if env vars are missing or placeholder - fail fast instead of silently returning mock
   if (!url || !key || url.includes("placeholder") || key.includes("placeholder")) {
-    return createMockClient()
+    throw new Error(
+      "Missing or invalid Supabase environment variables. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY."
+    )
   }
 
   return createServerClient(
@@ -88,8 +96,10 @@ export async function createServiceRoleClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
-  if (!url || !serviceKey) {
-    return createMockClient()
+  if (!url || !serviceKey || url.includes("placeholder") || serviceKey.includes("placeholder")) {
+    throw new Error(
+      "Missing or invalid Supabase service role environment variables. Set SUPABASE_SERVICE_ROLE_KEY."
+    )
   }
 
   return createServerClient(url, serviceKey, {

@@ -81,7 +81,9 @@ export function rateLimit(config: RateLimitConfig) {
       return null
     }
 
-    // Fall back to in-memory store
+    // Fall back to in-memory store (per-replica, not shared)
+    // Apply stricter limit to account for per-replica multiplication
+    const inMemoryMaxRequests = Math.ceil(config.maxRequests / 4) // Assume up to 4 replicas
     const entry = rateLimitStore.get(identifier)
 
     if (!entry || now > entry.resetTime) {
@@ -92,7 +94,7 @@ export function rateLimit(config: RateLimitConfig) {
 
     entry.count++
 
-    if (entry.count > config.maxRequests) {
+    if (entry.count > inMemoryMaxRequests) {
       return NextResponse.json(
         { error: "Too many requests", retryAfter: Math.ceil((entry.resetTime - now) / 1000) },
         { status: 429, headers: { "Retry-After": Math.ceil((entry.resetTime - now) / 1000).toString() } }

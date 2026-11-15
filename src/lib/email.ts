@@ -20,6 +20,18 @@ export interface EmailTemplate {
   text?: string
 }
 
+/**
+ * Escape HTML special characters to prevent XSS in email templates
+ */
+export function escapeHtml(unsafe: string): string {
+  return unsafe
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;")
+}
+
 export async function sendEmail(template: EmailTemplate): Promise<{ success: boolean; error?: string }> {
   if (!process.env.RESEND_API_KEY) {
     console.error("RESEND_API_KEY not configured")

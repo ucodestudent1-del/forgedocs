@@ -21,14 +21,12 @@ export async function POST(req: Request): Promise<NextResponse> {
     const body = await req.json()
     const { email } = forgotSchema.parse(body)
 
-    const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/reset-password`,
     })
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 })
-    }
-
+    // Always return success to prevent account enumeration
+    // Don't reveal whether the email exists in the system
     return NextResponse.json({
       success: true,
       message: "If an account exists, a password reset link has been sent",

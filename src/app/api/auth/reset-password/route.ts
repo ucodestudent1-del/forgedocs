@@ -2,20 +2,9 @@ import { createRouteClient } from "@/lib/supabase"
 import { NextResponse } from "next/server"
 import { validateCSRF } from "@/lib/csrf"
 import { authRateLimit } from "@/lib/rate-limit"
-import { z } from "zod"
-import { validatePassword } from "@/lib/auth"
+import { validatePassword } from "@/lib/password"
 import { sendEmail } from "@/lib/email"
 import { getPasswordChangedHtml } from "@/lib/emailTemplates"
-
-const resetSchema = z.object({
-  password: z.string()
-    .min(8, "Password must be at least 8 characters")
-    .max(128, "Password must be less than 128 characters")
-    .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
-    .regex(/[a-z]/, "Password must contain at least one lowercase letter")
-    .regex(/[0-9]/, "Password must contain at least one number")
-    .regex(/[^A-Za-z0-9]/, "Password must contain at least one special character"),
-})
 
 export async function POST(req: Request): Promise<NextResponse> {
   try {
@@ -26,8 +15,9 @@ export async function POST(req: Request): Promise<NextResponse> {
 
     const supabase = await createRouteClient()
     const body = await req.json()
-    const { password } = resetSchema.parse(body)
+    const { password } = body
 
+    // Validate password using shared schema
     const pwValidation = validatePassword(password)
     if (!pwValidation.valid) {
       return NextResponse.json({ error: pwValidation.errors.join(", ") }, { status: 400 })
@@ -39,8 +29,10 @@ export async function POST(req: Request): Promise<NextResponse> {
       return NextResponse.json({ error: error.message }, { status: 400 })
     }
 
-    // Invalidate all existing sessions after password change
-    await supabase.auth.signOut()
+    // Note: We intentionally do NOT call signOut() here. The user's current
+    // session remains valid since they just authenticated to change their password.
+    // Other devices with valid refresh tokens will continue to work until their
+    // tokens expire or are explicitly revoked.
 
     const { data: { user } } = await supabase.auth.getUser()
     if (user?.email) {

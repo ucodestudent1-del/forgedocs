@@ -3,7 +3,8 @@ import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { validateCSRF, generateCSRFToken } from "@/lib/csrf"
 import { authRateLimit } from "@/lib/rate-limit"
-import { checkLoginAttempts, recordFailedAttempt, clearFailedAttempts, validatePassword } from "@/lib/auth"
+import { checkLoginAttempts, recordFailedAttempt, clearFailedAttempts } from "@/lib/auth"
+import { validatePassword } from "@/lib/password"
 
 export async function POST(req: Request): Promise<NextResponse> {
   try {

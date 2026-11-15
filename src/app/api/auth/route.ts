@@ -2,7 +2,7 @@ import { getRouteClient } from "@/lib/supabase"
 import { NextResponse } from "next/server"
 import { validateCSRF } from "@/lib/csrf"
 import { authRateLimit } from "@/lib/rate-limit"
-import { z } from "zod"
+import { validatePassword } from "@/lib/password"
 
 export async function GET(req: Request): Promise<NextResponse> {
   const rateLimitError = await authRateLimit(req)
@@ -28,18 +28,6 @@ export async function GET(req: Request): Promise<NextResponse> {
   return NextResponse.json({ user, profile })
 }
 
-const signupSchema = z.object({
-  email: z.string().email(),
-  password: z.string()
-    .min(8, "Password must be at least 8 characters")
-    .max(128, "Password must be less than 128 characters")
-    .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
-    .regex(/[a-z]/, "Password must contain at least one lowercase letter")
-    .regex(/[0-9]/, "Password must contain at least one number")
-    .regex(/[^A-Za-z0-9]/, "Password must contain at least one special character"),
-  full_name: z.string().optional(),
-})
-
 export async function POST(req: Request): Promise<NextResponse> {
   try {
     const rateLimitError = await authRateLimit(req)
@@ -49,8 +37,18 @@ export async function POST(req: Request): Promise<NextResponse> {
 
     const supabase = await getRouteClient()
     const body = await req.json()
+    const { email, password, full_name } = body
 
-    const { email, password, full_name } = signupSchema.parse(body)
+    // Validate email
+    if (!email || !String(email).includes("@")) {
+      return NextResponse.json({ error: "Invalid email address" }, { status: 400 })
+    }
+
+    // Validate password using shared schema
+    const pwValidation = validatePassword(password)
+    if (!pwValidation.valid) {
+      return NextResponse.json({ error: pwValidation.errors.join(", ") }, { status: 400 })
+    }
 
     const { data, error } = await supabase.auth.signUp({
       email,

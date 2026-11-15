@@ -21,13 +21,26 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
 const conversionQueue = new Queue("document-conversion", { connection: redisConnection })
 
+const ALLOWED_LIBREOFFICE_FORMATS = new Set([
+  "pdf", "docx", "doc", "xlsx", "xls", "pptx", "ppt", "odt", "ods", "odp",
+  "rtf", "txt", "html", "md", "epub",
+]);
+
+function validateLibreOfficeFormat(format) {
+  if (!ALLOWED_LIBREOFFICE_FORMATS.has(format)) {
+    throw new Error(`Unsupported output format: ${format}`);
+  }
+  return format;
+}
+
 // LibreOffice document conversion
 async function convertWithLibreOffice(sourcePath, targetFormat, outputDir) {
+  const safeFormat = validateLibreOfficeFormat(targetFormat);
   return new Promise((resolve, reject) => {
-    const cmd = `libreoffice --headless --convert-to ${targetFormat} --outdir "${outputDir}" "${sourcePath}"`
+    const cmd = `libreoffice --headless --convert-to ${safeFormat} --outdir "${outputDir}" "${sourcePath}"`;
     exec(cmd, { timeout: 300000 }, (error, stdout, stderr) => {
       if (error) reject(error)
-      else resolve(path.join(outputDir, path.basename(sourcePath, path.extname(sourcePath)) + "." + targetFormat))
+      else resolve(path.join(outputDir, path.basename(sourcePath, path.extname(sourcePath)) + "." + safeFormat))
     })
   })
 }
@@ -142,73 +155,77 @@ const worker = new Worker(
 
       // ---- Document conversion ----
       // Download source file from Supabase Storage
-      const { data: sourceFile, error: downloadError } = await supabase.storage.from("documents").download(sourceUrl)
-      if (downloadError) throw downloadError
-
       const sourcePath = `/tmp/${jobId}_source`
       const outputDir = `/tmp`
       const outputPath = `/tmp/${jobId}_output.${targetFormat}`
+      let sourceFile = null
+      let resultPath = null
 
-      // Write source to temp file
-      fs.writeFileSync(sourcePath, await sourceFile.arrayBuffer())
+      try {
+        const { data: downloadedFile, error: downloadError } = await supabase.storage.from("documents").download(sourceUrl)
+        if (downloadError) throw downloadError
 
-      // Convert based on format
-      let resultPath
-      const sourceExt = getExt(sourceUrl)
+        sourceFile = downloadedFile
 
-      if (targetFormat === "pdf" && ["docx", "doc", "xlsx", "xls", "pptx", "ppt", "odt", "ods", "odp", "rtf", "txt", "html", "md", "epub"].includes(sourceExt)) {
-        resultPath = await convertWithLibreOffice(sourcePath, targetFormat, outputDir)
-      } else if (targetFormat === "docx" && sourceExt === "pdf") {
-        resultPath = await reconstructFromPDF(sourcePath, targetFormat)
-      } else if (["jpg", "jpeg", "png", "webp", "gif", "bmp", "tiff", "svg"].includes(sourceExt) && ["jpg", "jpeg", "png", "webp", "pdf"].includes(targetFormat)) {
-        // Image conversion - for now copy as-is (placeholder for sharp integration)
-        fs.copyFileSync(sourcePath, outputPath)
-        resultPath = outputPath
-      } else {
-        resultPath = await convertWithLibreOffice(sourcePath, targetFormat, outputDir)
+        // Write source to temp file
+        fs.writeFileSync(sourcePath, await sourceFile.arrayBuffer())
+
+        // Convert based on format
+        const sourceExt = getExt(sourceUrl)
+
+        if (targetFormat === "pdf" && ["docx", "doc", "xlsx", "xls", "pptx", "ppt", "odt", "ods", "odp", "rtf", "txt", "html", "md", "epub"].includes(sourceExt)) {
+          resultPath = await convertWithLibreOffice(sourcePath, targetFormat, outputDir)
+        } else if (targetFormat === "docx" && sourceExt === "pdf") {
+          resultPath = await reconstructFromPDF(sourcePath, targetFormat)
+        } else if (["jpg", "jpeg", "png", "webp", "gif", "bmp", "tiff", "svg"].includes(sourceExt) && ["jpg", "jpeg", "png", "webp", "pdf"].includes(targetFormat)) {
+          // Image conversion - for now copy as-is (placeholder for sharp integration)
+          fs.copyFileSync(sourcePath, outputPath)
+          resultPath = outputPath
+        } else {
+          resultPath = await convertWithLibreOffice(sourcePath, targetFormat, outputDir)
+        }
+
+        // Upload result to Supabase Storage
+        const resultBuffer = fs.readFileSync(resultPath)
+        const storagePath = `converted/${userId}/${jobId}.${targetFormat}`
+        const { error: uploadError } = await supabase.storage.from("converted").upload(storagePath, resultBuffer, { upsert: true })
+
+        if (uploadError) throw uploadError
+
+        // Get signed URL (private access only)
+        const { data: urlData, error: urlError } = await supabase.storage.from("converted").createSignedUrl(storagePath, 3600)
+
+        if (urlError) throw urlError
+
+        // Update job as completed
+        await supabase
+          .from("conversion_jobs")
+          .update({
+            status: "completed",
+            output_url: urlData.signedUrl,
+            output_mime_type: `application/${targetFormat}`,
+            completed_at: new Date().toISOString(),
+          })
+          .eq("id", jobId)
+
+        return { success: true, outputUrl: urlData.publicUrl }
+      } catch (err) {
+        await supabase
+          .from("conversion_jobs")
+          .update({
+            status: "failed",
+            error_message: err.message,
+            completed_at: new Date().toISOString(),
+          })
+          .eq("id", jobId)
+        throw err
+      } finally {
+        // Cleanup temp files in finally block to ensure they're always removed
+        try { if (sourcePath) fs.unlinkSync(sourcePath) } catch {}
+        try { if (resultPath) fs.unlinkSync(resultPath) } catch {}
       }
-
-      // Upload result to Supabase Storage
-      const resultBuffer = fs.readFileSync(resultPath)
-      const storagePath = `converted/${userId}/${jobId}.${targetFormat}`
-      const { error: uploadError } = await supabase.storage.from("converted").upload(storagePath, resultBuffer, { upsert: true })
-
-      if (uploadError) throw uploadError
-
-      // Get signed URL (private access only)
-      const { data: urlData, error: urlError } = await supabase.storage.from("converted").createSignedUrl(storagePath, 3600)
-
-      if (urlError) throw urlError
-
-      // Update job as completed
-      await supabase
-        .from("conversion_jobs")
-        .update({
-          status: "completed",
-          output_url: urlData.signedUrl,
-          output_mime_type: `application/${targetFormat}`,
-          completed_at: new Date().toISOString(),
-        })
-        .eq("id", jobId)
-
-      // Cleanup temp files
-      try { fs.unlinkSync(sourcePath) } catch {}
-      try { fs.unlinkSync(resultPath) } catch {}
-
-      return { success: true, outputUrl: urlData.publicUrl }
-    } catch (err) {
-      await supabase
-        .from("conversion_jobs")
-        .update({
-          status: "failed",
-          error_message: err.message,
-          completed_at: new Date().toISOString(),
-        })
-        .eq("id", jobId)
-      throw err
-    }
   },
-  { connection: redisConnection, concurrency: 5 }
+  { connection: redisConnection, concurrency: 5, maxAttempts: 3, backoff: { type: "exponential", delay: 1000 }, removeOnComplete: 100, removeOnFail: 50 }
 )
 
 worker.on("completed", (job) => {

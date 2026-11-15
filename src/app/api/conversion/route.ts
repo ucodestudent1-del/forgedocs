@@ -19,6 +19,8 @@ import {
   type ConversionType,
 } from "@/lib/conversion"
 
+export const maxDuration = 300
+
 const VALID_FORMATS = Object.keys(FORMAT_REGISTRY)
 
 export async function GET(req: Request): Promise<NextResponse> {
