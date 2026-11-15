@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { cacheGet, cacheSet } from "@/lib/cache"
+import { cacheIncrement } from "@/lib/cache"
 
 interface RateLimitEntry {
   count: number
@@ -35,54 +35,36 @@ function rateLimitKey(identifier: string, config: RateLimitConfig): string {
   return `ratelimit:${config.windowMs}:${config.maxRequests}:${identifier}`
 }
 
-async function getRedisRateLimit(identifier: string, config: RateLimitConfig): Promise<RateLimitEntry | null> {
-  try {
-    const value = await cacheGet<RateLimitEntry>(rateLimitKey(identifier, config))
-    return value
-  } catch {
-    return null
-  }
-}
-
-async function setRedisRateLimit(identifier: string, config: RateLimitConfig, entry: RateLimitEntry): Promise<void> {
-  try {
-    const ttlSeconds = Math.ceil(config.windowMs / 1000)
-    await cacheSet(rateLimitKey(identifier, config), entry, ttlSeconds)
-  } catch {
-    // Cache failure is non-fatal; fall back to in-memory
-  }
-}
-
 export function rateLimit(config: RateLimitConfig) {
   return async (req: Request): Promise<NextResponse | null> => {
     const now = Date.now()
     const identifier = getClientIdentifier(req)
+    const key = rateLimitKey(identifier, config)
+    const ttlSeconds = Math.ceil(config.windowMs / 1000)
 
-    // Try Redis first (shared across replicas)
-    const redisEntry = await getRedisRateLimit(identifier, config)
-
-    if (redisEntry) {
-      if (now > redisEntry.resetTime) {
-        // Window expired, reset
-        await setRedisRateLimit(identifier, config, { count: 1, resetTime: now + config.windowMs })
+    // Atomic fixed-window increment in Redis (shared across replicas, race-free).
+    // cacheIncrement returns 0 when Redis is unavailable.
+    try {
+      const count = await cacheIncrement(key, ttlSeconds)
+      if (count === 0) {
+        // Redis unavailable — fall through to in-memory per-replica fallback below
+      } else {
+        const limited = count > config.maxRequests
+        if (limited) {
+          return NextResponse.json(
+            { error: "Too many requests", retryAfter: ttlSeconds },
+            { status: 429, headers: { "Retry-After": String(ttlSeconds) } }
+          )
+        }
         return null
       }
-
-      redisEntry.count++
-      await setRedisRateLimit(identifier, config, redisEntry)
-
-      if (redisEntry.count > config.maxRequests) {
-        return NextResponse.json(
-          { error: "Too many requests", retryAfter: Math.ceil((redisEntry.resetTime - now) / 1000) },
-          { status: 429, headers: { "Retry-After": Math.ceil((redisEntry.resetTime - now) / 1000).toString() } }
-        )
-      }
-
-      return null
+    } catch {
+      // Fall through to in-memory fallback
     }
 
-    // Fall back to in-memory store (per-replica, not shared)
-    // Apply stricter limit to account for per-replica multiplication
+    // In-memory fallback (per-replica, NOT shared — weaker under scale).
+    // Only used when Redis is unavailable; production must run Redis and treat
+    // its unavailability as fail-closed at the ingress layer.
     const inMemoryMaxRequests = Math.ceil(config.maxRequests / 4) // Assume up to 4 replicas
     const entry = rateLimitStore.get(identifier)
 
