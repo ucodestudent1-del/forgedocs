@@ -5,6 +5,7 @@ import { documentRateLimit } from "@/lib/rate-limit"
 import { z } from "zod"
 import { sanitizeHtml } from "@/lib/sanitize"
 import { cacheDel } from "@/lib/cache"
+import { logAuditEvent, getClientIp, getClientUserAgent } from "@/lib/audit"
 
 export async function GET(
   req: Request,
@@ -119,6 +120,18 @@ export async function PUT(
 
     // Invalidate document list cache so clients see updated content
     await cacheDel(`documents:${user.id}:*`)
+
+    // Audit log document update
+    await logAuditEvent({
+      userId: user.id,
+      action: "document.update",
+      entityType: "documents",
+      entityId: id,
+      newValues: { version: (currentDoc as any).version + 1 },
+      severity: "medium",
+      ipAddress: getClientIp(req),
+      userAgent: getClientUserAgent(req),
+    })
 
     return NextResponse.json({ document: data })
   } catch (error) {

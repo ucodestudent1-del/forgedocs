@@ -5,6 +5,7 @@ import { locales, defaultLocale } from "@/i18n/locales"
 import { validateCSRF } from "@/lib/csrf"
 import { rateLimitMiddleware } from "@/lib/rate-limiter"
 import { randomUUID } from "crypto"
+import { validateApiKey } from "@/lib/api-key"
 
 const ADMIN_PATH_PREFIXES = ["/admin"]
 
@@ -108,6 +109,20 @@ export async function middleware(request: NextRequest) {
   ) {
     const response = NextResponse.next()
     response.headers.set("x-request-id", requestId)
+
+    // API key authentication: validate Bearer token and set user context header
+    const authHeader = request.headers.get("authorization")
+    if (authHeader?.startsWith("Bearer ")) {
+      const rawKey = authHeader.slice(7)
+      const validated = await validateApiKey(rawKey)
+      if (validated) {
+        response.headers.set("x-api-user-id", validated.userId)
+        response.headers.set("x-api-key-id", validated.key.id)
+      } else {
+        return NextResponse.json({ error: "Invalid or expired API key" }, { status: 401 })
+      }
+    }
+
     return response
   }
 

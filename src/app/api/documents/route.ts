@@ -5,6 +5,7 @@ import { documentRateLimit } from "@/lib/rate-limit"
 import { z } from "zod"
 import { MAX_PAGE_SIZE, DEFAULT_PAGE_SIZE, parsePagination } from "@/lib/pagination"
 import { cacheGet, cacheSet, cacheDel } from "@/lib/cache"
+import { logAuditEvent, getClientIp, getClientUserAgent } from "@/lib/audit"
 
 const TIER_LIMITS = {
   free: { documents: 500 },
@@ -190,6 +191,18 @@ export async function POST(req: Request) {
 
     // Invalidate document list cache
     await cacheDel(`documents:${user.id}:*`)
+
+    // Audit log document creation
+    await logAuditEvent({
+      userId: user.id,
+      action: "document.create",
+      entityType: "documents",
+      entityId: doc.id,
+      newValues: { title, mime_type: content_type },
+      severity: "low",
+      ipAddress: getClientIp(req),
+      userAgent: getClientUserAgent(req),
+    })
 
     return NextResponse.json({ document: doc }, { status: 201 })
   } catch (error) {
