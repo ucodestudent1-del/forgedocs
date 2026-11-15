@@ -148,16 +148,10 @@ export default function AIAssistantPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 overflow-y-auto">
       <DashboardHeader
         title="AI Assistant"
         description="Power your documents with AI — generate, rewrite, summarize, and more"
-        action={
-          <Button variant="outline" size="sm" onClick={() => setActiveTab("chat")}>
-            <Zap className="h-4 w-4 mr-2" />
-            Configure AI Provider
-          </Button>
-        }
       />
 
       {/* Tab Navigation */}

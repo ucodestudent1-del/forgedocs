@@ -322,7 +322,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 overflow-y-auto min-h-[calc(100vh-200px)]">
       <DashboardHeader
         title="Settings"
         description="Manage your account, security, and preferences"

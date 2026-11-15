@@ -65,7 +65,7 @@ export default function DocumentsPage() {
         />
       </div>
 
-      <div className="overflow-hidden rounded-md border">
+        <div className="overflow-hidden overflow-y-auto rounded-md border">
         <div className="bg-muted px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
             <div className="grid grid-cols-12">
               <div className="col-span-6">Title</div>

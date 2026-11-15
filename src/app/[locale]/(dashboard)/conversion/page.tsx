@@ -214,7 +214,7 @@ export default function ConversionPage() {
       }
       
       let result: number
-      if (unitCategory === 'currency') {
+      if (unitCategory === "currency") {
         const result = await convertCurrency(value, unitFrom, unitTo)
         toast({ title: `${unitValue} ${unitFrom} = ${result.result.toFixed(4)} ${unitTo}`, variant: "success" })
       } else {
@@ -295,7 +295,7 @@ export default function ConversionPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 overflow-y-auto min-h-[calc(100vh-200px)]">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Universal Converter</h1>
@@ -359,13 +359,9 @@ export default function ConversionPage() {
                         accept=".docx,.pdf,.xlsx,.csv,.pptx,.txt,.html,.md,.epub,.jpg,.png,.webp,.svg,.tiff,.bmp,.gif,.odt,.ods,.odp,.rtf"
                       />
                     </button>
-                    <button
-                      onClick={() => setSourceFile(null)}
-                      className="w-full flex items-center justify-center py-2 rounded-md text-sm text-destructive hover:bg-destructive/10"
-                      disabled={!sourceFile}
-                    >
+                    <Button variant="outline" onClick={() => setSourceFile(null)} className="w-full" disabled={!sourceFile}>
                       Remove File
-                    </button>
+                    </Button>
                   </div>
                   {sourceFile && (
                     <div className="mt-2 p-2 rounded-md bg-primary/50 text-sm text-primary border border-primary/20">
@@ -729,7 +725,8 @@ export default function ConversionPage() {
                       </Badge>
                     </div>
                     {job.status === "completed" && (
-                      <button
+                      <Button
+                        className="ml-4 text-sm text-primary hover:underline"
                         onClick={() => {
                           const downloadUrl =
                             job.download_url ||
@@ -737,10 +734,9 @@ export default function ConversionPage() {
                             `/api/conversion/${job.id}?download=true`
                           handleDownload(downloadUrl, job.target_format)
                         }}
-                        className="ml-4 text-sm text-primary hover:underline"
                       >
                         Download
-                      </button>
+                      </Button>
                     )}
                   </div>
                 ))

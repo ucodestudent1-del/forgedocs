@@ -361,37 +361,10 @@ export default function DashboardPage() {
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Quick Actions + Recent Documents */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Quick Actions */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Zap className="h-5 w-5" />
-                Quick Actions
-              </CardTitle>
-              <CardDescription>Common tasks to get you started</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {quickActions.map((action) => (
-                  <QuickActionCard key={action.label} action={action} />
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Recent Documents */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle>Recent Documents</CardTitle>
-                <CardDescription>Your most recently updated documents</CardDescription>
-              </div>
-              <Button variant="ghost" size="sm" asChild>
-                <Link href="/documents">View All</Link>
-              </Button>
-            </CardHeader>
+          {/* Quick Actions + Recent Documents */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Recent Documents */}
+            <Card>
             <CardContent>
               {documents.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
