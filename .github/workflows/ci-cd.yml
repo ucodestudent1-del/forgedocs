@@ -129,6 +129,36 @@ jobs:
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
           vercel-args: '--prod=true'
 
+  migration-validation:
+    name: Migration Validation
+    runs-on: ubuntu-latest
+    needs: [lint-and-typecheck]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Validate migration files have up/down sections
+        run: |
+          for f in supabase/migrations/*.sql; do
+            if ! grep -q "^--- up ---" "$f"; then
+              echo "ERROR: $f missing '--- up ---' section"
+              exit 1
+            fi
+            if ! grep -q "^--- down ---" "$f"; then
+              echo "ERROR: $f missing '--- down ---' section"
+              exit 1
+            fi
+          done
+          echo "All migrations valid"
+
+      - name: Validate webhook_events table exists in migrations
+        run: |
+          if ! grep -rl "CREATE TABLE.*webhook_events" supabase/migrations/ > /dev/null; then
+            echo "ERROR: webhook_events table not found in any migration"
+            exit 1
+          fi
+          echo "webhook_events table migration present"
+
   security-scan:
     name: Security Scan
     runs-on: ubuntu-latest

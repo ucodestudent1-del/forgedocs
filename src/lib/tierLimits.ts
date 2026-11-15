@@ -23,6 +23,7 @@ const DEFAULT_LIMITS: TierLimits = {
   has_advanced_templates: false,
 }
 
+// Hardcoded fallback used only if the DB tier_limits table is unavailable
 const TIER_LIMITS: Record<string, TierLimits> = {
   free: DEFAULT_LIMITS,
   pro: {
@@ -47,6 +48,39 @@ const TIER_LIMITS: Record<string, TierLimits> = {
   },
 }
 
+export async function getTierLimitsFromDB(userId: string): Promise<TierLimits | null> {
+  const supabase = await getRouteClient()
+  const { data: subscription } = await supabase
+    .from("subscriptions")
+    .select("tier")
+    .eq("user_id", userId)
+    .eq("status", "active")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .single()
+
+  const tier = subscription?.tier || "free"
+
+  const { data: limits } = await supabase
+    .from("tier_limits")
+    .select("*")
+    .eq("tier", tier)
+    .single()
+
+  if (!limits) return null
+
+  return {
+    documents_per_month: limits.documents_per_month,
+    conversions_per_month: limits.conversions_per_month,
+    storage_gb: limits.storage_gb,
+    max_file_size_mb: limits.max_file_size_mb,
+    api_requests_per_minute: limits.api_requests_per_minute,
+    has_priority_support: limits.has_priority_support,
+    has_audit_logs: limits.has_audit_logs,
+    has_advanced_templates: limits.has_advanced_templates,
+  }
+}
+
 export async function getUserTier(userId: string): Promise<string> {
   const supabase = await getRouteClient()
   const { data: subscription } = await supabase
@@ -62,6 +96,9 @@ export async function getUserTier(userId: string): Promise<string> {
 }
 
 export async function getTierLimits(userId: string): Promise<TierLimits> {
+  const dbLimits = await getTierLimitsFromDB(userId)
+  if (dbLimits) return dbLimits
+
   const tier = await getUserTier(userId)
   return TIER_LIMITS[tier] || DEFAULT_LIMITS
 }
@@ -162,9 +199,13 @@ export function hasFeature(tier: string, feature: keyof TierLimits): boolean {
   return limits[feature] as boolean
 }
 
+export async function hasFeatureForUser(userId: string, feature: keyof TierLimits): Promise<boolean> {
+  const limits = await getTierLimits(userId)
+  return limits[feature] as boolean
+}
+
 export async function getUserFeatures(userId: string): Promise<Record<string, boolean>> {
-  const tier = await getUserTier(userId)
-  const limits = TIER_LIMITS[tier] || DEFAULT_LIMITS
+  const limits = await getTierLimits(userId)
   return {
     priority_support: limits.has_priority_support,
     audit_logs: limits.has_audit_logs,

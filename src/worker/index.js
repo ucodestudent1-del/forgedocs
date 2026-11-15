@@ -237,10 +237,63 @@ worker.on("failed", (job, err) => {
   console.error(`Job ${job.id} failed:`, err.message)
 })
 
+// Worker health tracking
+const workerHealth = {
+  status: "healthy",
+  activeJobs: 0,
+  completedJobs: 0,
+  failedJobs: 0,
+  lastJobAt: null,
+  startedAt: new Date().toISOString(),
+}
+
+worker.on("active", (job) => {
+  workerHealth.activeJobs++
+  workerHealth.lastJobAt = new Date().toISOString()
+})
+
+worker.on("completed", (job) => {
+  workerHealth.activeJobs = Math.max(0, workerHealth.activeJobs - 1)
+  workerHealth.completedJobs++
+  console.log(`Job ${job.id} completed`)
+})
+
+worker.on("failed", (job, err) => {
+  workerHealth.activeJobs = Math.max(0, workerHealth.activeJobs - 1)
+  workerHealth.failedJobs++
+  console.error(`Job ${job.id} failed:`, err.message)
+})
+
+// Health check HTTP server
+const healthServer = require("http").createServer((req, res) => {
+  if (req.url === "/health") {
+    const isHealthy = workerHealth.status === "healthy" && !worker.isPaused()
+    res.writeHead(isHealthy ? 200 : 503, { "Content-Type": "application/json" })
+    res.end(JSON.stringify({
+      status: isHealthy ? "healthy" : "unhealthy",
+      activeJobs: workerHealth.activeJobs,
+      completedJobs: workerHealth.completedJobs,
+      failedJobs: workerHealth.failedJobs,
+      lastJobAt: workerHealth.lastJobAt,
+      startedAt: workerHealth.startedAt,
+      concurrency: parseInt(process.env.WORKER_CONCURRENCY || "5", 10),
+    }))
+  } else {
+    res.writeHead(404)
+    res.end()
+  }
+})
+
+const HEALTH_PORT = parseInt(process.env.WORKER_HEALTH_PORT || "3001", 10)
+healthServer.listen(HEALTH_PORT, () => {
+  console.log(`Worker health server listening on port ${HEALTH_PORT}`)
+})
+
 async function gracefulShutdown(signal) {
   console.log(`Received ${signal}, shutting down worker gracefully...`)
   try {
     await worker.close()
+    healthServer.close()
     console.log("Worker shutdown complete")
     process.exit(0)
   } catch (err) {

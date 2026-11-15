@@ -79,11 +79,14 @@ export async function GET(req: Request) {
   }
 
   if (search) {
-    query = query.ilike("title", `%${search}%`)
+    query = query
+      .textSearch("search_vector", search, { type: "plain" })
+      .order("rank", { ascending: false }, { referencedTable: "documents" })
+  } else {
+    query = query.order("updated_at", { ascending: false })
   }
 
   const { data, error, count } = await query
-    .order("updated_at", { ascending: false })
     .range(offset, offset + limit - 1)
 
   if (error) {
