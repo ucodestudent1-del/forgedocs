@@ -1,4 +1,5 @@
 import { I18nProvider } from "@/lib/i18n"
+import { ErrorBoundary } from "@/components/ui/ErrorBoundary"
 
 interface LocaleLayoutProps {
   children: React.ReactNode
@@ -15,7 +16,7 @@ export default async function LocaleLayout({
   return (
     <I18nProvider locale={locale}>
       <div dir={isRtl ? "rtl" : "ltr"} className="min-h-screen">
-        {children}
+        <ErrorBoundary>{children}</ErrorBoundary>
       </div>
     </I18nProvider>
   )

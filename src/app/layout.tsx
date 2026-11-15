@@ -5,6 +5,7 @@ import "@/app/env-check"
 import { Toast } from "@/components/ui/use-toast"
 import { ThemeProvider } from "@/components/theme/ThemeProvider"
 import { ThemeInitializer } from "@/components/theme/ThemeInitializer"
+import { ErrorBoundary } from "@/components/ui/ErrorBoundary"
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" })
 
@@ -29,7 +30,9 @@ export default function RootLayout({
       <body className={`${inter.variable} font-sans antialiased min-h-screen bg-background text-foreground`}>
         <ThemeInitializer />
         <ThemeProvider>
-          <Toast>{children}</Toast>
+          <ErrorBoundary>
+            <Toast>{children}</Toast>
+          </ErrorBoundary>
         </ThemeProvider>
       </body>
     </html>

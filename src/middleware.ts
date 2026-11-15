@@ -3,7 +3,7 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { locales, defaultLocale } from "@/i18n/locales"
 import { validateCSRF } from "@/lib/csrf"
-import { authRateLimit } from "@/lib/rate-limit"
+import { rateLimitMiddleware } from "@/lib/rate-limiter"
 
 const ADMIN_PATH_PREFIXES = ["/admin"]
 
@@ -93,9 +93,11 @@ async function getCachedAdminRole(supabase: any, userId: string): Promise<string
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
 
+  // Skip API routes - they have their own rate limiting
   if (
     pathname.startsWith("/api") ||
     pathname.startsWith("/_next") ||
+    pathname.startsWith("/_vercel") ||
     pathname.startsWith("/_vercel") ||
     pathname.startsWith("/_not-found") ||
     pathname.includes(".")
@@ -103,10 +105,15 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // Rate limit auth pages (login, signup, etc.)
+  // Apply general rate limiting to all routes
+  const rateLimitResponse = await rateLimitMiddleware(request)
+  if (rateLimitResponse.status !== 200) {
+    return rateLimitResponse
+  }
+
+  // Rate limit auth pages (login, signup, etc.) - handled by general rate limiter
   if (pathname.startsWith(`/${defaultLocale}/auth/`) || pathname.startsWith("/auth/")) {
-    const rateLimitError = await authRateLimit(request)
-    if (rateLimitError) return rateLimitError
+    // Auth rate limiting is now handled by the general rate limiter
   }
 
   if (isAdminPath(pathname)) {

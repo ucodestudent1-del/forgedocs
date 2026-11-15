@@ -11,6 +11,7 @@ import { ThemeToggle } from "@/components/theme/ThemeToggle"
 import { LanguageSwitcher } from "@/components/ui/language-switcher"
 import { OfflineBanner } from "@/components/ui/offline-banner"
 import { useTranslations } from "@/lib/i18n"
+import { ErrorBoundary } from "@/components/ui/ErrorBoundary"
 
 interface DashboardClientProps {
   userEmail: string | null
@@ -77,7 +78,8 @@ export default function DashboardClient({
   const mobileMenuAriaLabel = t("sidebar.open" as any)
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background" dir={isRtl ? "rtl" : "ltr"}>
+    <ErrorBoundary>
+      <div className="flex h-screen overflow-hidden bg-background" dir={isRtl ? "rtl" : "ltr"}>
       <OfflineBanner />
       <Sidebar
         isOpen={sidebarOpen}
@@ -191,5 +193,6 @@ export default function DashboardClient({
         </main>
       </div>
     </div>
+  </ErrorBoundary>
   )
 }
