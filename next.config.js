@@ -74,16 +74,21 @@ const nextConfig = {
     }
 
     // Handle node: protocol modules (ioredis uses node:diagnostics_channel)
-    // Use function form so webpack treats them as commonjs externals
-    // (require at runtime) rather than global variable references, which
-    // would generate invalid syntax due to the "node:" prefix.
+    // Bundle ioredis but intercept its node:diagnostics_channel import via
+    // externals, redirecting it to an empty stub module. The Edge Runtime has
+    // no node: built-ins, so we must not emit a runtime require("node:...")
+    // — it would resolve to undefined and break property access.
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      "empty-module-stub": path.resolve(__dirname, "src/lib/empty-module.ts"),
+    }
     config.externals = [
       ...(Array.isArray(config.externals) ? config.externals : [config.externals].filter(Boolean)),
       (_context, request, callback) => {
         if (request === "node:diagnostics_channel") {
-          return callback(null, `commonjs node:diagnostics_channel`);
+          return callback(null, "empty-module-stub")
         }
-        callback();
+        callback()
       },
     ]
 
