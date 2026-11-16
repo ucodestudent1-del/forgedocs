@@ -24,6 +24,9 @@ RUN npm install
 # next build fails with "TypeError: _webpack.WebpackError is not a constructor".
 RUN node -e "const fs=require('fs');const p='node_modules/next/dist/compiled/webpack/webpack.js';let c=fs.readFileSync(p,'utf8');if(!c.includes('exports.WebpackError')){c=c.replace(\"Object.assign(exports, require('./bundle5')())\",\"Object.assign(exports, require('./bundle5')())\\n    if (exports.webpack && typeof exports.webpack.WebpackError === 'function') { exports.WebpackError = exports.webpack.WebpackError }\");fs.writeFileSync(p,c);}"
 COPY . ./
+# Copy the webpack patch script (excluded from COPY above by .dockerignore scripts/)
+# so the prebuild hook can run during npm run build.
+COPY scripts/patch-webpack.js ./scripts/patch-webpack.js
 RUN npm run build
 
 # Runner stage
