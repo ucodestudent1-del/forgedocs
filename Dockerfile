@@ -17,6 +17,12 @@ ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL
 
 COPY package.json package-lock.json ./
 RUN npm install
+# Patch Next.js bundled webpack to export WebpackError at top level.
+# Next.js 15's minify-webpack-plugin requires _webpack.WebpackError to be a
+# constructor, but next/dist/compiled/webpack/webpack.js only exposes it nested
+# under exports.webpack (the re-exported root webpack). Without this patch,
+# next build fails with "TypeError: _webpack.WebpackError is not a constructor".
+RUN node -e "const fs=require('fs');const p='node_modules/next/dist/compiled/webpack/webpack.js';let c=fs.readFileSync(p,'utf8');if(!c.includes('exports.WebpackError')){c=c.replace(\"Object.assign(exports, require('./bundle5')())\",\"Object.assign(exports, require('./bundle5')())\\n    if (exports.webpack && typeof exports.webpack.WebpackError === 'function') { exports.WebpackError = exports.webpack.WebpackError }\");fs.writeFileSync(p,c);}"
 COPY . ./
 RUN npm run build
 

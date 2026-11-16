@@ -72,12 +72,16 @@ const nextConfig = {
     }
 
     // Handle node: protocol modules (ioredis uses node:diagnostics_channel)
-    // Bundle ioredis but externalize node: built-ins so webpack doesn't choke
-    // on the "node:" scheme. Node.js provides diagnostics_channel at runtime.
+    // Use function form so webpack treats them as commonjs externals
+    // (require at runtime) rather than global variable references, which
+    // would generate invalid syntax due to the "node:" prefix.
     config.externals = [
       ...(Array.isArray(config.externals) ? config.externals : [config.externals].filter(Boolean)),
-      {
-        "node:diagnostics_channel": "node:diagnostics_channel",
+      (_context, request, callback) => {
+        if (request.startsWith("node:")) {
+          return callback(null, `commonjs ${request}`);
+        }
+        callback();
       },
     ]
 
