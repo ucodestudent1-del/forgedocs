@@ -12,6 +12,8 @@ const nextConfig = {
     "/": [".env.local", ".next/static/**/*"],
     "/app/**": [".env.local", ".next/static/**/*"],
   },
+  // metadataBase is required for resolving social images and canonical URLs
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://forgedocs.com"),
   eslint: {
     ignoreDuringBuilds: false,
   },
@@ -78,8 +80,8 @@ const nextConfig = {
     config.externals = [
       ...(Array.isArray(config.externals) ? config.externals : [config.externals].filter(Boolean)),
       (_context, request, callback) => {
-        if (request.startsWith("node:")) {
-          return callback(null, `commonjs ${request}`);
+        if (request === "node:diagnostics_channel") {
+          return callback(null, `commonjs node:diagnostics_channel`);
         }
         callback();
       },
