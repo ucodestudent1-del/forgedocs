@@ -79,13 +79,6 @@ const nextConfig = {
       "node:diagnostics_channel": path.resolve(__dirname, "src/lib/empty-module.ts"),
     }
 
-    if (isServer) {
-      config.externals = [
-        ...(Array.isArray(config.externals) ? config.externals : [config.externals].filter(Boolean)),
-        "ioredis",
-      ]
-    }
-
     if (!dev && process.env.NODE_ENV === "production" && !isServer && process.env.SENTRY_ORG && process.env.SENTRY_PROJECT) {
       config.plugins.push(
         sentryWebpackPlugin({
