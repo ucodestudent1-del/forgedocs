@@ -72,12 +72,14 @@ const nextConfig = {
     }
 
     // Handle node: protocol modules (ioredis uses node:diagnostics_channel)
-    config.resolve.alias = {
-      ...config.resolve.alias,
-      "next-intl/config": path.resolve(__dirname, "next-intl.config.js"),
-      tslib: require.resolve("tslib"),
-      "node:diagnostics_channel": path.resolve(__dirname, "src/lib/empty-module.ts"),
-    }
+    // Bundle ioredis but externalize node: built-ins so webpack doesn't choke
+    // on the "node:" scheme. Node.js provides diagnostics_channel at runtime.
+    config.externals = [
+      ...(Array.isArray(config.externals) ? config.externals : [config.externals].filter(Boolean)),
+      {
+        "node:diagnostics_channel": "node:diagnostics_channel",
+      },
+    ]
 
     if (!dev && process.env.NODE_ENV === "production" && !isServer && process.env.SENTRY_ORG && process.env.SENTRY_PROJECT) {
       config.plugins.push(
