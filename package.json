@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "prebuild": "node scripts/patch-webpack.js",
     "start": "next start",
     "lint": "next lint",
     "test": "jest",
