@@ -3,6 +3,7 @@ import { validateCSRF } from "@/lib/csrf"
 import { authRateLimit } from "@/lib/rate-limiter"
 import { logAuditEvent, getClientIp, getClientUserAgent } from "@/lib/audit"
 import { z } from "zod"
+import { withErrorBoundary, createAppError } from "@/lib/api-error"
 
 const auditLogSchema = z.object({
   action: z.string().min(1).max(200),
@@ -14,23 +15,16 @@ const auditLogSchema = z.object({
   details: z.record(z.string(), z.any()).optional(),
 })
 
-export async function POST(req: Request): Promise<NextResponse> {
+export const POST = withErrorBoundary(async (req) => {
   const rateLimitError = await authRateLimit(req)
   if (rateLimitError) return rateLimitError
 
-  try {
-    await validateCSRF(req)
-  } catch (error) {
-    if (error instanceof Error && error.name === "CSRFError") {
-      return NextResponse.json({ error: "Invalid CSRF token" }, { status: 403 })
-    }
-    throw error
-  }
+  await validateCSRF(req)
 
   const supabase = await (await import("@/lib/supabase")).getRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    throw createAppError("Unauthorized", 401, "UNAUTHORIZED")
   }
 
   const body = await req.json()
@@ -53,4 +47,4 @@ export async function POST(req: Request): Promise<NextResponse> {
   })
 
   return NextResponse.json({ success: true })
-}
+})

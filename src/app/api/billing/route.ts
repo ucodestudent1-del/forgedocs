@@ -4,29 +4,31 @@ import { createRouteClient } from "@/lib/supabase"
 import { NextResponse } from "next/server"
 import { validateCSRF } from "@/lib/csrf"
 import { authRateLimit } from "@/lib/rate-limiter"
+import { withErrorBoundary, createAppError } from "@/lib/api-error"
+import { stripeCircuitBreaker } from "@/lib/circuit-breaker"
 
-export async function GET() {
+export const GET = withErrorBoundary(async () => {
   const supabase = await createRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    throw createAppError("Unauthorized", 401, "UNAUTHORIZED")
   }
 
-  const { data: subscription, error } = await (supabase as any)
+  const { data: subscription, error } = await supabase
     .from("subscriptions")
     .select("*")
     .eq("user_id", user.id)
     .single()
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    throw createAppError(error.message, 500, "DATABASE_ERROR")
   }
 
   return NextResponse.json({ subscription })
-}
+})
 
-export async function POST(req: Request) {
+export const POST = withErrorBoundary(async (req) => {
   const rateLimitError = await authRateLimit(req)
   if (rateLimitError) return rateLimitError
 
@@ -36,14 +38,14 @@ export async function POST(req: Request) {
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    throw createAppError("Unauthorized", 401, "UNAUTHORIZED")
   }
 
   const body = await req.json()
   const { priceId, trialDays } = body
 
   // Create Stripe checkout session
-  try {
+  const session = await stripeCircuitBreaker.execute(async () => {
     const Stripe = (await import("stripe")).default
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
 
@@ -70,10 +72,8 @@ export async function POST(req: Request) {
       }
     }
 
-    const session = await stripe.checkout.sessions.create(sessionParams)
+    return stripe.checkout.sessions.create(sessionParams)
+  })
 
-    return NextResponse.json({ checkoutUrl: session.url })
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 })
-  }
-}
+  return NextResponse.json({ checkoutUrl: session.url })
+})

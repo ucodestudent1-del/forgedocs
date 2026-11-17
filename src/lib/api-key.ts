@@ -125,6 +125,137 @@ export async function validateApiKey(rawKey: string): Promise<{ userId: string; 
   return { userId: key.user_id, key }
 }
 
+export interface ApiKeyPermissionCheck {
+  allowed: boolean
+  required: string[]
+  missing: string[]
+}
+
+/**
+ * Checks whether the API key's permissions grant all required permissions.
+ * Permissions use resource:action format (e.g., "documents:read", "conversion:write").
+ * A wildcard permission (e.g., "documents:*") grants all actions on a resource.
+ * An empty permissions object means no access (fail closed).
+ */
+export function checkApiKeyPermissions(
+  keyPermissions: Record<string, unknown>,
+  required: string[]
+): ApiKeyPermissionCheck {
+  const missing: string[] = []
+
+  for (const perm of required) {
+    const [resource, action] = perm.split(":")
+
+    // Exact match
+    if (keyPermissions[perm] === true) continue
+
+    // Wildcard resource:* grants all actions on that resource
+    if (keyPermissions[`${resource}:*`] === true) continue
+
+    // Global wildcard *:* grants everything
+    if (keyPermissions["*:*"] === true) continue
+
+    missing.push(perm)
+  }
+
+  return {
+    allowed: missing.length === 0,
+    required,
+    missing,
+  }
+}
+
+export function requiresApiKeyPermission(pathname: string): string[] | null {
+  // Map API path patterns to required permissions
+  const permissionMap: Record<string, string[] | null> = {
+    // Documents (read)
+    "/api/documents": ["documents:read"],
+    "/api/documents/": ["documents:read"],
+    "/api/files": ["documents:read"],
+    "/api/files/": ["documents:read"],
+    "/api/templates": ["documents:read"],
+    "/api/templates/": ["documents:read"],
+
+    // Document mutations (write)
+    "/api/document-generator": ["documents:write"],
+    "/api/document-generator/": ["documents:write"],
+
+    // Conversion (read + write)
+    "/api/conversion": ["conversion:read", "conversion:write"],
+    "/api/conversion/": ["conversion:read", "conversion:write"],
+
+    // OCR (read + write)
+    "/api/ocr": ["conversion:read", "conversion:write"],
+    "/api/ocr/": ["conversion:read", "conversion:write"],
+
+    // PDF tools (read + write)
+    "/api/pdf-tools": ["conversion:read", "conversion:write"],
+    "/api/pdf-tools/": ["conversion:read", "conversion:write"],
+
+    // Billing (read-only for API keys by default)
+    "/api/billing": ["billing:read"],
+    "/api/billing/": ["billing:read"],
+    "/api/usage": ["billing:read"],
+    "/api/usage/": ["billing:read"],
+
+    // Activity / audit (read)
+    "/api/activity": ["audit:read"],
+    "/api/activity/": ["audit:read"],
+    "/api/audit": ["audit:read"],
+    "/api/audit/": ["audit:read"],
+
+    // Storage (read + write)
+    "/api/storage": ["documents:read", "documents:write"],
+    "/api/storage/": ["documents:read", "documents:write"],
+
+    // E-signatures (read + write)
+    "/api/e-signatures": ["documents:read", "documents:write"],
+    "/api/e-signatures/": ["documents:read", "documents:write"],
+
+    // AI (read + write)
+    "/api/ai": ["ai:read", "ai:write"],
+    "/api/ai/": ["ai:read", "ai:write"],
+
+    // Admin (requires admin role + admin:* permission)
+    "/api/admin": ["admin:*"],
+    "/api/admin/": ["admin:*"],
+
+    // Auth routes are not accessible via API key
+    "/api/auth": null,
+    "/api/auth/": null,
+
+    // Onboarding is session-based
+    "/api/onboarding": null,
+    "/api/onboarding/": null,
+
+    // CSRF token is session-based
+    "/api/csrf": null,
+    "/api/csrf/": null,
+
+    // Health is public (no permission required)
+    "/api/health": [],
+    "/api/health/": [],
+  }
+
+  // Find the most specific match (longest prefix)
+  let bestMatch: string | null = null
+  let bestMatchLen = 0
+
+  for (const pattern of Object.keys(permissionMap)) {
+    if (pathname.startsWith(pattern) && pattern.length > bestMatchLen) {
+      bestMatch = pattern
+      bestMatchLen = pattern.length
+    }
+  }
+
+  if (bestMatch === null) {
+    // No specific rule — default to requiring documents:read for unknown API paths
+    return ["documents:read"]
+  }
+
+  return permissionMap[bestMatch]
+}
+
 // Read user context from API key header (set by middleware) or Supabase session
 export async function getApiUserId(req: Request): Promise<string | null> {
   // API key auth: middleware sets x-api-user-id header

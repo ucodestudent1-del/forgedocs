@@ -6,11 +6,9 @@ import { z } from "zod"
 import { sanitizeHtml } from "@/lib/sanitize"
 import { cacheDel } from "@/lib/cache"
 import { logAuditEvent, getClientIp, getClientUserAgent } from "@/lib/audit"
+import { withErrorBoundary, createAppError } from "@/lib/api-error"
 
-export async function GET(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
-): Promise<NextResponse> {
+export const GET = withErrorBoundary(async (req, { params }: { params: Promise<{ id: string }> }) => {
   const rateLimitError = await documentRateLimit(req)
   if (rateLimitError) return rateLimitError
 
@@ -18,7 +16,7 @@ export async function GET(
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    throw createAppError("Unauthorized", 401, "UNAUTHORIZED")
   }
 
   const { id } = await params
@@ -31,113 +29,96 @@ export async function GET(
     .single()
 
   if (error || !doc) {
-    return NextResponse.json({ error: "Document not found" }, { status: 404 })
+    throw createAppError("Document not found", 404, "DOCUMENT_NOT_FOUND")
   }
 
   return NextResponse.json({ document: { ...doc, content: sanitizeHtml(doc.content || "") } })
-}
+})
 
 const updateContentSchema = z.object({
   content: z.string().max(1000000),
   expected_version: z.number().int().nonnegative().optional(),
 })
 
-export async function PUT(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
-): Promise<NextResponse> {
-  try {
-    const rateLimitError = await documentRateLimit(req)
-    if (rateLimitError) return rateLimitError
+export const PUT = withErrorBoundary(async (req, { params }: { params: Promise<{ id: string }> }) => {
+  const rateLimitError = await documentRateLimit(req)
+  if (rateLimitError) return rateLimitError
 
-    try {
-      await validateCSRF(req)
-    } catch (error) {
-      if (error instanceof Error && error.name === "CSRFError") {
-        return NextResponse.json({ error: "Invalid CSRF token" }, { status: 403 })
-      }
-      throw error
-    }
+  await validateCSRF(req)
 
-    const supabase = await getRouteClient()
-    const { data: { user } } = await supabase.auth.getUser()
+  const supabase = await getRouteClient()
+  const { data: { user } } = await supabase.auth.getUser()
 
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
-
-    const body = await req.json()
-    const { content, expected_version } = updateContentSchema.parse(body)
-    const sanitizedContent = sanitizeHtml(content)
-
-    const { id } = await params
-
-    const { data: currentDoc } = await supabase
-      .from("documents")
-      .select("version, content")
-      .eq("id", id)
-      .eq("user_id", user.id)
-      .single()
-
-    if (!currentDoc) {
-      return NextResponse.json({ error: "Document not found" }, { status: 404 })
-    }
-
-    // Optimistic locking: reject if expected_version provided and doesn't match
-    if (expected_version !== undefined && currentDoc.version !== expected_version) {
-      return NextResponse.json(
-        { error: "Document has been modified by another user. Please reload and try again." },
-        { status: 409 }
-      )
-    }
-
-    await (supabase as any).from("document_versions").insert({
-      document_id: id,
-      version: (currentDoc as any).version,
-      content: (currentDoc as any).content,
-      created_by: user.id,
-    })
-
-    const { data, error } = await (supabase as any)
-      .from("documents")
-      .update({ content: sanitizedContent, version: (currentDoc as any).version + 1 })
-      .eq("id", id)
-      .eq("user_id", user.id)
-      .eq("version", (currentDoc as any).version)
-      .select()
-      .single()
-
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
-    }
-
-    if (!data) {
-      return NextResponse.json(
-        { error: "Document has been modified by another user. Please reload and try again." },
-        { status: 409 }
-      )
-    }
-
-    // Invalidate document list cache so clients see updated content
-    await cacheDel(`documents:${user.id}:*`)
-
-    // Audit log document update
-    await logAuditEvent({
-      userId: user.id,
-      action: "document.update",
-      entityType: "documents",
-      entityId: id,
-      newValues: { version: (currentDoc as any).version + 1 },
-      severity: "medium",
-      ipAddress: getClientIp(req),
-      userAgent: getClientUserAgent(req),
-    })
-
-    return NextResponse.json({ document: data })
-  } catch (error) {
-    if (error instanceof Error && error.name === "CSRFError") {
-      return NextResponse.json({ error: "Invalid CSRF token" }, { status: 403 })
-    }
-    throw error
+  if (!user) {
+    throw createAppError("Unauthorized", 401, "UNAUTHORIZED")
   }
-}
+
+  const body = await req.json()
+  const { content, expected_version } = updateContentSchema.parse(body)
+  const sanitizedContent = sanitizeHtml(content)
+
+  const { id } = await params
+
+  const { data: currentDoc } = await supabase
+    .from("documents")
+    .select("version, content")
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .single()
+
+  if (!currentDoc) {
+    throw createAppError("Document not found", 404, "DOCUMENT_NOT_FOUND")
+  }
+
+  // Optimistic locking: reject if expected_version provided and doesn't match
+  if (expected_version !== undefined && currentDoc.version !== expected_version) {
+    return NextResponse.json(
+      { error: "Document has been modified by another user. Please reload and try again." },
+      { status: 409 }
+    )
+  }
+
+  await supabase.from("document_versions").insert({
+    document_id: id,
+    version: currentDoc.version,
+    content: currentDoc.content,
+    created_by: user.id,
+  })
+
+  const { data, error } = await supabase
+    .from("documents")
+    .update({ content: sanitizedContent, version: currentDoc.version + 1 })
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .eq("version", currentDoc.version)
+    .select()
+    .single()
+
+  if (error) {
+    throw createAppError(error.message, 500, "DATABASE_ERROR")
+  }
+
+  if (!data) {
+    return NextResponse.json(
+      { error: "Document has been modified by another user. Please reload and try again." },
+      { status: 409 }
+    )
+  }
+
+  // Invalidate document list cache so clients see updated content
+  await cacheDel(`documents:${user.id}:*`)
+
+  // Audit log document update
+  await logAuditEvent({
+    userId: user.id,
+    action: "document.update",
+    entityType: "documents",
+    entityId: id,
+    newValues: { version: currentDoc.version + 1 },
+    severity: "medium",
+    ipAddress: getClientIp(req),
+    userAgent: getClientUserAgent(req),
+  })
+
+  return NextResponse.json({ document: data })
+})

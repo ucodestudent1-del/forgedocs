@@ -5,36 +5,29 @@ import { authRateLimit } from "@/lib/rate-limiter"
 import { z } from "zod"
 import { sendEmail } from "@/lib/email"
 import { getPasswordResetHtml } from "@/lib/emailTemplates"
+import { withErrorBoundary, createAppError } from "@/lib/api-error"
 
 const forgotSchema = z.object({
   email: z.string().email("Invalid email address"),
 })
 
-export async function POST(req: Request): Promise<NextResponse> {
-  try {
-    const rateLimitError = await authRateLimit(req)
-    if (rateLimitError) return rateLimitError
+export const POST = withErrorBoundary(async (req) => {
+  const rateLimitError = await authRateLimit(req)
+  if (rateLimitError) return rateLimitError
 
-    await validateCSRF(req)
+  await validateCSRF(req)
 
-    const supabase = await createRouteClient()
-    const body = await req.json()
-    const { email } = forgotSchema.parse(body)
+  const supabase = await createRouteClient()
+  const body = await req.json()
+  const { email } = forgotSchema.parse(body)
 
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/reset-password`,
-    })
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/reset-password`,
+  })
 
-    // Always return success to prevent account enumeration
-    // Don't reveal whether the email exists in the system
-    return NextResponse.json({
-      success: true,
-      message: "If an account exists, a password reset link has been sent",
-    })
-  } catch (error) {
-    if (error instanceof Error && error.name === "CSRFError") {
-      return NextResponse.json({ error: "Invalid CSRF token" }, { status: 403 })
-    }
-    throw error
-  }
-}
+  // Always return success to prevent account enumeration
+  return NextResponse.json({
+    success: true,
+    message: "If an account exists, a password reset link has been sent",
+  })
+})

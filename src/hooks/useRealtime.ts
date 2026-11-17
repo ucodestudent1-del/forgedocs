@@ -79,14 +79,14 @@ export function usePresence(
     channel
       .on('presence', { event: 'sync' }, () => {
         const state = channel.presenceState()
-        const allUsers = Object.values(state).flat() as any[]
-        setUsers(allUsers.filter((u: any) => u.id !== user.id))
+        const allUsers = Object.values(state).flat()
+        setUsers(allUsers.filter((u) => u.user_id !== user.id))
       })
-      .on('presence', { event: 'join' }, ({ key, newPresences }: any) => {
+      .on('presence', { event: 'join' }, ({ key, newPresences }) => {
         setUsers((prev) => [...prev, ...newPresences])
       })
-      .on('presence', { event: 'leave' }, ({ key, leftPresences }: any) => {
-        setUsers((prev) => prev.filter((u: any) => !leftPresences.some((lp: any) => lp.id === u.id)))
+      .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
+        setUsers((prev) => prev.filter((u) => !leftPresences.some((lp) => lp.user_id === u.user_id)))
       })
       .subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {

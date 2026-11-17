@@ -2,6 +2,8 @@ import { createServiceRoleClient } from "@/lib/supabase"
 import { NextResponse } from "next/server"
 import { sendEmail } from "@/lib/email"
 import { getPaymentFailedHtml, getTrialEndingHtml, getSubscriptionCanceledHtml } from "@/lib/emailTemplates"
+import { stripeCircuitBreaker } from "@/lib/circuit-breaker"
+import type { Stripe } from "stripe"
 
 export const dynamic = "force-dynamic"
 export const runtime = "nodejs"
@@ -40,7 +42,7 @@ export async function POST(req: Request) {
 
   // Idempotency check - atomic INSERT ON CONFLICT to prevent race conditions
   const eventId = `stripe_${event.id}`
-  const { error: insertError } = await (supabase as any)
+  const { error: insertError } = await supabase
     .from("webhook_events")
     .insert({
       event_id: eventId,
@@ -58,14 +60,16 @@ export async function POST(req: Request) {
 
   // Handle checkout.session.completed
   if (event.type === "checkout.session.completed") {
-    const session = event.data.object as any
+    const session = event.data.object as Stripe.Checkout.Session
     const userId = session.metadata?.userId
 
     if (userId) {
       // Determine tier from line items price, default to free
       let tier = "free"
       try {
-        const lineItems = await stripe.checkout.sessions.listLineItems(session.id, { limit: 10 })
+        const lineItems = await stripeCircuitBreaker.execute(() =>
+          stripe.checkout.sessions.listLineItems(session.id, { limit: 10 })
+        )
         const priceId = lineItems.data[0]?.price?.id || ""
         if (priceId.includes("pro")) tier = "pro"
         else if (priceId.includes("business")) tier = "business"
@@ -73,7 +77,7 @@ export async function POST(req: Request) {
         // tier remains "free" if lookup fails
       }
 
-      const { error } = await (supabase as any).from("subscriptions").upsert({
+      const { error } = await supabase.from("subscriptions").upsert({
         user_id: userId,
         stripe_customer_id: session.customer,
         stripe_subscription_id: session.subscription,
@@ -93,17 +97,17 @@ export async function POST(req: Request) {
 
   // Handle invoice.payment_succeeded
   if (event.type === "invoice.payment_succeeded") {
-    const invoice = event.data.object as any
+    const invoice = event.data.object as Stripe.Invoice
     const subscriptionId = invoice.subscription
 
-    const { data: sub } = await (supabase as any)
+    const { data: sub } = await supabase
       .from("subscriptions")
       .select("*")
       .eq("stripe_subscription_id", subscriptionId)
       .single()
 
     if (sub) {
-      await (supabase as any)
+      await supabase
         .from("subscriptions")
         .update({
           status: "active",
@@ -115,10 +119,10 @@ export async function POST(req: Request) {
 
   // Handle invoice.payment_failed - DUNNING MANAGEMENT
   if (event.type === "invoice.payment_failed") {
-    const invoice = event.data.object as any
+    const invoice = event.data.object as Stripe.Invoice
     const subscriptionId = invoice.subscription
 
-    const { data: sub } = await (supabase as any)
+    const { data: sub } = await supabase
       .from("subscriptions")
       .select("*")
       .eq("stripe_subscription_id", subscriptionId)
@@ -126,7 +130,7 @@ export async function POST(req: Request) {
 
     if (sub) {
       // Update subscription status to past_due
-      await (supabase as any)
+      await supabase
         .from("subscriptions")
         .update({ status: "past_due" })
         .eq("id", sub.id)
@@ -157,9 +161,9 @@ export async function POST(req: Request) {
 
   // Handle customer.subscription.trial_will_end - TRIAL ENDING NOTIFICATION
   if (event.type === "customer.subscription.trial_will_end") {
-    const subscription = event.data.object as any
+    const subscription = event.data.object as Stripe.Subscription
 
-    const { data: sub } = await (supabase as any)
+    const { data: sub } = await supabase
       .from("subscriptions")
       .select("*")
       .eq("stripe_subscription_id", subscription.id)
@@ -190,7 +194,7 @@ export async function POST(req: Request) {
 
   // Handle checkout.session.expired - ABANDONED CHECKOUT
   if (event.type === "checkout.session.expired") {
-    const session = event.data.object as any
+    const session = event.data.object as Stripe.Checkout.Session
     const userId = session.metadata?.userId
 
     if (userId) {
@@ -201,15 +205,15 @@ export async function POST(req: Request) {
 
   // Handle customer.subscription.deleted
   if (event.type === "customer.subscription.deleted") {
-    const subscription = event.data.object as any
+    const subscription = event.data.object as Stripe.Subscription
 
-    const { data: sub } = await (supabase as any)
+    const { data: sub } = await supabase
       .from("subscriptions")
       .select("*")
       .eq("stripe_subscription_id", subscription.id)
       .single()
 
-    await (supabase as any)
+    await supabase
       .from("subscriptions")
       .update({ status: "canceled", tier: "free" })
       .eq("stripe_subscription_id", subscription.id)
@@ -239,9 +243,9 @@ export async function POST(req: Request) {
 
   // Handle subscription updated (downgrades, upgrades, proration, etc.)
   if (event.type === "customer.subscription.updated") {
-    const subscription = event.data.object as any
+    const subscription = event.data.object as Stripe.Subscription
 
-    const { data: sub } = await (supabase as any)
+    const { data: sub } = await supabase
       .from("subscriptions")
       .select("*")
       .eq("stripe_subscription_id", subscription.id)
@@ -257,7 +261,7 @@ export async function POST(req: Request) {
         else if (priceId.includes("business")) tier = "business"
       }
 
-      await (supabase as any)
+      await supabase
         .from("subscriptions")
         .update({
           status: subscription.status,

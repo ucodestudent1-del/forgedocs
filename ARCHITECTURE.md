@@ -91,6 +91,46 @@ ForgeDocs is a document management, generation, editing, and conversion platform
 - Deprecated versions include `Deprecation` and `Sunset` response headers
 - Current supported version: `1`
 
+### API Key Permissions
+
+API keys use least-privilege RBAC with `resource:action` permission format:
+
+- **Permission model**: `Record<string, boolean>` stored on each API key row
+- **Wildcard support**: `resource:*` grants all actions on a resource; `*:*` grants everything
+- **Fail closed**: Empty/missing permissions deny all access; unknown paths default to `documents:read`
+- **Enforcement**: Middleware validates permissions on every API request; insufficient permissions return `403`
+- **Auth routes** (`/api/auth/*`, `/api/onboarding/*`, `/api/csrf/*`) are not accessible via API key — session-based only
+- **Health endpoint** (`/api/health`) is public
+
+Permission map (path → required permissions):
+
+| Path Pattern | Required Permissions |
+|---|---|
+| `/api/documents*` | `documents:read` |
+| `/api/files*` | `documents:read` |
+| `/api/templates*` | `documents:read` |
+| `/api/document-generator*` | `documents:write` |
+| `/api/conversion*` | `conversion:read`, `conversion:write` |
+| `/api/ocr*` | `conversion:read`, `conversion:write` |
+| `/api/pdf-tools*` | `conversion:read`, `conversion:write` |
+| `/api/billing*` | `billing:read` |
+| `/api/usage*` | `billing:read` |
+| `/api/activity*` | `audit:read` |
+| `/api/audit*` | `audit:read` |
+| `/api/storage*` | `documents:read`, `documents:write` |
+| `/api/e-signatures*` | `documents:read`, `documents:write` |
+| `/api/ai*` | `ai:read`, `ai:write` |
+| `/api/admin*` | `admin:*` |
+| `/api/auth*`, `/api/onboarding*`, `/api/csrf*` | Not accessible via API key |
+| `/api/health` | None (public) |
+
+### Rate Limiting (per API key)
+
+- API key clients are rate-limited by `x-api-key-id` (most granular)
+- Falls back to `x-api-user-id`, then IP address
+- Redis-backed, shared across all replicas
+- Fail-closed when Redis is unavailable
+
 ### Deploy
 - Railway platform
 - Docker container deployment

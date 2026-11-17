@@ -1,6 +1,8 @@
 import { createBrowserClient } from "@supabase/ssr"
+import type { Database } from "@/types/database"
+import type { SupabaseClient } from "@/lib/supabase-client"
 
-export function createBrowserSupabaseClient() {
+export function createBrowserSupabaseClient(): SupabaseClient {
   // Return mock during build
   if (typeof window === "undefined" && process.env.NEXT_PHASE === "phase-production-build") {
     return {
@@ -18,6 +20,9 @@ export function createBrowserSupabaseClient() {
       from: () => ({
         select: () => ({ single: async () => ({ data: null, error: { message: "Build mode" } }) }),
       }),
+      storage: {
+        from: () => ({}),
+      },
     }
   }
 
@@ -41,8 +46,11 @@ export function createBrowserSupabaseClient() {
       from: () => ({
         select: () => ({ single: async () => ({ data: null, error: { message: "Invalid config" } }) }),
       }),
+      storage: {
+        from: () => ({}),
+      },
     }
   }
 
-  return createBrowserClient(url, key)
+  return createBrowserClient<Database>(url, key)
 }

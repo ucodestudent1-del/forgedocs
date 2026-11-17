@@ -31,7 +31,13 @@ export interface RateLimitInfo {
 }
 
 function getClientIdentifier(request: NextRequest): string {
-  // Prefer authenticated user context (set by middleware for API keys via x-api-user-id)
+  // Prefer API key ID for per-key rate limiting (most granular)
+  const apiKeyId = request.headers.get("x-api-key-id")
+  if (apiKeyId) {
+    return `apikey:${apiKeyId}`
+  }
+
+  // Fall back to authenticated user context (set by middleware for API keys via x-api-user-id)
   const apiUserId = request.headers.get("x-api-user-id")
   if (apiUserId) {
     return `user:${apiUserId}`

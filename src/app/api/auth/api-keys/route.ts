@@ -4,6 +4,7 @@ import { validateCSRF } from "@/lib/csrf"
 import { authRateLimit } from "@/lib/rate-limiter"
 import { z } from "zod"
 import { createApiKey, listApiKeys } from "@/lib/api-key"
+import { withErrorBoundary, createAppError } from "@/lib/api-error"
 
 const createApiKeySchema = z.object({
   name: z.string().min(1).max(100),
@@ -11,48 +12,34 @@ const createApiKeySchema = z.object({
   expires_in_days: z.number().int().positive().max(365).optional(),
 })
 
-export async function GET(req: Request): Promise<NextResponse> {
+export const GET = withErrorBoundary(async (req) => {
   const rateLimitError = await authRateLimit(req)
   if (rateLimitError) return rateLimitError
 
-  try {
-    await validateCSRF(req)
-  } catch (error) {
-    if (error instanceof Error && error.name === "CSRFError") {
-      return NextResponse.json({ error: "Invalid CSRF token" }, { status: 403 })
-    }
-    throw error
-  }
+  await validateCSRF(req)
 
   const supabase = await getRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    throw createAppError("Unauthorized", 401, "UNAUTHORIZED")
   }
 
   const keys = await listApiKeys(user.id)
   return NextResponse.json({ api_keys: keys })
-}
+})
 
-export async function POST(req: Request): Promise<NextResponse> {
+export const POST = withErrorBoundary(async (req) => {
   const rateLimitError = await authRateLimit(req)
   if (rateLimitError) return rateLimitError
 
-  try {
-    await validateCSRF(req)
-  } catch (error) {
-    if (error instanceof Error && error.name === "CSRFError") {
-      return NextResponse.json({ error: "Invalid CSRF token" }, { status: 403 })
-    }
-    throw error
-  }
+  await validateCSRF(req)
 
   const supabase = await getRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    throw createAppError("Unauthorized", 401, "UNAUTHORIZED")
   }
 
   const body = await req.json()
@@ -68,9 +55,9 @@ export async function POST(req: Request): Promise<NextResponse> {
 
   const result = await createApiKey(user.id, name, permissions ?? {}, expiresAt)
   if ("error" in result) {
-    return NextResponse.json({ error: result.error }, { status: 500 })
+    throw createAppError(result.error, 500, "API_KEY_CREATE_ERROR")
   }
 
   // Return raw key only once
   return NextResponse.json({ api_key: result.key, raw_key: result.rawKey }, { status: 201 })
-}
+})

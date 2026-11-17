@@ -2,10 +2,10 @@
 
 import { createRouteClient } from "@/lib/supabase"
 import { cookies } from "next/headers"
-import { locales, defaultLocale } from "@/i18n/locales"
+import { locales, defaultLocale, type Locale } from "@/i18n/locales"
 
 export async function updateProfileLanguage(language: string) {
-  if (!locales.includes(language as any)) {
+  if (!locales.includes(language as Locale)) {
     return { error: "Unsupported language" }
   }
 

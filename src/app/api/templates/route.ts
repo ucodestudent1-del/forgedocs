@@ -5,6 +5,7 @@ import { documentRateLimit } from "@/lib/rate-limiter"
 import { z } from "zod"
 import { MAX_PAGE_SIZE, DEFAULT_PAGE_SIZE, parsePagination } from "@/lib/pagination"
 import { cacheGet, cacheSet, cacheDel } from "@/lib/cache"
+import { withErrorBoundary, createAppError } from "@/lib/api-error"
 
 const createTemplateSchema = z.object({
   name: z.string().min(1).max(200),
@@ -22,7 +23,7 @@ const createTemplateSchema = z.object({
   is_public: z.boolean().default(false),
 })
 
-export async function GET(req: Request): Promise<NextResponse> {
+export const GET = withErrorBoundary(async (req) => {
   const rateLimitError = await documentRateLimit(req)
   if (rateLimitError) return rateLimitError
 
@@ -56,7 +57,7 @@ export async function GET(req: Request): Promise<NextResponse> {
     .range(offset, offset + limit - 1)
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    throw createAppError(error.message, 500, "DATABASE_ERROR")
   }
 
   return NextResponse.json({
@@ -65,50 +66,43 @@ export async function GET(req: Request): Promise<NextResponse> {
     page,
     limit,
   })
-}
+})
 
-export async function POST(req: Request): Promise<NextResponse> {
-  try {
-    const rateLimitError = await documentRateLimit(req)
-    if (rateLimitError) return rateLimitError
+export const POST = withErrorBoundary(async (req) => {
+  const rateLimitError = await documentRateLimit(req)
+  if (rateLimitError) return rateLimitError
 
-    await validateCSRF(req)
+  await validateCSRF(req)
 
-    const supabase = await getRouteClient()
-    const { data: { user } } = await supabase.auth.getUser()
+  const supabase = await getRouteClient()
+  const { data: { user } } = await supabase.auth.getUser()
 
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
-
-    const body = await req.json()
-    const { name, description, category, source_url, placeholder_schema, preview_url, tags, is_public } = createTemplateSchema.parse(body)
-
-    const { data, error } = await (supabase as any)
-      .from("templates")
-      .insert({
-        user_id: user.id,
-        name,
-        description,
-        category,
-        source_url,
-        placeholder_schema,
-        preview_url,
-        tags,
-        is_public,
-      })
-      .select()
-      .single()
-
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
-    }
-
-    return NextResponse.json({ template: data }, { status: 201 })
-  } catch (error) {
-    if (error instanceof Error && error.name === "CSRFError") {
-      return NextResponse.json({ error: "Invalid CSRF token" }, { status: 403 })
-    }
-    throw error
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
-}
+
+  const body = await req.json()
+  const { name, description, category, source_url, placeholder_schema, preview_url, tags, is_public } = createTemplateSchema.parse(body)
+
+  const { data, error } = await supabase
+    .from("templates")
+    .insert({
+      user_id: user.id,
+      name,
+      description,
+      category,
+      source_url,
+      placeholder_schema,
+      preview_url,
+      tags,
+      is_public,
+    })
+    .select()
+    .single()
+
+  if (error) {
+    throw createAppError(error.message, 500, "DATABASE_ERROR")
+  }
+
+  return NextResponse.json({ template: data }, { status: 201 })
+})

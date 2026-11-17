@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
+import type { Database } from "@/types/database"
 
 const isBuildTime = typeof window === "undefined" && process.env.NEXT_PHASE === "phase-production-build"
 
@@ -64,7 +65,7 @@ export async function createRouteClient() {
     )
   }
 
-  return createServerClient(
+  return createServerClient<Database>(
     url,
     key,
     {
@@ -102,7 +103,7 @@ export async function createServiceRoleClient() {
     )
   }
 
-  return createServerClient(url, serviceKey, {
+  return createServerClient<Database>(url, serviceKey, {
     cookies: {
       getAll() {
         return []

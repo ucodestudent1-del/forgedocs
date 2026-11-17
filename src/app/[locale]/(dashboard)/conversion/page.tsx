@@ -604,7 +604,7 @@ export default function ConversionPage() {
                   <label className="text-sm font-medium text-foreground">Source Format</label>
                   <select
                     value={metaSourceFormat}
-                    onChange={(e) => setMetaSourceFormat(e.target.value as any)}
+                    onChange={(e) => setMetaSourceFormat(e.target.value)}
                     className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                   >
                     <option value="json">JSON</option>
@@ -617,7 +617,7 @@ export default function ConversionPage() {
                   <label className="text-sm font-medium text-foreground">Target Format</label>
                   <select
                     value={metaTargetFormat}
-                    onChange={(e) => setMetaTargetFormat(e.target.value as any)}
+                    onChange={(e) => setMetaTargetFormat(e.target.value)}
                     className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                   >
                     <option value="yaml">YAML</option>

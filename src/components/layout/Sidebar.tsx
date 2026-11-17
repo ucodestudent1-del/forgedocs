@@ -191,7 +191,7 @@ export function Sidebar({
             <button
               onClick={onClose}
               className="lg:hidden p-2 rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-              aria-label={t("sidebar.close" as any)}
+              aria-label={t("sidebar.close")}
             >
               <X className="h-5 w-5" />
             </button>
@@ -200,7 +200,7 @@ export function Sidebar({
             <button
               onClick={onToggleCollapse}
               className="p-2 rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-              aria-label={t("sidebar.expand" as any)}
+              aria-label={t("sidebar.expand")}
             >
               <ChevronRight className="h-5 w-5" />
             </button>
@@ -220,7 +220,7 @@ export function Sidebar({
                   {section.icon && (
                     <section.icon className={`h-4 w-4 ${collapsed ? "mx-auto" : ""}`} />
                   )}
-                  {!collapsed && t(section.titleKey as any)}
+                  {!collapsed && t(section.titleKey)}
                   {!collapsed && (
                     <span className="ml-auto flex items-center gap-1">
                       {isExpanded ? (
@@ -259,7 +259,7 @@ export function Sidebar({
                       />
                       {!collapsed && (
                         <>
-                          <span className="truncate">{t(item.labelKey as any)}</span>
+                          <span className="truncate">{t(item.labelKey)}</span>
                           {item.badge && (
                             <span className="ml-auto px-1.5 py-0.5 text-xs font-medium bg-primary/10 text-primary rounded-full">
                               {item.badge}
@@ -329,7 +329,7 @@ export function Sidebar({
                 <p className="text-sm font-medium text-foreground truncate">
                   {userEmail || "User"}
                 </p>
-                <p className="text-xs text-muted-foreground truncate">{t("sidebar.signedIn" as any)}</p>
+                <p className="text-xs text-muted-foreground truncate">{t("sidebar.signedIn")}</p>
               </div>
             )}
           </div>

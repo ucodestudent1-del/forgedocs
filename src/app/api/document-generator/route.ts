@@ -5,6 +5,7 @@ import { NextResponse } from "next/server"
 import { validateCSRF } from "@/lib/csrf"
 import { documentRateLimit } from "@/lib/rate-limiter"
 import { z } from "zod"
+import { withErrorBoundary, createAppError } from "@/lib/api-error"
 
 const generateSchema = z.object({
   document_id: z.string().uuid().optional(),
@@ -12,7 +13,7 @@ const generateSchema = z.object({
   template_data: z.record(z.string(), z.unknown()).optional(),
 })
 
-export async function GET(req: Request) {
+export const GET = withErrorBoundary(async (req) => {
   const rateLimitError = await documentRateLimit(req)
   if (rateLimitError) return rateLimitError
 
@@ -20,7 +21,7 @@ export async function GET(req: Request) {
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    throw createAppError("Unauthorized", 401, "UNAUTHORIZED")
   }
 
   const { data: documents, error } = await supabase
@@ -30,30 +31,23 @@ export async function GET(req: Request) {
     .order("updated_at", { ascending: false })
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    throw createAppError(error.message, 500, "DATABASE_ERROR")
   }
 
   return NextResponse.json({ documents: documents || [] })
-}
+})
 
-export async function POST(req: Request) {
+export const POST = withErrorBoundary(async (req) => {
   const rateLimitError = await documentRateLimit(req)
   if (rateLimitError) return rateLimitError
 
-  try {
-    await validateCSRF(req)
-  } catch (error) {
-    if (error instanceof Error && error.name === "CSRFError") {
-      return NextResponse.json({ error: "Invalid CSRF token" }, { status: 403 })
-    }
-    throw error
-  }
+  await validateCSRF(req)
 
   const supabase = await getRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    throw createAppError("Unauthorized", 401, "UNAUTHORIZED")
   }
 
   const body = await req.json()
@@ -72,7 +66,7 @@ export async function POST(req: Request) {
       .single()
 
     if (error || !doc) {
-      return NextResponse.json({ error: "Document not found" }, { status: 404 })
+      throw createAppError("Document not found", 404, "DOCUMENT_NOT_FOUND")
     }
 
     return NextResponse.json({
@@ -93,7 +87,7 @@ export async function POST(req: Request) {
       .single()
 
     if (templateError || !template) {
-      return NextResponse.json({ error: "Template not found" }, { status: 404 })
+      throw createAppError("Template not found", 404, "TEMPLATE_NOT_FOUND")
     }
 
     // Apply template data to template content with ReDoS protection
@@ -112,7 +106,7 @@ export async function POST(req: Request) {
 
     const storagePath = `documents/${user.id}/${crypto.randomUUID()}.json`
 
-    const { data: doc, error } = await (supabase as any)
+    const { data: doc, error } = await supabase
       .from("documents")
       .insert({
         user_id: user.id,
@@ -128,11 +122,11 @@ export async function POST(req: Request) {
       .single()
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      throw createAppError(error.message, 500, "DATABASE_ERROR")
     }
 
     return NextResponse.json({ document: doc }, { status: 201 })
   }
 
   return NextResponse.json({ error: "Invalid request" }, { status: 400 })
-}
+})

@@ -3,6 +3,7 @@ import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
 import { validateCSRF } from "@/lib/csrf"
 import { documentRateLimit } from "@/lib/rate-limiter"
+import { withErrorBoundary, createAppError } from "@/lib/api-error"
 
 export const maxDuration = 60
 
@@ -24,28 +25,11 @@ const MAGIC_BYTES: Record<string, Buffer[]> = {
   "text/csv": [Buffer.from([])], // Any text (can't validate magic bytes)
 }
 
-function validateMagicBytes(file: File, expectedMime: string): boolean {
-  const expected = MAGIC_BYTES[expectedMime]
-  if (!expected || expected.length === 0 || expected[0].length === 0) {
-    return true // Cannot validate (text files)
-  }
-  // We need to read the file buffer to check magic bytes
-  // This is done after we get the arrayBuffer
-  return false // Placeholder - actual check done below
-}
-
-export async function POST(req: Request) {
+export const POST = withErrorBoundary(async (req) => {
   const rateLimitError = await documentRateLimit(req)
   if (rateLimitError) return rateLimitError
 
-  try {
-    await validateCSRF(req)
-  } catch (error) {
-    if (error instanceof Error && error.name === "CSRFError") {
-      return NextResponse.json({ error: "Invalid CSRF token" }, { status: 403 })
-    }
-    throw error
-  }
+  await validateCSRF(req)
 
   const cookieStore = await cookies()
   const supabase = createServerClient(
@@ -63,7 +47,7 @@ export async function POST(req: Request) {
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    throw createAppError("Unauthorized", 401, "UNAUTHORIZED")
   }
 
   // Check Content-Length before parsing body (early rejection of oversized requests)
@@ -71,7 +55,7 @@ export async function POST(req: Request) {
   if (contentLength) {
     const size = parseInt(contentLength, 10)
     if (size > 15 * 1024 * 1024) { // 15MB max request body (10MB file + overhead)
-      return NextResponse.json({ error: "Request body too large" }, { status: 413 })
+      throw createAppError("Request body too large", 413, "REQUEST_TOO_LARGE")
     }
   }
 
@@ -79,12 +63,12 @@ export async function POST(req: Request) {
   const file = formData.get("file") as File
 
   if (!file) {
-    return NextResponse.json({ error: "No file provided" }, { status: 400 })
+    throw createAppError("No file provided", 400, "NO_FILE_PROVIDED")
   }
 
   // Validate file size (max 10MB)
   if (file.size > 10 * 1024 * 1024) {
-    return NextResponse.json({ error: "File too large (max 10MB)" }, { status: 400 })
+    throw createAppError("File too large (max 10MB)", 400, "FILE_TOO_LARGE")
   }
 
   // Validate file type by MIME type
@@ -100,7 +84,7 @@ export async function POST(req: Request) {
     "text/csv",
   ]
   if (!allowedTypes.includes(file.type)) {
-    return NextResponse.json({ error: "File type not supported" }, { status: 400 })
+    throw createAppError("File type not supported", 400, "INVALID_FILE_TYPE")
   }
 
   // Validate file magic bytes (content inspection, not just MIME type from client)
@@ -108,7 +92,7 @@ export async function POST(req: Request) {
   const fileBytes = new Uint8Array(arrayBuffer)
   const magicBytesValid = validateFileMagicBytes(fileBytes, file.type)
   if (!magicBytesValid) {
-    return NextResponse.json({ error: "File content does not match declared type" }, { status: 400 })
+    throw createAppError("File content does not match declared type", 400, "INVALID_FILE_CONTENT")
   }
 
   const fileName = `${user.id}/${crypto.randomUUID()}-${file.name}`
@@ -118,7 +102,7 @@ export async function POST(req: Request) {
     .upload(fileName, file)
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    throw createAppError(error.message, 500, "STORAGE_UPLOAD_ERROR")
   }
 
   // Generate signed URL (valid for 1 hour)
@@ -133,7 +117,7 @@ export async function POST(req: Request) {
     size: file.size,
     type: file.type,
   })
-}
+})
 
 function validateFileMagicBytes(fileBytes: Uint8Array, mimeType: string): boolean {
   const expected = MAGIC_BYTES[mimeType]

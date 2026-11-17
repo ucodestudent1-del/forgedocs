@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getRouteClient } from "@/lib/supabase"
 import OpenAI from "openai"
+import { openaiCircuitBreaker } from "@/lib/circuit-breaker"
+import { withErrorBoundary, createAppError } from "@/lib/api-error"
 
 export const dynamic = "force-dynamic"
 
@@ -27,68 +29,68 @@ const SYSTEM_PROMPTS: Record<string, string> = {
 const VALID_TONES = ["professional", "casual", "friendly", "formal", "urgent", "apologetic"]
 const VALID_LANGUAGES = ["en", "es", "fr", "de", "ja", "zh", "ar", "pt", "it", "ru", "ko", "hi"]
 
-export async function POST(request: NextRequest) {
-  try {
-    const supabase = await getRouteClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
+export const POST = withErrorBoundary(async (request) => {
+  const supabase = await getRouteClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
 
-    const body = await request.json()
-    const { action, input, tone, targetLanguage } = body
+  const body = await request.json()
+  const { action, input, tone, targetLanguage } = body
 
-    if (!action || (!input && action !== "generate")) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
-    }
+  if (!action || (!input && action !== "generate")) {
+    return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
+  }
 
-    // Validate tone against allowlist to prevent prompt injection
-    const resolvedTone = VALID_TONES.includes(tone) ? tone : "professional"
+  // Validate tone against allowlist to prevent prompt injection
+  const resolvedTone = VALID_TONES.includes(tone) ? tone : "professional"
 
-    // Validate target language against allowlist to prevent prompt injection
-    const resolvedLanguage = VALID_LANGUAGES.includes(targetLanguage) ? targetLanguage : "en"
+  // Validate target language against allowlist to prevent prompt injection
+  const resolvedLanguage = VALID_LANGUAGES.includes(targetLanguage) ? targetLanguage : "en"
 
-    if (!process.env.OPENAI_API_KEY) {
-      return NextResponse.json({ 
-        error: "AI provider not configured. Please set OPENAI_API_KEY environment variable." 
-      }, { status: 503 })
-    }
+  if (!process.env.OPENAI_API_KEY) {
+    return NextResponse.json({ 
+      error: "AI provider not configured. Please set OPENAI_API_KEY environment variable." 
+    }, { status: 503 })
+  }
 
-    const openai = getOpenAI()
-    const systemPrompt = SYSTEM_PROMPTS[action] || SYSTEM_PROMPTS.generate
-    
-    let userPrompt = ""
-    switch (action) {
-      case "generate":
-        userPrompt = `Generate content for: ${input || "general document"}`
-        break
-      case "rewrite":
-        userPrompt = `Rewrite this text with improved clarity and flow: ${input}`
-        break
-      case "summarize":
-        userPrompt = `Summarize this text concisely: ${input}`
-        break
-      case "expand":
-        userPrompt = `Expand this text with more detail and examples: ${input}`
-        break
-      case "shorten":
-        userPrompt = `Condense this text while preserving key information: ${input}`
-        break
-      case "tone":
-        userPrompt = `Rewrite in ${resolvedTone} tone: ${input}`
-        break
-      case "grammar":
-        userPrompt = `Fix all grammar, punctuation, and syntax errors: ${input}`
-        break
-      case "translate":
-        userPrompt = `Translate to ${resolvedLanguage}: ${input}`
-        break
-      default:
-        userPrompt = `${action.charAt(0).toUpperCase() + action.slice(1)} this text: ${input}`
-    }
+  const openai = getOpenAI()
+  const systemPrompt = SYSTEM_PROMPTS[action] || SYSTEM_PROMPTS.generate
+  
+  let userPrompt = ""
+  switch (action) {
+    case "generate":
+      userPrompt = `Generate content for: ${input || "general document"}`
+      break
+    case "rewrite":
+      userPrompt = `Rewrite this text with improved clarity and flow: ${input}`
+      break
+    case "summarize":
+      userPrompt = `Summarize this text concisely: ${input}`
+      break
+    case "expand":
+      userPrompt = `Expand this text with more detail and examples: ${input}`
+      break
+    case "shorten":
+      userPrompt = `Condense this text while preserving key information: ${input}`
+      break
+    case "tone":
+      userPrompt = `Rewrite in ${resolvedTone} tone: ${input}`
+      break
+    case "grammar":
+      userPrompt = `Fix all grammar, punctuation, and syntax errors: ${input}`
+      break
+    case "translate":
+      userPrompt = `Translate to ${resolvedLanguage}: ${input}`
+      break
+    default:
+      userPrompt = `${action.charAt(0).toUpperCase() + action.slice(1)} this text: ${input}`
+  }
 
-    const completion = await openai.chat.completions.create({
+  const completion = await openaiCircuitBreaker.execute(() =>
+    openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
         { role: "system", content: systemPrompt },
@@ -97,19 +99,9 @@ export async function POST(request: NextRequest) {
       temperature: 0.7,
       max_tokens: 2000,
     })
+  )
 
-    const result = completion.choices[0]?.message?.content || "AI processing complete"
+  const result = completion.choices[0]?.message?.content || "AI processing complete"
 
-    return NextResponse.json({ result })
-  } catch (error) {
-    console.error("AI assistant error:", error)
-    
-    if (error instanceof Error && error.message.includes("API key")) {
-      return NextResponse.json({ 
-        error: "AI provider not configured. Please set OPENAI_API_KEY environment variable." 
-      }, { status: 503 })
-    }
-    
-    return NextResponse.json({ error: "AI processing failed" }, { status: 500 })
-  }
-}
+  return NextResponse.json({ result })
+})

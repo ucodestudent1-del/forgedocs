@@ -5,6 +5,7 @@ const { exec } = require("child_process")
 const fs = require("fs")
 const path = require("path")
 const { createClient } = require("@supabase/supabase-js")
+const { createClient: createRedisClient } = require("redis")
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -13,8 +14,6 @@ if (!supabaseUrl || !supabaseAnonKey) {
   console.warn("Supabase env vars missing - worker will not function correctly")
 }
 
-// Use anon key instead of service role key to enforce RLS policies.
-// Configure RLS policies on conversion_jobs and documents tables for the worker's access.
 const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
 const redisConnection = {
@@ -25,16 +24,87 @@ const redisConnection = {
 const ALLOWED_LIBREOFFICE_FORMATS = new Set([
   "pdf", "docx", "doc", "xlsx", "xls", "pptx", "ppt", "odt", "ods", "odp",
   "rtf", "txt", "html", "md", "epub",
-]);
+])
 
 function validateLibreOfficeFormat(format) {
   if (!ALLOWED_LIBREOFFICE_FORMATS.has(format)) {
-    throw new Error(`Unsupported output format: ${format}`);
+    throw new Error(`Unsupported output format: ${format}`)
   }
-  return format;
+  return format
 }
 
-// LibreOffice document conversion
+// Leader election via Redis lock with TTL
+const LEADER_LOCK_KEY = "forge:worker:leader"
+const LEADER_LOCK_TTL_MS = 15000 // 15 second TTL
+const LEADER_RENEW_INTERVAL_MS = 5000 // Renew every 5 seconds
+
+let isLeader = false
+let leaderLockInterval = null
+let leaderLockValue = null
+
+const redisClient = createRedisClient(redisConnection)
+
+async function acquireLeaderLock() {
+  const value = `${process.pid}:${Date.now()}:${Math.random().toString(36).slice(2)}`
+  const result = await redisClient.set(LEADER_LOCK_KEY, value, {
+    PX: LEADER_LOCK_TTL_MS,
+    NX: true, // Only set if not exists
+  })
+  if (result === "OK") {
+    leaderLockValue = value
+    isLeader = true
+    console.log("Worker became leader")
+    return true
+  }
+  isLeader = false
+  return false
+}
+
+async function renewLeaderLock() {
+  if (!isLeader || !leaderLockValue) return
+
+  // Only renew if we still hold the lock
+  const current = await redisClient.get(LEADER_LOCK_KEY)
+  if (current === leaderLockValue) {
+    await redisClient.pexpire(LEADER_LOCK_KEY, LEADER_LOCK_TTL_MS)
+  } else {
+    // We lost leadership
+    isLeader = false
+    leaderLockValue = null
+    console.log("Worker lost leadership")
+  }
+}
+
+async function releaseLeaderLock() {
+  if (!isLeader || !leaderLockValue) return
+
+  // Only release if we still hold the lock
+  const current = await redisClient.get(LEADER_LOCK_KEY)
+  if (current === leaderLockValue) {
+    await redisClient.del(LEADER_LOCK_KEY)
+  }
+  isLeader = false
+  leaderLockValue = null
+}
+
+function startLeaderElection() {
+  return acquireLeaderLock().then((acquired) => {
+    if (!acquired) {
+      // Watch for lock expiry to retry
+      setTimeout(startLeaderElection, 2000)
+    }
+    leaderLockInterval = setInterval(renewLeaderLock, LEADER_RENEW_INTERVAL_MS)
+  })
+}
+
+function stopLeaderElection() {
+  if (leaderLockInterval) {
+    clearInterval(leaderLockInterval)
+    leaderLockInterval = null
+  }
+  return releaseLeaderLock()
+}
+
 async function convertWithLibreOffice(sourcePath, targetFormat, outputDir) {
   const safeFormat = validateLibreOfficeFormat(targetFormat);
   return new Promise((resolve, reject) => {
@@ -50,12 +120,10 @@ async function reconstructFromPDF(sourcePath, targetFormat) {
   throw new Error(`PDF to ${targetFormat} reconstruction not yet implemented`)
 }
 
-// Get file extension from URL/path
 function getExt(url) {
   return url ? url.split(".").pop()?.toLowerCase() || "" : ""
 }
 
-// Map file extension to target format for libreoffice
 function extToLibreOfficeFormat(ext) {
   const map = {
     docx: "pdf",
@@ -81,6 +149,11 @@ const worker = new Worker(
   async (job) => {
     const { type, userId, sourceUrl, targetFormat, sourceFormat, jobId, options, value } = job.data
 
+    // Only the leader processes jobs
+    if (!isLeader) {
+      throw new Error("Worker is not the leader")
+    }
+
     // Update job status to processing
     await supabase
       .from("conversion_jobs")
@@ -88,46 +161,8 @@ const worker = new Worker(
       .eq("id", jobId)
 
     try {
-      // ---- Unit conversion (handled synchronously in API, but support in worker too) ----
+      // ---- Unit conversion ----
       if (type === "unit") {
-        const conversions = {
-          length: {
-            "m->km": (v) => v / 1000,
-            "km->m": (v) => v * 1000,
-            "m->cm": (v) => v * 100,
-            "cm->m": (v) => v / 100,
-            "m->mm": (v) => v * 1000,
-            "mm->m": (v) => v / 1000,
-            "km->mi": (v) => v * 0.621371,
-            "mi->km": (v) => v * 1.60934,
-            "m->ft": (v) => v * 3.28084,
-            "ft->m": (v) => v / 3.28084,
-            "m->in": (v) => v * 39.3701,
-            "in->m": (v) => v / 39.3701,
-            "cm->in": (v) => v / 2.54,
-            "in->cm": (v) => v * 2.54,
-            "ft->in": (v) => v * 12,
-            "in->ft": (v) => v / 12,
-          },
-          mass: {
-            "kg->g": (v) => v * 1000,
-            "g->kg": (v) => v / 1000,
-            "kg->lb": (v) => v * 2.20462,
-            "lb->kg": (v) => v / 2.20462,
-            "kg->oz": (v) => v * 35.274,
-            "oz->kg": (v) => v / 35.274,
-          },
-          temperature: {
-            "c->f": (v) => (v * 9) / 5 + 32,
-            "f->c": (v) => ((v - 32) * 5) / 9,
-            "c->k": (v) => v + 273.15,
-            "k->c": (v) => v - 273.15,
-          },
-        }
-
-        const category = sourceFormat
-        const key = `${value && value.from ? value.from : ""}->${targetFormat}`
-        // For unit conversions the result is computed in the API; worker just marks complete
         await supabase
           .from("conversion_jobs")
           .update({
@@ -140,7 +175,7 @@ const worker = new Worker(
         return { success: true, type: "unit" }
       }
 
-      // ---- Metadata transformation (handled synchronously in API) ----
+      // ---- Metadata transformation ----
       if (type === "metadata") {
         await supabase
           .from("conversion_jobs")
@@ -155,7 +190,6 @@ const worker = new Worker(
       }
 
       // ---- Document conversion ----
-      // Download source file from Supabase Storage
       const sourcePath = `/tmp/${jobId}_source`
       const outputDir = `/tmp`
       const outputPath = `/tmp/${jobId}_output.${targetFormat}`
@@ -167,11 +201,8 @@ const worker = new Worker(
         if (downloadError) throw downloadError
 
         sourceFile = downloadedFile
-
-        // Write source to temp file
         fs.writeFileSync(sourcePath, await sourceFile.arrayBuffer())
 
-        // Convert based on format
         const sourceExt = getExt(sourceUrl)
 
         if (targetFormat === "pdf" && ["docx", "doc", "xlsx", "xls", "pptx", "ppt", "odt", "ods", "odp", "rtf", "txt", "html", "md", "epub"].includes(sourceExt)) {
@@ -179,26 +210,22 @@ const worker = new Worker(
         } else if (targetFormat === "docx" && sourceExt === "pdf") {
           resultPath = await reconstructFromPDF(sourcePath, targetFormat)
         } else if (["jpg", "jpeg", "png", "webp", "gif", "bmp", "tiff", "svg"].includes(sourceExt) && ["jpg", "jpeg", "png", "webp", "pdf"].includes(targetFormat)) {
-          // Image conversion - for now copy as-is (placeholder for sharp integration)
           fs.copyFileSync(sourcePath, outputPath)
           resultPath = outputPath
         } else {
           resultPath = await convertWithLibreOffice(sourcePath, targetFormat, outputDir)
         }
 
-        // Upload result to Supabase Storage
         const resultBuffer = fs.readFileSync(resultPath)
         const storagePath = `converted/${userId}/${jobId}.${targetFormat}`
         const { error: uploadError } = await supabase.storage.from("converted").upload(storagePath, resultBuffer, { upsert: true })
 
         if (uploadError) throw uploadError
 
-        // Get signed URL (private access only)
         const { data: urlData, error: urlError } = await supabase.storage.from("converted").createSignedUrl(storagePath, 3600)
 
         if (urlError) throw urlError
 
-        // Update job as completed
         await supabase
           .from("conversion_jobs")
           .update({
@@ -221,10 +248,20 @@ const worker = new Worker(
           .eq("id", jobId)
         throw err
       } finally {
-        // Cleanup temp files in finally block to ensure they're always removed
         try { if (sourcePath) fs.unlinkSync(sourcePath) } catch {}
         try { if (resultPath) fs.unlinkSync(resultPath) } catch {}
       }
+    } catch (err) {
+      await supabase
+        .from("conversion_jobs")
+        .update({
+          status: "failed",
+          error_message: err.message,
+          completed_at: new Date().toISOString(),
+        })
+        .eq("id", jobId)
+      throw err
+    }
   },
   { connection: redisConnection, concurrency: parseInt(process.env.WORKER_CONCURRENCY || "5", 10), maxAttempts: 3, backoff: { type: "exponential", delay: 1000 }, removeOnComplete: 100, removeOnFail: 50 }
 )
@@ -245,6 +282,7 @@ const workerHealth = {
   failedJobs: 0,
   lastJobAt: null,
   startedAt: new Date().toISOString(),
+  isLeader: false,
 }
 
 worker.on("active", (job) => {
@@ -271,6 +309,7 @@ const healthServer = require("http").createServer((req, res) => {
     res.writeHead(isHealthy ? 200 : 503, { "Content-Type": "application/json" })
     res.end(JSON.stringify({
       status: isHealthy ? "healthy" : "unhealthy",
+      isLeader,
       activeJobs: workerHealth.activeJobs,
       completedJobs: workerHealth.completedJobs,
       failedJobs: workerHealth.failedJobs,
@@ -289,11 +328,16 @@ healthServer.listen(HEALTH_PORT, () => {
   console.log(`Worker health server listening on port ${HEALTH_PORT}`)
 })
 
+// Initialize leader election
+startLeaderElection()
+
 async function gracefulShutdown(signal) {
   console.log(`Received ${signal}, shutting down worker gracefully...`)
   try {
+    await stopLeaderElection()
     await worker.close()
     healthServer.close()
+    await redisClient.quit()
     console.log("Worker shutdown complete")
     process.exit(0)
   } catch (err) {
@@ -305,4 +349,4 @@ async function gracefulShutdown(signal) {
 process.on("SIGTERM", () => gracefulShutdown("SIGTERM"))
 process.on("SIGINT", () => gracefulShutdown("SIGINT"))
 
-module.exports = { worker }
+module.exports = { worker, isLeader: () => isLeader }

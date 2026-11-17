@@ -31,7 +31,7 @@ export function AuditLogsTable() {
 
   async function fetchLogs() {
     try {
-      const supabase = createBrowserSupabaseClient() as any
+      const supabase = createBrowserSupabaseClient()
       const { data, error } = await supabase
         .from("audit_logs")
         .select("*")

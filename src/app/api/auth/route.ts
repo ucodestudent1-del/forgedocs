@@ -3,8 +3,9 @@ import { NextResponse } from "next/server"
 import { validateCSRF } from "@/lib/csrf"
 import { authRateLimit } from "@/lib/rate-limiter"
 import { validatePassword } from "@/lib/password"
+import { withErrorBoundary, createAppError } from "@/lib/api-error"
 
-export async function GET(req: Request): Promise<NextResponse> {
+export const GET = withErrorBoundary(async (req) => {
   const rateLimitError = await authRateLimit(req)
   if (rateLimitError) return rateLimitError
 
@@ -22,49 +23,42 @@ export async function GET(req: Request): Promise<NextResponse> {
     .single()
 
   if (profileError) {
-    return NextResponse.json({ error: "Profile not found" }, { status: 404 })
+    throw createAppError("Profile not found", 404, "PROFILE_NOT_FOUND")
   }
 
   return NextResponse.json({ user, profile })
-}
+})
 
-export async function POST(req: Request): Promise<NextResponse> {
-  try {
-    const rateLimitError = await authRateLimit(req)
-    if (rateLimitError) return rateLimitError
+export const POST = withErrorBoundary(async (req) => {
+  const rateLimitError = await authRateLimit(req)
+  if (rateLimitError) return rateLimitError
 
-    await validateCSRF(req)
+  await validateCSRF(req)
 
-    const supabase = await getRouteClient()
-    const body = await req.json()
-    const { email, password, full_name } = body
+  const supabase = await getRouteClient()
+  const body = await req.json()
+  const { email, password, full_name } = body
 
-    // Validate email
-    if (!email || !String(email).includes("@")) {
-      return NextResponse.json({ error: "Invalid email address" }, { status: 400 })
-    }
-
-    // Validate password using shared schema
-    const pwValidation = validatePassword(password)
-    if (!pwValidation.valid) {
-      return NextResponse.json({ error: pwValidation.errors.join(", ") }, { status: 400 })
-    }
-
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { data: { full_name } },
-    })
-
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 })
-    }
-
-    return NextResponse.json({ user: data.user })
-  } catch (error) {
-    if (error instanceof Error && error.name === "CSRFError") {
-      return NextResponse.json({ error: "Invalid CSRF token" }, { status: 403 })
-    }
-    throw error
+  // Validate email
+  if (!email || !String(email).includes("@")) {
+    return NextResponse.json({ error: "Invalid email address" }, { status: 400 })
   }
-}
+
+  // Validate password using shared schema
+  const pwValidation = validatePassword(password)
+  if (!pwValidation.valid) {
+    return NextResponse.json({ error: pwValidation.errors.join(", ") }, { status: 400 })
+  }
+
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: { data: { full_name } },
+  })
+
+  if (error) {
+    throw createAppError(error.message, 400, "SIGNUP_ERROR")
+  }
+
+  return NextResponse.json({ user: data.user })
+})

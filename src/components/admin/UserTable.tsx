@@ -30,7 +30,7 @@ export function UserTable() {
 
   async function fetchUsers() {
     try {
-      const supabase = createBrowserSupabaseClient() as any
+      const supabase = createBrowserSupabaseClient()
       const { data, error } = await supabase
         .from("profiles")
         .select("id, email, full_name, role, created_at, last_login_at, mfa_enabled")

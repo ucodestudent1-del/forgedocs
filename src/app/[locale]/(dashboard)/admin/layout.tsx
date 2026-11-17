@@ -52,7 +52,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             {navItems.map((item) => (
               <Link key={item.href} href={item.href} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
                 <item.icon className="h-4 w-4" />
-                {t(item.labelKey as any)}
+                {t(item.labelKey)}
               </Link>
             ))}
           </nav>

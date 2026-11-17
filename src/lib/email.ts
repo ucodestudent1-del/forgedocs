@@ -1,4 +1,5 @@
 import { Resend } from "resend"
+import { resendCircuitBreaker } from "@/lib/circuit-breaker"
 
 let resendInstance: Resend | null = null
 
@@ -40,13 +41,15 @@ export async function sendEmail(template: EmailTemplate): Promise<{ success: boo
 
   try {
     const resend = getResend()
-    const result = await resend.emails.send({
-      from: process.env.EMAIL_FROM || "ForgeDocs <noreply@forgedocs.com>",
-      to: template.to,
-      subject: template.subject,
-      html: template.html,
-      text: template.text,
-    })
+    const result = await resendCircuitBreaker.execute(() =>
+      resend.emails.send({
+        from: process.env.EMAIL_FROM || "ForgeDocs <noreply@forgedocs.com>",
+        to: template.to,
+        subject: template.subject,
+        html: template.html,
+        text: template.text,
+      })
+    )
 
     if (result.error) {
       console.error("Resend error:", result.error)

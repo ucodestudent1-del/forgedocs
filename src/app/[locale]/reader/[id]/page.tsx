@@ -15,7 +15,7 @@ export default async function ReaderPageRoute({
   const doc = await getDocumentWithTranslation(id, userLocale)
 
   if (!doc) {
-    return <ReaderPage document={{ error: "Document not found" } as any} />
+    return <ReaderPage document={{ error: "Document not found" }} />
   }
 
   return <ReaderPage document={doc} />

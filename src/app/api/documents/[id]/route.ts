@@ -4,11 +4,9 @@ import { z } from "zod"
 import { validateCSRF } from "@/lib/csrf"
 import { documentRateLimit } from "@/lib/rate-limiter"
 import { cacheDel } from "@/lib/cache"
+import { withErrorBoundary, createAppError } from "@/lib/api-error"
 
-export async function GET(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
-): Promise<NextResponse> {
+export const GET = withErrorBoundary(async (req, { params }: { params: Promise<{ id: string }> }) => {
   const rateLimitError = await documentRateLimit(req)
   if (rateLimitError) return rateLimitError
 
@@ -16,7 +14,7 @@ export async function GET(
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    throw createAppError("Unauthorized", 401, "UNAUTHORIZED")
   }
 
   const { id } = await params
@@ -29,11 +27,11 @@ export async function GET(
     .single()
 
   if (error || !doc) {
-    return NextResponse.json({ error: "Document not found" }, { status: 404 })
+    throw createAppError("Document not found", 404, "DOCUMENT_NOT_FOUND")
   }
 
   return NextResponse.json({ document: doc })
-}
+})
 
 const updateDocSchema = z.object({
   title: z.string().min(1).max(200).optional(),
@@ -42,34 +40,24 @@ const updateDocSchema = z.object({
   is_archived: z.boolean().optional(),
 })
 
-export async function PATCH(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
-): Promise<NextResponse> {
+export const PATCH = withErrorBoundary(async (req, { params }: { params: Promise<{ id: string }> }) => {
   const rateLimitError = await documentRateLimit(req)
   if (rateLimitError) return rateLimitError
 
-  try {
-    await validateCSRF(req)
-  } catch (error) {
-    if (error instanceof Error && error.name === "CSRFError") {
-      return NextResponse.json({ error: "Invalid CSRF token" }, { status: 403 })
-    }
-    throw error
-  }
+  await validateCSRF(req)
 
   const supabase = await createRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    throw createAppError("Unauthorized", 401, "UNAUTHORIZED")
   }
 
   const body = await req.json()
   const { title, description, is_pinned, is_archived } = updateDocSchema.parse(body)
   const { id } = await params
 
-  const { data, error } = await (supabase as any)
+  const { data, error } = await supabase
     .from("documents")
     .update({ title, description, is_pinned, is_archived })
     .eq("id", id)
@@ -78,36 +66,26 @@ export async function PATCH(
     .single()
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    throw createAppError(error.message, 500, "DATABASE_ERROR")
   }
 
   // Invalidate document list cache
   await cacheDel(`documents:${user.id}:*`)
 
   return NextResponse.json({ document: data })
-}
+})
 
-export async function DELETE(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
-): Promise<NextResponse> {
+export const DELETE = withErrorBoundary(async (req, { params }: { params: Promise<{ id: string }> }) => {
   const rateLimitError = await documentRateLimit(req)
   if (rateLimitError) return rateLimitError
 
-  try {
-    await validateCSRF(req)
-  } catch (error) {
-    if (error instanceof Error && error.name === "CSRFError") {
-      return NextResponse.json({ error: "Invalid CSRF token" }, { status: 403 })
-    }
-    throw error
-  }
+  await validateCSRF(req)
 
   const supabase = await createRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    throw createAppError("Unauthorized", 401, "UNAUTHORIZED")
   }
 
   const { id } = await params
@@ -119,11 +97,11 @@ export async function DELETE(
     .eq("user_id", user.id)
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    throw createAppError(error.message, 500, "DATABASE_ERROR")
   }
 
   // Invalidate document list cache
   await cacheDel(`documents:${user.id}:*`)
 
   return NextResponse.json({ success: true })
-}
+})

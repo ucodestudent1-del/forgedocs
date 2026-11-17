@@ -16,16 +16,16 @@ export function ThemeToggle() {
   ] as const
 
   return (
-    <div className="flex items-center gap-1 p-1 bg-muted rounded-lg" role="group" aria-label={t("theme" as any)}>
+    <div className="flex items-center gap-1 p-1 bg-muted rounded-lg" role="group" aria-label={t("theme")}>
       {themes.map(({ value, icon: Icon, labelKey }) => (
         <Button
           key={value}
           variant={theme === value ? "default" : "ghost"}
           size="icon"
           onClick={() => setTheme(value)}
-          aria-label={t(labelKey as any)}
+          aria-label={t(labelKey)}
           aria-pressed={theme === value}
-          title={t(labelKey as any)}
+          title={t(labelKey)}
         >
           <Icon className="h-4 w-4" />
         </Button>

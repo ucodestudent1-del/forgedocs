@@ -78,8 +78,8 @@ export async function performOCR(
           onProgress(Math.round(progress * 100))
         }
       }
-    } as any) as any
-    
+    })
+
     return {
       text: result.text,
       confidence: result.confidence,

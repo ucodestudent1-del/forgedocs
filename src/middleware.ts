@@ -3,7 +3,11 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { locales, defaultLocale } from "@/i18n/locales"
 import { rateLimitMiddleware } from "@/lib/rate-limiter"
-import { validateApiKey } from "@/lib/api-key"
+import {
+  validateApiKey,
+  checkApiKeyPermissions,
+  requiresApiKeyPermission,
+} from "@/lib/api-key"
 import {
   parseApiVersion,
   apiVersionHeaders,
@@ -53,16 +57,16 @@ function getLocale(request: NextRequest): string {
   }
 
   const cookieLocale = request.cookies.get("locale")?.value
-  if (cookieLocale && locales.includes(cookieLocale as any)) {
-    return cookieLocale
-  }
+    if (cookieLocale && locales.includes(cookieLocale)) {
+      return cookieLocale
+    }
 
   const acceptLanguage = request.headers.get("accept-language")
   if (acceptLanguage) {
     const preferred = acceptLanguage
       .split(",")
       .map((l) => l.split(";")[0].trim().toLowerCase().split("-")[0])
-      .find((l) => locales.includes(l as any))
+      .find((l) => locales.includes(l))
     if (preferred) {
       return preferred
     }
@@ -88,7 +92,7 @@ async function getProfileLocale(request: NextRequest): Promise<string | null> {
       .eq("id", user.id)
       .single()
 
-    if (profile?.language && locales.includes(profile.language as any)) {
+    if (profile?.language && locales.includes(profile.language)) {
       return profile.language
     }
   } catch {
@@ -162,6 +166,28 @@ export async function middleware(request: NextRequest) {
       if (validated) {
         response.headers.set("x-api-user-id", validated.userId)
         response.headers.set("x-api-key-id", validated.key.id)
+
+        // Enforce API key permissions (fail closed)
+        const required = requiresApiKeyPermission(pathname)
+        if (required !== null) {
+          const permCheck = checkApiKeyPermissions(validated.key.permissions as Record<string, unknown>, required)
+          if (!permCheck.allowed) {
+            const forbidden = NextResponse.json(
+              {
+                error: "Insufficient API key permissions",
+                required: permCheck.required,
+                missing: permCheck.missing,
+              },
+              { status: 403 }
+            )
+            forbidden.headers.set("x-request-id", requestId)
+            forbidden.headers.set("API-Version", versionInfo.version)
+            if (versionInfo.version !== DEFAULT_API_VERSION) {
+              forbidden.headers.set("API-Version-Default", DEFAULT_API_VERSION)
+            }
+            return forbidden
+          }
+        }
       } else {
         const response = NextResponse.json({ error: "Invalid or expired API key" }, { status: 401 })
         response.headers.set("API-Version", versionInfo.version)

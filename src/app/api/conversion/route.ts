@@ -66,7 +66,7 @@ export async function GET(req: Request): Promise<NextResponse> {
 
   const { page, limit, offset } = parsePagination(searchParams)
 
-  const { data: jobs, error, count } = await (supabase as any)
+  const { data: jobs, error, count } = await supabase
     .from("conversion_jobs")
     .select("*, source_document:documents(title)", { count: "exact" })
     .eq("user_id", user.id)
@@ -89,14 +89,7 @@ export async function POST(req: Request): Promise<NextResponse> {
   const rateLimitError = await documentRateLimit(req)
   if (rateLimitError) return rateLimitError
 
-  try {
-    await validateCSRF(req)
-  } catch (error) {
-    if (error instanceof Error && error.name === "CSRFError") {
-      return NextResponse.json({ error: "Invalid CSRF token" }, { status: 403 })
-    }
-    throw error
-  }
+  await validateCSRF(req)
 
   const supabase = await getRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -163,7 +156,11 @@ export async function POST(req: Request): Promise<NextResponse> {
       return NextResponse.json({ error: "Invalid JSON metadata" }, { status: 400 })
     }
     try {
-      const output = transformMetadata({ sourceFormat: source_format as any, targetFormat: target_format as any, data, options })
+      const validMetaFormats: string[] = ["json", "xml", "yaml", "csv_meta"]
+      if (!validMetaFormats.includes(source_format) || !validMetaFormats.includes(target_format)) {
+        return NextResponse.json({ error: "Invalid metadata format" }, { status: 400 })
+      }
+      const output = transformMetadata({ sourceFormat: source_format, targetFormat: target_format, data, options })
       return NextResponse.json({
         type: "metadata",
         source_format,
@@ -206,7 +203,7 @@ export async function POST(req: Request): Promise<NextResponse> {
     }
   }
 
-  const { data: job, error } = await (supabase as any)
+  const { data: job, error } = await supabase
     .from("conversion_jobs")
     .insert({
       user_id: user.id,

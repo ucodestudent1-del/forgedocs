@@ -73,9 +73,9 @@ export default function DashboardClient({
   }, [])
 
   const headerAriaLabel = sidebarCollapsed
-    ? t("sidebar.expand" as any)
-    : t("sidebar.collapse" as any)
-  const mobileMenuAriaLabel = t("sidebar.open" as any)
+    ? t("sidebar.expand")
+    : t("sidebar.collapse")
+  const mobileMenuAriaLabel = t("sidebar.open")
 
   return (
     <ErrorBoundary>
@@ -95,7 +95,7 @@ export default function DashboardClient({
           <button
             onClick={() => setSidebarCollapsed(false)}
             className="fixed lg:static top-4 left-4 z-50 p-2 rounded-md bg-card border shadow-lg text-muted-foreground hover:bg-accent hover:text-foreground transition-colors lg:hidden"
-            aria-label={t("sidebar.expand" as any)}
+            aria-label={t("sidebar.expand")}
           >
             <ChevronRight className="h-5 w-5" />
           </button>
@@ -131,7 +131,7 @@ export default function DashboardClient({
               />
               <input
                 type="search"
-                placeholder={tCommon("header.searchPlaceholder" as any)}
+                placeholder={tCommon("header.searchPlaceholder")}
                 value={searchQuery}
                 onChange={(e) => handleSearchChange(e.target.value)}
                 onKeyDown={(e) => {
@@ -181,7 +181,7 @@ export default function DashboardClient({
           <div className="flex items-center gap-2">
             <LanguageSwitcher />
             <ThemeToggle />
-            <Bell className="h-5 w-5 text-muted-foreground hover:text-primary transition-colors cursor-pointer relative" aria-label={tCommon("header.notifications" as any)} />
+            <Bell className="h-5 w-5 text-muted-foreground hover:text-primary transition-colors cursor-pointer relative" aria-label={tCommon("header.notifications")} />
             <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium text-primary">
               {userInitial}
             </div>

@@ -1,7 +1,7 @@
 "use server"
 
 import { createRouteClient } from "@/lib/supabase"
-import { locales, defaultLocale } from "@/i18n/locales"
+import { locales, defaultLocale, type Locale } from "@/i18n/locales"
 
 export interface DocumentTranslationData {
   id: string
@@ -32,7 +32,7 @@ export async function getDocumentWithTranslation(
   const supabase = await createRouteClient()
 
   // Validate locale
-  if (!locales.includes(userLocale as any)) {
+  if (!locales.includes(userLocale as Locale)) {
     userLocale = defaultLocale
   }
 
@@ -47,7 +47,7 @@ export async function getDocumentWithTranslation(
     return null
   }
 
-  const sourceLocale = (sourceDoc as any).locale || defaultLocale
+  const sourceLocale = sourceDoc.locale || defaultLocale
 
   // If user wants source locale, return source directly
   if (userLocale === sourceLocale) {
@@ -144,5 +144,5 @@ export async function getUserLocale(): Promise<string> {
     .single()
 
   const lang = profile?.language
-  return locales.includes(lang as any) ? lang : defaultLocale
+  return lang && locales.includes(lang as Locale) ? lang : defaultLocale
 }

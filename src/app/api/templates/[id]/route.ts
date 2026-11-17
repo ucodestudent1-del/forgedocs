@@ -2,11 +2,9 @@ import { getRouteClient } from "@/lib/supabase"
 import { NextResponse } from "next/server"
 import { validateCSRF } from "@/lib/csrf"
 import { documentRateLimit } from "@/lib/rate-limiter"
+import { withErrorBoundary, createAppError } from "@/lib/api-error"
 
-export async function GET(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
-): Promise<NextResponse> {
+export const GET = withErrorBoundary(async (req, { params }: { params: Promise<{ id: string }> }) => {
   const rateLimitError = await documentRateLimit(req)
   if (rateLimitError) return rateLimitError
 
@@ -14,7 +12,7 @@ export async function GET(
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    throw createAppError("Unauthorized", 401, "UNAUTHORIZED")
   }
 
   const { id } = await params
@@ -27,46 +25,36 @@ export async function GET(
     .single()
 
   if (error || !template) {
-    return NextResponse.json({ error: "Template not found" }, { status: 404 })
+    throw createAppError("Template not found", 404, "TEMPLATE_NOT_FOUND")
   }
 
   return NextResponse.json({ template })
-}
+})
 
-export async function DELETE(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
-): Promise<NextResponse> {
-  try {
-    const rateLimitError = await documentRateLimit(req)
-    if (rateLimitError) return rateLimitError
+export const DELETE = withErrorBoundary(async (req, { params }: { params: Promise<{ id: string }> }) => {
+  const rateLimitError = await documentRateLimit(req)
+  if (rateLimitError) return rateLimitError
 
-    await validateCSRF(req)
+  await validateCSRF(req)
 
-    const supabase = await getRouteClient()
-    const { data: { user } } = await supabase.auth.getUser()
+  const supabase = await getRouteClient()
+  const { data: { user } } = await supabase.auth.getUser()
 
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
-
-    const { id } = await params
-
-    const { error } = await supabase
-      .from("templates")
-      .delete()
-      .eq("id", id)
-      .eq("user_id", user.id)
-
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
-    }
-
-    return NextResponse.json({ success: true })
-  } catch (error) {
-    if (error instanceof Error && error.name === "CSRFError") {
-      return NextResponse.json({ error: "Invalid CSRF token" }, { status: 403 })
-    }
-    throw error
+  if (!user) {
+    throw createAppError("Unauthorized", 401, "UNAUTHORIZED")
   }
-}
+
+  const { id } = await params
+
+  const { error } = await supabase
+    .from("templates")
+    .delete()
+    .eq("id", id)
+    .eq("user_id", user.id)
+
+  if (error) {
+    throw createAppError(error.message, 500, "DATABASE_ERROR")
+  }
+
+  return NextResponse.json({ success: true })
+})

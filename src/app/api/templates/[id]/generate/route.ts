@@ -22,7 +22,7 @@ export async function POST(
   const { id } = await params
 
   // Fetch template
-  const { data: template, error: templateError } = await (supabase as any)
+  const { data: template, error: templateError } = await supabase
     .from("templates")
     .select("*")
     .eq("id", id)
@@ -79,7 +79,7 @@ export async function POST(
 
   const storagePath = `documents/${user.id}/${crypto.randomUUID()}.json`
 
-  const { data: doc, error } = await (supabase as any)
+  const { data: doc, error } = await supabase
     .from("documents")
     .insert({
       user_id: user.id,
@@ -100,7 +100,7 @@ export async function POST(
   }
 
   // Track usage
-  await (supabase as any).from("usage_records").insert({
+  await supabase.from("usage_records").insert({
     user_id: user.id,
     metric: "documents_created",
     quantity: 1,

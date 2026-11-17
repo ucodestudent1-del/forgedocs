@@ -141,7 +141,7 @@ export default function SettingsPage() {
     }
     setPasswordChanging(true)
     try {
-      const supabase = createBrowserSupabaseClient() as any
+      const supabase = createBrowserSupabaseClient()
       const { error } = await supabase.auth.updateUser({ password: newPassword })
       if (error) {
         toast({ title: error.message || "Failed to change password", variant: "destructive" })
@@ -159,7 +159,7 @@ export default function SettingsPage() {
   const handleExportData = async () => {
     setExporting(true)
     try {
-      const supabase = createBrowserSupabaseClient() as any
+      const supabase = createBrowserSupabaseClient()
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
@@ -195,7 +195,7 @@ export default function SettingsPage() {
   const handleExportDocuments = async () => {
     setExporting(true)
     try {
-      const supabase = createBrowserSupabaseClient() as any
+      const supabase = createBrowserSupabaseClient()
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
@@ -244,7 +244,7 @@ export default function SettingsPage() {
     }
     setDeleting(true)
     try {
-      const supabase = createBrowserSupabaseClient() as any
+      const supabase = createBrowserSupabaseClient()
       const { error } = await supabase.auth.deleteUser()
       if (error) {
         toast({ title: error.message || "Failed to delete account", variant: "destructive" })

@@ -32,7 +32,7 @@ export function SubscriptionTable() {
 
   async function fetchSubscriptions() {
     try {
-      const supabase = createBrowserSupabaseClient() as any
+      const supabase = createBrowserSupabaseClient()
       const { data, error } = await supabase
         .from("subscriptions")
         .select("*")
