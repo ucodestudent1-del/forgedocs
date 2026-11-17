@@ -3,8 +3,12 @@ const path = require("path")
 const { sentryWebpackPlugin } = require("@sentry/webpack-plugin")
 
 const createNextIntlPlugin = require("next-intl/plugin")
-
+const { setCSPNonce, clearCSPNonce } = require("./src/lib/csp-nonce")
 const withNextIntl = createNextIntlPlugin("./src/i18n/routing.ts")
+
+function generateNonce() {
+  return crypto.randomUUID().replace(/-/g, "")
+}
 
 const nextConfig = {
   outputFileTracingRoot: __dirname,
@@ -17,6 +21,20 @@ const nextConfig = {
     ignoreBuildErrors: false,
   },
   async headers() {
+    const nonce = generateNonce()
+    setCSPNonce(nonce)
+    const csp = [
+      "default-src 'self'",
+      `script-src 'self' 'nonce-${nonce}'`,
+      "style-src 'self'",
+      "img-src 'self' data: https:",
+      "font-src 'self'",
+      "connect-src 'self' https:",
+      "frame-ancestors 'none'",
+      "base-uri 'self'",
+      "form-action 'self'",
+    ].join("; ")
+
     return [
       {
         source: "/api/:path*",
@@ -34,20 +52,8 @@ const nextConfig = {
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains; preload" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-          {
-            key: "Content-Security-Policy",
-            value: [
-              "default-src 'self'",
-              "script-src 'self'",
-              "style-src 'self'",
-              "img-src 'self' data: https:",
-              "font-src 'self'",
-              "connect-src 'self' https:",
-              "frame-ancestors 'none'",
-              "base-uri 'self'",
-              "form-action 'self'",
-            ].join("; "),
-          },
+          { key: "Content-Security-Policy", value: csp },
+          { key: "X-CSP-Nonce", value: nonce },
           {
             key: "Permissions-Policy",
             value: "camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()",
