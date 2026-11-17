@@ -69,10 +69,13 @@ ForgeDocs is a document management, generation, editing, and conversion platform
 - Validated against cookie-stored token
 
 ### Rate Limiting
-- Auth endpoints: 5 requests/minute
-- Document operations: 30 requests/minute
-- General API: 100 requests/minute
-- In-memory store (Redis in production)
+- Auth endpoints: 5 requests/minute per user/IP
+- Document operations: 30 requests/minute per user/IP
+- General API: 100 requests/minute per user/IP
+- Redis-backed (shared across all replicas, no per-replica divergence)
+- Fail-closed: rejects all requests when Redis is unavailable
+- User-aware: API key clients rate-limited by `x-api-user-id` header; session/unauthenticated clients by IP
+- Rate limit headers: `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`, `Retry-After`
 
 ## Deployment Architecture
 
@@ -80,6 +83,13 @@ ForgeDocs is a document management, generation, editing, and conversion platform
 - Next.js 15 with `output: 'standalone'`
 - Docker multi-stage build (builder + runner)
 - Node.js 24 Alpine
+
+### API Versioning
+- All API responses include `API-Version` response header
+- Clients negotiate version via `api-version` request header (defaults to `1`)
+- Unsupported versions return `426 Upgrade Required` with `supported_versions` and `default_version` in the body
+- Deprecated versions include `Deprecation` and `Sunset` response headers
+- Current supported version: `1`
 
 ### Deploy
 - Railway platform

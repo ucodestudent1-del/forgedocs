@@ -1,6 +1,6 @@
 import { getRouteClient } from "@/lib/supabase"
 import { NextResponse } from "next/server"
-import { documentRateLimit } from "@/lib/rate-limit"
+import { documentRateLimit } from "@/lib/rate-limiter"
 import { getTierLimits } from "@/lib/tierLimits"
 
 export async function GET(req: Request): Promise<NextResponse> {

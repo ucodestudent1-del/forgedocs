@@ -2,7 +2,7 @@ import { createRouteClient } from "@/lib/supabase"
 import { NextResponse } from "next/server"
 import { z } from "zod"
 import { validateCSRF } from "@/lib/csrf"
-import { documentRateLimit } from "@/lib/rate-limit"
+import { documentRateLimit } from "@/lib/rate-limiter"
 import { cacheDel } from "@/lib/cache"
 
 export async function GET(

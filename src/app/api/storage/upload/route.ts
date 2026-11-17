@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
 import { validateCSRF } from "@/lib/csrf"
-import { documentRateLimit } from "@/lib/rate-limit"
+import { documentRateLimit } from "@/lib/rate-limiter"
 
 export const maxDuration = 60
 

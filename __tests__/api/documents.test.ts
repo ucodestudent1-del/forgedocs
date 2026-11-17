@@ -46,7 +46,7 @@ jest.mock('@/lib/csrf', () => ({
   validateCSRF: jest.fn().mockResolvedValue(undefined),
 }))
 
-jest.mock('@/lib/rate-limit', () => ({
+jest.mock('@/lib/rate-limiter', () => ({
   documentRateLimit: jest.fn().mockResolvedValue(null),
 }))
 

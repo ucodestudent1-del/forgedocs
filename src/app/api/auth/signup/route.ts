@@ -1,7 +1,7 @@
 import { createRouteClient } from "@/lib/supabase"
 import { NextResponse } from "next/server"
 import { validateCSRF, CSRFError } from "@/lib/csrf"
-import { authRateLimit } from "@/lib/rate-limit"
+import { authRateLimit } from "@/lib/rate-limiter"
 import { validatePassword } from "@/lib/password"
 
 export async function POST(req: Request) {

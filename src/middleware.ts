@@ -4,6 +4,12 @@ import type { NextRequest } from "next/server"
 import { locales, defaultLocale } from "@/i18n/locales"
 import { rateLimitMiddleware } from "@/lib/rate-limiter"
 import { validateApiKey } from "@/lib/api-key"
+import {
+  parseApiVersion,
+  apiVersionHeaders,
+  SUPPORTED_API_VERSIONS,
+  DEFAULT_API_VERSION,
+} from "@/lib/api-version"
 
 const ADMIN_PATH_PREFIXES = ["/admin"]
 
@@ -12,6 +18,28 @@ function generateRequestId(): string {
     return crypto.randomUUID()
   }
   return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
+}
+
+function addVersionHeaders(response: NextResponse, version: string): NextResponse {
+  response.headers.set("API-Version", version)
+  if (version !== DEFAULT_API_VERSION) {
+    response.headers.set("API-Version-Default", DEFAULT_API_VERSION)
+  }
+  return response
+}
+
+function unsupportedVersionResponse(version: string): NextResponse {
+  const response = NextResponse.json(
+    {
+      error: `Unsupported API version: ${version}`,
+      supported_versions: SUPPORTED_API_VERSIONS,
+      default_version: DEFAULT_API_VERSION,
+    },
+    { status: 426 }
+  )
+  response.headers.set("API-Version", version)
+  response.headers.set("API-Version-Default", DEFAULT_API_VERSION)
+  return response
 }
 
 function getLocale(request: NextRequest): string {
@@ -103,6 +131,13 @@ export async function middleware(request: NextRequest) {
   // Generate request ID for distributed tracing
   const requestId = request.headers.get("x-request-id") || generateRequestId()
 
+  // API versioning: validate api-version header on every request.
+  // Unsupported versions get 426 Upgrade Required immediately.
+  const versionInfo = parseApiVersion(request.headers)
+  if (!SUPPORTED_API_VERSIONS.includes(versionInfo.version)) {
+    return unsupportedVersionResponse(versionInfo.version)
+  }
+
   // Skip API routes - they have their own rate limiting
   if (
     pathname.startsWith("/api") ||
@@ -114,6 +149,10 @@ export async function middleware(request: NextRequest) {
   ) {
     const response = NextResponse.next()
     response.headers.set("x-request-id", requestId)
+    response.headers.set("API-Version", versionInfo.version)
+    if (versionInfo.version !== DEFAULT_API_VERSION) {
+      response.headers.set("API-Version-Default", DEFAULT_API_VERSION)
+    }
 
     // API key authentication: validate Bearer token and set user context header
     const authHeader = request.headers.get("authorization")
@@ -124,7 +163,12 @@ export async function middleware(request: NextRequest) {
         response.headers.set("x-api-user-id", validated.userId)
         response.headers.set("x-api-key-id", validated.key.id)
       } else {
-        return NextResponse.json({ error: "Invalid or expired API key" }, { status: 401 })
+        const response = NextResponse.json({ error: "Invalid or expired API key" }, { status: 401 })
+        response.headers.set("API-Version", versionInfo.version)
+        if (versionInfo.version !== DEFAULT_API_VERSION) {
+          response.headers.set("API-Version-Default", DEFAULT_API_VERSION)
+        }
+        return response
       }
     }
 
@@ -134,6 +178,10 @@ export async function middleware(request: NextRequest) {
   // Apply general rate limiting to all routes
   const rateLimitResponse = await rateLimitMiddleware(request)
   if (rateLimitResponse.status !== 200) {
+    rateLimitResponse.headers.set("API-Version", versionInfo.version)
+    if (versionInfo.version !== DEFAULT_API_VERSION) {
+      rateLimitResponse.headers.set("API-Version-Default", DEFAULT_API_VERSION)
+    }
     return rateLimitResponse
   }
 
@@ -158,6 +206,10 @@ export async function middleware(request: NextRequest) {
         loginUrl.searchParams.set("callbackUrl", pathname)
         const response = NextResponse.redirect(loginUrl)
         response.headers.set("x-request-id", requestId)
+        response.headers.set("API-Version", versionInfo.version)
+        if (versionInfo.version !== DEFAULT_API_VERSION) {
+          response.headers.set("API-Version-Default", DEFAULT_API_VERSION)
+        }
         return response
       }
 
@@ -171,6 +223,10 @@ export async function middleware(request: NextRequest) {
         }
         const response = NextResponse.redirect(redirectUrl)
         response.headers.set("x-request-id", requestId)
+        response.headers.set("API-Version", versionInfo.version)
+        if (versionInfo.version !== DEFAULT_API_VERSION) {
+          response.headers.set("API-Version-Default", DEFAULT_API_VERSION)
+        }
         return response
       }
       const { data: adminProfile } = await supabase
@@ -182,6 +238,10 @@ export async function middleware(request: NextRequest) {
         const mfaUrl = new URL(`/${defaultLocale}/auth/mfa/verify`, request.url)
         const response = NextResponse.redirect(mfaUrl)
         response.headers.set("x-request-id", requestId)
+        response.headers.set("API-Version", versionInfo.version)
+        if (versionInfo.version !== DEFAULT_API_VERSION) {
+          response.headers.set("API-Version-Default", DEFAULT_API_VERSION)
+        }
         return response
       }
     }
@@ -212,6 +272,10 @@ export async function middleware(request: NextRequest) {
         loginUrl.searchParams.set("callbackUrl", pathname)
         const response = NextResponse.redirect(loginUrl)
         response.headers.set("x-request-id", requestId)
+        response.headers.set("API-Version", versionInfo.version)
+        if (versionInfo.version !== DEFAULT_API_VERSION) {
+          response.headers.set("API-Version-Default", DEFAULT_API_VERSION)
+        }
         return response
       }
 
@@ -219,6 +283,10 @@ export async function middleware(request: NextRequest) {
         const verifyUrl = new URL(`/${defaultLocale}/auth/verify`, request.url)
         const response = NextResponse.redirect(verifyUrl)
         response.headers.set("x-request-id", requestId)
+        response.headers.set("API-Version", versionInfo.version)
+        if (versionInfo.version !== DEFAULT_API_VERSION) {
+          response.headers.set("API-Version-Default", DEFAULT_API_VERSION)
+        }
         return response
       }
 
@@ -231,6 +299,10 @@ export async function middleware(request: NextRequest) {
         const mfaUrl = new URL(`/${defaultLocale}/auth/mfa/verify`, request.url)
         const response = NextResponse.redirect(mfaUrl)
         response.headers.set("x-request-id", requestId)
+        response.headers.set("API-Version", versionInfo.version)
+        if (versionInfo.version !== DEFAULT_API_VERSION) {
+          response.headers.set("API-Version-Default", DEFAULT_API_VERSION)
+        }
         return response
       }
     }
@@ -255,6 +327,10 @@ export async function middleware(request: NextRequest) {
       url.pathname = `/${locale}${pathname}`
       const response = NextResponse.redirect(url)
       response.headers.set("x-request-id", requestId)
+      response.headers.set("API-Version", versionInfo.version)
+      if (versionInfo.version !== DEFAULT_API_VERSION) {
+        response.headers.set("API-Version-Default", DEFAULT_API_VERSION)
+      }
       response.cookies.set("locale", locale, {
         path: "/",
         maxAge: 31536000,
@@ -268,6 +344,10 @@ export async function middleware(request: NextRequest) {
   if (currentCookie !== locale) {
     const response = NextResponse.next()
     response.headers.set("x-request-id", requestId)
+    response.headers.set("API-Version", versionInfo.version)
+    if (versionInfo.version !== DEFAULT_API_VERSION) {
+      response.headers.set("API-Version-Default", DEFAULT_API_VERSION)
+    }
     response.cookies.set("locale", locale, {
       path: "/",
       maxAge: 31536000,
@@ -278,6 +358,10 @@ export async function middleware(request: NextRequest) {
 
   const response = NextResponse.next()
   response.headers.set("x-request-id", requestId)
+  response.headers.set("API-Version", versionInfo.version)
+  if (versionInfo.version !== DEFAULT_API_VERSION) {
+    response.headers.set("API-Version-Default", DEFAULT_API_VERSION)
+  }
   return response
 }
 

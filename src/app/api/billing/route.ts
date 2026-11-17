@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic"
 import { createRouteClient } from "@/lib/supabase"
 import { NextResponse } from "next/server"
 import { validateCSRF } from "@/lib/csrf"
-import { authRateLimit } from "@/lib/rate-limit"
+import { authRateLimit } from "@/lib/rate-limiter"
 
 export async function GET() {
   const supabase = await createRouteClient()

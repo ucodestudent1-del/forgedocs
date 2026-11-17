@@ -1,7 +1,7 @@
 import { getRouteClient } from "@/lib/supabase"
 import { NextResponse } from "next/server"
 import { validateCSRF } from "@/lib/csrf"
-import { documentRateLimit } from "@/lib/rate-limit"
+import { documentRateLimit } from "@/lib/rate-limiter"
 import { parsePagination } from "@/lib/pagination"
 import { checkTierLimit, trackUsage } from "@/lib/tierLimits"
 import {

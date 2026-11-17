@@ -2,7 +2,7 @@ import { getRouteClient } from "@/lib/supabase"
 import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { validateCSRF, generateCSRFToken } from "@/lib/csrf"
-import { authRateLimit } from "@/lib/rate-limit"
+import { authRateLimit } from "@/lib/rate-limiter"
 import { checkLoginAttempts, recordFailedAttempt, clearFailedAttempts } from "@/lib/auth"
 import { validatePassword } from "@/lib/password"
 

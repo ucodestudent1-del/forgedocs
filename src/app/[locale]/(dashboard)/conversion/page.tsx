@@ -19,7 +19,7 @@ import {
   Layout,
   ArrowLeftRight,
 } from "lucide-react"
-import { documentRateLimit } from "@/lib/rate-limit"
+import { documentRateLimit } from "@/lib/rate-limiter"
 import { validateCSRF } from "@/lib/csrf"
 import { useToast } from "@/components/ui/use-toast"
 import {

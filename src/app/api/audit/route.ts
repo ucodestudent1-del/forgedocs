@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { validateCSRF } from "@/lib/csrf"
-import { authRateLimit } from "@/lib/rate-limit"
+import { authRateLimit } from "@/lib/rate-limiter"
 import { logAuditEvent, getClientIp, getClientUserAgent } from "@/lib/audit"
 import { z } from "zod"
 

@@ -8,10 +8,6 @@ const withNextIntl = createNextIntlPlugin("./src/i18n/routing.ts")
 
 const nextConfig = {
   outputFileTracingRoot: __dirname,
-  outputFileTracingIncludes: {
-    "/": [".env.local", ".next/static/**/*"],
-    "/app/**": [".env.local", ".next/static/**/*"],
-  },
   // metadataBase is required for resolving social images and canonical URLs
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://forgedocs.com"),
   eslint: {
@@ -43,7 +39,7 @@ const nextConfig = {
             value: [
               "default-src 'self'",
               "script-src 'self'",
-              "style-src 'self' 'unsafe-inline'",
+              "style-src 'self'",
               "img-src 'self' data: https:",
               "font-src 'self'",
               "connect-src 'self' https:",

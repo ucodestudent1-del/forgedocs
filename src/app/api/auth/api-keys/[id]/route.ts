@@ -1,7 +1,7 @@
 import { getRouteClient } from "@/lib/supabase"
 import { NextResponse } from "next/server"
 import { validateCSRF } from "@/lib/csrf"
-import { authRateLimit } from "@/lib/rate-limit"
+import { authRateLimit } from "@/lib/rate-limiter"
 import { revokeApiKey } from "@/lib/api-key"
 import { z } from "zod"
 

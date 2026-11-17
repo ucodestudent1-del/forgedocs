@@ -31,9 +31,16 @@ export interface RateLimitInfo {
 }
 
 function getClientIdentifier(request: NextRequest): string {
+  // Prefer authenticated user context (set by middleware for API keys via x-api-user-id)
+  const apiUserId = request.headers.get("x-api-user-id")
+  if (apiUserId) {
+    return `user:${apiUserId}`
+  }
+
+  // Fall back to IP for session-based and unauthenticated clients
   const forwarded = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
   const realIp = request.headers.get("x-real-ip")
-  return (forwarded || realIp || "unknown")
+  return `ip:${forwarded || realIp || "unknown"}`
 }
 
 async function checkRateLimit(identifier: string, config: RateLimitConfig): Promise<RateLimitInfo> {
@@ -43,10 +50,11 @@ async function checkRateLimit(identifier: string, config: RateLimitConfig): Prom
 
   let count: number
   try {
-    // Atomic INCR with TTL on first hit = fixed-window rate limiting in Redis
+    // Atomic INCR with TTL on first hit = fixed-window rate limiting in Redis.
+    // Single shared store across all replicas — no per-replica divergence.
     count = await cacheIncrement(redisKey, ttlSeconds)
   } catch {
-    // Redis unavailable — fail closed
+    // Redis unavailable — fail closed. Reject all requests when the backing store is down.
     return { limited: true, remaining: 0, resetTime: now + config.windowMs, total: config.maxRequests }
   }
 
@@ -63,27 +71,57 @@ async function checkRateLimit(identifier: string, config: RateLimitConfig): Prom
   return { limited, remaining, resetTime, total: config.maxRequests }
 }
 
-export function createRateLimiter(path: string) {
+function rateLimitResponse(limitInfo: RateLimitInfo): NextResponse {
+  const response = NextResponse.json(
+    { error: "Rate limit exceeded", message: "Too many requests. Please try again later." },
+    { status: 429 }
+  )
+  response.headers.set("X-RateLimit-Limit", limitInfo.total.toString())
+  response.headers.set("X-RateLimit-Remaining", "0")
+  response.headers.set("X-RateLimit-Reset", Math.ceil(limitInfo.resetTime / 1000).toString())
+  response.headers.set("Retry-After", Math.ceil((limitInfo.resetTime - Date.now()) / 1000).toString())
+  return response
+}
+
+function nextResponse(limitInfo: RateLimitInfo): NextResponse {
+  const response = NextResponse.next()
+  response.headers.set("X-RateLimit-Limit", limitInfo.total.toString())
+  response.headers.set("X-RateLimit-Remaining", limitInfo.remaining.toString())
+  response.headers.set("X-RateLimit-Reset", Math.ceil(limitInfo.resetTime / 1000).toString())
+  return response
+}
+
+/**
+ * Creates a rate limiter middleware for a specific path config.
+ * Returns NextResponse | null (null = allowed, NextResponse = rate limited).
+ * Used by API route handlers directly.
+ */
+export function createRateLimiter(config: RateLimitConfig) {
+  return async (request: NextRequest): Promise<NextResponse | null> => {
+    const identifier = getClientIdentifier(request)
+    const limitInfo = await checkRateLimit(identifier, config)
+
+    if (limitInfo.limited) {
+      return rateLimitResponse(limitInfo)
+    }
+    return null
+  }
+}
+
+/**
+ * Creates a rate limiter by path pattern (used by middleware).
+ * Returns NextResponse (always a response, either next() or 429).
+ */
+export function createRateLimiterByPath(path: string) {
   const config = RATE_LIMIT_CONFIGS[path]
   if (!config) {
     return async (request: NextRequest) => NextResponse.next()
   }
 
+  const limiter = createRateLimiter(config)
   return async (request: NextRequest) => {
-    const ip = getClientIdentifier(request)
-    const key = `${ip}:${path}`
-
-    const limitInfo = await checkRateLimit(key, config)
-
-    const response = limitInfo.limited
-      ? NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 })
-      : NextResponse.next()
-
-    response.headers.set("X-RateLimit-Limit", limitInfo.total.toString())
-    response.headers.set("X-RateLimit-Remaining", limitInfo.remaining.toString())
-    response.headers.set("X-RateLimit-Reset", Math.ceil(limitInfo.resetTime / 1000).toString())
-
-    return response
+    const result = await limiter(request)
+    return result ?? NextResponse.next()
   }
 }
 
@@ -106,26 +144,34 @@ export async function rateLimitMiddleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  const ip = getClientIdentifier(request)
-  const key = `${ip}:${matchedPath}`
-
-  const limitInfo = await checkRateLimit(key, matchedConfig)
+  const identifier = getClientIdentifier(request)
+  const limitInfo = await checkRateLimit(identifier, matchedConfig)
 
   if (limitInfo.limited) {
-    const response = NextResponse.json(
-      { error: "Rate limit exceeded", message: "Too many requests. Please try again later." },
-      { status: 429 }
-    )
-    response.headers.set("X-RateLimit-Limit", limitInfo.total.toString())
-    response.headers.set("X-RateLimit-Remaining", "0")
-    response.headers.set("X-RateLimit-Reset", Math.ceil(limitInfo.resetTime / 1000).toString())
-    response.headers.set("Retry-After", Math.ceil((limitInfo.resetTime - Date.now()) / 1000).toString())
-    return response
+    return rateLimitResponse(limitInfo)
   }
 
-  const response = NextResponse.next()
-  response.headers.set("X-RateLimit-Limit", limitInfo.total.toString())
-  response.headers.set("X-RateLimit-Remaining", limitInfo.remaining.toString())
-  response.headers.set("X-RateLimit-Reset", Math.ceil(limitInfo.resetTime / 1000).toString())
-  return response
+  return nextResponse(limitInfo)
 }
+
+/**
+ * Preconfigured rate limiters for direct use in API route handlers.
+ * Each returns NextResponse | null (null = allowed).
+ */
+export const authRateLimit = createRateLimiter({
+  windowMs: 60 * 1000,
+  maxRequests: 5,
+  keyPrefix: "auth",
+})
+
+export const apiRateLimit = createRateLimiter({
+  windowMs: 60 * 1000,
+  maxRequests: 100,
+  keyPrefix: "api",
+})
+
+export const documentRateLimit = createRateLimiter({
+  windowMs: 60 * 1000,
+  maxRequests: 30,
+  keyPrefix: "documents",
+})
