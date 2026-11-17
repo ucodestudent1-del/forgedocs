@@ -1,5 +1,5 @@
-// Environment validation - only runs at runtime, not during build
-// This prevents build failures when env vars aren't set during Docker build
+// Environment validation - only runs when explicitly called
+// This prevents build/runtime failures when env vars aren't set
 
 let validated = false
 
@@ -35,7 +35,10 @@ export function validateEnv() {
   }
 }
 
-// Auto-validate on module load (runtime only)
+// Auto-validate on module load (runtime only, non-blocking)
+// Wrapped in try-catch to prevent crashing the server if env vars are missing
 if (typeof window !== "undefined" || process.env.NEXT_PHASE !== "phase-production-build") {
-  validateEnv()
+  try {
+    validateEnv()
+  } catch {}
 }

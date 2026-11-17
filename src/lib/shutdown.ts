@@ -33,8 +33,10 @@ async function runShutdown(signal: string) {
   }
 }
 
-// Only register once
-if (typeof process !== "undefined" && process.on) {
-  process.on("SIGTERM", () => runShutdown("SIGTERM"))
-  process.on("SIGINT", () => runShutdown("SIGINT"))
+// Only register once, safely guarded for Edge Runtime compatibility
+if (typeof process !== "undefined" && process && typeof process.on === "function") {
+  try {
+    process.on("SIGTERM", () => runShutdown("SIGTERM"))
+    process.on("SIGINT", () => runShutdown("SIGINT"))
+  } catch {}
 }
