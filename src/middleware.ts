@@ -137,9 +137,26 @@ export async function middleware(request: NextRequest) {
 
   // API versioning: validate api-version header on every request.
   // Unsupported versions get 426 Upgrade Required immediately.
-  const versionInfo = parseApiVersion(request.headers)
-  if (!SUPPORTED_API_VERSIONS.includes(versionInfo.version)) {
-    return unsupportedVersionResponse(versionInfo.version)
+  // Wrapped in try-catch to avoid crashing middleware on Edge Runtime
+  // Header API incompatibilities.
+  let versionInfo: { version: string; supported: boolean; deprecated: boolean; sunset: boolean }
+  let versionValidated = false
+  try {
+    versionInfo = parseApiVersion(request.headers)
+    versionValidated = true
+  } catch {
+    versionInfo = { version: DEFAULT_API_VERSION, supported: true, deprecated: false, sunset: false }
+  }
+
+  if (
+    versionValidated &&
+    !SUPPORTED_API_VERSIONS.includes(versionInfo.version)
+  ) {
+    try {
+      return unsupportedVersionResponse(versionInfo.version)
+    } catch {
+      // If version response fails, continue without version validation
+    }
   }
 
   // Skip API routes - they have their own rate limiting
