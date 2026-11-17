@@ -2,7 +2,6 @@
 
 import { Component, ReactNode } from "react"
 import { Button } from "@/components/ui/button"
-import { useToast } from "@/components/ui/use-toast"
 import { AlertTriangle, RefreshCw, Home } from "lucide-react"
 import Link from "next/link"
 
@@ -52,8 +51,6 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
       if (this.props.fallback) {
         return this.props.fallback
       }
-
-      const { toast } = useToast()
 
       return (
         <div className="min-h-screen flex items-center justify-center bg-background px-4">
