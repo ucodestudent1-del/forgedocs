@@ -12,8 +12,6 @@ function generateNonce() {
 
 const nextConfig = {
   outputFileTracingRoot: __dirname,
-  // metadataBase is required for resolving social images and canonical URLs
-  metadataBase: process.env.NEXT_PUBLIC_APP_URL || "https://forgedocs.com",
   eslint: {
     ignoreDuringBuilds: false,
   },

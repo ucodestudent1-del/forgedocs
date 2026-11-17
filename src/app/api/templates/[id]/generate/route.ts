@@ -1,6 +1,7 @@
 import { createRouteClient } from "@/lib/supabase"
 import { NextResponse } from "next/server"
 import { z } from "zod"
+import { withErrorBoundary, createAppError } from "@/lib/api-error"
 
 export const dynamic = "force-dynamic"
 
@@ -8,15 +9,15 @@ const generateSchema = z.object({
   values: z.record(z.string(), z.unknown()),
 })
 
-export async function POST(
+export const POST = withErrorBoundary(async (
   req: Request,
   { params }: { params: Promise<{ id: string }> }
-) {
+) => {
   const supabase = await createRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    throw createAppError("Unauthorized", 401, "UNAUTHORIZED")
   }
 
   const { id } = await params
@@ -29,7 +30,7 @@ export async function POST(
     .single()
 
   if (templateError || !template) {
-    return NextResponse.json({ error: "Template not found" }, { status: 404 })
+    throw createAppError("Template not found", 404, "NOT_FOUND")
   }
 
   const body = await req.json()
@@ -41,10 +42,7 @@ export async function POST(
   const required = placeholderSchema.filter((p: any) => p.required)
   for (const field of required) {
     if (!(field.name in values) || values[field.name] === "" || values[field.name] == null) {
-      return NextResponse.json(
-        { error: `Missing required field: ${field.name}` },
-        { status: 400 }
-      )
+      throw createAppError(`Missing required field: ${field.name}`, 400, "MISSING_FIELD")
     }
   }
 
@@ -96,7 +94,7 @@ export async function POST(
     .single()
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    throw createAppError(error.message, 500, "DATABASE_ERROR")
   }
 
   // Track usage
@@ -107,4 +105,4 @@ export async function POST(
   })
 
   return NextResponse.json({ document: doc }, { status: 201 })
-}
+})

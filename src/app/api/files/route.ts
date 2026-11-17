@@ -3,8 +3,9 @@ import { NextResponse } from "next/server"
 import { validateCSRF } from "@/lib/csrf"
 import { documentRateLimit } from "@/lib/rate-limiter"
 import { MAX_PAGE_SIZE, DEFAULT_PAGE_SIZE, parsePagination } from "@/lib/pagination"
+import { withErrorBoundary, createAppError } from "@/lib/api-error"
 
-export async function GET(req: Request): Promise<NextResponse> {
+export const GET = withErrorBoundary(async (req: Request): Promise<NextResponse> => {
   const rateLimitError = await documentRateLimit(req)
   if (rateLimitError) return rateLimitError
 
@@ -12,7 +13,7 @@ export async function GET(req: Request): Promise<NextResponse> {
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    throw createAppError("Unauthorized", 401, "UNAUTHORIZED")
   }
 
   const url = new URL(req.url)
@@ -47,7 +48,7 @@ export async function GET(req: Request): Promise<NextResponse> {
     .range(offset, offset + limit - 1)
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    throw createAppError(error.message, 500, "DATABASE_ERROR")
   }
 
   return NextResponse.json({
@@ -56,4 +57,4 @@ export async function GET(req: Request): Promise<NextResponse> {
     page,
     limit,
   })
-}
+})

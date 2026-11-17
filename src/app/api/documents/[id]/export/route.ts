@@ -2,11 +2,12 @@ import { getRouteClient } from "@/lib/supabase"
 import { NextResponse } from "next/server"
 import { sanitizeForExport } from "@/lib/sanitize"
 import { documentRateLimit } from "@/lib/rate-limiter"
+import { withErrorBoundary, createAppError } from "@/lib/api-error"
 
-export async function GET(
+export const GET = withErrorBoundary(async (
   req: Request,
   { params }: { params: Promise<{ id: string }> }
-) {
+) => {
   const rateLimitError = await documentRateLimit(req)
   if (rateLimitError) return rateLimitError
 
@@ -14,7 +15,7 @@ export async function GET(
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    throw createAppError("Unauthorized", 401, "UNAUTHORIZED")
   }
 
   const { id } = await params
@@ -29,7 +30,7 @@ export async function GET(
     .single()
 
   if (error || !doc) {
-    return NextResponse.json({ error: "Document not found" }, { status: 404 })
+    throw createAppError("Document not found", 404, "NOT_FOUND")
   }
 
   // Sanitize filename to prevent header injection
@@ -60,13 +61,11 @@ export async function GET(
       extension = "txt"
       break
     case "docx":
-      // DOCX binary generation requires a library (e.g., docx). Return HTML with correct MIME for now.
       exportContent = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${safeTitle}</title></head><body>${sanitizedContent}</body></html>`
       mimeType = "text/html"
       extension = "html"
       break
     case "pdf":
-      // PDF binary generation requires a library (e.g., pdfkit/puppeteer). Return HTML with correct MIME for now.
       exportContent = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${safeTitle}</title></head><body>${sanitizedContent}</body></html>`
       mimeType = "text/html"
       extension = "html"
@@ -77,13 +76,13 @@ export async function GET(
       extension = "html"
   }
 
-  return new Response(exportContent, {
+  return new NextResponse(exportContent, {
     headers: {
       "Content-Type": mimeType,
       "Content-Disposition": `attachment; filename="${safeTitle}.${extension}"`,
     },
   })
-}
+})
 
 function htmlToMarkdown(html: string): string {
   return html

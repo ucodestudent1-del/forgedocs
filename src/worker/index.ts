@@ -1,11 +1,12 @@
 "use strict"
 
-const { Queue, Worker } = require("bullmq")
-const { exec } = require("child_process")
-const fs = require("fs")
-const path = require("path")
-const { createClient } = require("@supabase/supabase-js")
-const { createClient: createRedisClient } = require("redis")
+import { Queue, Worker } from "bullmq"
+import { exec } from "child_process"
+import fs from "fs"
+import path from "path"
+import { createClient } from "@supabase/supabase-js"
+import Redis from "ioredis"
+const createRedisClient = (opts: any) => new Redis(opts)
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -14,11 +15,11 @@ if (!supabaseUrl || !supabaseAnonKey) {
   console.warn("Supabase env vars missing - worker will not function correctly")
 }
 
-const supabase = createClient(supabaseUrl, supabaseAnonKey)
+const supabase = createClient(supabaseUrl!, supabaseAnonKey!)
 
 const redisConnection = {
   host: process.env.REDIS_HOST || "localhost",
-  port: parseInt(process.env.REDIS_PORT || "6379"),
+  port: parseInt(process.env.REDIS_PORT || "6379", 10),
 }
 
 const ALLOWED_LIBREOFFICE_FORMATS = new Set([
@@ -26,7 +27,7 @@ const ALLOWED_LIBREOFFICE_FORMATS = new Set([
   "rtf", "txt", "html", "md", "epub",
 ])
 
-function validateLibreOfficeFormat(format) {
+function validateLibreOfficeFormat(format: string): string {
   if (!ALLOWED_LIBREOFFICE_FORMATS.has(format)) {
     throw new Error(`Unsupported output format: ${format}`)
   }
@@ -39,17 +40,14 @@ const LEADER_LOCK_TTL_MS = 15000 // 15 second TTL
 const LEADER_RENEW_INTERVAL_MS = 5000 // Renew every 5 seconds
 
 let isLeader = false
-let leaderLockInterval = null
-let leaderLockValue = null
+let leaderLockInterval: ReturnType<typeof setInterval> | null = null
+let leaderLockValue: string | null = null
 
 const redisClient = createRedisClient(redisConnection)
 
-async function acquireLeaderLock() {
+async function acquireLeaderLock(): Promise<boolean> {
   const value = `${process.pid}:${Date.now()}:${Math.random().toString(36).slice(2)}`
-  const result = await redisClient.set(LEADER_LOCK_KEY, value, {
-    PX: LEADER_LOCK_TTL_MS,
-    NX: true, // Only set if not exists
-  })
+  const result = await redisClient.set(LEADER_LOCK_KEY, value, "PX", LEADER_LOCK_TTL_MS, "NX")
   if (result === "OK") {
     leaderLockValue = value
     isLeader = true
@@ -60,7 +58,7 @@ async function acquireLeaderLock() {
   return false
 }
 
-async function renewLeaderLock() {
+async function renewLeaderLock(): Promise<void> {
   if (!isLeader || !leaderLockValue) return
 
   // Only renew if we still hold the lock
@@ -75,7 +73,7 @@ async function renewLeaderLock() {
   }
 }
 
-async function releaseLeaderLock() {
+async function releaseLeaderLock(): Promise<void> {
   if (!isLeader || !leaderLockValue) return
 
   // Only release if we still hold the lock
@@ -87,8 +85,8 @@ async function releaseLeaderLock() {
   leaderLockValue = null
 }
 
-function startLeaderElection() {
-  return acquireLeaderLock().then((acquired) => {
+function startLeaderElection(): void {
+  acquireLeaderLock().then((acquired) => {
     if (!acquired) {
       // Watch for lock expiry to retry
       setTimeout(startLeaderElection, 2000)
@@ -97,7 +95,7 @@ function startLeaderElection() {
   })
 }
 
-function stopLeaderElection() {
+function stopLeaderElection(): Promise<void> {
   if (leaderLockInterval) {
     clearInterval(leaderLockInterval)
     leaderLockInterval = null
@@ -105,10 +103,10 @@ function stopLeaderElection() {
   return releaseLeaderLock()
 }
 
-async function convertWithLibreOffice(sourcePath, targetFormat, outputDir) {
-  const safeFormat = validateLibreOfficeFormat(targetFormat);
-  return new Promise((resolve, reject) => {
-    const cmd = `libreoffice --headless --convert-to ${safeFormat} --outdir "${outputDir}" "${sourcePath}"`;
+async function convertWithLibreOffice(sourcePath: string, targetFormat: string, outputDir: string): Promise<string> {
+  const safeFormat = validateLibreOfficeFormat(targetFormat)
+  return new Promise<string>((resolve, reject) => {
+    const cmd = `libreoffice --headless --convert-to ${safeFormat} --outdir "${outputDir}" "${sourcePath}"`
     exec(cmd, { timeout: 300000 }, (error, stdout, stderr) => {
       if (error) reject(error)
       else resolve(path.join(outputDir, path.basename(sourcePath, path.extname(sourcePath)) + "." + safeFormat))
@@ -116,16 +114,16 @@ async function convertWithLibreOffice(sourcePath, targetFormat, outputDir) {
   })
 }
 
-async function reconstructFromPDF(sourcePath, targetFormat) {
+async function reconstructFromPDF(sourcePath: string, targetFormat: string): Promise<string> {
   throw new Error(`PDF to ${targetFormat} reconstruction not yet implemented`)
 }
 
-function getExt(url) {
+function getExt(url: string | undefined): string {
   return url ? url.split(".").pop()?.toLowerCase() || "" : ""
 }
 
-function extToLibreOfficeFormat(ext) {
-  const map = {
+function extToLibreOfficeFormat(ext: string): string {
+  const map: Record<string, string> = {
     docx: "pdf",
     doc: "pdf",
     xlsx: "pdf",
@@ -144,7 +142,18 @@ function extToLibreOfficeFormat(ext) {
   return map[ext] || ext
 }
 
-const worker = new Worker(
+interface ConversionJobData {
+  type: string
+  userId: string
+  sourceUrl: string
+  targetFormat: string
+  sourceFormat: string
+  jobId: string
+  options?: Record<string, unknown>
+  value?: string
+}
+
+const worker = new Worker<ConversionJobData, { success: boolean; outputUrl?: string; type?: string }>(
   "document-conversion",
   async (job) => {
     const { type, userId, sourceUrl, targetFormat, sourceFormat, jobId, options, value } = job.data
@@ -193,15 +202,16 @@ const worker = new Worker(
       const sourcePath = `/tmp/${jobId}_source`
       const outputDir = `/tmp`
       const outputPath = `/tmp/${jobId}_output.${targetFormat}`
-      let sourceFile = null
-      let resultPath = null
+      let sourceFile: unknown = null
+      let resultPath: string | null = null
 
       try {
         const { data: downloadedFile, error: downloadError } = await supabase.storage.from("documents").download(sourceUrl)
         if (downloadError) throw downloadError
 
         sourceFile = downloadedFile
-        fs.writeFileSync(sourcePath, await sourceFile.arrayBuffer())
+        const buffer = await (sourceFile as Blob).arrayBuffer()
+        fs.writeFileSync(sourcePath, new Uint8Array(buffer))
 
         const sourceExt = getExt(sourceUrl)
 
@@ -216,7 +226,7 @@ const worker = new Worker(
           resultPath = await convertWithLibreOffice(sourcePath, targetFormat, outputDir)
         }
 
-        const resultBuffer = fs.readFileSync(resultPath)
+        const resultBuffer = fs.readFileSync(resultPath!)
         const storagePath = `converted/${userId}/${jobId}.${targetFormat}`
         const { error: uploadError } = await supabase.storage.from("converted").upload(storagePath, resultBuffer, { upsert: true })
 
@@ -242,7 +252,7 @@ const worker = new Worker(
           .from("conversion_jobs")
           .update({
             status: "failed",
-            error_message: err.message,
+            error_message: err instanceof Error ? err.message : String(err),
             completed_at: new Date().toISOString(),
           })
           .eq("id", jobId)
@@ -256,26 +266,34 @@ const worker = new Worker(
         .from("conversion_jobs")
         .update({
           status: "failed",
-          error_message: err.message,
+          error_message: err instanceof Error ? err.message : String(err),
           completed_at: new Date().toISOString(),
         })
         .eq("id", jobId)
       throw err
     }
   },
-  { connection: redisConnection, concurrency: parseInt(process.env.WORKER_CONCURRENCY || "5", 10), maxAttempts: 3, backoff: { type: "exponential", delay: 1000 }, removeOnComplete: 100, removeOnFail: 50 }
+  {
+    connection: redisConnection,
+    concurrency: parseInt(process.env.WORKER_CONCURRENCY || "5", 10),
+    maxStartedAttempts: 3,
+    removeOnComplete: 100 as any,
+    removeOnFail: 50 as any,
+  }
 )
 
-worker.on("completed", (job) => {
-  console.log(`Job ${job.id} completed`)
-})
-
-worker.on("failed", (job, err) => {
-  console.error(`Job ${job.id} failed:`, err.message)
-})
-
 // Worker health tracking
-const workerHealth = {
+interface WorkerHealth {
+  status: string
+  activeJobs: number
+  completedJobs: number
+  failedJobs: number
+  lastJobAt: string | null
+  startedAt: string
+  isLeader: boolean
+}
+
+const workerHealth: WorkerHealth = {
   status: "healthy",
   activeJobs: 0,
   completedJobs: 0,
@@ -286,24 +304,32 @@ const workerHealth = {
 }
 
 worker.on("active", (job) => {
-  workerHealth.activeJobs++
-  workerHealth.lastJobAt = new Date().toISOString()
+  if (job) {
+    workerHealth.activeJobs++
+    workerHealth.lastJobAt = new Date().toISOString()
+  }
 })
 
 worker.on("completed", (job) => {
-  workerHealth.activeJobs = Math.max(0, workerHealth.activeJobs - 1)
-  workerHealth.completedJobs++
-  console.log(`Job ${job.id} completed`)
+  if (job) {
+    workerHealth.activeJobs = Math.max(0, workerHealth.activeJobs - 1)
+    workerHealth.completedJobs++
+    console.log(`Job ${job.id} completed`)
+  }
 })
 
 worker.on("failed", (job, err) => {
-  workerHealth.activeJobs = Math.max(0, workerHealth.activeJobs - 1)
-  workerHealth.failedJobs++
-  console.error(`Job ${job.id} failed:`, err.message)
+  if (job) {
+    workerHealth.activeJobs = Math.max(0, workerHealth.activeJobs - 1)
+    workerHealth.failedJobs++
+    console.error(`Job ${job.id} failed:`, err.message)
+  }
 })
 
 // Health check HTTP server
-const healthServer = require("http").createServer((req, res) => {
+import http from "http"
+
+const healthServer = http.createServer((req: http.IncomingMessage, res: http.ServerResponse) => {
   if (req.url === "/health") {
     const isHealthy = workerHealth.status === "healthy" && !worker.isPaused()
     res.writeHead(isHealthy ? 200 : 503, { "Content-Type": "application/json" })
@@ -331,7 +357,7 @@ healthServer.listen(HEALTH_PORT, () => {
 // Initialize leader election
 startLeaderElection()
 
-async function gracefulShutdown(signal) {
+async function gracefulShutdown(signal: string): Promise<void> {
   console.log(`Received ${signal}, shutting down worker gracefully...`)
   try {
     await stopLeaderElection()
@@ -341,7 +367,7 @@ async function gracefulShutdown(signal) {
     console.log("Worker shutdown complete")
     process.exit(0)
   } catch (err) {
-    console.error("Worker shutdown error:", err.message)
+    console.error("Worker shutdown error:", err instanceof Error ? err.message : String(err))
     process.exit(1)
   }
 }
@@ -349,4 +375,8 @@ async function gracefulShutdown(signal) {
 process.on("SIGTERM", () => gracefulShutdown("SIGTERM"))
 process.on("SIGINT", () => gracefulShutdown("SIGINT"))
 
-module.exports = { worker, isLeader: () => isLeader }
+function getIsLeader(): boolean {
+  return isLeader
+}
+
+export { worker, getIsLeader }

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { cacheIncrement } from "@/lib/cache"
+import { getClientIdentifier } from "@/lib/client-identifier"
 
 export interface RateLimitConfig {
   windowMs: number
@@ -28,25 +29,6 @@ export interface RateLimitInfo {
   remaining: number
   resetTime: number
   total: number
-}
-
-function getClientIdentifier(request: Request): string {
-  // Prefer API key ID for per-key rate limiting (most granular)
-  const apiKeyId = request.headers.get("x-api-key-id")
-  if (apiKeyId) {
-    return `apikey:${apiKeyId}`
-  }
-
-  // Fall back to authenticated user context (set by middleware for API keys via x-api-user-id)
-  const apiUserId = request.headers.get("x-api-user-id")
-  if (apiUserId) {
-    return `user:${apiUserId}`
-  }
-
-  // Fall back to IP for session-based and unauthenticated clients
-  const forwarded = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
-  const realIp = request.headers.get("x-real-ip")
-  return `ip:${forwarded || realIp || "unknown"}`
 }
 
 async function checkRateLimit(identifier: string, config: RateLimitConfig): Promise<RateLimitInfo> {
@@ -121,7 +103,7 @@ export function createRateLimiter(config: RateLimitConfig) {
 export function createRateLimiterByPath(path: string) {
   const config = RATE_LIMIT_CONFIGS[path]
   if (!config) {
-    return async (request: Request) => NextResponse.next()
+    return async (_request: Request) => NextResponse.next()
   }
 
   const limiter = createRateLimiter(config)

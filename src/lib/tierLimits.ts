@@ -167,7 +167,7 @@ export async function trackUsage(
 }
 
 export function createTierLimitMiddleware(metric: "documents_created" | "conversions" | "storage_bytes") {
-  return async (req: Request): Promise<NextResponse | null> => {
+  return async (_req: Request): Promise<NextResponse | null> => {
     const supabase = await getRouteClient()
     const { data: { user } } = await supabase.auth.getUser()
 

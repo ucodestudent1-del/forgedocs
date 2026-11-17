@@ -1,5 +1,35 @@
 // Template definitions for ForgeDocs document generator
-export const TEMPLATE_LIBRARY = {
+export interface TemplateField {
+  name: string
+  type: string
+  label: string
+  required?: boolean
+  placeholder?: string
+  default_value?: string
+}
+
+export interface TemplateSection {
+  id: string
+  label: string
+  required?: boolean
+}
+
+export interface Template {
+  id: string
+  name: string
+  category: string
+  description: string
+  fields: TemplateField[]
+  sections: TemplateSection[]
+  placeholder_schema?: TemplateField[]
+  styling?: Record<string, unknown>
+}
+
+export interface TemplateCategory {
+  [key: string]: Template[]
+}
+
+export const TEMPLATE_LIBRARY: Record<string, Template> = {
   // Legal Contracts
   professional_service_agreement: {
     id: 'professional_service_agreement',
@@ -241,6 +271,6 @@ export const TEMPLATE_CATEGORIES = {
   hr: 'Human Resources'
 };
 
-export const getTemplateById = (id: string) => (TEMPLATE_LIBRARY as Record<string, any>)[id];
-export const getTemplatesByCategory = (category: string) => Object.values(TEMPLATE_LIBRARY).filter((t: any) => t.category === category);
+export const getTemplateById = (id: string): Template | undefined => TEMPLATE_LIBRARY[id];
+export const getTemplatesByCategory = (category: string) => Object.values(TEMPLATE_LIBRARY).filter((t: Template) => t.category === category);
 export const getAllTemplates = () => Object.values(TEMPLATE_LIBRARY);

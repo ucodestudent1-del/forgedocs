@@ -1,5 +1,6 @@
 import { getRouteClient } from "@/lib/supabase"
 import logger, { logAuditEvent as logToWinston } from "@/lib/logger"
+import { getClientIp } from "@/lib/client-identifier"
 
 export interface AuditEventInput {
   userId: string
@@ -49,15 +50,8 @@ export async function logAuditEvent(input: AuditEventInput): Promise<void> {
   }
 }
 
-export function getClientIp(req: Request): string | null {
-  const forwarded = req.headers.get("x-forwarded-for")
-  if (forwarded) {
-    return forwarded.split(",")[0]?.trim() || null
-  }
-  const realIp = req.headers.get("x-real-ip")
-  return realIp ?? null
-}
-
 export function getClientUserAgent(req: Request): string | null {
   return req.headers.get("user-agent") ?? null
 }
+
+export { getClientIp } from "@/lib/client-identifier"

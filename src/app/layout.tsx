@@ -14,6 +14,7 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-sans" })
 const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://forgedocs.com"
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://forgedocs.com"),
   title: {
     default: "ForgeDocs - Professional Document Management Platform",
     template: "%s | ForgeDocs",

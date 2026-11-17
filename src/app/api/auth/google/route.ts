@@ -1,8 +1,9 @@
 import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
+import { withErrorBoundary, createAppError } from "@/lib/api-error"
 
-export async function GET() {
+export const GET = withErrorBoundary(async () => {
   const cookieStore = await cookies()
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -37,8 +38,8 @@ export async function GET() {
   })
 
   if (error) {
-    return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/auth/login?error=${error.message}`)
+    throw createAppError(error.message, 400, "OAUTH_ERROR")
   }
 
   return NextResponse.redirect(data.url)
-}
+})

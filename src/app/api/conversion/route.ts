@@ -18,12 +18,13 @@ import {
   convertDocumentServer,
   type ConversionType,
 } from "@/lib/conversion"
+import { withErrorBoundary, createAppError } from "@/lib/api-error"
 
 export const maxDuration = 300
 
 const VALID_FORMATS = Object.keys(FORMAT_REGISTRY)
 
-export async function GET(req: Request): Promise<NextResponse> {
+export const GET = withErrorBoundary(async (req: Request): Promise<NextResponse> => {
   const rateLimitError = await documentRateLimit(req)
   if (rateLimitError) return rateLimitError
 
@@ -31,7 +32,7 @@ export async function GET(req: Request): Promise<NextResponse> {
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    throw createAppError("Unauthorized", 401, "UNAUTHORIZED")
   }
 
   const url = new URL(req.url)
@@ -74,7 +75,7 @@ export async function GET(req: Request): Promise<NextResponse> {
     .range(offset, offset + limit - 1)
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    throw createAppError(error.message, 500, "DATABASE_ERROR")
   }
 
   return NextResponse.json({
@@ -83,9 +84,9 @@ export async function GET(req: Request): Promise<NextResponse> {
     page,
     limit,
   })
-}
+})
 
-export async function POST(req: Request): Promise<NextResponse> {
+export const POST = withErrorBoundary(async (req: Request): Promise<NextResponse> => {
   const rateLimitError = await documentRateLimit(req)
   if (rateLimitError) return rateLimitError
 
@@ -95,14 +96,14 @@ export async function POST(req: Request): Promise<NextResponse> {
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    throw createAppError("Unauthorized", 401, "UNAUTHORIZED")
   }
 
   const body = await req.json()
   const parsed = conversionJobSchema.safeParse(body)
 
   if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten().fieldErrors }, { status: 400 })
+    throw createAppError(JSON.stringify(parsed.error.flatten().fieldErrors), 400, "VALIDATION_ERROR")
   }
 
   const { type, source_format, target_format, source_url, value, options } = parsed.data
@@ -111,23 +112,23 @@ export async function POST(req: Request): Promise<NextResponse> {
   const sourceFmt = getFormat(source_format)
   const targetFmt = getFormat(target_format)
   if (!sourceFmt || !targetFmt) {
-    return NextResponse.json({ error: "Invalid source or target format" }, { status: 400 })
+    throw createAppError("Invalid source or target format", 400, "INVALID_FORMAT")
   }
 
   // Handle unit conversion (synchronous, no job needed)
   if (type === "unit") {
     if (!value) {
-      return NextResponse.json({ error: "Value is required for unit conversion" }, { status: 400 })
+      throw createAppError("Value is required for unit conversion", 400, "MISSING_VALUE")
     }
     const numValue = parseFloat(value)
     if (isNaN(numValue)) {
-      return NextResponse.json({ error: "Invalid numeric value" }, { status: 400 })
+      throw createAppError("Invalid numeric value", 400, "INVALID_NUMBER")
     }
     // Determine category from format IDs
     const sourceFmtObj = Object.values(FORMAT_REGISTRY).find((f) => f.id === source_format)
     const category = sourceFmtObj?.category
     if (!category || category !== "unit") {
-      return NextResponse.json({ error: "Source format must be a unit type" }, { status: 400 })
+      throw createAppError("Source format must be a unit type", 400, "INVALID_FORMAT")
     }
     try {
       const result = convertUnit(numValue, source_format, source_format, target_format)
@@ -140,25 +141,25 @@ export async function POST(req: Request): Promise<NextResponse> {
         converted_at: new Date().toISOString(),
       })
     } catch (err) {
-      return NextResponse.json({ error: err instanceof Error ? err.message : "Unit conversion failed" }, { status: 400 })
+      throw createAppError(err instanceof Error ? err.message : "Unit conversion failed", 400, "CONVERSION_FAILED")
     }
   }
 
   // Handle metadata transformation (synchronous)
   if (type === "metadata") {
     if (!value) {
-      return NextResponse.json({ error: "Value (metadata JSON) is required for metadata conversion" }, { status: 400 })
+      throw createAppError("Value (metadata JSON) is required for metadata conversion", 400, "MISSING_VALUE")
     }
     let data: Record<string, unknown>
     try {
       data = JSON.parse(value)
     } catch {
-      return NextResponse.json({ error: "Invalid JSON metadata" }, { status: 400 })
+      throw createAppError("Invalid JSON metadata", 400, "INVALID_JSON")
     }
     try {
       const validMetaFormats: string[] = ["json", "xml", "yaml", "csv_meta"]
       if (!validMetaFormats.includes(source_format) || !validMetaFormats.includes(target_format)) {
-        return NextResponse.json({ error: "Invalid metadata format" }, { status: 400 })
+        throw createAppError("Invalid metadata format", 400, "INVALID_FORMAT")
       }
       const output = transformMetadata({
         sourceFormat: source_format as "json" | "xml" | "yaml" | "csv_meta",
@@ -174,22 +175,23 @@ export async function POST(req: Request): Promise<NextResponse> {
         converted_at: new Date().toISOString(),
       })
     } catch (err) {
-      return NextResponse.json({ error: err instanceof Error ? err.message : "Metadata transformation failed" }, { status: 400 })
+      throw createAppError(err instanceof Error ? err.message : "Metadata transformation failed", 400, "CONVERSION_FAILED")
     }
   }
 
   // Document conversion - create a job
   // Validate pair support
   if (!isPairSupported(source_format, target_format) && source_format !== target_format) {
-    return NextResponse.json({ error: `Conversion from ${source_format} to ${target_format} is not supported` }, { status: 400 })
+    throw createAppError(`Conversion from ${source_format} to ${target_format} is not supported`, 400, "UNSUPPORTED_CONVERSION")
   }
 
   // Check tier limits using centralized utility
   const limitCheck = await checkTierLimit(user.id, "conversions", 1)
   if (!limitCheck.allowed) {
-    return NextResponse.json(
-      { error: `Monthly conversion limit reached (${limitCheck.current}/${limitCheck.limit}). Upgrade your plan to continue.` },
-      { status: 403 }
+    throw createAppError(
+      `Monthly conversion limit reached (${limitCheck.current}/${limitCheck.limit}). Upgrade your plan to continue.`,
+      403,
+      "RATE_LIMIT_EXCEEDED"
     )
   }
 
@@ -204,7 +206,7 @@ export async function POST(req: Request): Promise<NextResponse> {
       .single()
 
     if (docError || !sourceDoc) {
-      return NextResponse.json({ error: "Source document not found" }, { status: 404 })
+      throw createAppError("Source document not found", 404, "NOT_FOUND")
     }
   }
 
@@ -223,11 +225,11 @@ export async function POST(req: Request): Promise<NextResponse> {
     .single()
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    throw createAppError(error.message, 500, "DATABASE_ERROR")
   }
 
   // Track usage
   await trackUsage(user.id, "conversions", 1)
 
   return NextResponse.json({ job }, { status: 201 })
-}
+})

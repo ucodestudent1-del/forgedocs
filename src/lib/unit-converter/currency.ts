@@ -1,7 +1,6 @@
 // Currency Conversion Module - Uses free exchange rate APIs
 
 const CURRENCY_CACHE = new Map<string, { rates: Record<string, number>; timestamp: number }>()
-const CACHE_TTL = 60 * 60 * 1000 // 1 hour
 
 const SUPPORTED_CURRENCIES = [
   'USD', 'EUR', 'GBP', 'JPY', 'CHF', 'CAD', 'AUD', 'CNY',
@@ -27,8 +26,6 @@ const CURRENCY_LABELS: Record<string, string> = {
   BHD: 'Bahraini Dinar (ب.د)', OMR: 'Omani Rial (﷼)', JOD: 'Jordanian Dinar (د.ا)',
   LBP: 'Lebanese Pound (ل.ل)'
 }
-
-const CURRENCY_CACHE_TTL = 60 * 60 * 1000 // 1 hour
 
 const CURRENCY_APIS = [
   'https://api.frankfurter.dev/v1/latest',

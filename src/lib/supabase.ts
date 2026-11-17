@@ -2,11 +2,9 @@ import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
 import type { Database } from "@/types/database"
 
-const isBuildTime = typeof window === "undefined" && process.env.NEXT_PHASE === "phase-production-build"
-
 // Mock query builder that chains all Supabase query methods
 function createMockQueryBuilder() {
-  const chain: any = {}
+  const chain: Record<string, any> = {}
   const methods = ["select", "insert", "update", "delete", "upsert", "order", "range", "eq", "neq", "gt", "gte", "lt", "lte", "like", "ilike", "is", "in", "contains", "contained_by", "range_filter", "match", "not", "or", "filter", "limit", "offset", "single", "maybeSingle", "abortSignal", "select", "insert", "update", "delete", "upsert", "rpc", "returns"]
   for (const method of methods) {
     chain[method] = (..._args: any[]) => createMockQueryBuilder()
@@ -54,7 +52,6 @@ export async function createRouteClient() {
     }
   }
 
-  const cookieStore = await cookies()
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 

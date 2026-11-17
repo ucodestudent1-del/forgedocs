@@ -6,6 +6,7 @@ import { authRateLimit } from "@/lib/rate-limiter"
 import { checkLoginAttempts, recordFailedAttempt, clearFailedAttempts } from "@/lib/auth"
 import { validatePassword } from "@/lib/password"
 import { withErrorBoundary, createAppError } from "@/lib/api-error"
+import { getClientIdentifier } from "@/lib/client-identifier"
 
 export const POST = withErrorBoundary(async (req) => {
   const rateLimitError = await authRateLimit(req)
@@ -71,9 +72,3 @@ export const DELETE = withErrorBoundary(async (req) => {
 
   return NextResponse.json({ success: true })
 })
-
-function getClientIdentifier(req: Request): string {
-  const forwarded = req.headers.get("x-forwarded-for")
-  const ip = forwarded ? forwarded.split(",")[0].trim() : "unknown"
-  return ip
-}

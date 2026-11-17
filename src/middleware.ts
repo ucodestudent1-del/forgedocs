@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import { locales, defaultLocale, type Locale } from "@/i18n/locales"
+import { locales, defaultLocale } from "@/i18n/locales"
 
 function generateRequestId(): string {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
@@ -40,8 +40,10 @@ export async function middleware(request: NextRequest) {
       // Safe cookie read
       try {
         const cookieLocale = request.cookies?.get?.("locale")?.value
-        if (cookieLocale && locales.includes(cookieLocale as any)) {
-          locale = cookieLocale
+        if (cookieLocale && typeof cookieLocale === "string") {
+          if (locales.includes(cookieLocale as (typeof locales)[number])) {
+            locale = cookieLocale
+          }
         }
       } catch {}
 
@@ -53,7 +55,7 @@ export async function middleware(request: NextRequest) {
             const preferred = acceptLanguage
               .split(",")
               .map((l) => l.split(";")[0].trim().toLowerCase().split("-")[0])
-              .find((l) => locales.includes(l as any))
+              .find((l) => locales.includes(l as (typeof locales)[number]))
             if (preferred && typeof preferred === "string") {
               locale = preferred
             }

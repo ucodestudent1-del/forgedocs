@@ -2,8 +2,9 @@ import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
 import { documentRateLimit } from "@/lib/rate-limiter"
+import { withErrorBoundary, createAppError } from "@/lib/api-error"
 
-export async function GET(req: Request) {
+export const GET = withErrorBoundary(async (req: Request) => {
   const rateLimitError = await documentRateLimit(req)
   if (rateLimitError) return rateLimitError
 
@@ -23,7 +24,7 @@ export async function GET(req: Request) {
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    throw createAppError("Unauthorized", 401, "UNAUTHORIZED")
   }
 
   const url = new URL(req.url)
@@ -31,17 +32,17 @@ export async function GET(req: Request) {
   const bucket = url.searchParams.get("bucket") || "documents"
 
   if (!path) {
-    return NextResponse.json({ error: "Path parameter required" }, { status: 400 })
+    throw createAppError("Path parameter required", 400, "MISSING_PARAM")
   }
 
   // Prevent path traversal: reject paths with .. or absolute paths
   if (path.includes("..") || path.startsWith("/") || path.includes("\\")) {
-    return NextResponse.json({ error: "Invalid path" }, { status: 400 })
+    throw createAppError("Invalid path", 400, "INVALID_PATH")
   }
 
   // Verify user owns this file (path should start with user.id)
   if (!path.startsWith(`${user.id}/`)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    throw createAppError("Forbidden", 403, "FORBIDDEN")
   }
 
   // Generate signed URL (valid for 5 minutes)
@@ -50,9 +51,9 @@ export async function GET(req: Request) {
     .createSignedUrl(path, 300)
 
   if (error || !signedUrlData?.signedUrl) {
-    return NextResponse.json({ error: "File not found" }, { status: 404 })
+    throw createAppError("File not found", 404, "NOT_FOUND")
   }
 
   // Redirect to signed URL
   return NextResponse.redirect(signedUrlData.signedUrl)
-}
+})
