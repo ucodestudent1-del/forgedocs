@@ -139,12 +139,12 @@ export default function RootLayout({
         <link rel="preconnect" href="https://api.forgedocs.com" />
       </head>
       <body className={`${inter.variable} font-sans antialiased min-h-screen bg-background text-foreground`}>
-        <ThemeInitializer />
-        <ThemeProvider>
-          <ErrorBoundary>
+        <ErrorBoundary>
+          <ThemeInitializer />
+          <ThemeProvider>
             <Toast>{children}</Toast>
-          </ErrorBoundary>
-        </ThemeProvider>
+          </ThemeProvider>
+        </ErrorBoundary>
       </body>
     </html>
   )
