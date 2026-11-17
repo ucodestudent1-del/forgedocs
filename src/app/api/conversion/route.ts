@@ -160,7 +160,12 @@ export async function POST(req: Request): Promise<NextResponse> {
       if (!validMetaFormats.includes(source_format) || !validMetaFormats.includes(target_format)) {
         return NextResponse.json({ error: "Invalid metadata format" }, { status: 400 })
       }
-      const output = transformMetadata({ sourceFormat: source_format, targetFormat: target_format, data, options })
+      const output = transformMetadata({
+        sourceFormat: source_format as "json" | "xml" | "yaml" | "csv_meta",
+        targetFormat: target_format as "json" | "xml" | "yaml" | "csv_meta",
+        data,
+        options,
+      })
       return NextResponse.json({
         type: "metadata",
         source_format,

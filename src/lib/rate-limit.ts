@@ -18,4 +18,4 @@ export type { RateLimitConfig } from "@/lib/rate-limiter"
 
 // Deprecated: per-replica in-memory store removed. Rate limiting is now
 // Redis-backed and shared across all replicas. Fail-closed when Redis is unavailable.
-export const rateLimitStore: Map<string, never> = new Map()
+export const rateLimitStore: Map<string, unknown> = new Map()

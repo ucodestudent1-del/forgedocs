@@ -78,13 +78,13 @@ export async function performOCR(
           onProgress(Math.round(progress * 100))
         }
       }
-    })
+    } as any)
 
     return {
-      text: result.text,
-      confidence: result.confidence,
+      text: (result as any).text,
+      confidence: (result as any).confidence,
       data: result,
-      pages: result.pages?.length || 1,
+      pages: (result as any).pages?.length || 1,
       language
     }
   } catch (error) {

@@ -79,7 +79,7 @@ export function usePresence(
     channel
       .on('presence', { event: 'sync' }, () => {
         const state = channel.presenceState()
-        const allUsers = Object.values(state).flat()
+        const allUsers = Object.values(state).flat() as unknown as Array<{ user_id: string }>
         setUsers(allUsers.filter((u) => u.user_id !== user.id))
       })
       .on('presence', { event: 'join' }, ({ key, newPresences }) => {

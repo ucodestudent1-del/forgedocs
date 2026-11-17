@@ -8,7 +8,7 @@ export interface SupabaseClient {
     getUser: () => Promise<{ data: { user: any } }>
     getSession: () => Promise<{ data: { session: any } }>
     updateUser: (attrs: any) => Promise<{ data: any; error: any }>
-    deleteUser: () => Promise<{ data: any; error: any }>
+    deleteUser?: () => Promise<{ data: any; error: any }>
     resetPasswordForEmail: (email: string, opts?: any) => Promise<{ data: any; error: any }>
     signInWithPassword: (credentials: any) => Promise<{ data: any; error: any }>
     signUp: (credentials: any) => Promise<{ data: any; error: any }>

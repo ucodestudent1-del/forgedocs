@@ -1,7 +1,7 @@
 import { createRouteClient } from "@/lib/supabase"
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import { locales, defaultLocale } from "@/i18n/locales"
+import { locales, defaultLocale, type Locale } from "@/i18n/locales"
 import { rateLimitMiddleware } from "@/lib/rate-limiter"
 import {
   validateApiKey,
@@ -57,7 +57,7 @@ function getLocale(request: NextRequest): string {
   }
 
   const cookieLocale = request.cookies.get("locale")?.value
-    if (cookieLocale && locales.includes(cookieLocale)) {
+    if (cookieLocale && locales.includes(cookieLocale as Locale)) {
       return cookieLocale
     }
 
@@ -66,7 +66,7 @@ function getLocale(request: NextRequest): string {
     const preferred = acceptLanguage
       .split(",")
       .map((l) => l.split(";")[0].trim().toLowerCase().split("-")[0])
-      .find((l) => locales.includes(l))
+      .find((l) => locales.includes(l as Locale))
     if (preferred) {
       return preferred
     }

@@ -31,7 +31,7 @@ export const DELETE = withErrorBoundary(async (req) => {
 
   const result = await revokeApiKey(user.id, parsed.data.key_id)
   if (!result.success) {
-    throw createAppError(result.error, 500, "API_KEY_REVOKE_ERROR")
+    throw createAppError(result.error || "Unknown error", 500, "API_KEY_REVOKE_ERROR")
   }
 
   return NextResponse.json({ success: true })

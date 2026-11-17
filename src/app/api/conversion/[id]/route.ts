@@ -48,7 +48,7 @@ export const GET = withErrorBoundary(async (req, { params }: { params: Promise<{
         "Content-Type": mimeType,
         "Content-Disposition": `attachment; filename="converted-${job.id}${extension}"`,
       },
-    })
+    }) as unknown as NextResponse
   }
 
   return NextResponse.json({ job })

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { cacheIncrement } from "@/lib/cache"
 
-interface RateLimitConfig {
+export interface RateLimitConfig {
   windowMs: number
   maxRequests: number
   keyPrefix: string
@@ -30,7 +30,7 @@ export interface RateLimitInfo {
   total: number
 }
 
-function getClientIdentifier(request: NextRequest): string {
+function getClientIdentifier(request: Request): string {
   // Prefer API key ID for per-key rate limiting (most granular)
   const apiKeyId = request.headers.get("x-api-key-id")
   if (apiKeyId) {
@@ -103,7 +103,7 @@ function nextResponse(limitInfo: RateLimitInfo): NextResponse {
  * Used by API route handlers directly.
  */
 export function createRateLimiter(config: RateLimitConfig) {
-  return async (request: NextRequest): Promise<NextResponse | null> => {
+  return async (request: Request): Promise<NextResponse | null> => {
     const identifier = getClientIdentifier(request)
     const limitInfo = await checkRateLimit(identifier, config)
 
@@ -121,11 +121,11 @@ export function createRateLimiter(config: RateLimitConfig) {
 export function createRateLimiterByPath(path: string) {
   const config = RATE_LIMIT_CONFIGS[path]
   if (!config) {
-    return async (request: NextRequest) => NextResponse.next()
+    return async (request: Request) => NextResponse.next()
   }
 
   const limiter = createRateLimiter(config)
-  return async (request: NextRequest) => {
+  return async (request: Request) => {
     const result = await limiter(request)
     return result ?? NextResponse.next()
   }

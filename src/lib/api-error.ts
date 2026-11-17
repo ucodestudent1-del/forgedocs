@@ -80,7 +80,7 @@ export function apiErrorResponse(error: unknown, requestId: string): NextRespons
   return NextResponse.json(response, { status: statusCode })
 }
 
-export type ApiHandler = (req: Request) => Promise<NextResponse>
+export type ApiHandler = (req: Request, ...extra: any[]) => Promise<NextResponse>
 
 /**
  * Wraps an API route handler with standardized error handling.
@@ -94,11 +94,11 @@ export type ApiHandler = (req: Request) => Promise<NextResponse>
  *   })
  */
 export function withErrorBoundary(handler: ApiHandler): ApiHandler {
-  return async (req: Request): Promise<NextResponse> => {
+  return async (req: Request, ...args: any[]): Promise<NextResponse> => {
     const requestId = req.headers.get("x-request-id") || generateRequestId()
 
     try {
-      const response = await handler(req)
+      const response = await handler(req, ...args)
 
       // Ensure request ID header on all responses
       response.headers.set("x-request-id", requestId)

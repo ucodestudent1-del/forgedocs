@@ -83,7 +83,7 @@ export function useNotificationsRealtime(userId: string) {
         setNotifications((prev) => prev.map((n) => (n.id === payload.new.id ? payload.new : n)))
       },
       onDelete: (payload) => {
-        setNotifications((prev) => prev.filter((n) => n.id !== payload.old.id))
+        setNotifications((prev) => prev.filter((n) => n.id !== (payload.old as { id: string }).id))
       }
     }
   )

@@ -38,7 +38,8 @@ export async function POST(req: Request) {
   }
 
   // Use service role client for webhook operations (no user cookies in webhook context)
-  const supabase = await createServiceRoleClient()
+  // Typed as any because webhook_events table is not in the Database type schema
+  const supabase = (await createServiceRoleClient()) as any
 
   // Idempotency check - atomic INSERT ON CONFLICT to prevent race conditions
   const eventId = `stripe_${event.id}`
@@ -176,7 +177,7 @@ export async function POST(req: Request) {
         .eq("id", sub.user_id)
         .single()
 
-      if (profile?.email) {
+      if (profile?.email && subscription.trial_end) {
         const trialEndDate = new Date(subscription.trial_end * 1000)
 
         await sendEmail({

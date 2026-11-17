@@ -245,7 +245,8 @@ export default function SettingsPage() {
     setDeleting(true)
     try {
       const supabase = createBrowserSupabaseClient()
-      const { error } = await supabase.auth.deleteUser()
+      const result = await supabase.auth.deleteUser?.()
+      const error = result?.error
       if (error) {
         toast({ title: error.message || "Failed to delete account", variant: "destructive" })
         setDeleting(false)
