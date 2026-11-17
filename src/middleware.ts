@@ -130,7 +130,8 @@ async function getCachedAdminRole(supabase: any, userId: string): Promise<string
 }
 
 export async function middleware(request: NextRequest) {
-  const pathname = request.nextUrl.pathname
+  try {
+    const pathname = request.nextUrl.pathname
 
   // Generate request ID for distributed tracing
   const requestId = request.headers.get("x-request-id") || generateRequestId()
@@ -406,6 +407,9 @@ export async function middleware(request: NextRequest) {
     response.headers.set("API-Version-Default", DEFAULT_API_VERSION)
   }
   return response
+  } catch {
+    return NextResponse.next()
+  }
 }
 
 export const config = {
