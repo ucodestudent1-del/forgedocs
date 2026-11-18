@@ -60,7 +60,7 @@ export const POST = withErrorBoundary(async (req) => {
 
     await supabase
       .from("subscriptions")
-      .update({ status: "canceled", tier: "free", cancel_at_period_end: false })
+      .update({ status: "canceled", tier: null, cancel_at_period_end: false })
       .eq("id", subscription.id)
 
     return NextResponse.json({

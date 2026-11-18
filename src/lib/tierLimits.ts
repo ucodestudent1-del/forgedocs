@@ -10,41 +10,34 @@ export interface TierLimits {
   has_priority_support: boolean
   has_audit_logs: boolean
   has_advanced_templates: boolean
+  max_seats: number
 }
 
 const DEFAULT_LIMITS: TierLimits = {
-  documents_per_month: 500,
-  conversions_per_month: 100,
-  storage_gb: 5,
-  max_file_size_mb: 10,
-  api_requests_per_minute: 30,
-  has_priority_support: false,
+  documents_per_month: -1,
+  conversions_per_month: -1,
+  storage_gb: 20,
+  max_file_size_mb: 50,
+  api_requests_per_minute: 100,
+  has_priority_support: true,
   has_audit_logs: false,
   has_advanced_templates: false,
+  max_seats: 5,
 }
 
 // Hardcoded fallback used only if the DB tier_limits table is unavailable
 const TIER_LIMITS: Record<string, TierLimits> = {
-  free: DEFAULT_LIMITS,
-  pro: {
-    documents_per_month: -1,
-    conversions_per_month: -1,
-    storage_gb: 100,
-    max_file_size_mb: 50,
-    api_requests_per_minute: 100,
-    has_priority_support: true,
-    has_audit_logs: true,
-    has_advanced_templates: true,
-  },
+  professional: DEFAULT_LIMITS,
   business: {
     documents_per_month: -1,
     conversions_per_month: -1,
-    storage_gb: 500,
+    storage_gb: 100,
     max_file_size_mb: 100,
     api_requests_per_minute: 500,
     has_priority_support: true,
     has_audit_logs: true,
     has_advanced_templates: true,
+    max_seats: -1,
   },
 }
 
@@ -59,7 +52,7 @@ export async function getTierLimitsFromDB(userId: string): Promise<TierLimits | 
     .limit(1)
     .single()
 
-  const tier = subscription?.tier || "free"
+  const tier = subscription?.tier || "professional"
 
   const { data: limits } = await supabase
     .from("tier_limits")
@@ -92,7 +85,7 @@ export async function getUserTier(userId: string): Promise<string> {
     .limit(1)
     .single()
 
-  return subscription?.tier || "free"
+  return subscription?.tier || "professional"
 }
 
 export async function getTierLimits(userId: string): Promise<TierLimits> {
@@ -100,7 +93,7 @@ export async function getTierLimits(userId: string): Promise<TierLimits> {
   if (dbLimits) return dbLimits
 
   const tier = await getUserTier(userId)
-  return TIER_LIMITS[tier] || DEFAULT_LIMITS
+  return TIER_LIMITS[tier] || TIER_LIMITS.professional
 }
 
 export async function checkTierLimit(
@@ -195,7 +188,7 @@ export function createTierLimitMiddleware(metric: "documents_created" | "convers
 
 // Feature gating helpers
 export function hasFeature(tier: string, feature: keyof TierLimits): boolean {
-  const limits = TIER_LIMITS[tier] || DEFAULT_LIMITS
+  const limits = TIER_LIMITS[tier] || TIER_LIMITS.professional
   return limits[feature] as boolean
 }
 

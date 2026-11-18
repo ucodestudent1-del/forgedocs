@@ -6,37 +6,27 @@ import { PricingCard } from "@/components/ui/pricing-card"
 
 export const metadata: Metadata = {
   title: "Pricing - Simple, Transparent Document Management",
-  description: "Choose the ForgeDocs plan that fits your team. Free, Pro ($19/mo), and Business ($49/mo). All plans include a 14-day free trial.",
+  description: "Choose the ForgeDocs plan that fits your team. Professional ($29/mo) and Business ($89/mo). All plans include a 14-day free trial.",
 }
 
 export default function PricingPage() {
   const plans = [
     {
-      name: "Free",
-      price: "$0",
-      description: "For individuals getting started",
+      name: "Professional",
+      price: "$29",
+      description: "For individuals and small teams",
       interval: "/mo",
-      features: ["500 documents per month", "3 template uses", "Basic format conversion", "Community support", "1GB storage"],
-      ctaText: "Get started free",
-      ctaHref: "/auth/signup",
-      isFeatured: false,
-    },
-    {
-      name: "Pro",
-      price: "$19",
-      description: "For growing teams",
-      interval: "/mo",
-      features: ["Unlimited documents", "Unlimited templates", "All 50+ format conversions", "Priority email support", "Team collaboration", "10GB storage", "Version history", "Custom templates"],
+      features: ["Unlimited documents", "Unlimited templates", "All 50+ format conversions", "Priority email support", "Team collaboration (up to 5 seats)", "20GB storage", "Version history (30 days)", "Custom templates"],
       ctaText: "Start free trial",
       ctaHref: "/auth/signup",
       isFeatured: true,
     },
     {
       name: "Business",
-      price: "$49",
+      price: "$89",
       description: "For established organizations",
       interval: "/mo",
-      features: ["Everything in Pro", "SSO / SAML authentication", "Advanced analytics & reporting", "Dedicated account manager", "Custom integrations", "100GB storage", "Unlimited version history", "SLA guarantee"],
+      features: ["Everything in Professional", "Unlimited seats", "SSO / SAML authentication", "Advanced analytics & reporting", "Dedicated account manager", "Custom integrations", "100GB storage", "Unlimited version history", "SLA guarantee", "Audit logs"],
       ctaText: "Contact sales",
       ctaHref: "/contact",
       isFeatured: false,
@@ -44,16 +34,18 @@ export default function PricingPage() {
   ]
 
   const compareFeatures = [
-    { label: "Documents per month", free: "500", pro: "Unlimited", business: "Unlimited" },
-    { label: "Template uses", free: "3", pro: "Unlimited", business: "Unlimited" },
-    { label: "Format conversions", free: "Basic", pro: "All 50+", business: "All 50+" },
-    { label: "Storage", free: "1 GB", pro: "10 GB", business: "100 GB" },
-    { label: "Team collaboration", free: "No", pro: "Yes", business: "Yes" },
-    { label: "Version history", free: "No", pro: "Yes", business: "Unlimited" },
-    { label: "Priority support", free: "Community", pro: "Email", business: "Dedicated" },
-    { label: "SSO / SAML", free: "No", pro: "No", business: "Yes" },
-    { label: "Custom integrations", free: "No", pro: "No", business: "Yes" },
-    { label: "SLA guarantee", free: "No", pro: "No", business: "Yes" },
+    { label: "Documents per month", professional: "Unlimited", business: "Unlimited" },
+    { label: "Seats", professional: "Up to 5", business: "Unlimited" },
+    { label: "Template uses", professional: "Unlimited", business: "Unlimited" },
+    { label: "Format conversions", professional: "All 50+", business: "All 50+" },
+    { label: "Storage", professional: "20 GB", business: "100 GB" },
+    { label: "Team collaboration", professional: "Yes", business: "Yes" },
+    { label: "Version history", professional: "30 days", business: "Unlimited" },
+    { label: "Priority support", professional: "Email", business: "Dedicated" },
+    { label: "SSO / SAML", professional: "No", business: "Yes" },
+    { label: "Custom integrations", professional: "No", business: "Yes" },
+    { label: "SLA guarantee", professional: "No", business: "Yes" },
+    { label: "Audit logs", professional: "No", business: "Yes" },
   ]
 
   return (
@@ -67,21 +59,20 @@ export default function PricingPage() {
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-10">
             Choose the plan that fits your team. All plans include a 14-day free trial.
           </p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto mb-16">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto mb-16">
             {plans.map((plan) => (
               <PricingCard key={plan.name} {...plan} />
             ))}
           </div>
           <div className="text-center mb-16 text-xs text-muted-foreground">
-            All paid plans include a 14-day free trial. Cancel anytime. No credit card required for Free plan.
+            All paid plans include a 14-day free trial. Cancel anytime. Credit card required.
           </div>
           <div className="overflow-x-auto border border-input rounded-xl">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-input">
                   <th scope="col" className="pb-4 text-left text-sm font-semibold text-muted-foreground w-1/3">Feature</th>
-                  <th scope="col" className="pb-4 text-center text-sm font-semibold text-muted-foreground">Free</th>
-                  <th scope="col" className="pb-4 text-center text-sm font-semibold text-muted-foreground">Pro</th>
+                  <th scope="col" className="pb-4 text-center text-sm font-semibold text-muted-foreground">Professional</th>
                   <th scope="col" className="pb-4 text-center text-sm font-semibold text-muted-foreground">Business</th>
                 </tr>
               </thead>
@@ -89,8 +80,7 @@ export default function PricingPage() {
                 {compareFeatures.map((row) => (
                   <tr key={row.label} className="border-b border-input/50 last:border-0">
                     <td className="py-4 text-sm text-foreground">{row.label}</td>
-                    <td className="py-4 text-center text-sm">{row.free}</td>
-                    <td className="py-4 text-center text-sm">{row.pro}</td>
+                    <td className="py-4 text-center text-sm">{row.professional}</td>
                     <td className="py-4 text-center text-sm">{row.business}</td>
                   </tr>
                 ))}

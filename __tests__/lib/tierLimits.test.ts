@@ -31,9 +31,9 @@ describe("Tier Limits", () => {
     })
 
     const limits = await getTierLimits("user-123")
-    expect(limits.documents_per_month).toBe(500)
-    expect(limits.conversions_per_month).toBe(100)
-    expect(limits.storage_gb).toBe(5)
+    expect(limits.documents_per_month).toBe(-1)
+    expect(limits.conversions_per_month).toBe(-1)
+    expect(limits.storage_gb).toBe(20)
   })
 
   it("returns DB limits when available", async () => {
@@ -43,7 +43,7 @@ describe("Tier Limits", () => {
       order: jest.fn().mockReturnThis(),
       limit: jest.fn().mockReturnThis(),
       single: jest.fn().mockResolvedValue({
-        data: { tier: "pro" },
+        data: { tier: "professional" },
         error: null,
       }),
     }
@@ -53,7 +53,7 @@ describe("Tier Limits", () => {
       eq: jest.fn().mockReturnThis(),
       single: jest.fn().mockResolvedValue({
         data: {
-          tier: "pro",
+          tier: "professional",
           documents_per_month: -1,
           conversions_per_month: -1,
           storage_gb: 100,
@@ -92,14 +92,14 @@ describe("Tier Limits", () => {
       eq: jest.fn().mockReturnThis(),
       order: jest.fn().mockReturnThis(),
       limit: jest.fn().mockReturnThis(),
-      single: jest.fn().mockResolvedValue({ data: { tier: "pro" }, error: null }),
+      single: jest.fn().mockResolvedValue({ data: { tier: "professional" }, error: null }),
     }
     const tierLimitsChain = {
       select: jest.fn().mockReturnThis(),
       eq: jest.fn().mockReturnThis(),
       single: jest.fn().mockResolvedValue({
         data: {
-          tier: "pro",
+          tier: "professional",
           documents_per_month: -1,
           conversions_per_month: -1,
           storage_gb: 100,

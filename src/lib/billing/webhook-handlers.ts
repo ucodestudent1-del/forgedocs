@@ -31,16 +31,16 @@ export async function handleCheckoutSessionCompleted(
   if (!userId) return
 
   // Determine tier from line items price
-  let tier = "free"
+  let tier: string | null = null
   try {
     const lineItems = await stripeCircuitBreaker.execute(() =>
       stripe.checkout.sessions.listLineItems(session.id, { limit: 10 })
     )
     const priceId = lineItems.data[0]?.price?.id || ""
-    if (priceId.includes("pro")) tier = "pro"
+    if (priceId.includes("professional")) tier = "professional"
     else if (priceId.includes("business")) tier = "business"
   } catch {
-    // tier remains "free" if lookup fails
+    // tier remains null if lookup fails
   }
 
   const { error } = await supabase.from("subscriptions").upsert({
@@ -197,7 +197,7 @@ export async function handleSubscriptionDeleted(
 
   await supabase
     .from("subscriptions")
-    .update({ status: "canceled", tier: "free" })
+    .update({ status: "canceled", tier: null })
     .eq("stripe_subscription_id", subscription.id)
 
   const { data: sub } = await supabase
@@ -247,9 +247,9 @@ export async function handleSubscriptionUpdated(
   if (sub) {
     // Determine tier from price ID
     const priceId = subscription.items.data[0]?.price?.id
-    let tier = "free"
+    let tier: string | null = null
     if (priceId) {
-      if (priceId.includes("pro")) tier = "pro"
+      if (priceId.includes("professional")) tier = "professional"
       else if (priceId.includes("business")) tier = "business"
     }
 
