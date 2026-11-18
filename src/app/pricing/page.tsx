@@ -9,6 +9,8 @@ export const metadata: Metadata = {
   description: "Choose the ForgeDocs plan that fits your team. Professional ($29/mo) and Business ($89/mo). All plans include a 14-day free trial.",
 }
 
+export const revalidate = 60
+
 export default function PricingPage() {
   const plans = [
     {

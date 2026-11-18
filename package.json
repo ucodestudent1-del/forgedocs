@@ -18,7 +18,10 @@
     "db:reset": "supabase db reset",
     "verify:isolation": "node scripts/verify-isolation.js",
     "verify:backup": "node scripts/verify-backup.js",
-    "worker": "node src/worker/index.js"
+    "worker": "node src/worker/index.js",
+    "lighthouse": "lhci autorun",
+    "lighthouse:ci": "lhci autorun --upload.target=temporary-public-storage",
+    "analyze": "ANALYZE=true npm run build"
   },
   "dependencies": {
     "@radix-ui/react-dropdown-menu": "^2.2.1",
@@ -51,6 +54,7 @@
     "react": "19.0.0",
     "react-dom": "19.0.0",
     "resend": "^6.38.1",
+    "sharp": "^0.35.5",
     "stripe": "^14.0.0",
     "tailwind-merge": "^2.5.5",
     "tesseract.js": "^7.0.0",
@@ -61,6 +65,8 @@
   },
   "devDependencies": {
     "@eslint/compat": "^2.1.1",
+    "@lhci/cli": "^0.16.1",
+    "@next/bundle-analyzer": "^16.4.6",
     "@playwright/test": "^1.40.0",
     "@testing-library/jest-dom": "^6.4.0",
     "@testing-library/react": "^16.0.0",

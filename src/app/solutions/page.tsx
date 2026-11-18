@@ -10,6 +10,8 @@ export const metadata: Metadata = {
   description: "ForgeDocs industry solutions for Legal, Finance, HR, Education, Real Estate, and Healthcare. Industry-tailored templates and features.",
 }
 
+export const revalidate = 60
+
 export default function SolutionsPage() {
   const solutions = [
     {

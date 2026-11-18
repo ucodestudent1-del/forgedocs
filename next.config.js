@@ -2,6 +2,9 @@
 const path = require("path")
 const crypto = require("crypto")
 const { sentryWebpackPlugin } = require("@sentry/webpack-plugin")
+const withBundleAnalyzer = require("@next/bundle-analyzer")({
+  enabled: process.env.ANALYZE === "true",
+})
 
 const { setCSPNonce, clearCSPNonce } = require("./src/lib/csp-nonce")
 
@@ -90,6 +93,28 @@ const nextConfig = {
             key: "X-Permitted-Cross-Domain-Policies",
             value: "none",
           },
+          // CDN/Edge caching headers
+          { key: "Cache-Control", value: "public, max-age=0, must-revalidate, stale-while-revalidate=300" },
+          { key: "X-DNS-Prefetch-Control", value: "on" },
+        ],
+      },
+      // Static assets with long-term caching
+      {
+        source: "/:path*\\.(js|css|woff|woff2|png|jpg|jpeg|gif|webp|avif|ico|svg)",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+        ],
+      },
+      {
+        source: "/_next/static/:path*",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+        ],
+      },
+      {
+        source: "/_next/image/:path*",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
         ],
       },
     ]
@@ -135,4 +160,4 @@ const nextConfig = {
   },
 }
 
-module.exports = nextConfig
+module.exports = withBundleAnalyzer(nextConfig)

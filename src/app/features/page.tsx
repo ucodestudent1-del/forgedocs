@@ -10,6 +10,8 @@ export const metadata: Metadata = {
   description: "ForgeDocs features: document management, templates, format conversion, team collaboration, security & compliance, API & integrations.",
 }
 
+export const revalidate = 60
+
 export default function FeaturesPage() {
   return (
     <div className="min-h-screen flex flex-col">
