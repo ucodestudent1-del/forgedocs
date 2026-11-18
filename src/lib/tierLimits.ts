@@ -13,32 +13,58 @@ export interface TierLimits {
   max_seats: number
 }
 
-const DEFAULT_LIMITS: TierLimits = {
-  documents_per_month: -1,
-  conversions_per_month: -1,
-  storage_gb: 20,
-  max_file_size_mb: 50,
-  api_requests_per_minute: 100,
-  has_priority_support: true,
-  has_audit_logs: false,
-  has_advanced_templates: false,
-  max_seats: 5,
-}
+const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === "true"
+
+const DEFAULT_LIMITS: TierLimits = isDemoMode
+  ? {
+      documents_per_month: parseInt(process.env.NEXT_PUBLIC_DEMO_MAX_DOCUMENTS || "100", 10),
+      conversions_per_month: parseInt(process.env.NEXT_PUBLIC_DEMO_MAX_CONVERSIONS || "50", 10),
+      storage_gb: parseInt(process.env.NEXT_PUBLIC_DEMO_MAX_STORAGE_GB || "10", 10),
+      max_file_size_mb: parseInt(process.env.NEXT_PUBLIC_DEMO_MAX_FILE_SIZE_MB || "10", 10),
+      api_requests_per_minute: parseInt(process.env.NEXT_PUBLIC_DEMO_MAX_API_REQUESTS_PER_MIN || "30", 10),
+      has_priority_support: process.env.NEXT_PUBLIC_DEMO_HAS_PRIORITY_SUPPORT === "true",
+      has_audit_logs: process.env.NEXT_PUBLIC_DEMO_HAS_AUDIT_LOGS === "true",
+      has_advanced_templates: process.env.NEXT_PUBLIC_DEMO_HAS_ADVANCED_TEMPLATES === "true",
+      max_seats: parseInt(process.env.NEXT_PUBLIC_DEMO_MAX_SEATS || "3", 10),
+    }
+  : {
+      documents_per_month: -1,
+      conversions_per_month: -1,
+      storage_gb: 20,
+      max_file_size_mb: 50,
+      api_requests_per_minute: 100,
+      has_priority_support: true,
+      has_audit_logs: false,
+      has_advanced_templates: false,
+      max_seats: 5,
+    }
 
 // Hardcoded fallback used only if the DB tier_limits table is unavailable
 const TIER_LIMITS: Record<string, TierLimits> = {
-  professional: DEFAULT_LIMITS,
-  business: {
-    documents_per_month: -1,
-    conversions_per_month: -1,
-    storage_gb: 100,
-    max_file_size_mb: 100,
-    api_requests_per_minute: 500,
-    has_priority_support: true,
-    has_audit_logs: true,
-    has_advanced_templates: true,
-    max_seats: -1,
-  },
+  pro: DEFAULT_LIMITS,
+  business: isDemoMode
+    ? {
+        documents_per_month: -1,
+        conversions_per_month: -1,
+        storage_gb: 100,
+        max_file_size_mb: 100,
+        api_requests_per_minute: 500,
+        has_priority_support: process.env.NEXT_PUBLIC_DEMO_HAS_PRIORITY_SUPPORT === "true",
+        has_audit_logs: process.env.NEXT_PUBLIC_DEMO_HAS_AUDIT_LOGS === "true",
+        has_advanced_templates: process.env.NEXT_PUBLIC_DEMO_HAS_ADVANCED_TEMPLATES === "true",
+        max_seats: -1,
+      }
+    : {
+        documents_per_month: -1,
+        conversions_per_month: -1,
+        storage_gb: 100,
+        max_file_size_mb: 100,
+        api_requests_per_minute: 500,
+        has_priority_support: true,
+        has_audit_logs: true,
+        has_advanced_templates: true,
+        max_seats: -1,
+      },
 }
 
 export async function getTierLimitsFromDB(userId: string): Promise<TierLimits | null> {
@@ -52,7 +78,7 @@ export async function getTierLimitsFromDB(userId: string): Promise<TierLimits | 
     .limit(1)
     .single()
 
-  const tier = subscription?.tier || "professional"
+  const tier = subscription?.tier || "pro"
 
   const { data: limits } = await supabase
     .from("tier_limits")
@@ -86,7 +112,7 @@ export async function getUserTier(userId: string): Promise<string> {
     .limit(1)
     .single()
 
-  return subscription?.tier || "professional"
+  return subscription?.tier || "pro"
 }
 
 export async function getTierLimits(userId: string): Promise<TierLimits> {
@@ -94,7 +120,7 @@ export async function getTierLimits(userId: string): Promise<TierLimits> {
   if (dbLimits) return dbLimits
 
   const tier = await getUserTier(userId)
-  return TIER_LIMITS[tier] || TIER_LIMITS.professional
+  return TIER_LIMITS[tier] || TIER_LIMITS.pro
 }
 
 export async function checkTierLimit(
@@ -189,7 +215,7 @@ export function createTierLimitMiddleware(metric: "documents_created" | "convers
 
 // Feature gating helpers
 export function hasFeature(tier: string, feature: keyof TierLimits): boolean {
-  const limits = TIER_LIMITS[tier] || TIER_LIMITS.professional
+  const limits = TIER_LIMITS[tier] || TIER_LIMITS.pro
   return limits[feature] as boolean
 }
 

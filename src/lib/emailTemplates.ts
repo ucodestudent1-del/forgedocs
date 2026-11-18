@@ -104,7 +104,7 @@ export function getSubscriptionCanceledHtml(userName: string, endDate: string, b
   const content = `
     <h2 style="margin: 0 0 16px; color: #1f2937; font-size: 24px;">Subscription canceled</h2>
     <p style="margin: 0 0 16px; color: #4b5563; font-size: 16px;">Hi ${escapeHtml(userName)}, your ForgeDocs subscription has been canceled.</p>
-    <p style="margin: 0 0 16px; color: #4b5563; font-size: 16px;">You'll continue to have access until ${escapeHtml(endDate)}. After that, your account will revert to the Free plan.</p>
+    <p style="margin: 0 0 16px; color: #4b5563; font-size: 16px;">You'll continue to have access until ${escapeHtml(endDate)}. After that, your account will revert to the Pro plan.</p>
     ${getButtonHtml(billingPortalUrl, "Reactivate Subscription", "primary")}
   `
   return getBaseTemplate(content, "Your ForgeDocs subscription was canceled")

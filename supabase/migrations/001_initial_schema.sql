@@ -124,7 +124,7 @@ CREATE TABLE IF NOT EXISTS subscriptions (
     stripe_customer_id TEXT UNIQUE,
     stripe_subscription_id TEXT UNIQUE,
     stripe_price_id TEXT,
-    plan TEXT DEFAULT 'free' CHECK (plan IN ('free', 'pro', 'business')),
+    plan TEXT DEFAULT 'pro' CHECK (plan IN ('pro', 'business')),
     status TEXT DEFAULT 'active' CHECK (status IN ('active', 'canceled', 'past_due', 'unpaid', 'trialing')),
     current_period_start TIMESTAMP WITH TIME ZONE,
     current_period_end TIMESTAMP WITH TIME ZONE,

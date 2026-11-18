@@ -87,7 +87,7 @@ export default function TermsPage() {
                 4. Subscription Plans and Billing
               </h2>
               <div className="space-y-4 text-muted-foreground">
-                <p>ForgeDocs offers Free, Pro, and Business plans with varying features and limits. By subscribing to a paid plan, you agree to:</p>
+                <p>ForgeDocs offers Pro and Business plans with varying features and limits. By subscribing to a paid plan, you agree to:</p>
                 <ul className="list-disc list-inside space-y-2">
                   <li>Pay the applicable fees for your selected plan</li>
                   <li>Provide accurate billing information</li>

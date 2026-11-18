@@ -29,7 +29,7 @@ export default function FAQPage() {
     {
       id: "4",
       question: "Do you offer a free trial?",
-      answer: "Yes. All paid plans include a 14-day free trial. No credit card is required to start with the Free plan, which includes 5 documents per month.",
+      answer: "Yes. All paid plans include a 14-day free trial. No credit card is required to start with the Pro plan, which includes unlimited documents and 100 GB storage.",
     },
     {
       id: "5",
@@ -59,7 +59,7 @@ export default function FAQPage() {
     {
       id: "10",
       question: "What happens if I exceed my document limit?",
-      answer: "On the Free plan, you'll be prompted to upgrade to Pro for unlimited documents. On Pro and Business plans, you won't hit limits for standard usage. Contact us for enterprise-scale needs.",
+      answer: "On the Pro plan, you won't hit limits for standard document usage. On Business plans, you get unlimited everything plus enterprise features. Contact us for enterprise-scale needs.",
     },
   ]
 

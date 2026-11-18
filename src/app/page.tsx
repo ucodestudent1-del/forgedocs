@@ -388,23 +388,8 @@ export default function LandingPage() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
             <PricingCard
-              name="Free"
-              price="$0"
-              description="For individuals getting started"
-              features={[
-                "500 documents/month",
-                "100 conversions/month",
-                "5 GB storage",
-                "10 MB max file size",
-                "Community support",
-              ]}
-              isFeatured={false}
-              ctaText="Get started free"
-              ctaHref="/auth/signup"
-            />
-            <PricingCard
               name="Pro"
-              price="$19"
+              price="$15"
               description="For growing teams"
               features={[
                 "Unlimited documents",
@@ -421,7 +406,7 @@ export default function LandingPage() {
             />
           </div>
           <p className="text-center mt-12 text-xs text-muted-foreground">
-            All plans include a 14-day free trial. No credit card required for the Free plan.
+            All plans include a 14-day free trial. No credit card required for the Pro plan.
           </p>
         </div>
       </section>

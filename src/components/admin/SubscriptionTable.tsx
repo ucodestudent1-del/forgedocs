@@ -55,7 +55,6 @@ export function SubscriptionTable() {
   })
 
   function getTierBadge(tier: string) {
-    if (tier === "free") return <Badge variant="secondary">{tier.toUpperCase()}</Badge>
     if (tier === "pro") return <Badge variant="default">{tier.toUpperCase()}</Badge>
     return <Badge variant="outline">{tier.toUpperCase()}</Badge>
   }
@@ -90,7 +89,6 @@ export function SubscriptionTable() {
           className="px-3 py-2 border rounded-md text-sm"
         >
           <option value="all">All Tiers</option>
-          <option value="free">Free</option>
           <option value="pro">Pro</option>
           <option value="business">Business</option>
         </select>

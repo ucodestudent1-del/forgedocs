@@ -20,19 +20,11 @@ interface PlanCardProps {
 
 export default function BillingPage() {
   // TEMPORARILY DISABLED: Auth check removed for development
-  const [tier, setTier] = useState<"free" | "pro" | "business">("free")
+  const [tier, setTier] = useState<"pro" | "business">("pro")
   const { toast } = useToast()
   const [mrr, setMrr] = useState(0)
 
   const tierInfo = {
-    free: {
-      name: "Free",
-      price: "$0",
-      priceId: null,
-      description: "For individuals and small teams",
-      features: ["500 documents/month", "100 conversions/month", "5 GB storage", "Community support", "Team collaboration"],
-      limits: { documents: 500, conversions: 100, storage: "5 GB" },
-    },
     pro: {
       name: "Pro",
       price: "$15",
@@ -120,9 +112,9 @@ export default function BillingPage() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <UsageStat title="Documents Created" value="0/500" icon={CreditCard} />
-            <UsageStat title="Conversions" value="0/100" icon={DollarSign} />
-            <UsageStat title="Storage" value="0 MB / 5 GB" icon={Users} />
+            <UsageStat title="Documents Created" value="0/Unlimited" icon={CreditCard} />
+            <UsageStat title="Conversions" value="0/Unlimited" icon={DollarSign} />
+            <UsageStat title="Storage" value="0 MB / 100 GB" icon={Users} />
             <UsageStat title="MRR" value={`$${mrr}`} icon={Settings} />
           </div>
         </CardContent>
@@ -134,17 +126,7 @@ export default function BillingPage() {
           <CardTitle className="text-foreground">Choose a Plan</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <PlanCard
-              name="Free"
-              price="$0"
-              priceId={tierInfo.free.priceId}
-              description="For individuals and small teams"
-              features={["500 documents/month", "100 conversions/month", "5 GB storage", "Community support", "Team collaboration"]}
-              popular={false}
-              currentTier={tier}
-              onChoosePlan={handleChoosePlan}
-            />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <PlanCard
               name="Pro"
               price="$15"

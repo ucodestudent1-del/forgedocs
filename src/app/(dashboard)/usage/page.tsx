@@ -42,20 +42,6 @@ interface UsageData {
 }
 
 const TIER_FEATURES = {
-  free: {
-    name: "Free",
-    price: "$0",
-    color: "bg-gray-100 text-gray-700",
-    features: [
-      "500 documents/month",
-      "100 conversions/month",
-      "5 GB storage",
-      "10 MB max file size",
-      "Community support",
-      "Basic templates",
-    ],
-    limits: { documents: 500, conversions: 100, storage_gb: 5, file_size_mb: 10 },
-  },
   pro: {
     name: "Pro",
     price: "$15/mo",
@@ -222,8 +208,8 @@ export default function UsagePage() {
     )
   }
 
-  const currentTier = TIER_FEATURES[usage.tier as keyof typeof TIER_FEATURES] || TIER_FEATURES.free
-  const nextTier = usage.tier === "free" ? TIER_FEATURES.pro : usage.tier === "pro" ? TIER_FEATURES.business : null
+  const currentTier = TIER_FEATURES[usage.tier as keyof typeof TIER_FEATURES] || TIER_FEATURES.pro
+  const nextTier = usage.tier === "pro" ? TIER_FEATURES.business : null
 
   return (
     <div className="space-y-6">
@@ -344,21 +330,20 @@ export default function UsagePage() {
               <thead>
                 <tr className="border-b text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   <th className="pb-3 pr-4">Feature</th>
-                  <th className="pb-3 pr-4 text-center">Free</th>
                   <th className="pb-3 pr-4 text-center">Pro</th>
                   <th className="pb-3 text-center">Business</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
-                <PlanRow feature="Documents/month" values={["500", "Unlimited", "Unlimited"]} highlight={usage.tier} />
-                <PlanRow feature="Conversions/month" values={["100", "Unlimited", "Unlimited"]} highlight={usage.tier} />
-                <PlanRow feature="Storage" values={["5 GB", "100 GB", "500 GB"]} highlight={usage.tier} />
-                <PlanRow feature="Max file size" values={["10 MB", "50 MB", "100 MB"]} highlight={usage.tier} />
-                <PlanRow feature="API requests/min" values={["30", "100", "500"]} highlight={usage.tier} />
-                <PlanRow feature="Priority support" values={["No", "Yes", "Yes"]} highlight={usage.tier} />
-                <PlanRow feature="Audit logs" values={["No", "Yes", "Yes"]} highlight={usage.tier} />
-                <PlanRow feature="Advanced templates" values={["No", "Yes", "Yes"]} highlight={usage.tier} />
-                <PlanRow feature="SSO/SAML" values={["No", "No", "Yes"]} highlight={usage.tier} />
+                <PlanRow feature="Documents/month" values={["Unlimited", "Unlimited"]} highlight={usage.tier} />
+                <PlanRow feature="Conversions/month" values={["Unlimited", "Unlimited"]} highlight={usage.tier} />
+                <PlanRow feature="Storage" values={["100 GB", "500 GB"]} highlight={usage.tier} />
+                <PlanRow feature="Max file size" values={["50 MB", "100 MB"]} highlight={usage.tier} />
+                <PlanRow feature="API requests/min" values={["100", "500"]} highlight={usage.tier} />
+                <PlanRow feature="Priority support" values={["Yes", "Yes"]} highlight={usage.tier} />
+                <PlanRow feature="Audit logs" values={["Yes", "Yes"]} highlight={usage.tier} />
+                <PlanRow feature="Advanced templates" values={["Yes", "Yes"]} highlight={usage.tier} />
+                <PlanRow feature="SSO/SAML" values={["No", "Yes"]} highlight={usage.tier} />
               </tbody>
             </table>
           </div>
@@ -470,7 +455,7 @@ function Legend({ color, label }: { color: string; label: string }) {
 }
 
 function PlanRow({ feature, values, highlight }: { feature: string; values: string[]; highlight: string }) {
-  const tiers = ["free", "pro", "business"]
+  const tiers = ["pro", "business"]
   return (
     <tr className="hover:bg-accent/50">
       <td className="py-3 pr-4 text-sm font-medium">{feature}</td>
@@ -479,7 +464,7 @@ function PlanRow({ feature, values, highlight }: { feature: string; values: stri
           {tiers[i] === highlight ? (
             <Badge variant="secondary" className="text-xs">{value}</Badge>
           ) : (
-            <span className={tiers[i] === "free" && i > 0 ? "text-muted-foreground" : ""}>{value}</span>
+            <span className={tiers[i] === "pro" && i > 0 ? "text-muted-foreground" : ""}>{value}</span>
           )}
         </td>
       ))}
