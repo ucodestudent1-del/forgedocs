@@ -71,6 +71,7 @@ export async function getTierLimitsFromDB(userId: string): Promise<TierLimits | 
     has_priority_support: limits.has_priority_support,
     has_audit_logs: limits.has_audit_logs,
     has_advanced_templates: limits.has_advanced_templates,
+    max_seats: limits.max_seats,
   }
 }
 
