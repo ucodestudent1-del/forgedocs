@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const path = require("path")
+const crypto = require("crypto")
 const { sentryWebpackPlugin } = require("@sentry/webpack-plugin")
 
 const createNextIntlPlugin = require("next-intl/plugin")
@@ -8,6 +9,36 @@ const withNextIntl = createNextIntlPlugin("./src/i18n/routing.ts")
 
 function generateNonce() {
   return crypto.randomUUID().replace(/-/g, "")
+}
+
+// Compute SHA-256 hash of the static JSON-LD script content for CSP
+function computeJsonLdHash() {
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    name: "ForgeDocs",
+    applicationCategory: "BusinessApplication",
+    operatingSystem: "Cloud",
+    offers: {
+      "@type": "Offer",
+      price: "0",
+      priceCurrency: "USD",
+      availability: "https://schema.org/InStock",
+    },
+    description: "Professional document management platform for modern teams. Create, organize, generate, and convert documents in the cloud.",
+    featureList: [
+      "Document management and version control",
+      "Format conversion (50+ formats)",
+      "Electronic signatures",
+      "Template-based document generation",
+      "Team collaboration with roles and permissions",
+      "AI-powered document assistance",
+      "PDF tools (merge, split, compress, OCR)",
+      "End-to-end encryption and SOC 2 compliance",
+    ],
+  }
+  const scriptContent = JSON.stringify(jsonLd)
+  return crypto.createHash("sha256").update(scriptContent).digest("base64")
 }
 
 const nextConfig = {
@@ -20,10 +51,11 @@ const nextConfig = {
   },
   async headers() {
     const nonce = generateNonce()
+    const jsonLdHash = computeJsonLdHash()
     setCSPNonce(nonce)
     const csp = [
       "default-src 'self'",
-      "script-src 'self'",
+      `script-src 'self' 'nonce-${nonce}' 'sha256-${jsonLdHash}'`,
       "style-src 'self'",
       "img-src 'self' data: https:",
       "font-src 'self'",
