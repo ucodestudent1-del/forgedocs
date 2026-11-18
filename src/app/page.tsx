@@ -57,9 +57,6 @@ export default function LandingPage() {
               <a href="/auth/signup" className="px-8 py-4 bg-primary text-primary-foreground font-medium rounded-lg hover:bg-primary/90 transition-colors shadow-lg shadow-primary/30 text-lg">
                 Start building
               </a>
-              <a href="/templates" className="px-8 py-4 bg-background text-foreground font-medium rounded-lg border border-input hover:bg-accent transition-colors text-lg">
-                Browse templates
-              </a>
             </div>
 
             <div className="flex flex-wrap items-center justify-center gap-8 md:gap-16 opacity-60 text-xs font-medium uppercase tracking-tighter text-muted-foreground">
