@@ -6,13 +6,11 @@ export const dynamic = "force-dynamic"
 export default async function ReaderPageRoute({
   params,
 }: {
-  params: Promise<{ id: string; locale: string }>
+  params: Promise<{ id: string }>
 }) {
-  const { id, locale } = await params
+  const { id } = await params
 
-  const userLocale = locale && typeof locale === "string" ? locale : "en"
-
-  const doc = await getDocumentWithTranslation(id, userLocale)
+  const doc = await getDocumentWithTranslation(id)
 
   if (!doc) {
     return <ReaderPage document={{ error: "Document not found" }} />

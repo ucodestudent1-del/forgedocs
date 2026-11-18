@@ -1,4 +1,3 @@
-import { notFound } from "next/navigation"
 import { Metadata } from "next"
 import Link from "next/link"
 
@@ -9,7 +8,7 @@ export const metadata: Metadata = {
 
 export default function NotFound() {
   return (
-    <html lang="en">
+    <html lang="en" dir="ltr">
       <body>
         <div className="flex min-h-screen items-center justify-center px-4">
           <div className="text-center">

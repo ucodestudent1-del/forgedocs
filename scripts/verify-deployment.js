@@ -44,18 +44,10 @@ check("Build output valid", () => {
   console.log(`   Build ID: ${buildId}`);
 });
 
-// 4. Check next-intl config
-check("next-intl.config.js exists", () => {
-  if (!fs.existsSync("next-intl.config.js")) throw new Error("next-intl.config.js missing");
-});
-
 // 4. Check middleware.ts uses inline config
 check("Middleware uses inline routing config", () => {
   const middleware = fs.readFileSync("src/middleware.ts", "utf-8");
   if (!middleware.includes("const routing = {")) throw new Error("Missing inline routing config");
-  if (middleware.includes("@/i18n/routing")) throw new Error("Uses @/i18n/routing alias (fails in Edge)");
-  if (!middleware.includes("nextIntlMiddleware")) throw new Error("Missing nextIntlMiddleware");
-  if (middleware.includes("import { nextIntlMiddleware }")) throw new Error("Uses named import (should be default)");
 });
 
 // 5. Check package.json has start script
@@ -72,28 +64,14 @@ check("Dockerfile uses next start", () => {
   }
 });
 
-// 7. Verify middleware import is default
-check("Middleware uses default import", () => {
-  const middleware = fs.readFileSync("src/middleware.ts", "utf-8");
-  if (!middleware.includes("import nextIntlMiddleware from \"next-intl/middleware\"")) {
-    throw new Error("Middleware must use default import");
-  }
-});
-
-// 8. Check admin layout has server-side auth
+// 7. Check admin layout has server-side auth
 check("Admin layout has server-side auth", () => {
-  const layout = fs.readFileSync("src/app/[locale]/(dashboard)/admin/layout.tsx", "utf-8");
+  const layout = fs.readFileSync("src/app/(dashboard)/admin/layout.tsx", "utf-8");
   if (!layout.includes("getRouteClient")) throw new Error("Missing getRouteClient");
   if (!layout.includes("redirect")) throw new Error("Missing redirect");
 });
 
-// 9. Check next.config.js has next-intl alias
-check("next.config.js has next-intl alias", () => {
-  const config = fs.readFileSync("next.config.js", "utf-8");
-  if (!config.includes("next-intl/config")) throw new Error("Missing next-intl/config alias");
-});
-
-// 10. Run typecheck (skip - pre-existing errors not from our changes)
+// 9. Run typecheck (skip - pre-existing errors not from our changes)
 check("TypeScript check runs", () => {
   try {
     execSync("npx tsc --noEmit", { stdio: "pipe", timeout: 120000 });

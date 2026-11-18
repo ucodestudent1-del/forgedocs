@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { CreditCard, DollarSign, Clock, Users, Settings } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
-import { useTranslations } from "@/lib/i18n"
 import { useState } from "react"
 
 interface PlanCardProps {
@@ -22,7 +21,6 @@ interface PlanCardProps {
 export default function BillingPage() {
   // TEMPORARILY DISABLED: Auth check removed for development
   const [tier, setTier] = useState<"free" | "pro" | "business">("free")
-  const t = useTranslations(["common", "billing", "dashboard"])
   const { toast } = useToast()
   const [mrr, setMrr] = useState(0)
 
@@ -122,9 +120,9 @@ export default function BillingPage() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <UsageStat title={t("documentsCreated")} value="0/500" icon={CreditCard} />
-            <UsageStat title={t("conversions")} value="0/100" icon={DollarSign} />
-            <UsageStat title={t("storage")} value="0 MB / 5 GB" icon={Users} />
+            <UsageStat title="Documents Created" value="0/500" icon={CreditCard} />
+            <UsageStat title="Conversions" value="0/100" icon={DollarSign} />
+            <UsageStat title="Storage" value="0 MB / 5 GB" icon={Users} />
             <UsageStat title="MRR" value={`$${mrr}`} icon={Settings} />
           </div>
         </CardContent>

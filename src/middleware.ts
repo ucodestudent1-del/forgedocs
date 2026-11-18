@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import { locales, defaultLocale } from "@/i18n/locales"
 
 function generateRequestId(): string {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
@@ -29,56 +28,6 @@ export async function middleware(request: NextRequest) {
       return response
     }
 
-    // Minimal locale handling - only redirect if no locale in URL
-    const pathnameHasLocale = locales.some(
-      (loc) => pathname.startsWith(`/${loc}/`) || pathname === `/${loc}`
-    )
-
-    if (!pathnameHasLocale) {
-      let locale: string = defaultLocale
-
-      // Safe cookie read
-      try {
-        const cookieLocale = request.cookies?.get?.("locale")?.value
-        if (cookieLocale && typeof cookieLocale === "string") {
-          if (locales.includes(cookieLocale as (typeof locales)[number])) {
-            locale = cookieLocale
-          }
-        }
-      } catch {}
-
-      // Safe accept-language read
-      if (locale === defaultLocale) {
-        try {
-          const acceptLanguage = request.headers?.get?.("accept-language")
-          if (acceptLanguage) {
-            const preferred = acceptLanguage
-              .split(",")
-              .map((l) => l.split(";")[0].trim().toLowerCase().split("-")[0])
-              .find((l) => locales.includes(l as (typeof locales)[number]))
-            if (preferred && typeof preferred === "string") {
-              locale = preferred
-            }
-          }
-        } catch {}
-      }
-
-      // Redirect with locale
-      const url = request.nextUrl?.clone?.() ?? new URL(request.url)
-      url.pathname = `/${locale}${pathname}`
-      const response = NextResponse.redirect(url)
-      response.headers.set("x-request-id", "req-" + Date.now())
-      try {
-        response.cookies.set("locale", locale, {
-          path: "/",
-          maxAge: 31536000,
-          sameSite: "strict",
-        })
-      } catch {}
-      return response
-    }
-
-    // Pass through for pages with locale
     const response = NextResponse.next()
     response.headers.set("x-request-id", "req-" + Date.now())
     return response

@@ -7,13 +7,9 @@ import { Input } from "@/components/ui/input"
 import { Users, CreditCard, FileText, AlertTriangle, TrendingUp, Clock, Download, Search, Shield, DollarSign, Calendar, XCircle, ExternalLink } from "lucide-react"
 import Link from "next/link"
 import { format } from "date-fns"
-import { useTranslations } from "@/lib/i18n"
 import { SubscriptionTable } from "@/components/admin/SubscriptionTable"
-import { useFormatNumber } from "@/lib/i18n"
 
 export default function AdminSubscriptionsPage() {
-  const t = useTranslations(["admin", "common"])
-  const formatNumber = useFormatNumber()
   const activeCount = 89
   const pastDueCount = 12
   const canceledCount = 5
@@ -44,7 +40,7 @@ export default function AdminSubscriptionsPage() {
         <StatCard title="Active" value={activeCount ?? 0} icon={CreditCard} color="green" />
         <StatCard title="Past Due" value={pastDueCount ?? 0} icon={AlertTriangle} color="amber" />
         <StatCard title="Canceled" value={canceledCount ?? 0} icon={XCircle} color="red" />
-        <StatCard title="MRR" value={formatNumber(0)} icon={DollarSign} color="blue" />
+        <StatCard title="MRR" value={0} icon={DollarSign} color="blue" />
       </div>
 
       <Card>
@@ -55,7 +51,7 @@ export default function AdminSubscriptionsPage() {
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   type="search"
-                  placeholder={t("searchSubscriptions")}
+                  placeholder="Search subscriptions"
                   className="h-10 pl-10 pr-4 w-full md:w-80"
                 />
               </div>

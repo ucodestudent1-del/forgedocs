@@ -3,9 +3,7 @@ const path = require("path")
 const crypto = require("crypto")
 const { sentryWebpackPlugin } = require("@sentry/webpack-plugin")
 
-const createNextIntlPlugin = require("next-intl/plugin")
 const { setCSPNonce, clearCSPNonce } = require("./src/lib/csp-nonce")
-const withNextIntl = createNextIntlPlugin("./src/i18n/routing.ts")
 
 function generateNonce() {
   return crypto.randomUUID().replace(/-/g, "")
@@ -98,10 +96,8 @@ const nextConfig = {
   },
   transpilePackages: ["tslib", "react-remove-scroll", "use-sidecar", "@radix-ui/react-select", "@radix-ui/react-dropdown-menu", "@radix-ui/react-menu"],
   webpack: (config, { dev, isServer }) => {
-    // Manually add the alias for next-intl/config
     config.resolve.alias = {
       ...config.resolve.alias,
-      "next-intl/config": path.resolve(__dirname, "next-intl.config.js"),
       tslib: require.resolve("tslib"),
     }
 
@@ -139,4 +135,4 @@ const nextConfig = {
   },
 }
 
-module.exports = withNextIntl(nextConfig)
+module.exports = nextConfig

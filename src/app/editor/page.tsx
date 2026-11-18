@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { FileText, Plus, Download, Share2, Loader2, AlertTriangle } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
-import { useTranslations } from "@/lib/i18n"
 import { ScrollIndicator } from "@/components/ui/scroll-indicator"
 
 export default function EditorPage() {
@@ -14,7 +13,6 @@ export default function EditorPage() {
   const [initialContent, setInitialContent] = useState<string>("");
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const t = useTranslations(["editor", "common", "navigation"])
   const { toast } = useToast()
 
   useEffect(() => {
@@ -64,7 +62,7 @@ export default function EditorPage() {
         body: JSON.stringify({ content: htmlContent }),
       })
 
-      if (!res.ok) throw new Error(t("saveFailed"))
+      if (!res.ok) throw new Error("Save failed")
       toast({ title: "Document saved", variant: "success" })
     } catch (e) {
       console.error("Save failed:", e)
@@ -178,13 +176,13 @@ export default function EditorPage() {
               <Button asChild>
                 <a href="/dashboard">
                   <FileText className="h-4 w-4 mr-2" />
-                  {t("documents")}
+                  Documents
                 </a>
               </Button>
               <Button variant="outline" asChild>
                 <a href="/document-generator">
                   <Plus className="h-4 w-4 mr-2" />
-                  {t("createNewDocument")}
+                  Create New Document
                 </a>
               </Button>
             </div>

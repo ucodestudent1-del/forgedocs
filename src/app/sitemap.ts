@@ -1,7 +1,6 @@
 import { MetadataRoute } from "next"
 
 const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://forgedocs.com"
-const locales = ["en", "es", "ar", "fr", "de", "ja", "zh"]
 
 const staticPages = [
   "",
@@ -49,38 +48,31 @@ const adminPages = [
 export default function sitemap(): MetadataRoute.Sitemap {
   const urls: MetadataRoute.Sitemap = []
 
-  // Static pages for all locales
-  for (const locale of locales) {
-    for (const page of staticPages) {
-      urls.push({
-        url: `${baseUrl}/${locale}${page}`,
-        lastModified: new Date(),
-        changeFrequency: page === "" ? "daily" : "weekly",
-        priority: page === "" ? 1 : 0.8,
-        alternates: {
-          languages: Object.fromEntries(
-            locales.map(l => [l, `${baseUrl}/${l}${page}`])
-          ),
-        },
-      })
-    }
+  for (const page of staticPages) {
+    urls.push({
+      url: `${baseUrl}${page}`,
+      lastModified: new Date(),
+      changeFrequency: page === "" ? "daily" : "weekly",
+      priority: page === "" ? 1 : 0.8,
+    })
   }
 
-  // Dashboard pages (authenticated)
-  for (const locale of locales) {
-    for (const page of dashboardPages) {
-      urls.push({
-        url: `${baseUrl}/${locale}${page}`,
-        lastModified: new Date(),
-        changeFrequency: "weekly",
-        priority: 0.6,
-        alternates: {
-          languages: Object.fromEntries(
-            locales.map(l => [l, `${baseUrl}/${l}${page}`])
-          ),
-        },
-      })
-    }
+  for (const page of dashboardPages) {
+    urls.push({
+      url: `${baseUrl}${page}`,
+      lastModified: new Date(),
+      changeFrequency: "weekly",
+      priority: 0.6,
+    })
+  }
+
+  for (const page of adminPages) {
+    urls.push({
+      url: `${baseUrl}${page}`,
+      lastModified: new Date(),
+      changeFrequency: "weekly",
+      priority: 0.6,
+    })
   }
 
   return urls

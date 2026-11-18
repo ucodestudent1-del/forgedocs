@@ -4,7 +4,6 @@ import React, { useEffect, useState, useCallback, useRef } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { useTranslations } from "@/lib/i18n"
 import {
   FileText,
   FileSpreadsheet,
@@ -74,7 +73,6 @@ export default function ConversionPage() {
       if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current)
     }
   }, [search])
-  const t = useTranslations(["conversion", "common", "errors"])
 
   // Unit tab state
   const [unitCategory, setUnitCategory] = useState<string | null>(() => getCategories()[0]?.id || null)
@@ -195,14 +193,14 @@ export default function ConversionPage() {
       setConverting(false)
     } catch (e) {
       console.error(e)
-      toast({ title: t("conversionFailed"), variant: "destructive" })
+      toast({ title: "Conversion failed", variant: "destructive" })
       setConverting(false)
     }
   }
 
   async function handleUnitConvert() {
     if (!unitCategory || !unitFrom || !unitTo || !unitValue) {
-      toast({ title: t("errors.validationError"), variant: "destructive" })
+      toast({ title: "Validation error", variant: "destructive" })
       return
     }
     setConverting(true)
@@ -223,7 +221,7 @@ export default function ConversionPage() {
       }
     } catch (e) {
       console.error(e)
-      toast({ title: t("conversionFailed"), variant: "destructive" })
+      toast({ title: "Conversion failed", variant: "destructive" })
     } finally {
       setConverting(false)
     }
@@ -250,7 +248,7 @@ export default function ConversionPage() {
       setMetaResult(data.output)
     } catch (e) {
       console.error(e)
-      toast({ title: t("conversionFailed"), variant: "destructive" })
+      toast({ title: "Conversion failed", variant: "destructive" })
     } finally {
       setConverting(false)
     }
@@ -680,7 +678,7 @@ export default function ConversionPage() {
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input
               type="search"
-              placeholder={t("searchJobs")}
+              placeholder="Search jobs"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="h-10 pl-10 pr-4 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary w-full"

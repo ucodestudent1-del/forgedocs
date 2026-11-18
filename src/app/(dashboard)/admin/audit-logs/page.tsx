@@ -7,11 +7,9 @@ import { Input } from "@/components/ui/input"
 import { Users, CreditCard, FileText, AlertTriangle, TrendingUp, Clock, Download, Search, Shield, Database, User } from "lucide-react"
 import Link from "next/link"
 import { format } from "date-fns"
-import { useTranslations } from "@/lib/i18n"
 import { AuditLogsTable } from "@/components/admin/AuditLogsTable"
 
 export default function AdminAuditLogsPage() {
-  const t = useTranslations(["admin", "common"])
 
   return (
     <div className="space-y-6">
@@ -41,7 +39,7 @@ export default function AdminAuditLogsPage() {
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   type="search"
-                  placeholder={t("searchLogs")}
+                  placeholder="Search logs"
                   className="h-10 pl-10 pr-4 w-full md:w-80"
                 />
               </div>

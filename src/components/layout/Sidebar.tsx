@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { useLocale, useTranslations } from "@/lib/i18n"
 import {
   LayoutDashboard,
   FileText,
@@ -38,14 +37,14 @@ import { useToast } from "@/components/ui/use-toast"
 
 interface NavItem {
   href: string
-  labelKey: string
+  label: string
   icon: React.ElementType
   badge?: string
   children?: NavItem[]
 }
 
 interface NavSection {
-  titleKey: string
+  title: string
   icon?: React.ElementType
   items: NavItem[]
 }
@@ -65,60 +64,56 @@ export function Sidebar({
   userEmail?: string | null
   userInitial?: string
 }) {
-  const t = useTranslations("navigation")
-  const tCommon = useTranslations("common")
   const pathname = usePathname()
-  const locale = useLocale()
   const router = useRouter()
-  const isRtl = locale === "ar"
   const [expandedSections, setExpandedSections] = useState<string[]>([])
   const { toast } = useToast()
 
   const NAV_SECTIONS: NavSection[] = [
     {
-      titleKey: "workspace",
+      title: "Workspace",
       icon: Home,
       items: [
-        { href: "/dashboard", labelKey: "dashboard", icon: LayoutDashboard },
-        { href: "/documents", labelKey: "documents", icon: FileText },
-        { href: "/files", labelKey: "myFiles", icon: FolderOpen },
-        { href: "/editor", labelKey: "editor", icon: FilePen },
-        { href: "/templates", labelKey: "templates", icon: FileStack },
-        { href: "/tools", labelKey: "tools", icon: Wrench },
+        { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+        { href: "/documents", label: "Documents", icon: FileText },
+        { href: "/files", label: "My Files", icon: FolderOpen },
+        { href: "/editor", label: "Editor", icon: FilePen },
+        { href: "/templates", label: "Templates", icon: FileStack },
+        { href: "/tools", label: "Tools", icon: Wrench },
       ],
     },
     {
-      titleKey: "conversionAI",
+      title: "Conversion & AI",
       icon: Zap,
       items: [
-        { href: "/conversion", labelKey: "conversion", icon: RefreshCw },
-        { href: "/ai-assistant", labelKey: "aiAssistant", icon: Bot },
-        { href: "/pdf-tools", labelKey: "pdfTools", icon: FileImage },
-        { href: "/e-signatures", labelKey: "eSignatures", icon: FileSignature },
+        { href: "/conversion", label: "Conversion", icon: RefreshCw },
+        { href: "/ai-assistant", label: "AI Assistant", icon: Bot },
+        { href: "/pdf-tools", label: "PDF Tools", icon: FileImage },
+        { href: "/e-signatures", label: "E-Signatures", icon: FileSignature },
       ],
     },
     {
-      titleKey: "manage",
+      title: "Manage",
       icon: Users,
       items: [
-        { href: "/shared", labelKey: "shared", icon: Share2 },
-        { href: "/activity", labelKey: "activity", icon: History },
-        { href: "/notifications", labelKey: "notifications", icon: Bell, badge: "3" },
-        { href: "/usage", labelKey: "usage", icon: CreditCard },
+        { href: "/shared", label: "Shared", icon: Share2 },
+        { href: "/activity", label: "Activity", icon: History },
+        { href: "/notifications", label: "Notifications", icon: Bell, badge: "3" },
+        { href: "/usage", label: "Usage", icon: CreditCard },
       ],
     },
     {
-      titleKey: "other",
+      title: "Other",
       icon: Shield,
       items: [
-        { href: "/settings", labelKey: "settings", icon: Settings },
-        { href: "/help", labelKey: "help", icon: HelpCircle },
+        { href: "/settings", label: "Settings", icon: Settings },
+        { href: "/help", label: "Help", icon: HelpCircle },
       ],
     },
   ]
 
   useEffect(() => {
-    setExpandedSections(NAV_SECTIONS.map((s) => s.titleKey))
+    setExpandedSections(NAV_SECTIONS.map((s) => s.title))
   }, [])
 
   useEffect(() => {
@@ -139,16 +134,16 @@ export function Sidebar({
   const handleQuickAction = (action: string) => {
     switch (action) {
       case "create":
-        router.push(`/${locale}/document-generator`)
+        router.push("/document-generator")
         break
       case "convert":
-        router.push(`/${locale}/conversion`)
+        router.push("/conversion")
         break
       case "merge":
-        router.push(`/${locale}/pdf-tools?tool=merge`)
+        router.push("/pdf-tools?tool=merge")
         break
       case "ai-generate":
-        router.push(`/${locale}/ai-assistant`)
+        router.push("/ai-assistant")
         break
       default:
         break
@@ -191,7 +186,7 @@ export function Sidebar({
             <button
               onClick={onClose}
               className="lg:hidden p-2 rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-              aria-label={t("sidebar.close")}
+              aria-label="Close sidebar"
             >
               <X className="h-5 w-5" />
             </button>
@@ -200,7 +195,7 @@ export function Sidebar({
             <button
               onClick={onToggleCollapse}
               className="p-2 rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-              aria-label={t("sidebar.expand")}
+              aria-label="Expand sidebar"
             >
               <ChevronRight className="h-5 w-5" />
             </button>
@@ -209,24 +204,24 @@ export function Sidebar({
 
         <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-6" aria-label="Main navigation">
           {NAV_SECTIONS.map((section) => {
-            const isExpanded = expandedSections.includes(section.titleKey)
+            const isExpanded = expandedSections.includes(section.title)
             return (
-              <div key={section.titleKey} className="space-y-1">
+              <div key={section.title} className="space-y-1">
                 <button
-                  onClick={() => toggleSection(section.titleKey)}
+                  onClick={() => toggleSection(section.title)}
                   className={`flex items-center gap-2 w-full px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors`}
                   aria-expanded={isExpanded}
                 >
                   {section.icon && (
                     <section.icon className={`h-4 w-4 ${collapsed ? "mx-auto" : ""}`} />
                   )}
-                  {!collapsed && t(section.titleKey)}
+                  {!collapsed && section.title}
                   {!collapsed && (
                     <span className="ml-auto flex items-center gap-1">
                       {isExpanded ? (
-                        <ChevronDown className={`h-4 w-4 transition-transform ${isRtl ? "rtl-flip" : ""}`} />
+                        <ChevronDown className="h-4 w-4 transition-transform" />
                       ) : (
-                        <ChevronRight className={`h-4 w-4 transition-transform ${isRtl ? "rtl-flip" : ""}`} />
+                        <ChevronRight className="h-4 w-4 transition-transform" />
                       )}
                     </span>
                   )}
@@ -259,7 +254,7 @@ export function Sidebar({
                       />
                       {!collapsed && (
                         <>
-                          <span className="truncate">{t(item.labelKey)}</span>
+                          <span className="truncate">{item.label}</span>
                           {item.badge && (
                             <span className="ml-auto px-1.5 py-0.5 text-xs font-medium bg-primary/10 text-primary rounded-full">
                               {item.badge}
@@ -276,7 +271,7 @@ export function Sidebar({
 
           <div className="pt-4 border-t space-y-2">
             <p className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              {t("quickActions")}
+              Quick Actions
             </p>
             <div className="px-2 space-y-1">
               <button
@@ -286,7 +281,7 @@ export function Sidebar({
                 }`}
               >
                 <FilePen className={`h-5 w-5 ${collapsed ? "mx-0" : ""}`} />
-                {!collapsed && <span>{t("createDocument")}</span>}
+                {!collapsed && <span>Create Document</span>}
               </button>
               <button
                 onClick={() => handleQuickAction("convert")}
@@ -295,7 +290,7 @@ export function Sidebar({
                 }`}
               >
                 <RefreshCw className={`h-5 w-5 ${collapsed ? "mx-0" : ""}`} />
-                {!collapsed && <span>{t("convertFile")}</span>}
+                {!collapsed && <span>Convert File</span>}
               </button>
               <button
                 onClick={() => handleQuickAction("merge")}
@@ -304,7 +299,7 @@ export function Sidebar({
                 }`}
               >
                 <FileImage className={`h-5 w-5 ${collapsed ? "mx-0" : ""}`} />
-                {!collapsed && <span>{t("mergePDFs")}</span>}
+                {!collapsed && <span>Merge PDFs</span>}
               </button>
               <button
                 onClick={() => handleQuickAction("ai-generate")}
@@ -313,7 +308,7 @@ export function Sidebar({
                 }`}
               >
                 <Bot className={`h-5 w-5 ${collapsed ? "mx-0" : ""}`} />
-                {!collapsed && <span>{t("aiGenerate")}</span>}
+                {!collapsed && <span>AI Generate</span>}
               </button>
             </div>
           </div>
@@ -329,7 +324,7 @@ export function Sidebar({
                 <p className="text-sm font-medium text-foreground truncate">
                   {userEmail || "User"}
                 </p>
-                <p className="text-xs text-muted-foreground truncate">{t("sidebar.signedIn")}</p>
+                <p className="text-xs text-muted-foreground truncate">Signed in</p>
               </div>
             )}
           </div>
@@ -341,14 +336,14 @@ export function Sidebar({
                 className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground rounded-lg transition-colors"
               >
                 <Settings className="h-4 w-4" />
-                {tCommon("settings")}
+                Settings
               </Link>
             )}
             {collapsed && (
               <button
                 onClick={() => onClose()}
                 className="p-2 rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-                aria-label={tCommon("settings")}
+                aria-label="Settings"
               >
                 <Settings className="h-4 w-4" />
               </button>
@@ -360,12 +355,12 @@ export function Sidebar({
                 } catch {
                   // ignore
                 }
-                router.push(`/${locale}/auth/login`)
+                router.push("/auth/login")
               }}
               className={`p-2 rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors ${
                 collapsed ? "mx-auto" : ""
               }`}
-              aria-label={tCommon("signOut")}
+              aria-label="Sign out"
             >
               <Download className="h-4 w-4" />
             </button>

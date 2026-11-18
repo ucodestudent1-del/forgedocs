@@ -2,7 +2,6 @@
 
 import React, { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { useTranslations } from "@/lib/i18n"
 import { useToast } from "@/components/ui/use-toast"
 import { FileText, Save, Undo, Redo, Bold, Italic, Underline, List, ListOrdered, Image, Link, Maximize, MoreHorizontal } from "lucide-react"
 
@@ -21,7 +20,6 @@ export function SimpleEditor({
   readOnly = false,
   placeholder = "Start typing...",
 }: SimpleEditorProps) {
-  const t = useTranslations("editor")
   const { toast } = useToast()
   const [editorContent, setEditorContent] = useState(content)
   const [saving, setSaving] = useState(false)
@@ -178,7 +176,7 @@ export function SimpleEditor({
         <div className="h-4 w-px bg-border mx-1" />
         <button
           onClick={() => {
-            const url = window.prompt(t("promptImageUrl"))
+            const url = window.prompt("Enter image URL")
             if (url) insertAtCursor(`![Image](${url})`)
           }}
           className="p-1.5 rounded hover:bg-muted transition-colors"
@@ -189,8 +187,8 @@ export function SimpleEditor({
         </button>
         <button
           onClick={() => {
-            const text = window.prompt(t("promptLinkText"))
-            const url = window.prompt(t("promptUrl"))
+            const text = window.prompt("Enter link text")
+            const url = window.prompt("Enter URL")
             if (text && url) insertAtCursor(`[${text}](${url})`)
           }}
           className="p-1.5 rounded hover:bg-muted transition-colors"

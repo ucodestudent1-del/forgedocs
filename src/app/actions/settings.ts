@@ -2,52 +2,13 @@
 
 import { createRouteClient } from "@/lib/supabase"
 import { cookies } from "next/headers"
-import { locales, defaultLocale, type Locale } from "@/i18n/locales"
 
-export async function updateProfileLanguage(language: string) {
-  if (!locales.includes(language as Locale)) {
-    return { error: "Unsupported language" }
-  }
-
-  const supabase = await createRouteClient()
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
-
-  if (authError || !user) {
-    return { error: "Not authenticated" }
-  }
-
-  const { error } = await supabase
-    .from("profiles")
-    .update({ language })
-    .eq("id", user.id)
-
-  if (error) {
-    return { error: "Failed to save language preference" }
-  }
-
-  // Set cookie for middleware/client-side consistency
-  const cookieStore = await cookies()
-  cookieStore.set("locale", language, {
-    path: "/",
-    maxAge: 31536000,
-    sameSite: "lax",
-  })
-
+export async function updateProfileLanguage() {
   return { success: true }
 }
 
 export async function getProfileLanguage(): Promise<string | null> {
-  const supabase = await createRouteClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return null
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("language")
-    .eq("id", user.id)
-    .single()
-
-  return profile?.language || null
+  return null
 }
 
 export async function updateProfile(data: {
@@ -69,7 +30,6 @@ export async function updateProfile(data: {
   if (data.email !== undefined) updateData.email = data.email
   if (data.bio !== undefined) updateData.bio = data.bio
   if (data.timezone !== undefined) updateData.timezone = data.timezone
-  if (data.language !== undefined) updateData.language = data.language
 
   if (Object.keys(updateData).length === 0) {
     return { success: true }
@@ -82,15 +42,6 @@ export async function updateProfile(data: {
 
   if (error) {
     return { error: "Failed to update profile" }
-  }
-
-  if (data.language) {
-    const cookieStore = await cookies()
-    cookieStore.set("locale", data.language, {
-      path: "/",
-      maxAge: 31536000,
-      sameSite: "lax",
-    })
   }
 
   return { success: true }

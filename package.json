@@ -18,8 +18,6 @@
     "db:reset": "supabase db reset",
     "verify:isolation": "node scripts/verify-isolation.js",
     "verify:backup": "node scripts/verify-backup.js",
-    "i18n:extract": "node scripts/i18n/extract.js",
-    "i18n:validate": "node scripts/i18n/extract.js --validate",
     "worker": "node src/worker/index.js"
   },
   "dependencies": {
@@ -45,7 +43,6 @@
     "ioredis": "^5.4.1",
     "lucide-react": "^0.469.0",
     "next": "^15.5.29",
-    "next-intl": "^4.15.1",
     "openai": "^7.57.0",
     "otplib": "^13.6.0",
     "pdf-lib": "^1.17.1",
