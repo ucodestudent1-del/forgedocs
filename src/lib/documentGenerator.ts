@@ -4,6 +4,7 @@
  */
 
 import { TEMPLATE_LIBRARY, getTemplateById } from './templateLibrary';
+import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 
 interface TemplateData {
   [key: string]: string | number | boolean;
@@ -357,13 +358,92 @@ export class DocumentGenerator {
   }
 
   /**
-   * Export as PDF (placeholder - in production use jsPDF or similar)
+   * Export as PDF using pdf-lib
    */
   public async exportToPDF(): Promise<Blob> {
     const html = this.generateHTML();
-    // In production, use jsPDF or Puppeteer to convert HTML to PDF
-    const blob = new Blob([html], { type: 'text/html' });
-    return blob;
+    const pdfDoc = await PDFDocument.create();
+    const page = pdfDoc.addPage([612, 792]); // Letter size
+    const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    const fontSize = 11;
+    const margin = 50;
+    const maxWidth = page.getWidth() - 2 * margin;
+
+    // Extract text content from HTML (strip tags for PDF)
+    const textContent = this.extractTextFromHTML(html);
+
+    let y = page.getHeight() - margin;
+    const lines = this.wrapText(textContent, font, fontSize, maxWidth);
+
+    for (const line of lines) {
+      if (y < margin) {
+        const newPage = pdfDoc.addPage([612, 792]);
+        y = newPage.getHeight() - margin;
+      }
+      page.drawText(line, {
+        x: margin,
+        y,
+        size: fontSize,
+        font,
+        color: rgb(0.2, 0.2, 0.2),
+      });
+      y -= fontSize * 1.5;
+    }
+
+    const pdfBytes = await pdfDoc.save();
+    return new Blob([pdfBytes as unknown as BlobPart], { type: 'application/pdf' });
+  }
+
+  /**
+   * Extract plain text from HTML for PDF rendering
+   */
+  private extractTextFromHTML(html: string): string {
+    return html
+      .replace(/<style[^>]*>[\s\S]*?<\/style>/g, '')
+      .replace(/<script[^>]*>[\s\S]*?<\/script>/g, '')
+      .replace(/<\/h1>/g, '\n\n')
+      .replace(/<\/h2>/g, '\n\n')
+      .replace(/<\/p>/g, '\n')
+      .replace(/<br\s*\/?>/g, '\n')
+      .replace(/<[^>]*>/g, '')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/\n\s*\n/g, '\n')
+      .trim();
+  }
+
+  /**
+   * Wrap text to fit within maxWidth
+   */
+  private wrapText(text: string, font: any, fontSize: number, maxWidth: number): string[] {
+    const paragraphs = text.split('\n');
+    const lines: string[] = [];
+
+    for (const paragraph of paragraphs) {
+      const words = paragraph.split(' ');
+      let currentLine = '';
+
+      for (const word of words) {
+        const testLine = currentLine ? `${currentLine} ${word}` : word;
+        const width = font.widthOfTextAtSize(testLine, fontSize);
+        if (width > maxWidth && currentLine) {
+          lines.push(currentLine);
+          currentLine = word;
+        } else {
+          currentLine = testLine;
+        }
+      }
+
+      if (currentLine) {
+        lines.push(currentLine);
+      }
+    }
+
+    return lines;
   }
 
   /**

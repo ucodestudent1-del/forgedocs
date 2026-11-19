@@ -9,6 +9,23 @@ import { DocumentGenerator } from "@/lib/documentGenerator"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useToast } from "@/components/ui/use-toast"
 
+interface ServerTemplate {
+  id: string
+  name: string
+  description: string
+  category: string
+  content: string
+  placeholder_schema: Array<{
+    name: string
+    type: string
+    label: string
+    required?: boolean
+    placeholder?: string
+    default_value?: string
+  }>
+  is_system?: boolean
+}
+
 export default function DocumentGeneratorForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -19,18 +36,58 @@ export default function DocumentGeneratorForm() {
   const [documentName, setDocumentName] = useState("")
   const [isGenerating, setIsGenerating] = useState(false)
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null)
+  const [serverTemplates, setServerTemplates] = useState<ServerTemplate[]>([])
+  const [templatesLoaded, setTemplatesLoaded] = useState(false)
 
-  const templates = Object.values(TEMPLATE_LIBRARY)
+  // Load system templates from server, fall back to TEMPLATE_LIBRARY
+  useEffect(() => {
+    const loadTemplates = async () => {
+      try {
+        const res = await fetch("/api/templates?is_system=true")
+        if (res.ok) {
+          const data = await res.json()
+          if (data.templates && data.templates.length > 0) {
+            setServerTemplates(data.templates as ServerTemplate[])
+          }
+        }
+      } catch {
+        // Server unavailable, will use TEMPLATE_LIBRARY fallback
+      } finally {
+        setTemplatesLoaded(true)
+      }
+    }
+    loadTemplates()
+  }, [])
+
+  // Get available templates: server templates first, then TEMPLATE_LIBRARY fallback
+  const getAvailableTemplates = () => {
+    if (serverTemplates.length > 0) {
+      return serverTemplates.map((t: ServerTemplate) => ({
+        id: t.id,
+        name: t.name,
+        description: t.description,
+        category: t.category,
+        fields: t.placeholder_schema || [],
+        sections: [], // Server templates don't have predefined sections
+        styling: {},
+        content: t.content,
+        is_system: t.is_system,
+      }))
+    }
+    return Object.values(TEMPLATE_LIBRARY)
+  }
+
+  const templates = getAvailableTemplates()
 
   useEffect(() => {
     const templateParam = searchParams.get("template")
     if (templateParam && !selectedTemplateId) {
-      const template = getTemplateById(templateParam)
+      const template = templates.find((t: any) => t.id === templateParam)
       if (template) {
         setSelectedTemplateId(template.id)
       }
     }
-  }, [searchParams, selectedTemplateId])
+  }, [searchParams, selectedTemplateId, templates])
 
   const handleGenerate = async () => {
     if (!selectedTemplateId) return
@@ -65,6 +122,18 @@ export default function DocumentGeneratorForm() {
     setTemplateData((prev) => ({ ...prev, [fieldName]: value }))
   }
 
+  // Get template fields for the selected template
+  const getSelectedTemplateFields = () => {
+    if (serverTemplates.length > 0) {
+      const t = serverTemplates.find((t: ServerTemplate) => t.id === selectedTemplateId)
+      return t?.placeholder_schema || []
+    }
+    const t = getTemplateById(selectedTemplateId!)
+    return t?.fields || []
+  }
+
+  const selectedFields = getSelectedTemplateFields()
+
   if (!selectedTemplateId) {
     return (
       <div className="space-y-6">
@@ -80,7 +149,7 @@ export default function DocumentGeneratorForm() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {templates.map((template) => (
+          {templates.map((template: any) => (
             <Card key={template.id} className="cursor-pointer hover:border-primary/50 transition-colors hover:shadow-sm" onClick={() => setSelectedTemplateId(template.id)}>
               <CardHeader>
                 <CardTitle className="text-lg font-medium">{template.name}</CardTitle>
@@ -88,7 +157,7 @@ export default function DocumentGeneratorForm() {
               </CardHeader>
               <CardContent className="pt-0">
                 <div className="space-y-2">
-                  {template.fields.slice(0, 3).map((field) => (
+                  {template.fields.slice(0, 3).map((field: any) => (
                     <div key={field.name} className="flex items-center gap-2 text-sm">
                       <span className="text-muted-foreground">{field.name.replace(/_/g, " ")}</span>
                       <span className="text-xs bg-muted px-2 py-0.5 rounded">{field.type}</span>
@@ -124,17 +193,17 @@ export default function DocumentGeneratorForm() {
             <CardContent>
               <form onSubmit={(e) => e.preventDefault()}>
                 <div className="space-y-4">
-                  {templateData && Object.entries((TEMPLATE_LIBRARY as Record<string, { fields: { name: string; label: string; required: boolean; type: string; placeholder?: string }[] }>)[selectedTemplateId!].fields).map(([fieldName, field]) => (
-                    <div key={fieldName} className="space-y-1">
+                  {selectedFields.map((field: any) => (
+                    <div key={field.name} className="space-y-1">
                       <label className="text-sm font-medium text-muted-foreground block">
-                        {field.label}
+                        {field.label || field.name.replace(/_/g, " ")}
                         {field.required && <span className="text-destructive text-xs ml-1">*</span>}
                       </label>
                       <input
                         type={field.type === "textarea" ? "text" : field.type}
                         placeholder={field.placeholder}
-                        value={templateData[fieldName] || ""}
-                        onChange={(e) => handleFieldChange(fieldName, e.target.value)}
+                        value={templateData[field.name] || ""}
+                        onChange={(e) => handleFieldChange(field.name, e.target.value)}
                         className="w-full border border-input bg-background px-3 py-2 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                       />
                     </div>
