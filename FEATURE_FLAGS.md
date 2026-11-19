@@ -8,7 +8,7 @@ This document describes the feature flag system for ForgeDocs.
 |------|-------------|---------|--------------|
 | `enable_templates` | Enable template generation feature | true | all |
 | `enable_conversion` | Enable document conversion feature | true | all |
-| `enable_billing` | Enable billing/Stripe integration | false | production |
+| `enable_billing` | Enable billing/Stripe integration | true | production |
 | `enable_audit_log` | Enable audit logging for all actions | true | production |
 | `enable_collaboration` | Enable real-time collaborative editing | false | all |
 | `enable_advanced_templates` | Enable advanced template features | false | production |

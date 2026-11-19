@@ -51,7 +51,8 @@ export default function PricingPage() {
   ]
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <>
+      <div className="min-h-screen flex flex-col">
       <Navbar />
       <section className="pt-32 pb-24 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto text-center">
@@ -99,6 +100,59 @@ export default function PricingPage() {
       />
       <Footer />
     </div>
+
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{
+        __html: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "Product",
+          name: "ForgeDocs",
+          description: "Professional document management platform for modern teams. Create, organize, generate, and convert documents in the cloud.",
+          brand: {
+            "@type": "Brand",
+            name: "ForgeDocs",
+          },
+          offers: [
+            {
+              "@type": "Offer",
+              name: "Professional Plan",
+              price: "29.00",
+              priceCurrency: "USD",
+              priceSpecification: {
+                "@type": "UnitPriceSpecification",
+                price: "29.00",
+                priceCurrency: "USD",
+                billingDuration: "P1M",
+                recurringBilling: true,
+              },
+              availability: "https://schema.org/InStock",
+              validFrom: new Date().toISOString(),
+              url: `${process.env.NEXT_PUBLIC_APP_URL || "https://forgedocs.com"}/pricing`,
+              description: "For individuals and small teams. Includes unlimited documents, templates, all 50+ format conversions, priority email support, team collaboration (up to 5 seats), 20GB storage, version history (30 days), and custom templates.",
+            },
+            {
+              "@type": "Offer",
+              name: "Business Plan",
+              price: "89.00",
+              priceCurrency: "USD",
+              priceSpecification: {
+                "@type": "UnitPriceSpecification",
+                price: "89.00",
+                priceCurrency: "USD",
+                billingDuration: "P1M",
+                recurringBilling: true,
+              },
+              availability: "https://schema.org/InStock",
+              validFrom: new Date().toISOString(),
+              url: `${process.env.NEXT_PUBLIC_APP_URL || "https://forgedocs.com"}/pricing`,
+              description: "For established organizations. Everything in Professional plus unlimited seats, SSO/SAML authentication, advanced analytics, dedicated account manager, custom integrations, 100GB storage, unlimited version history, SLA guarantee, and audit logs.",
+            },
+          ],
+        }),
+      }}
+    />
+    </>
   )
 }
 

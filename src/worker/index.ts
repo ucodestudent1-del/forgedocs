@@ -383,7 +383,7 @@ async function gracefulShutdown(signal: string): Promise<void> {
     console.log("Worker shutdown complete")
     process.exit(0)
   } catch (err) {
-    console.error("Worker shutdown error:", err instanceof Error ? err.message : String(err))
+    logger.error("Worker shutdown error", { error: err instanceof Error ? err.message : String(err) })
     process.exit(1)
   }
 }
