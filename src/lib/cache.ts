@@ -1,5 +1,6 @@
 import "server-only"
 import Redis from "ioredis"
+import logger from "@/lib/logger"
 
 let redisClient: Redis | null = null
 const isTestEnv = process.env.NODE_ENV === 'test' || process.env.JEST_WORKER_ID !== undefined
@@ -22,11 +23,11 @@ export function getRedisClient(): Redis | null {
     })
 
     redisClient.on("error", (err: Error) => {
-      console.error("Redis connection error:", err)
+      logger.error("Redis connection error", { error: err.message, stack: err.stack })
     })
 
     redisClient.on("connect", () => {
-      console.log("Redis connected")
+      logger.info("Redis connected")
     })
   }
   return redisClient
@@ -122,8 +123,7 @@ export async function cacheDel(key: string): Promise<void> {
       let cursor = "0"
       const keysToDelete: string[] = []
       do {
-        // @ts-expect-error - ioredis scan options type may not include MATCH/COUNT
-        const [newCursor, keys] = await client.scan(cursor, { MATCH: pattern, COUNT: 100 })
+        const [newCursor, keys] = await client.scan(cursor, { MATCH: pattern, COUNT: 100 } as any)
         cursor = newCursor
         keysToDelete.push(...keys)
       } while (cursor !== "0")

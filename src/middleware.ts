@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
+import { validateApiKey } from "@/lib/api-key"
+import { checkApiKeyPermissions } from "@/lib/api-key"
+import { requiresApiKeyPermission } from "@/lib/api-key"
 
 function generateRequestId(): string {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
@@ -15,9 +18,37 @@ export async function middleware(request: NextRequest) {
     // Generate request ID for distributed tracing
     const requestId = request.headers?.get?.("x-request-id") ?? generateRequestId()
 
+    // API key authentication for /api/* routes
+    if (pathname.startsWith("/api")) {
+      const apiKey = request.headers.get("x-api-key")
+      if (apiKey) {
+        const keyInfo = await validateApiKey(apiKey)
+        if (!keyInfo) {
+          return NextResponse.json({ error: "Invalid or revoked API key" }, { status: 401 })
+        }
+
+        // Check API key permissions
+        const requiredPermissions = requiresApiKeyPermission(pathname)
+        if (requiredPermissions !== null && requiredPermissions.length > 0) {
+          const permCheck = checkApiKeyPermissions(keyInfo.key.permissions, requiredPermissions)
+          if (!permCheck.allowed) {
+            return NextResponse.json(
+              { error: "Insufficient API key permissions", missing: permCheck.missing },
+              { status: 403 }
+            )
+          }
+        }
+
+        // Set user ID header for downstream route handlers
+        const response = NextResponse.next()
+        response.headers.set("x-request-id", requestId)
+        response.headers.set("x-api-user-id", keyInfo.userId)
+        return response
+      }
+    }
+
     // Skip all non-page routes
     if (
-      pathname.startsWith("/api") ||
       pathname.startsWith("/_next") ||
       pathname.startsWith("/_vercel") ||
       pathname.startsWith("/_not-found") ||
@@ -38,6 +69,6 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!api|_next|_vercel|_not-found|.*\\..*).*)"],
+  matcher: ["/((?!_next|_vercel|_not-found|.*\\..*).*)"],
   runtime: "nodejs"
 }

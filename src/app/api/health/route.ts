@@ -57,7 +57,7 @@ export async function GET() {
     if (!stripeSecretKey || stripeSecretKey.startsWith("sk_test_placeholder")) {
       checks.stripe = { status: "unhealthy", error: "Stripe secret key not configured" }
     } else {
-      const stripe = new Stripe(stripeSecretKey, { apiVersion: "2023-10-16" })
+      const stripe = new Stripe(stripeSecretKey)
       await stripe.balance.retrieve()
       const stripeLatency = Date.now() - stripeStart
       checks.stripe = { status: "healthy", latency: stripeLatency }
@@ -69,9 +69,10 @@ export async function GET() {
 
   const allHealthy = Object.values(checks).every((c) => c.status === "healthy")
   const status = allHealthy ? "healthy" : "degraded"
+  const httpStatus = allHealthy ? 200 : 503
 
   return NextResponse.json(
     { status, checks, timestamp: new Date().toISOString() },
-    { status: 200 }
+    { status: httpStatus }
   )
 }

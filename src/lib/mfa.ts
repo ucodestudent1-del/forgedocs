@@ -1,6 +1,6 @@
 import { generateSecret as otpGenerateSecret, generateURI, verifySync } from "otplib"
 import QRCode from "qrcode"
-import { randomBytes, createHash, timingSafeEqual, createCipheriv, createDecipheriv } from "crypto"
+import { randomBytes, createHash, timingSafeEqual, createCipheriv, createDecipheriv, createHmac } from "crypto"
 
 export const MFA_ISSUER = "ForgeDocs"
 
@@ -107,7 +107,8 @@ export function verifyToken(secret: string, token: string): boolean {
 }
 
 export function hashBackupCode(code: string): string {
-  return createHash("sha256").update(code).digest("hex")
+  const pepper = process.env.MFA_BACKUP_CODE_PEPPER || "default-pepper-change-in-production"
+  return createHmac("sha256", pepper).update(code).digest("hex")
 }
 
 export function verifyBackupCode(hashedCode: string, providedCode: string): boolean {

@@ -6,6 +6,7 @@ import fs from "fs"
 import path from "path"
 import { createClient } from "@supabase/supabase-js"
 import Redis from "ioredis"
+import logger from "@/lib/logger"
 const createRedisClient = (opts: any) => new Redis(opts)
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -153,13 +154,28 @@ interface ConversionJobData {
   value?: string
 }
 
+async function verifyLeadership(): Promise<boolean> {
+  if (!isLeader || !leaderLockValue) return false
+  try {
+    const current = await redisClient.get(LEADER_LOCK_KEY)
+    if (current !== leaderLockValue) {
+      isLeader = false
+      leaderLockValue = null
+      return false
+    }
+    return true
+  } catch {
+    return false
+  }
+}
+
 const worker = new Worker<ConversionJobData, { success: boolean; outputUrl?: string; type?: string }>(
   "document-conversion",
   async (job) => {
     const { type, userId, sourceUrl, targetFormat, sourceFormat, jobId, options, value } = job.data
 
-    // Only the leader processes jobs
-    if (!isLeader) {
+    // Fencing: verify we still hold the leader lock before processing
+    if (!(await verifyLeadership())) {
       throw new Error("Worker is not the leader")
     }
 
@@ -322,7 +338,7 @@ worker.on("failed", (job, err) => {
   if (job) {
     workerHealth.activeJobs = Math.max(0, workerHealth.activeJobs - 1)
     workerHealth.failedJobs++
-    console.error(`Job ${job.id} failed:`, err.message)
+    logger.error(`Job ${job.id} failed`, { error: err.message, jobId: job.id })
   }
 })
 

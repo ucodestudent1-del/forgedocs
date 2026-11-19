@@ -78,13 +78,7 @@ export const PUT = withErrorBoundary(async (req, { params }: { params: Promise<{
     )
   }
 
-  await supabase.from("document_versions").insert({
-    document_id: id,
-    version: currentDoc.version,
-    content: currentDoc.content,
-    created_by: user.id,
-  })
-
+  // Atomic update with optimistic locking — only proceeds if version still matches
   const { data, error } = await supabase
     .from("documents")
     .update({ content: sanitizedContent, version: currentDoc.version + 1 })
@@ -104,6 +98,14 @@ export const PUT = withErrorBoundary(async (req, { params }: { params: Promise<{
       { status: 409 }
     )
   }
+
+  // Insert version record only after successful update (no orphan versions)
+  await supabase.from("document_versions").insert({
+    document_id: id,
+    version: currentDoc.version,
+    content: currentDoc.content,
+    created_by: user.id,
+  })
 
   // Invalidate document list cache so clients see updated content
   await cacheDel(`documents:${user.id}:*`)

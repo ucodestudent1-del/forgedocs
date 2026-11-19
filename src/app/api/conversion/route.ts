@@ -131,7 +131,7 @@ export const POST = withErrorBoundary(async (req: Request): Promise<NextResponse
       throw createAppError("Source format must be a unit type", 400, "INVALID_FORMAT")
     }
     try {
-      const result = convertUnit(numValue, source_format, source_format, target_format)
+      const result = convertUnit(numValue, category, source_format, target_format)
       return NextResponse.json({
         type: "unit",
         source_format,
@@ -193,6 +193,20 @@ export const POST = withErrorBoundary(async (req: Request): Promise<NextResponse
       403,
       "RATE_LIMIT_EXCEEDED"
     )
+  }
+
+  // SSRF protection: validate source_url is a safe storage path, not an arbitrary URL
+  if (source_url) {
+    try {
+      const url = new URL(source_url)
+      // Reject absolute URLs — only relative storage paths are allowed
+      throw createAppError("source_url must be a relative storage path", 400, "INVALID_SOURCE_URL")
+    } catch {
+      // Not a URL — treat as storage path, validate it
+      if (source_url.includes("..") || source_url.includes("://") || source_url.startsWith("/")) {
+        throw createAppError("Invalid source_url path", 400, "INVALID_SOURCE_URL")
+      }
+    }
   }
 
   // Verify source document if provided

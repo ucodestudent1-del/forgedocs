@@ -15,7 +15,8 @@ primary_region: "iad"
   min_machines_running = 0
 
 [processes]
-  app = "node_modules/.bin/next start"
+app = "node_modules/.bin/next start"
+worker = "npm run worker"
 
 [[vm]]
   memory = "1gb"

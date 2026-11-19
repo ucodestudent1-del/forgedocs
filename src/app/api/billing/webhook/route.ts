@@ -3,6 +3,7 @@ import { NextResponse } from "next/server"
 import { stripeCircuitBreaker } from "@/lib/circuit-breaker"
 import type { Stripe } from "stripe"
 import { WEBHOOK_HANDLERS } from "@/lib/billing/webhook-handlers"
+import logger from "@/lib/logger"
 
 export const dynamic = "force-dynamic"
 export const runtime = "nodejs"
@@ -32,14 +33,26 @@ export async function POST(req: Request) {
       process.env.STRIPE_WEBHOOK_SECRET!
     )
   } catch (err: any) {
-    console.error("Stripe webhook signature verification failed:", err.message)
+    logger.error("Stripe webhook signature verification failed", { error: err.message })
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 })
   }
 
   // Use service role client for webhook operations (no user cookies in webhook context)
   const supabase = await createServiceRoleClient()
 
-  // Idempotency check - atomic INSERT ON CONFLICT to prevent race conditions
+  // Dispatch to the appropriate handler first
+  const handler = WEBHOOK_HANDLERS[event.type]
+  if (handler) {
+    try {
+      await handler(event, supabase, stripe)
+    } catch (err) {
+      logger.error(`Webhook handler error for ${event.type}`, { error: err instanceof Error ? err.message : String(err) })
+      // Return 500 so Stripe retries the event
+      return NextResponse.json({ error: "Handler failed" }, { status: 500 })
+    }
+  }
+
+  // Idempotency check - atomic INSERT ON CONFLICT after handler succeeds
   const eventId = `stripe_${event.id}`
   const { error: insertError } = await (supabase as any)
     .from("webhook_events")
@@ -53,19 +66,8 @@ export async function POST(req: Request) {
 
   if (insertError) {
     // Duplicate event - already processed
-    console.log(`Duplicate webhook event ignored: ${eventId}`)
+    logger.info(`Duplicate webhook event ignored: ${eventId}`)
     return NextResponse.json({ received: true })
-  }
-
-  // Dispatch to the appropriate handler
-  const handler = WEBHOOK_HANDLERS[event.type]
-  if (handler) {
-    try {
-      await handler(event, supabase, stripe)
-    } catch (err) {
-      console.error(`Webhook handler error for ${event.type}:`, err)
-      // Don't fail the webhook on handler errors - Stripe will retry
-    }
   }
 
   return NextResponse.json({ received: true })

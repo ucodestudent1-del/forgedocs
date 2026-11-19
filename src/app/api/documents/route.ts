@@ -3,6 +3,7 @@ import { NextResponse } from "next/server"
 import { validateCSRF } from "@/lib/csrf"
 import { documentRateLimit } from "@/lib/rate-limiter"
 import { z } from "zod"
+import { randomUUID } from "crypto"
 import { MAX_PAGE_SIZE, DEFAULT_PAGE_SIZE, parsePagination } from "@/lib/pagination"
 import { cacheGet, cacheSet, cacheDel } from "@/lib/cache"
 import { logAuditEvent, getClientIp, getClientUserAgent } from "@/lib/audit"
@@ -120,7 +121,7 @@ export const POST = withErrorBoundary(async (req) => {
     content_type = "application/vnd.forgedocs.document+json"
   }
 
-  const storagePath = `documents/${user.id}/${crypto.randomUUID()}.json`
+  const storagePath = `documents/${user.id}/${randomUUID()}.json`
 
   const { data: doc, error } = await supabase
     .from("documents")

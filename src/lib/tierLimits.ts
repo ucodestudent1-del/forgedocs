@@ -1,5 +1,6 @@
 import { getRouteClient } from "@/lib/supabase"
 import { NextResponse } from "next/server"
+import { cacheIncrement, cacheGet } from "@/lib/cache"
 
 export interface TierLimits {
   documents_per_month: number
@@ -28,19 +29,20 @@ const DEFAULT_LIMITS: TierLimits = isDemoMode
       max_seats: parseInt(process.env.NEXT_PUBLIC_DEMO_MAX_SEATS || "3", 10),
     }
   : {
-      documents_per_month: -1,
-      conversions_per_month: -1,
-      storage_gb: 20,
-      max_file_size_mb: 50,
-      api_requests_per_minute: 100,
-      has_priority_support: true,
+      documents_per_month: 500,
+      conversions_per_month: 100,
+      storage_gb: 5,
+      max_file_size_mb: 10,
+      api_requests_per_minute: 30,
+      has_priority_support: false,
       has_audit_logs: false,
       has_advanced_templates: false,
-      max_seats: 5,
+      max_seats: 1,
     }
 
 // Hardcoded fallback used only if the DB tier_limits table is unavailable
 const TIER_LIMITS: Record<string, TierLimits> = {
+  free: DEFAULT_LIMITS,
   pro: DEFAULT_LIMITS,
   business: isDemoMode
     ? {
@@ -78,7 +80,7 @@ export async function getTierLimitsFromDB(userId: string): Promise<TierLimits | 
     .limit(1)
     .single()
 
-  const tier = subscription?.tier || "pro"
+  const tier = subscription?.tier || "free"
 
   const { data: limits } = await supabase
     .from("tier_limits")
@@ -112,7 +114,7 @@ export async function getUserTier(userId: string): Promise<string> {
     .limit(1)
     .single()
 
-  return subscription?.tier || "pro"
+  return subscription?.tier || "free"
 }
 
 export async function getTierLimits(userId: string): Promise<TierLimits> {
@@ -120,7 +122,7 @@ export async function getTierLimits(userId: string): Promise<TierLimits> {
   if (dbLimits) return dbLimits
 
   const tier = await getUserTier(userId)
-  return TIER_LIMITS[tier] || TIER_LIMITS.pro
+  return TIER_LIMITS[tier] || TIER_LIMITS.free
 }
 
 export async function checkTierLimit(
@@ -128,7 +130,6 @@ export async function checkTierLimit(
   metric: "documents_created" | "conversions" | "storage_bytes",
   quantity: number = 1
 ): Promise<{ allowed: boolean; limit: number; current: number; remaining: number }> {
-  const supabase = await getRouteClient()
   const limits = await getTierLimits(userId)
 
   let limit: number
@@ -151,22 +152,25 @@ export async function checkTierLimit(
     return { allowed: true, limit: -1, current: 0, remaining: -1 }
   }
 
-  const startOfMonth = new Date()
-  startOfMonth.setDate(1)
-  startOfMonth.setHours(0, 0, 0, 0)
+  const now = new Date()
+  const monthKey = `${now.getFullYear()}-${now.getMonth()}`
+  const redisKey = `tierlimit:${userId}:${metric}:${monthKey}`
 
-  const { count } = await supabase
-    .from("usage_records")
-    .select("*", { count: "exact", head: true })
-    .eq("user_id", userId)
-    .eq("metric", metric)
-    .gte("recorded_at", startOfMonth.toISOString())
+  // Atomic INCR — single Redis operation, no TOCTOU race
+  const ttlSeconds = Math.ceil(
+    (new Date(now.getFullYear(), now.getMonth() + 1, 1).getTime() - now.getTime()) / 1000
+  )
+  const current = await cacheIncrement(redisKey, ttlSeconds)
 
-  const current = count ?? 0
+  if (current === 0) {
+    // Redis unavailable — fail closed
+    return { allowed: false, limit, current: 0, remaining: 0 }
+  }
+
   const remaining = Math.max(0, limit - current)
 
   return {
-    allowed: current + quantity <= limit,
+    allowed: current <= limit,
     limit,
     current,
     remaining,
@@ -215,7 +219,7 @@ export function createTierLimitMiddleware(metric: "documents_created" | "convers
 
 // Feature gating helpers
 export function hasFeature(tier: string, feature: keyof TierLimits): boolean {
-  const limits = TIER_LIMITS[tier] || TIER_LIMITS.pro
+  const limits = TIER_LIMITS[tier] || TIER_LIMITS.free
   return limits[feature] as boolean
 }
 

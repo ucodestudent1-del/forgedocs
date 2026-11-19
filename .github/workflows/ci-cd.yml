@@ -88,7 +88,7 @@ jobs:
           REDIS_URL: ${{ secrets.REDIS_URL }}
 
       - name: Verify Docker build
-        run: docker build -t forgedocs:ci --target builder .
+        run: docker build -t forgedocs:ci --target builder --build-arg NEXT_PUBLIC_SUPABASE_URL=https://placeholder.supabase.co --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY=placeholder-anon-key --build-arg NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_placeholder --build-arg NEXT_PUBLIC_APP_URL=http://localhost:3000 --build-arg NEXT_PUBLIC_BUILD_MOCK=true .
         if: always()
 
       - name: Upload build artifacts

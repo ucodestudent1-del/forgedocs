@@ -12,3 +12,7 @@
     "restartPolicyMaxRetries": 10
   }
 }
+
+# Note: The BullMQ conversion worker must be deployed as a separate Railway service
+# using the same Dockerfile with startCommand: "npm run worker". It requires Redis
+# and the same runtime environment variables as the app service.

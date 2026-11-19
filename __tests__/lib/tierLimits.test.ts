@@ -31,9 +31,9 @@ describe("Tier Limits", () => {
     })
 
     const limits = await getTierLimits("user-123")
-    expect(limits.documents_per_month).toBe(-1)
-    expect(limits.conversions_per_month).toBe(-1)
-    expect(limits.storage_gb).toBe(20)
+    expect(limits.documents_per_month).toBe(500)
+    expect(limits.conversions_per_month).toBe(100)
+    expect(limits.storage_gb).toBe(5)
   })
 
   it("returns DB limits when available", async () => {

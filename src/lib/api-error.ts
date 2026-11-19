@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import logger from "@/lib/logger"
 
 export interface ApiErrorResponse {
   error: {
@@ -74,7 +75,7 @@ export function apiErrorResponse(error: unknown, requestId: string): NextRespons
 
   // Log full error server-side (including stack trace) but never return it to client
   if (statusCode >= 500) {
-    console.error(`[${requestId}] Server error:`, error)
+    logger.error(`[${requestId}] Server error`, { error: error instanceof Error ? error.message : String(error), stack: error instanceof Error ? error.stack : undefined })
   }
 
   return NextResponse.json(response, { status: statusCode })
@@ -102,6 +103,8 @@ export function withErrorBoundary(handler: ApiHandler): ApiHandler {
 
       // Ensure request ID header on all responses
       response.headers.set("x-request-id", requestId)
+      // Prevent caching of API responses containing user data
+      response.headers.set("Cache-Control", "private, no-store")
       return response
     } catch (error) {
       return apiErrorResponse(error, requestId)

@@ -119,10 +119,23 @@ export const POST = withErrorBoundary(async (req) => {
   })
 })
 
+const DANGEROUS_TEXT_PATTERNS = [
+  /<script[\s\S]*?>[\s\S]*?<\/script>/gi,
+  /<iframe[\s\S]*?>[\s\S]*?<\/iframe>/gi,
+  /<embed[\s\S]*?>/gi,
+  /<object[\s\S]*?>[\s\S]*?<\/object>/gi,
+  /<\?php/gi,
+  /<\?=/gi,
+  /javascript:/gi,
+  /on\w+\s*=/gi,
+]
+
 function validateFileMagicBytes(fileBytes: Uint8Array, mimeType: string): boolean {
   const expected = MAGIC_BYTES[mimeType]
   if (!expected || expected.length === 0 || expected[0].length === 0) {
-    return true // Cannot validate magic bytes for text files
+    // Text files: scan content for dangerous patterns instead of magic bytes
+    const text = Buffer.from(fileBytes).toString("utf8", 0, Math.min(fileBytes.length, 10000))
+    return !DANGEROUS_TEXT_PATTERNS.some((pattern) => pattern.test(text))
   }
 
   // Check if file starts with any of the expected magic byte sequences

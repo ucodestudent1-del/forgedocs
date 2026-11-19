@@ -19,7 +19,7 @@ export const GET = withErrorBoundary(async (req) => {
   // Return current session info
   const currentSession = {
     id: session.access_token?.slice(0, 20) || "current",
-    user_agent: typeof navigator !== "undefined" ? navigator.userAgent : "Unknown",
+    user_agent: req.headers.get("user-agent") ?? "Unknown",
     ip_address: "Current",
     created_at: new Date().toISOString(),
     is_current: true,
@@ -52,10 +52,11 @@ export const DELETE = withErrorBoundary(async (req) => {
   }
 
   if (session_id) {
-    // Revoke a specific session using service role client
+    // Supabase does not support per-session revocation via the admin API;
+    // revoking a specific session ID signs out all sessions for the user.
     const serviceSupabase = await createServiceRoleClient()
     await serviceSupabase.auth.admin.signOut(user.id)
-    return NextResponse.json({ success: true, revoked_session: session_id })
+    return NextResponse.json({ success: true, revoked_all: true, note: "Per-session revocation not supported; all sessions revoked" })
   }
 
   // Default: sign out current session

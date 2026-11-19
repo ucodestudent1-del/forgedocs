@@ -7,19 +7,11 @@ services:
       dockerfile: Dockerfile
       args:
         # Build-time environment variables (loaded from .env.build)
+        # Only NEXT_PUBLIC_* variables are safe at build time.
         NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
         NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
-        SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
-        STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
-        STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
         NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY}
-        RESEND_API_KEY: ${RESEND_API_KEY}
-        EMAIL_FROM: ${EMAIL_FROM}
-        REDIS_URL: ${REDIS_URL}
         NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL}
-        SENTRY_DSN: ${SENTRY_DSN}
-        SENTRY_ORG: ${SENTRY_ORG}
-        SENTRY_PROJECT: ${SENTRY_PROJECT}
     ports:
       - "3000:3000"
     env_file:
@@ -29,7 +21,7 @@ services:
       - PORT=3000
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/api/health", "||", "true"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/api/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -48,6 +40,30 @@ services:
       interval: 10s
       timeout: 5s
       retries: 3
+
+  # BullMQ worker for async document conversion jobs
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: builder
+      args:
+        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+        NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY}
+        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL}
+    env_file:
+      - .env.production
+    environment:
+      - NODE_ENV=production
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - WORKER_CONCURRENCY=5
+    depends_on:
+      - app
+      - redis
+    restart: unless-stopped
+    command: ["npm", "run", "worker"]
 
 volumes:
   redis_data:

@@ -17,11 +17,11 @@ export async function validateCSRF(req: Request): Promise<void> {
     throw new CSRFError("Invalid CSRF token")
   }
 
-  if (token.length !== cookieToken.length) {
-    throw new CSRFError("Invalid CSRF token")
-  }
-
-  if (!timingSafeEqual(Buffer.from(token), Buffer.from(cookieToken))) {
+  try {
+    if (!timingSafeEqual(Buffer.from(token), Buffer.from(cookieToken))) {
+      throw new CSRFError("Invalid CSRF token")
+    }
+  } catch {
     throw new CSRFError("Invalid CSRF token")
   }
 }

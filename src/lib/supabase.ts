@@ -42,14 +42,18 @@ function createMockClient() {
 }
 
 export async function createRouteClient() {
-  // Return mock client during build only when env vars are explicitly missing
+  // Return mock client during build only when explicitly opted in
   if (typeof window === "undefined" && process.env.NEXT_PHASE === "phase-production-build") {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-    if (!url || !key || url.includes("placeholder") || key.includes("placeholder")) {
-      // During build, return mock to allow static generation
-      return createMockClient()
+    if (process.env.NEXT_PUBLIC_BUILD_MOCK !== "true") {
+      const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+      const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+      if (!url || !key || url.includes("placeholder") || key.includes("placeholder")) {
+        throw new Error(
+          "Missing or invalid Supabase environment variables. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY."
+        )
+      }
     }
+    return createMockClient()
   }
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL

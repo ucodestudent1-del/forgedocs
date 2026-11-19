@@ -38,9 +38,11 @@ export function sanitizeFilename(filename: string): string {
   return filename.replace(/[^a-zA-Z0-9._-]/g, "_")
 }
 
-export function generateSignedUrl(bucket: string, path: string, expiresIn: number = 900): string {
-  // In production, use supabase.storage.from(bucket).createSignedUrl(path, expiresIn)
-  return `${process.env.NEXT_PUBLIC_APP_URL}/api/storage/download?bucket=${bucket}&path=${encodeURIComponent(path)}&expires=${expiresIn}`
+export async function generateSignedUrl(bucket: string, path: string, expiresIn: number = 900): Promise<string> {
+  const { createRouteClient } = await import("@/lib/supabase")
+  const supabase = await createRouteClient()
+  const { data } = await supabase.storage.from(bucket).createSignedUrl(path, expiresIn)
+  return data?.signedUrl || `${process.env.NEXT_PUBLIC_APP_URL}/api/storage/download?bucket=${bucket}&path=${encodeURIComponent(path)}&expires=${expiresIn}`
 }
 
 const MAGIC_BYTES: Record<string, Buffer[]> = {
