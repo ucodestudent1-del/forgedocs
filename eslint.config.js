@@ -18,6 +18,7 @@ module.exports = [
       'scripts/**',
       'start.js',
       'src/worker/**',
+      'src/lib/csp-nonce.js',
     ],
   },
   {

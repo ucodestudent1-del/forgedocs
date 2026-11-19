@@ -2,9 +2,9 @@
 
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { CreditCard, DollarSign, Clock, Users, Settings } from "lucide-react"
+import { CreditCard, DollarSign, Users, Settings } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
+import { ErrorBoundary } from "@/components/ui/ErrorBoundary"
 import { useState } from "react"
 
 interface PlanCardProps {
@@ -19,7 +19,6 @@ interface PlanCardProps {
 }
 
 export default function BillingPage() {
-  // TEMPORARILY DISABLED: Auth check removed for development
   const [tier, setTier] = useState<"pro" | "business">("pro")
   const { toast } = useToast()
   const [mrr, setMrr] = useState(0)
@@ -48,7 +47,6 @@ export default function BillingPage() {
   const handleChoosePlan = async (priceId: string | null) => {
     if (!priceId) return
     try {
-      // Get CSRF token
       const csrfRes = await fetch("/api/csrf")
       const csrfData = await csrfRes.json()
 
@@ -77,81 +75,102 @@ export default function BillingPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">Billing</h1>
-        <p className="text-muted-foreground">Manage your subscription and usage</p>
+    <ErrorBoundary>
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Billing</h1>
+          <p className="text-muted-foreground">Manage your subscription and usage</p>
+        </div>
+
+        {/* Current plan */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-foreground">Current Plan</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+            <div>
+              <h2 className="text-lg font-semibold text-foreground">{currentTier.name}</h2>
+              <p className="text-muted-foreground text-sm">{currentTier.description}</p>
+            </div>
+            <div className="flex items-center gap-4">
+              <span className="text-2xl font-bold text-foreground">{currentTier.price}</span>
+              <span className="text-muted-foreground text-sm">/month</span>
+            </div>
+            <div className="flex items-center gap-3 w-full lg:w-auto">
+              <Button className="w-full lg:w-auto" disabled>
+                Current Plan
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Usage */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-foreground">Usage This Period</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <UsageStat title="Documents Created" value="0/Unlimited" icon={CreditCard} />
+              <UsageStat title="Conversions" value="0/Unlimited" icon={DollarSign} />
+              <UsageStat title="Storage" value="0 MB / 100 GB" icon={Users} />
+              <UsageStat title="MRR" value={`$${mrr}`} icon={Settings} />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Plans */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-foreground">Choose a Plan</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <PlanCard
+                name="Pro"
+                price="$15"
+                priceId={tierInfo.pro.priceId}
+                description="For power users and growing teams"
+                features={["Unlimited documents", "Unlimited conversions", "100 GB storage", "Priority support", "Advanced templates", "Audit logs"]}
+                popular={tier === "pro"}
+                currentTier={tier}
+                onChoosePlan={handleChoosePlan}
+              />
+              <PlanCard
+                name="Business"
+                price="$49"
+                priceId={tierInfo.business.priceId}
+                description="For established organizations"
+                features={tierInfo.business.features}
+                popular={tier === "business"}
+                currentTier={tier}
+                onChoosePlan={handleChoosePlan}
+              />
+            </div>
+          </CardContent>
+        </Card>
       </div>
-
-      {/* Current plan */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-foreground">Current Plan</CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-          <div>
-            <h2 className="text-lg font-semibold text-foreground">{currentTier.name}</h2>
-            <p className="text-muted-foreground text-sm">{currentTier.description}</p>
-          </div>
-          <div className="flex items-center gap-4">
-            <span className="text-2xl font-bold text-foreground">{currentTier.price}</span>
-            <span className="text-muted-foreground text-sm">/month</span>
-          </div>
-          <div className="flex items-center gap-3 w-full lg:w-auto">
-            <Button className="w-full lg:w-auto" disabled>
-              Current Plan
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Usage */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-foreground">Usage This Period</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <UsageStat title="Documents Created" value="0/Unlimited" icon={CreditCard} />
-            <UsageStat title="Conversions" value="0/Unlimited" icon={DollarSign} />
-            <UsageStat title="Storage" value="0 MB / 100 GB" icon={Users} />
-            <UsageStat title="MRR" value={`$${mrr}`} icon={Settings} />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Plans */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-foreground">Choose a Plan</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <PlanCard
-              name="Pro"
-              price="$15"
-              priceId={tierInfo.pro.priceId}
-              description="For power users and growing teams"
-              features={["Unlimited documents", "Unlimited conversions", "100 GB storage", "Priority support", "Advanced templates", "Audit logs"]}
-              popular={tier === "pro"}
-              currentTier={tier}
-              onChoosePlan={handleChoosePlan}
-            />
-            <PlanCard
-              name="Business"
-              price="$49"
-              priceId={tierInfo.business.priceId}
-              description="For established organizations"
-              features={tierInfo.business.features}
-              popular={tier === "business"}
-              currentTier={tier}
-              onChoosePlan={handleChoosePlan}
-            />
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+    </ErrorBoundary>
   )
+}
+
+const tierInfo = {
+  pro: {
+    name: "Pro",
+    price: "$15",
+    priceId: "price_pro_monthly",
+    description: "For power users and growing teams",
+    features: ["Unlimited documents", "Unlimited conversions", "100 GB storage", "Priority support", "Advanced templates", "Audit logs"],
+    limits: { documents: null, conversions: null, storage: "100 GB" },
+  },
+  business: {
+    name: "Business",
+    price: "$49",
+    priceId: "price_business_monthly",
+    description: "For established organizations",
+    features: ["Everything in Pro", "SSO/SAML authentication", "Advanced analytics & reporting", "Dedicated account manager", "Custom integrations", "Unlimited version history", "SLA guarantee"],
+    limits: { documents: null, conversions: null, storage: "500 GB" },
+  },
 }
 
 function UsageStat({ title, value, icon: Icon }: { title: string; value: string; icon: React.ElementType }) {

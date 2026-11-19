@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useEffect, useState, useCallback, useRef } from "react"
+import { ErrorBoundary } from "@/components/ui/ErrorBoundary"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -293,7 +294,8 @@ export default function ConversionPage() {
   }
 
   return (
-    <div className="space-y-6 overflow-y-auto min-h-[calc(100vh-200px)]">
+    <ErrorBoundary>
+      <div className="space-y-6 overflow-y-auto min-h-[calc(100vh-200px)]">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Universal Converter</h1>
@@ -744,5 +746,6 @@ export default function ConversionPage() {
         </CardContent>
       </Card>
     </div>
+  </ErrorBoundary>
   )
 }

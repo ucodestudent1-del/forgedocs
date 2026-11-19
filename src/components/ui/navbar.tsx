@@ -1,14 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { X, Menu, ChevronDown, Check } from "lucide-react"
+import { X, Menu } from "lucide-react"
 import { useRouter, usePathname } from "next/navigation"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 
 export function Navbar() {
   const router = useRouter()

@@ -2,11 +2,10 @@ import { getRouteClient } from "@/lib/supabase"
 import { NextResponse } from "next/server"
 import { validateCSRF } from "@/lib/csrf"
 import { documentRateLimit } from "@/lib/rate-limiter"
-import { checkTierLimit, trackUsage } from "@/lib/tierLimits"
+import { checkTierLimit, trackUsage, getTierLimits } from "@/lib/tierLimits"
 import { validateFileMagicBytes } from "@/lib/security"
 import { withErrorBoundary, createAppError } from "@/lib/api-error"
 
-const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50MB
 const ALLOWED_MIME_TYPES = [
   "application/pdf",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -42,6 +41,10 @@ export const POST = withErrorBoundary(async (req) => {
     throw createAppError("Unauthorized", 401, "UNAUTHORIZED")
   }
 
+  // Get user's tier limits for max file size
+  const limits = await getTierLimits(user.id)
+  const MAX_FILE_SIZE = limits.max_file_size_mb * 1024 * 1024
+
   // Check document limit
   const limitCheck = await checkTierLimit(user.id, "documents_created", 1)
   if (!limitCheck.allowed) {
@@ -59,9 +62,10 @@ export const POST = withErrorBoundary(async (req) => {
     return NextResponse.json({ error: "No file provided" }, { status: 400 })
   }
 
-  // Validate file size
+  // Validate file size against tier limit
   if (file.size > MAX_FILE_SIZE) {
-    return NextResponse.json({ error: "File size exceeds 50MB limit" }, { status: 400 })
+    const maxMB = limits.max_file_size_mb
+    return NextResponse.json({ error: `File size exceeds ${maxMB}MB limit for your plan` }, { status: 400 })
   }
 
   // Validate file type
