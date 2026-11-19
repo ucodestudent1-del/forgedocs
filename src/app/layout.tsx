@@ -54,7 +54,7 @@ export const metadata: Metadata = {
     description: "Create, organize, generate, and convert documents in the cloud. One platform for every document workflow.",
     images: [
       {
-        url: "/og-image.png",
+        url: "/og-image.svg",
         width: 1200,
         height: 630,
         alt: "ForgeDocs - Professional Document Management",
@@ -67,7 +67,7 @@ export const metadata: Metadata = {
     creator: "@forgedocs",
     title: "ForgeDocs - Professional Document Management",
     description: "Create, organize, generate, and convert documents in the cloud.",
-    images: ["/og-image.png"],
+    images: ["/og-image.svg"],
   },
   icons: {
     icon: "/favicon.svg",
@@ -125,17 +125,8 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head>
         <meta name="color-scheme" content="light dark" />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
-        <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
         <link rel="preconnect" href="https://api.forgedocs.com" />
         <JsonLdScript />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
-        <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
-        <link rel="preconnect" href="https://api.forgedocs.com" />
       </head>
       <body className={`${inter.variable} font-sans antialiased min-h-screen bg-background text-foreground`}>
         <ErrorBoundary>
