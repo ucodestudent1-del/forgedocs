@@ -7,8 +7,6 @@ import { Toast } from "@/components/ui/use-toast"
 import { ThemeProvider } from "@/components/theme/ThemeProvider"
 import { ThemeInitializer } from "@/components/theme/ThemeInitializer"
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary"
-import { getCSPNonce } from "@/lib/csp-nonce"
-
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" })
 
 const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://forgedocs.com"
@@ -82,7 +80,6 @@ export const metadata: Metadata = {
 }
 
 function JsonLdScript() {
-  const nonce = getCSPNonce()
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
@@ -111,7 +108,6 @@ function JsonLdScript() {
   return (
     <script
       type="application/ld+json"
-      nonce={nonce}
       dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
     />
   )

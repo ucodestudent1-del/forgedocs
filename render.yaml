@@ -4,7 +4,7 @@
 
 services:
   - type: web
-    name: forgedocs
+    name: forgedocs-app
     runtime: docker
     dockerfilePath: ./Dockerfile
     dockerContext: .
@@ -15,3 +15,22 @@ services:
         value: "3000"
     healthCheckPath: /api/health
     autoDeploy: true
+
+  - type: worker
+    name: forgedocs-worker
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: REDIS_HOST
+        value: redis
+      - key: REDIS_PORT
+        value: "6379"
+      - key: WORKER_CONCURRENCY
+        value: "5"
+    autoDeploy: true
+
+# Note: The BullMQ worker must be deployed as a separate worker service
+# on Render. Add a Redis service separately and connect via env vars.

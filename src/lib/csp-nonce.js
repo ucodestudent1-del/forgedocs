@@ -1,15 +1,22 @@
-let currentCSPNonce = undefined
+const { AsyncLocalStorage } = require("async_hooks")
+
+const cspNonceStorage = new AsyncLocalStorage()
 
 function setCSPNonce(nonce) {
-  currentCSPNonce = nonce
+  cspNonceStorage.enterWith(nonce)
 }
 
 function getCSPNonce() {
-  return currentCSPNonce
+  return cspNonceStorage.getStore()
 }
 
 function clearCSPNonce() {
-  currentCSPNonce = undefined
+  cspNonceStorage.disable()
+  cspNonceStorage.enable()
 }
 
-module.exports = { setCSPNonce, getCSPNonce, clearCSPNonce }
+function runWithCSPNonce(nonce, fn) {
+  return cspNonceStorage.run(nonce, fn)
+}
+
+module.exports = { setCSPNonce, getCSPNonce, clearCSPNonce, runWithCSPNonce }

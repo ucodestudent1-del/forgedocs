@@ -2,6 +2,8 @@ import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
 import type { Database } from "@/types/database"
 
+let routeClientCache: any = null
+
 // Mock query builder that chains all Supabase query methods
 function createMockQueryBuilder() {
   const chain: Record<string, any> = {}
@@ -42,6 +44,8 @@ function createMockClient() {
 }
 
 export async function createRouteClient() {
+  if (routeClientCache) return routeClientCache
+
   // Return mock client during build only when explicitly opted in
   if (typeof window === "undefined" && process.env.NEXT_PHASE === "phase-production-build") {
     if (process.env.NEXT_PUBLIC_BUILD_MOCK !== "true") {
@@ -53,7 +57,8 @@ export async function createRouteClient() {
         )
       }
     }
-    return createMockClient()
+    routeClientCache = createMockClient()
+    return routeClientCache
   }
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -66,7 +71,7 @@ export async function createRouteClient() {
     )
   }
 
-  return createServerClient<Database>(
+  const client = createServerClient<Database>(
     url,
     key,
     {
@@ -88,6 +93,9 @@ export async function createRouteClient() {
       },
     },
   )
+
+  routeClientCache = client
+  return client
 }
 
 export async function getRouteClient() {

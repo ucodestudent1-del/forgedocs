@@ -4,12 +4,11 @@ import { getRedisClient } from "@/lib/cache"
 import Stripe from "stripe"
 
 export async function GET() {
-  const checks: Record<string, { status: string; latency?: number; error?: string }> = {}
+  const checks: Record<string, { status: string; latency?: number; error?: string; [key: string]: any }> = {}
 
   // ---- Database (Supabase) check ----
   const dbStart = Date.now()
   try {
-    // Use anon key for health check - we only need connectivity, not RLS bypass
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -65,6 +64,33 @@ export async function GET() {
   } catch (err) {
     const stripeLatency = Date.now() - stripeStart
     checks.stripe = { status: "unhealthy", latency: stripeLatency, error: String(err) }
+  }
+
+  // ---- Worker check ----
+  const workerStart = Date.now()
+  try {
+    const workerHealthUrl = process.env.WORKER_HEALTH_URL
+    if (!workerHealthUrl) {
+      checks.worker = { status: "unhealthy", error: "Worker health URL not configured" }
+    } else {
+      const workerRes = await fetch(workerHealthUrl, { signal: AbortSignal.timeout(5000) })
+      const workerLatency = Date.now() - workerStart
+      if (workerRes.ok) {
+        const workerData = await workerRes.json()
+        checks.worker = {
+          status: workerData.status === "healthy" ? "healthy" : "unhealthy",
+          latency: workerLatency,
+          isLeader: workerData.isLeader,
+          activeJobs: workerData.activeJobs,
+          failedJobs: workerData.failedJobs,
+        }
+      } else {
+        checks.worker = { status: "unhealthy", latency: workerLatency, error: `HTTP ${workerRes.status}` }
+      }
+    }
+  } catch (err) {
+    const workerLatency = Date.now() - workerStart
+    checks.worker = { status: "unhealthy", latency: workerLatency, error: String(err) }
   }
 
   const allHealthy = Object.values(checks).every((c) => c.status === "healthy")

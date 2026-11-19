@@ -22,27 +22,43 @@ const consoleFormat = winston.format.combine(
   })
 )
 
+const transports: winston.transport[] = [
+  new winston.transports.Console({
+    format: consoleFormat,
+    level: process.env.NODE_ENV === "production" ? "warn" : "debug",
+  }),
+  new winston.transports.File({
+    filename: path.join(logDir, "error.log"),
+    level: "error",
+    maxsize: 5 * 1024 * 1024,
+    maxFiles: 5,
+  }),
+  new winston.transports.File({
+    filename: path.join(logDir, "combined.log"),
+    maxsize: 5 * 1024 * 1024,
+    maxFiles: 5,
+  }),
+]
+
+// Optional remote log transport (e.g., Datadog, Logtail, CloudWatch via HTTP)
+if (process.env.LOG_ENDPOINT) {
+  transports.push(
+    new (winston.transports.Http as any)({
+      host: new URL(process.env.LOG_ENDPOINT).host,
+      path: new URL(process.env.LOG_ENDPOINT).pathname,
+      protocol: new URL(process.env.LOG_ENDPOINT).protocol,
+      ssl: new URL(process.env.LOG_ENDPOINT).protocol === "https:",
+      format: winston.format.json(),
+      level: process.env.LOG_LEVEL || "info",
+    })
+  )
+}
+
 const logger = winston.createLogger({
   level: process.env.LOG_LEVEL || "info",
   format: logFormat,
   defaultMeta: { service: "forgedocs" },
-  transports: [
-    new winston.transports.Console({
-      format: consoleFormat,
-      level: process.env.NODE_ENV === "production" ? "warn" : "debug",
-    }),
-    new winston.transports.File({
-      filename: path.join(logDir, "error.log"),
-      level: "error",
-      maxsize: 5 * 1024 * 1024,
-      maxFiles: 5,
-    }),
-    new winston.transports.File({
-      filename: path.join(logDir, "combined.log"),
-      maxsize: 5 * 1024 * 1024,
-      maxFiles: 5,
-    }),
-  ],
+  transports,
 })
 
 // Create a child logger with request context
