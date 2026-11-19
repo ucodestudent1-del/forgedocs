@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react"
 import { usePathname } from "next/navigation"
+import { useGlobalHotkeys } from "@/hooks/useHotkeys"
 import { Search, Bell, ChevronLeft, ChevronRight, Menu, FileText } from "lucide-react"
 import { Sidebar } from "@/components/layout/Sidebar"
 import { DashboardHeader } from "@/components/dashboard/header"
@@ -29,6 +30,26 @@ export default function DashboardClient({
   const { toast } = useToast()
   const pathname = usePathname()
   const searchDebounceRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Global keyboard shortcuts
+  useGlobalHotkeys({
+    "mod+k": () => {
+      // Focus search input
+      const searchInput = document.querySelector('input[type="search"]') as HTMLInputElement
+      if (searchInput) {
+        searchInput.focus()
+        searchInput.select()
+      }
+    },
+    "mod+n": () => {
+      // Navigate to new document
+      window.location.href = "/editor"
+    },
+    "mod+b": () => {
+      // Toggle sidebar
+      setSidebarCollapsed((prev) => !prev)
+    },
+  })
 
   // Close mobile sidebar on route change
   useEffect(() => {

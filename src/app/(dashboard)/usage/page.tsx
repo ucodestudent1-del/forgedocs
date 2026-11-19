@@ -23,6 +23,11 @@ import {
   BarChart3,
   PieChart,
 } from "lucide-react"
+import {
+  SkeletonUsageCard,
+  SkeletonChart,
+  SkeletonPlanCard,
+} from "@/components/ui/skeleton"
 
 interface UsageData {
   documents: { current: number; limit: number }
@@ -151,24 +156,20 @@ export default function UsagePage() {
   if (loading || !usage) {
     return (
       <ErrorBoundary>
-        <div className="space-y-6 animate-pulse">
+        <div className="space-y-6">
           <DashboardHeader
             title="Usage & Limits"
             description="Monitor your resource usage against plan limits"
           />
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[1, 2, 3, 4].map((i) => (
-              <Card key={i}>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm">Loading...</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-8 bg-muted rounded mb-2" />
-                  <div className="h-4 bg-muted rounded" />
-                </CardContent>
-              </Card>
-            ))}
+            <SkeletonUsageCard />
+            <SkeletonUsageCard />
+            <SkeletonUsageCard />
+            <SkeletonUsageCard />
           </div>
+          <SkeletonPlanCard />
+          <SkeletonChart />
+          <SkeletonPlanCard />
         </div>
       </ErrorBoundary>
     )

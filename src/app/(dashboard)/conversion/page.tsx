@@ -5,6 +5,7 @@ import { ErrorBoundary } from "@/components/ui/ErrorBoundary"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { SkeletonTable } from "@/components/ui/skeleton"
 import {
   FileText,
   FileSpreadsheet,
@@ -696,13 +697,10 @@ export default function ConversionPage() {
                 <div className="w-1/3">Status</div>
               </div>
             </div>
-            <div className="divide-y">
-              {loading ? (
-                <div className="p-4 animate-pulse rounded-lg bg-card">
-                  <div className="h-4 bg-muted w-1/2 rounded mb-2" />
-                  <div className="h-4 bg-muted w-1/3 rounded" />
-                </div>
-              ) : jobs.length === 0 ? (
+<div className="divide-y">
+                {loading ? (
+                  <SkeletonTable rows={5} columns={3} />
+                ) : jobs.length === 0 ? (
                 <div className="p-8 text-center text-muted-foreground">
                   <RefreshCw className="h-8 w-8 mx-auto mb-2 opacity-50" />
                   <p>No conversion jobs yet</p>
