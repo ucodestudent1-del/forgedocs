@@ -1,8 +1,12 @@
 const requiredEnvVars = [
   "NEXT_PUBLIC_SUPABASE_URL",
   "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+  "SUPABASE_SERVICE_ROLE_KEY",
   "STRIPE_SECRET_KEY",
   "STRIPE_WEBHOOK_SECRET",
+  "RESEND_API_KEY",
+  "REDIS_URL",
+  "MFA_SECRET_ENCRYPTION_KEY",
 ] as const
 
 const optionalEnvVars = [
@@ -47,8 +51,12 @@ export function getRequiredEnv(key: typeof requiredEnvVars[number]): string {
 export const env = {
   NEXT_PUBLIC_SUPABASE_URL: getRequiredEnv("NEXT_PUBLIC_SUPABASE_URL"),
   NEXT_PUBLIC_SUPABASE_ANON_KEY: getRequiredEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY"),
+  SUPABASE_SERVICE_ROLE_KEY: getRequiredEnv("SUPABASE_SERVICE_ROLE_KEY"),
   STRIPE_SECRET_KEY: getRequiredEnv("STRIPE_SECRET_KEY"),
   STRIPE_WEBHOOK_SECRET: getRequiredEnv("STRIPE_WEBHOOK_SECRET"),
+  RESEND_API_KEY: getRequiredEnv("RESEND_API_KEY"),
+  REDIS_URL: getRequiredEnv("REDIS_URL"),
+  MFA_SECRET_ENCRYPTION_KEY: getRequiredEnv("MFA_SECRET_ENCRYPTION_KEY"),
   SENTRY_ORG: getEnv("SENTRY_ORG"),
   SENTRY_PROJECT: getEnv("SENTRY_PROJECT"),
   SENTRY_DSN: getEnv("SENTRY_DSN"),

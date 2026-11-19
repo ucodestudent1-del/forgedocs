@@ -12,9 +12,14 @@ export function getRedisClient(): Redis | null {
   if (isTestEnv) {
     return null
   }
-  
+
+  const redisUrl = process.env.REDIS_URL
+  if (!redisUrl) {
+    logger.warn("REDIS_URL is not configured — cache and rate limiting will be disabled")
+    return null
+  }
+
   if (!redisClient) {
-    const redisUrl = process.env.REDIS_URL || "redis://localhost:6379"
     redisClient = new Redis(redisUrl, {
       maxRetriesPerRequest: 3,
       enableReadyCheck: true,

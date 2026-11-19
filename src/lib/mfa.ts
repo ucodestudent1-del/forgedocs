@@ -107,7 +107,10 @@ export function verifyToken(secret: string, token: string): boolean {
 }
 
 export function hashBackupCode(code: string): string {
-  const pepper = process.env.MFA_BACKUP_CODE_PEPPER || "default-pepper-change-in-production"
+  const pepper = process.env.MFA_BACKUP_CODE_PEPPER
+  if (!pepper) {
+    throw new Error("MFA_BACKUP_CODE_PEPPER is not configured")
+  }
   return createHmac("sha256", pepper).update(code).digest("hex")
 }
 
