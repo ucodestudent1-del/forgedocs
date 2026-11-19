@@ -27,18 +27,30 @@ const transports: winston.transport[] = [
     format: consoleFormat,
     level: process.env.NODE_ENV === "production" ? "warn" : "debug",
   }),
-  new winston.transports.File({
-    filename: path.join(logDir, "error.log"),
-    level: "error",
-    maxsize: 5 * 1024 * 1024,
-    maxFiles: 5,
-  }),
-  new winston.transports.File({
-    filename: path.join(logDir, "combined.log"),
-    maxsize: 5 * 1024 * 1024,
-    maxFiles: 5,
-  }),
 ]
+
+// Add file transports only if log directory is writable
+try {
+  const fs = require("fs")
+  if (!fs.existsSync(logDir)) {
+    fs.mkdirSync(logDir, { recursive: true })
+  }
+  transports.push(
+    new winston.transports.File({
+      filename: path.join(logDir, "error.log"),
+      level: "error",
+      maxsize: 5 * 1024 * 1024,
+      maxFiles: 5,
+    }),
+    new winston.transports.File({
+      filename: path.join(logDir, "combined.log"),
+      maxsize: 5 * 1024 * 1024,
+      maxFiles: 5,
+    })
+  )
+} catch {
+  // File logging unavailable — console only
+}
 
 // Optional remote log transport (e.g., Datadog, Logtail, CloudWatch via HTTP)
 if (process.env.LOG_ENDPOINT) {

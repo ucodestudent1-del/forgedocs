@@ -35,6 +35,9 @@ ENV PORT=3000
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nodejs
 
+# Create logs directory with proper permissions for non-root user
+RUN mkdir -p /app/logs && chown -R nodejs:nodejs /app/logs
+
 USER nodejs
 
 # Copy built application from builder
