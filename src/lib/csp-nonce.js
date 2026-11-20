@@ -1,22 +1,26 @@
-const { AsyncLocalStorage } = require("async_hooks")
-
-const cspNonceStorage = new AsyncLocalStorage()
+// Simple module-level CSP nonce store (plain JavaScript for next.config.js compatibility)
+let currentCSPNonce = undefined
 
 function setCSPNonce(nonce) {
-  cspNonceStorage.enterWith(nonce)
+  currentCSPNonce = nonce
 }
 
 function getCSPNonce() {
-  return cspNonceStorage.getStore()
+  return currentCSPNonce
 }
 
 function clearCSPNonce() {
-  cspNonceStorage.disable()
-  cspNonceStorage.enable()
+  currentCSPNonce = undefined
 }
 
 function runWithCSPNonce(nonce, fn) {
-  return cspNonceStorage.run(nonce, fn)
+  const prev = currentCSPNonce
+  currentCSPNonce = nonce
+  try {
+    return fn()
+  } finally {
+    currentCSPNonce = prev
+  }
 }
 
 module.exports = { setCSPNonce, getCSPNonce, clearCSPNonce, runWithCSPNonce }

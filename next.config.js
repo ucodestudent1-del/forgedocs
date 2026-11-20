@@ -57,20 +57,26 @@ const nextConfig = {
     minimumCacheTTL: 31536000,
   },
   async headers() {
-    const nonce = generateNonce()
-    const jsonLdHash = computeJsonLdHash()
-    setCSPNonce(nonce)
-    const csp = [
-      "default-src 'self'",
-      `script-src 'self' 'nonce-${nonce}' 'sha256-${jsonLdHash}' 'strict-dynamic'`,
-      "style-src 'self'",
-      "img-src 'self' data: https:",
-      "font-src 'self'",
-      "connect-src 'self' https:",
-      "frame-ancestors 'none'",
-      "base-uri 'self'",
-      "form-action 'self'",
-    ].join("; ")
+    let csp = "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: https:; font-src 'self'; connect-src 'self' https:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+    let nonce = ""
+    try {
+      nonce = generateNonce()
+      const jsonLdHash = computeJsonLdHash()
+      setCSPNonce(nonce)
+      csp = [
+        "default-src 'self'",
+        `script-src 'self' 'nonce-${nonce}' 'sha256-${jsonLdHash}' 'strict-dynamic'`,
+        "style-src 'self'",
+        "img-src 'self' data: https:",
+        "font-src 'self'",
+        "connect-src 'self' https:",
+        "frame-ancestors 'none'",
+        "base-uri 'self'",
+        "form-action 'self'",
+      ].join("; ")
+    } catch {
+      // Fall back to basic CSP if nonce generation fails
+    }
 
     return [
       {
@@ -103,12 +109,10 @@ const nextConfig = {
             key: "X-Permitted-Cross-Domain-Policies",
             value: "none",
           },
-          // CDN/Edge caching headers
           { key: "Cache-Control", value: "public, max-age=0, must-revalidate, stale-while-revalidate=300" },
           { key: "X-DNS-Prefetch-Control", value: "on" },
         ],
       },
-      // Static assets with long-term caching
       {
         source: "/:path*\\.(js|css|woff|woff2|png|jpg|jpeg|gif|webp|avif|ico|svg)",
         headers: [
