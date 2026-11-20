@@ -11,26 +11,27 @@ function generateRequestId(): string {
 export async function middleware(request: NextRequest) {
   try {
     const pathname = request.nextUrl?.pathname ?? "/"
-    const requestId = request.headers?.get("x-request-id") ?? generateRequestId()
+    const requestId = request.headers.get("x-request-id") ?? generateRequestId()
 
-    // Skip all non-page routes (static assets, internals)
-    if (
+    // Skip non-page routes (static assets, internals)
+    const isStaticRoute =
       pathname.startsWith("/_next") ||
       pathname.startsWith("/_vercel") ||
       pathname.startsWith("/_not-found") ||
       pathname.includes(".")
-    ) {
-      const response = NextResponse.next()
-      response.headers.set("x-request-id", requestId)
+
+    const response = NextResponse.next()
+    response.headers.set("x-request-id", requestId)
+
+    if (isStaticRoute) {
       return response
     }
 
-    // Pass through for all page routes
-    const response = NextResponse.next()
-    response.headers.set("x-request-id", requestId)
     return response
   } catch {
-    return NextResponse.next()
+    const response = NextResponse.next()
+    response.headers.set("x-request-id", generateRequestId())
+    return response
   }
 }
 

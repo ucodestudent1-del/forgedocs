@@ -55,24 +55,23 @@ const nextConfig = {
     minimumCacheTTL: 31536000,
   },
   async headers() {
-    let csp = "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: https:; font-src 'self'; connect-src 'self' https:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+    let csp = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self' https: wss:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
     let nonce = ""
     try {
-      nonce = generateNonce()
       const jsonLdHash = computeJsonLdHash()
       csp = [
         "default-src 'self'",
-        `script-src 'self' 'sha256-${jsonLdHash}'`,
-        "style-src 'self'",
+        `script-src 'self' 'unsafe-inline' 'sha256-${jsonLdHash}'`,
+        "style-src 'self' 'unsafe-inline'",
         "img-src 'self' data: https:",
         "font-src 'self'",
-        "connect-src 'self' https:",
+        "connect-src 'self' https: wss:",
         "frame-ancestors 'none'",
         "base-uri 'self'",
         "form-action 'self'",
       ].join("; ")
     } catch {
-      // Fall back to basic CSP if nonce/hash generation fails
+      // Fall back to basic CSP if hash generation fails
     }
 
     return [
@@ -97,7 +96,6 @@ const nextConfig = {
           { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains; preload" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           { key: "Content-Security-Policy", value: csp },
-          { key: "X-CSP-Nonce", value: nonce },
           {
             key: "Permissions-Policy",
             value: "camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()",
