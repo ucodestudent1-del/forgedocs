@@ -239,11 +239,9 @@ export function CookieConsentProvider({ children }: { children: React.ReactNode 
     setMounted(true)
   }, [])
 
-  if (!mounted) return null
-
   return (
     <>
-      <CookieConsentBanner />
+      {mounted && <CookieConsentBanner />}
       {children}
     </>
   )
