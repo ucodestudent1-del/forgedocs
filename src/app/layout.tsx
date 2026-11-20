@@ -1,8 +1,6 @@
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
-import "@/app/env-check"
-import { getCSPNonce } from "@/lib/csp-nonce"
 import { Toast } from "@/components/ui/use-toast"
 import { ThemeProvider } from "@/components/theme/ThemeProvider"
 import { ThemeInitializer } from "@/components/theme/ThemeInitializer"
@@ -10,10 +8,10 @@ import { ErrorBoundary } from "@/components/ui/ErrorBoundary"
 import { CookieConsentProvider } from "@/components/ui/cookie-consent"
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" })
 
-const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://forgedocs.com"
+const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://forgedocs.com"
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://forgedocs.com"),
+  metadataBase: new URL(appUrl),
   title: {
     default: "ForgeDocs - Professional Document Management Platform",
     template: "%s | ForgeDocs",
@@ -48,7 +46,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://forgedocs.com",
+    url: appUrl,
     siteName: "ForgeDocs",
     title: "ForgeDocs - Professional Document Management Platform",
     description: "Create, organize, generate, and convert documents in the cloud. One platform for every document workflow.",
@@ -81,7 +79,6 @@ export const metadata: Metadata = {
 }
 
 function JsonLdScript() {
-  const nonce = getCSPNonce()
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
@@ -110,7 +107,6 @@ function JsonLdScript() {
   return (
     <script
       type="application/ld+json"
-      nonce={nonce}
       dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
     />
   )

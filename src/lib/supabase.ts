@@ -52,9 +52,8 @@ export async function createRouteClient() {
       const url = process.env.NEXT_PUBLIC_SUPABASE_URL
       const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
       if (!url || !key || url.includes("placeholder") || key.includes("placeholder")) {
-        throw new Error(
-          "Missing or invalid Supabase environment variables. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY."
-        )
+        routeClientCache = createMockClient()
+        return routeClientCache
       }
     }
     routeClientCache = createMockClient()
@@ -64,11 +63,9 @@ export async function createRouteClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-  // Throw if env vars are missing or placeholder - fail fast instead of silently returning mock
+  // Return null if env vars are missing instead of throwing — prevents SSR crashes
   if (!url || !key || url.includes("placeholder") || key.includes("placeholder")) {
-    throw new Error(
-      "Missing or invalid Supabase environment variables. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY."
-    )
+    return null
   }
 
   const client = createServerClient<Database>(

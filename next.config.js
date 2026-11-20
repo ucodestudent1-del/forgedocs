@@ -6,8 +6,6 @@ const withBundleAnalyzer = require("@next/bundle-analyzer")({
   enabled: process.env.ANALYZE === "true",
 })
 
-const { setCSPNonce, clearCSPNonce } = require("./src/lib/csp-nonce")
-
 function generateNonce() {
   return crypto.randomUUID().replace(/-/g, "")
 }
@@ -62,11 +60,10 @@ const nextConfig = {
     try {
       nonce = generateNonce()
       const jsonLdHash = computeJsonLdHash()
-      setCSPNonce(nonce)
       csp = [
         "default-src 'self'",
-        `script-src 'self' 'nonce-${nonce}' 'sha256-${jsonLdHash}'`,
-        "style-src 'self' 'nonce-*'",
+        `script-src 'self' 'sha256-${jsonLdHash}'`,
+        "style-src 'self'",
         "img-src 'self' data: https:",
         "font-src 'self'",
         "connect-src 'self' https:",
@@ -75,7 +72,7 @@ const nextConfig = {
         "form-action 'self'",
       ].join("; ")
     } catch {
-      // Fall back to basic CSP if nonce generation fails
+      // Fall back to basic CSP if nonce/hash generation fails
     }
 
     return [
