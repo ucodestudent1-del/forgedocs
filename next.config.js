@@ -65,8 +65,8 @@ const nextConfig = {
       setCSPNonce(nonce)
       csp = [
         "default-src 'self'",
-        `script-src 'self' 'nonce-${nonce}' 'sha256-${jsonLdHash}' 'strict-dynamic'`,
-        "style-src 'self'",
+        `script-src 'self' 'nonce-${nonce}' 'sha256-${jsonLdHash}'`,
+        "style-src 'self' 'nonce-*'",
         "img-src 'self' data: https:",
         "font-src 'self'",
         "connect-src 'self' https:",

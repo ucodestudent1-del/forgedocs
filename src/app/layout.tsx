@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
 import "@/app/env-check"
+import { getCSPNonce } from "@/lib/csp-nonce"
 import { Toast } from "@/components/ui/use-toast"
 import { ThemeProvider } from "@/components/theme/ThemeProvider"
 import { ThemeInitializer } from "@/components/theme/ThemeInitializer"
@@ -80,6 +81,7 @@ export const metadata: Metadata = {
 }
 
 function JsonLdScript() {
+  const nonce = getCSPNonce()
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
@@ -108,6 +110,7 @@ function JsonLdScript() {
   return (
     <script
       type="application/ld+json"
+      nonce={nonce}
       dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
     />
   )
