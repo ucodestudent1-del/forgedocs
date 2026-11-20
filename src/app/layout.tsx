@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
-import { Toast } from "@/components/ui/use-toast"
+import { ToastProvider } from "@/components/ui/toast"
 import { ThemeProvider } from "@/components/theme/ThemeProvider"
 import { ThemeInitializer } from "@/components/theme/ThemeInitializer"
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary"
@@ -128,9 +128,9 @@ export default function RootLayout({
         <ErrorBoundary>
           <ThemeInitializer />
           <ThemeProvider>
-            <Toast>
+            <ToastProvider>
               <CookieConsentProvider>{children}</CookieConsentProvider>
-            </Toast>
+            </ToastProvider>
           </ThemeProvider>
         </ErrorBoundary>
       </body>
