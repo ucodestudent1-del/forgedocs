@@ -10,36 +10,6 @@ function generateNonce() {
   return crypto.randomUUID().replace(/-/g, "")
 }
 
-// Compute SHA-256 hash of the static JSON-LD script content for CSP
-function computeJsonLdHash() {
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "SoftwareApplication",
-    name: "ForgeDocs",
-    applicationCategory: "BusinessApplication",
-    operatingSystem: "Cloud",
-    offers: {
-      "@type": "Offer",
-      price: "0",
-      priceCurrency: "USD",
-      availability: "https://schema.org/InStock",
-    },
-    description: "Professional document management platform for modern teams. Create, organize, generate, and convert documents in the cloud.",
-    featureList: [
-      "Document management and version control",
-      "Format conversion (50+ formats)",
-      "Electronic signatures",
-      "Template-based document generation",
-      "Team collaboration with roles and permissions",
-      "AI-powered document assistance",
-      "PDF tools (merge, split, compress, OCR)",
-      "End-to-end encryption and SOC 2 compliance",
-    ],
-  }
-  const scriptContent = JSON.stringify(jsonLd)
-  return crypto.createHash("sha256").update(scriptContent).digest("base64")
-}
-
 const nextConfig = {
   outputFileTracingRoot: __dirname,
   eslint: {
@@ -56,12 +26,10 @@ const nextConfig = {
   },
   async headers() {
     let csp = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self' https: wss:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
-    let nonce = ""
     try {
-      const jsonLdHash = computeJsonLdHash()
       csp = [
         "default-src 'self'",
-        `script-src 'self' 'unsafe-inline' 'sha256-${jsonLdHash}'`,
+        "script-src 'self' 'unsafe-inline'",
         "style-src 'self' 'unsafe-inline'",
         "img-src 'self' data: https:",
         "font-src 'self'",
@@ -71,7 +39,7 @@ const nextConfig = {
         "form-action 'self'",
       ].join("; ")
     } catch {
-      // Fall back to basic CSP if hash generation fails
+      // Fall back to basic CSP
     }
 
     return [
