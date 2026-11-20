@@ -102,27 +102,30 @@ export async function validateApiKey(rawKey: string): Promise<{ userId: string; 
     .select("id, user_id, name, key_hash, key_prefix, permissions, expires_at, revoked_at")
     .eq("key_prefix", keyPrefix)
     .is("revoked_at", null)
-    .maybeSingle()
 
-  if (!data) return null
+  const keys = (data ?? []) as ApiKeyRow[]
 
-  const key = data as ApiKeyRow
+  // Multiple keys may share the same prefix; compare each hash in constant time
+  // to avoid prefix-collision denial of service and to avoid maybeSingle() errors.
+  for (const key of keys) {
+    // Check expiry
+    if (key.expires_at && new Date(key.expires_at) < new Date()) {
+      continue
+    }
 
-  // Check expiry
-  if (key.expires_at && new Date(key.expires_at) < new Date()) {
-    return null
+    // Constant-time comparison
+    if (compareApiKey(rawKey, key.key_hash)) {
+      // Update last_used_at (non-blocking)
+      void supabase
+        .from("api_keys")
+        .update({ last_used_at: new Date().toISOString() })
+        .eq("id", key.id)
+
+      return { userId: key.user_id, key }
+    }
   }
 
-  // Constant-time comparison
-  if (!compareApiKey(rawKey, key.key_hash)) return null
-
-  // Update last_used_at (non-blocking)
-  void supabase
-    .from("api_keys")
-    .update({ last_used_at: new Date().toISOString() })
-    .eq("id", key.id)
-
-  return { userId: key.user_id, key }
+  return null
 }
 
 export interface ApiKeyPermissionCheck {

@@ -3,6 +3,7 @@ import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
 import { validateCSRF } from "@/lib/csrf"
 import { documentRateLimit } from "@/lib/rate-limiter"
+import { sanitizeFilename } from "@/lib/security"
 import { withErrorBoundary, createAppError } from "@/lib/api-error"
 
 export const maxDuration = 60
@@ -95,7 +96,7 @@ export const POST = withErrorBoundary(async (req) => {
     throw createAppError("File content does not match declared type", 400, "INVALID_FILE_CONTENT")
   }
 
-  const fileName = `${user.id}/${crypto.randomUUID()}-${file.name}`
+  const fileName = `${user.id}/${crypto.randomUUID()}-${sanitizeFilename(file.name)}`
 
   const { data, error } = await supabase.storage
     .from("documents")
@@ -133,8 +134,8 @@ const DANGEROUS_TEXT_PATTERNS = [
 function validateFileMagicBytes(fileBytes: Uint8Array, mimeType: string): boolean {
   const expected = MAGIC_BYTES[mimeType]
   if (!expected || expected.length === 0 || expected[0].length === 0) {
-    // Text files: scan content for dangerous patterns instead of magic bytes
-    const text = Buffer.from(fileBytes).toString("utf8", 0, Math.min(fileBytes.length, 10000))
+    // Text files: scan the full content for dangerous patterns
+    const text = Buffer.from(fileBytes).toString("utf8")
     return !DANGEROUS_TEXT_PATTERNS.some((pattern) => pattern.test(text))
   }
 

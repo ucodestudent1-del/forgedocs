@@ -4,6 +4,7 @@ import { validateCSRF } from "@/lib/csrf"
 import { documentRateLimit } from "@/lib/rate-limiter"
 import { checkTierLimit, trackUsage, getTierLimits } from "@/lib/tierLimits"
 import { validateFileMagicBytes } from "@/lib/security"
+import { sanitizeFilename } from "@/lib/security"
 import { withErrorBoundary, createAppError } from "@/lib/api-error"
 
 const ALLOWED_MIME_TYPES = [
@@ -103,7 +104,7 @@ export const POST = withErrorBoundary(async (req) => {
 
   // Generate storage path
   const fileId = crypto.randomUUID()
-  const ext = file.name.split(".").pop() || ""
+  const ext = sanitizeFilename(file.name.split(".").pop() || "")
   const storagePath = `documents/${user.id}/${folderId ? folderId + "/" : ""}${fileId}.${ext}`
 
   // Validate file magic bytes (content inspection, not just MIME type from client)
@@ -131,7 +132,7 @@ export const POST = withErrorBoundary(async (req) => {
     .insert({
       user_id: user.id,
       parent_id: folderId,
-      title: file.name,
+      title: sanitizeFilename(file.name),
       storage_path: storagePath,
       mime_type: file.type,
       file_size: file.size,

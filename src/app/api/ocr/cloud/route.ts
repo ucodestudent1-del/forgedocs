@@ -1,11 +1,18 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getRouteClient } from "@/lib/supabase"
 import { performCloudOCR } from "@/lib/ocr/cloud"
+import { documentRateLimit } from "@/lib/rate-limiter"
+import { validateCSRF } from "@/lib/csrf"
 import { withErrorBoundary, createAppError } from "@/lib/api-error"
 
 export const dynamic = "force-dynamic"
 
 export const POST = withErrorBoundary(async (request) => {
+  const rateLimitError = await documentRateLimit(request)
+  if (rateLimitError) return rateLimitError
+
+  await validateCSRF(request)
+
   const supabase = await getRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
   

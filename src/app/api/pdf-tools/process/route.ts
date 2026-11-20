@@ -1,9 +1,16 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getRouteClient } from "@/lib/supabase"
 import { PDFDocument, StandardFonts, rgb, degrees } from "pdf-lib"
+import { documentRateLimit } from "@/lib/rate-limiter"
+import { validateCSRF } from "@/lib/csrf"
 import { withErrorBoundary, createAppError } from "@/lib/api-error"
 
 export const POST = withErrorBoundary(async (request) => {
+  const rateLimitError = await documentRateLimit(request)
+  if (rateLimitError) return rateLimitError
+
+  await validateCSRF(request)
+
   const supabase = await getRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
   
@@ -24,8 +31,15 @@ export const POST = withErrorBoundary(async (request) => {
     throw createAppError("Invalid tool", 400, "INVALID_TOOL")
   }
 
-  // Validate file size per file (max 25MB per PDF to prevent memory exhaustion)
+  // Cap file count and total combined size to prevent memory exhaustion
+  const MAX_FILES = 5
+  const MAX_TOTAL_SIZE = 50 * 1024 * 1024 // 50 MB
   const MAX_PDF_SIZE = 25 * 1024 * 1024
+  if (files.length > MAX_FILES) {
+    throw createAppError(`Too many files (max ${MAX_FILES})`, 400, "TOO_MANY_FILES")
+  }
+
+  let totalSize = 0
   for (const file of files) {
     if (file.type !== "application/pdf") {
       throw createAppError("All files must be PDF", 400, "INVALID_FILE_TYPE")
@@ -33,6 +47,10 @@ export const POST = withErrorBoundary(async (request) => {
     if (file.size > MAX_PDF_SIZE) {
       throw createAppError(`PDF file too large (max ${MAX_PDF_SIZE / (1024 * 1024)}MB)`, 400, "FILE_TOO_LARGE")
     }
+    totalSize += file.size
+  }
+  if (totalSize > MAX_TOTAL_SIZE) {
+    throw createAppError(`Total upload too large (max ${MAX_TOTAL_SIZE / (1024 * 1024)}MB)`, 400, "TOTAL_TOO_LARGE")
   }
 
   let processedPdf: Uint8Array

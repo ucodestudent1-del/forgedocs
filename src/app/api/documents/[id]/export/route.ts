@@ -36,6 +36,11 @@ export const GET = withErrorBoundary(async (
   // Sanitize filename to prevent header injection
   const safeTitle = (doc.title || "document").replace(/["\r\n]/g, "_").slice(0, 100)
 
+  // HTML-escape the title to prevent stored XSS when it is interpolated into exported HTML
+  const escapeHtml = (str: string): string =>
+    str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;")
+  const safeTitleHtml = escapeHtml(safeTitle)
+
   // Sanitize content for export
   const sanitizedContent = sanitizeForExport(doc.content || "")
 
@@ -46,7 +51,7 @@ export const GET = withErrorBoundary(async (
 
   switch (format) {
     case "html":
-      exportContent = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${safeTitle}</title></head><body>${sanitizedContent}</body></html>`
+      exportContent = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${safeTitleHtml}</title></head><body>${sanitizedContent}</body></html>`
       mimeType = "text/html"
       extension = "html"
       break
@@ -61,12 +66,12 @@ export const GET = withErrorBoundary(async (
       extension = "txt"
       break
     case "docx":
-      exportContent = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${safeTitle}</title></head><body>${sanitizedContent}</body></html>`
+      exportContent = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${safeTitleHtml}</title></head><body>${sanitizedContent}</body></html>`
       mimeType = "text/html"
       extension = "html"
       break
     case "pdf":
-      exportContent = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${safeTitle}</title></head><body>${sanitizedContent}</body></html>`
+      exportContent = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${safeTitleHtml}</title></head><body>${sanitizedContent}</body></html>`
       mimeType = "text/html"
       extension = "html"
       break

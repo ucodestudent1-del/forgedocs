@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from "next/server"
 import { getRouteClient } from "@/lib/supabase"
 import { v4 as uuidv4 } from "uuid"
 import { Resend } from "resend"
+import { escapeHtml } from "@/lib/email"
 import { validateCSRF } from "@/lib/csrf"
+import { documentRateLimit } from "@/lib/rate-limiter"
 import { withErrorBoundary, createAppError } from "@/lib/api-error"
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
@@ -43,6 +45,9 @@ async function validateSigningToken(supabase: any, signingToken: string): Promis
 }
 
 export const POST = withErrorBoundary(async (request) => {
+  const rateLimitError = await documentRateLimit(request)
+  if (rateLimitError) return rateLimitError
+
   const supabase = await getRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
   
@@ -143,9 +148,9 @@ export const POST = withErrorBoundary(async (request) => {
           html: `
             <div style="font-family: system-ui, sans-serif; max-width: 600px; margin: 0 auto;">
               <h1 style="color: #1a1a1a;">Signature Request</h1>
-              <p>Hi ${signer.name},</p>
-              <p>You've been requested to sign <strong>${document.name}</strong> by ${user.email}.</p>
-              ${message ? `<p style="background: #f5f5f5; padding: 16px; border-radius: 8px;">${message}</p>` : ''}
+              <p>Hi ${escapeHtml(signer.name)},</p>
+              <p>You've been requested to sign <strong>${escapeHtml(document.name)}</strong> by ${escapeHtml(user.email)}.</p>
+              ${message ? `<p style="background: #f5f5f5; padding: 16px; border-radius: 8px;">${escapeHtml(message)}</p>` : ''}
               <div style="text-align: center; margin: 32px 0;">
                 <a href="${link}" style="background: #3b82f6; color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; display: inline-block;">
                   Review & Sign Document

@@ -25,6 +25,19 @@ export const POST = withErrorBoundary(async (req) => {
   const body = await req.json()
   const { step } = stepSchema.parse(body)
 
+  // Enforce sequential onboarding: a user may only advance to the next step
+  // (or revisit an earlier one), never skip ahead.
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("onboarding_step")
+    .eq("id", user.id)
+    .single()
+
+  const currentStep = profile?.onboarding_step ?? 0
+  if (step > currentStep + 1) {
+    return NextResponse.json({ error: "Cannot skip onboarding steps" }, { status: 400 })
+  }
+
   const { error } = await supabase
     .from("profiles")
     .update({ onboarding_step: step })

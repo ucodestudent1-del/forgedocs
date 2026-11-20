@@ -45,10 +45,9 @@ export const POST = withErrorBoundary(async (req) => {
     })
     .eq("id", user.id)
 
-  // Return QR code only; secret is embedded in QR code and not exposed in response.
-  // Backup codes are returned only after successful verification in the verify endpoint.
+  // Return QR code only; the TOTP secret is embedded in the QR image and never
+  // transmitted as plaintext, preventing secret interception via logs/DevTools.
   return NextResponse.json({
     qr_code: qrCode,
-    otp_uri: otpUri,
   })
 })

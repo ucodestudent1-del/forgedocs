@@ -2,9 +2,21 @@ import { NextRequest, NextResponse } from "next/server"
 import { getRouteClient } from "@/lib/supabase"
 import OpenAI from "openai"
 import { openaiCircuitBreaker } from "@/lib/circuit-breaker"
+import { validateCSRF } from "@/lib/csrf"
 import { withErrorBoundary, createAppError } from "@/lib/api-error"
+import { z } from "zod"
 
 export const dynamic = "force-dynamic"
+
+const chatSchema = z.object({
+  message: z.string().min(1).max(4000),
+  history: z.array(
+    z.object({
+      role: z.enum(["user", "assistant"]),
+      content: z.string(),
+    })
+  ).optional(),
+})
 
 function getOpenAI() {
   if (!process.env.OPENAI_API_KEY) {
@@ -23,12 +35,15 @@ export const POST = withErrorBoundary(async (request) => {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  const body = await request.json()
-  const { message, history } = body
+  await validateCSRF(request)
 
-  if (!message) {
-    return NextResponse.json({ error: "Missing message" }, { status: 400 })
+  const body = await request.json()
+  const parsed = chatSchema.safeParse(body)
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Invalid request", details: parsed.error.flatten().fieldErrors }, { status: 400 })
   }
+
+  const { message, history } = parsed.data
 
   if (!process.env.OPENAI_API_KEY) {
     return NextResponse.json({ 
@@ -47,7 +62,7 @@ export const POST = withErrorBoundary(async (request) => {
     },
     ...(history || [])
       .slice(-MAX_HISTORY_MESSAGES)
-      .map((msg: { role: string; content: string }) => ({
+      .map((msg) => ({
         role: msg.role as "user" | "assistant",
         content: msg.content,
       })),

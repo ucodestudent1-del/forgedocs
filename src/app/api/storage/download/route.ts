@@ -29,7 +29,7 @@ export const GET = withErrorBoundary(async (req: Request) => {
 
   const url = new URL(req.url)
   const path = url.searchParams.get("path")
-  const bucket = url.searchParams.get("bucket") || "documents"
+  const bucket = "documents"
 
   if (!path) {
     throw createAppError("Path parameter required", 400, "MISSING_PARAM")

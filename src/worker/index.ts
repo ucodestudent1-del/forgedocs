@@ -10,13 +10,13 @@ import logger from "@/lib/logger"
 const createRedisClient = (opts: any) => new Redis(opts)
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
-if (!supabaseUrl || !supabaseAnonKey) {
+if (!supabaseUrl || !supabaseServiceKey) {
   console.warn("Supabase env vars missing - worker will not function correctly")
 }
 
-const supabase = createClient(supabaseUrl!, supabaseAnonKey!)
+const supabase = createClient(supabaseUrl!, supabaseServiceKey!)
 
 const redisConnection = {
   host: process.env.REDIS_HOST || "localhost",
@@ -27,6 +27,9 @@ const ALLOWED_LIBREOFFICE_FORMATS = new Set([
   "pdf", "docx", "doc", "xlsx", "xls", "pptx", "ppt", "odt", "ods", "odp",
   "rtf", "txt", "html", "md", "epub",
 ])
+
+// Maximum size for a single conversion source file to prevent memory/disk exhaustion
+const MAX_CONVERSION_FILE_SIZE = 50 * 1024 * 1024 // 50 MB
 
 function validateLibreOfficeFormat(format: string): string {
   if (!ALLOWED_LIBREOFFICE_FORMATS.has(format)) {
@@ -227,6 +230,12 @@ const worker = new Worker<ConversionJobData, { success: boolean; outputUrl?: str
 
         sourceFile = downloadedFile
         const buffer = await (sourceFile as Blob).arrayBuffer()
+
+        // Cap source file size to prevent memory and disk exhaustion
+        if (buffer.byteLength > MAX_CONVERSION_FILE_SIZE) {
+          throw new Error(`Source file too large for conversion (max ${MAX_CONVERSION_FILE_SIZE / (1024 * 1024)}MB)`)
+        }
+
         fs.writeFileSync(sourcePath, new Uint8Array(buffer))
 
         const sourceExt = getExt(sourceUrl)
@@ -366,7 +375,14 @@ const healthServer = http.createServer((req: http.IncomingMessage, res: http.Ser
 })
 
 const HEALTH_PORT = parseInt(process.env.WORKER_HEALTH_PORT || "3001", 10)
-healthServer.listen(HEALTH_PORT, () => {
+healthServer.listen(HEALTH_PORT).on("error", (err: NodeJS.ErrnoException) => {
+  if (err.code === "EADDRINUSE") {
+    console.warn(`Worker health port ${HEALTH_PORT} already in use — health endpoint disabled`)
+  } else {
+    console.error(`Worker health server error:`, err)
+  }
+})
+healthServer.on("listening", () => {
   console.log(`Worker health server listening on port ${HEALTH_PORT}`)
 })
 

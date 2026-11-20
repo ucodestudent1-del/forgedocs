@@ -100,12 +100,16 @@ export const PUT = withErrorBoundary(async (req, { params }: { params: Promise<{
   }
 
   // Insert version record only after successful update (no orphan versions)
-  await supabase.from("document_versions").insert({
+  const { error: versionError } = await supabase.from("document_versions").insert({
     document_id: id,
     version: currentDoc.version,
     content: currentDoc.content,
     created_by: user.id,
   })
+
+  if (versionError) {
+    throw createAppError(versionError.message, 500, "DATABASE_ERROR")
+  }
 
   // Invalidate document list cache so clients see updated content
   await cacheDel(`documents:${user.id}:*`)

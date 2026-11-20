@@ -73,17 +73,21 @@ describe("Audit Logging", () => {
   })
 
   it("getClientIp extracts from x-forwarded-for", () => {
+    process.env.TRUSTED_PROXY_IPS = "10.0.0.1"
     const req = new Request("http://localhost/", {
       headers: { "x-forwarded-for": "203.0.113.5, 10.0.0.1" },
     })
     expect(getClientIp(req)).toBe("203.0.113.5")
+    delete process.env.TRUSTED_PROXY_IPS
   })
 
   it("getClientIp falls back to x-real-ip", () => {
+    process.env.TRUSTED_PROXY_IPS = "198.51.100.23"
     const req = new Request("http://localhost/", {
       headers: { "x-real-ip": "198.51.100.23" },
     })
     expect(getClientIp(req)).toBe("198.51.100.23")
+    delete process.env.TRUSTED_PROXY_IPS
   })
 
   it("getClientUserAgent extracts user agent", () => {

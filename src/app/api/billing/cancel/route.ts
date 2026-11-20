@@ -41,10 +41,15 @@ export const POST = withErrorBoundary(async (req) => {
       })
     })
 
-    await supabase
+    // Update local state; if this fails the Stripe webhook (customer.subscription.updated)
+    // reconciles the record, so a DB failure must not mask a successful Stripe cancel.
+    const { error: dbError } = await supabase
       .from("subscriptions")
       .update({ cancel_at_period_end: true })
       .eq("id", subscription.id)
+    if (dbError) {
+      console.error(`Failed to mark subscription cancel-at-period-end for ${subscription.id}:`, dbError)
+    }
 
     return NextResponse.json({
       success: true,
@@ -58,10 +63,13 @@ export const POST = withErrorBoundary(async (req) => {
       await stripe.subscriptions.cancel(subscription.stripe_subscription_id)
     })
 
-    await supabase
+    const { error: dbError } = await supabase
       .from("subscriptions")
       .update({ status: "canceled", tier: null, cancel_at_period_end: false })
       .eq("id", subscription.id)
+    if (dbError) {
+      console.error(`Failed to mark subscription canceled for ${subscription.id}:`, dbError)
+    }
 
     return NextResponse.json({
       success: true,

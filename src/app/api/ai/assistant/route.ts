@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getRouteClient } from "@/lib/supabase"
 import OpenAI from "openai"
 import { openaiCircuitBreaker } from "@/lib/circuit-breaker"
+import { validateCSRF } from "@/lib/csrf"
 import { withErrorBoundary, createAppError } from "@/lib/api-error"
 
 export const dynamic = "force-dynamic"
@@ -36,6 +37,8 @@ export const POST = withErrorBoundary(async (request) => {
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
+
+  await validateCSRF(request)
 
   const body = await request.json()
   const { action, input, tone, targetLanguage } = body

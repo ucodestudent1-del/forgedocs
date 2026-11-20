@@ -4,6 +4,13 @@ import { validateCSRF, CSRFError } from "@/lib/csrf"
 import { authRateLimit } from "@/lib/rate-limiter"
 import { validatePassword } from "@/lib/password"
 import { withErrorBoundary, createAppError } from "@/lib/api-error"
+import { z } from "zod"
+
+const signupSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  password: z.string(),
+  full_name: z.string().optional(),
+})
 
 export const POST = withErrorBoundary(async (req) => {
   const rateLimitError = await authRateLimit(req)
@@ -13,13 +20,12 @@ export const POST = withErrorBoundary(async (req) => {
 
   const supabase = await createRouteClient()
   const body = await req.json()
-
-  const { email, password, full_name } = body
-
-  // Validate email
-  if (!email || !String(email).includes("@")) {
-    return NextResponse.json({ error: "Invalid email address" }, { status: 400 })
+  const parsed = signupSchema.safeParse(body)
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.flatten().fieldErrors }, { status: 400 })
   }
+
+  const { email, password, full_name } = parsed.data
 
   // Validate password using shared schema
   const pwValidation = validatePassword(password)

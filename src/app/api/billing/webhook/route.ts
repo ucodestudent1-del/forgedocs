@@ -40,19 +40,9 @@ export async function POST(req: Request) {
   // Use service role client for webhook operations (no user cookies in webhook context)
   const supabase = await createServiceRoleClient()
 
-  // Dispatch to the appropriate handler first
-  const handler = WEBHOOK_HANDLERS[event.type]
-  if (handler) {
-    try {
-      await handler(event, supabase, stripe)
-    } catch (err) {
-      logger.error(`Webhook handler error for ${event.type}`, { error: err instanceof Error ? err.message : String(err) })
-      // Return 500 so Stripe retries the event
-      return NextResponse.json({ error: "Handler failed" }, { status: 500 })
-    }
-  }
-
-  // Idempotency check - atomic INSERT ON CONFLICT after handler succeeds
+  // Idempotency check first — insert the event id before running any handler.
+  // A duplicate event (retry) hits the unique constraint on event_id and is skipped,
+  // preventing double-charging / duplicate subscription actions.
   const eventId = `stripe_${event.id}`
   const { error: insertError } = await (supabase as any)
     .from("webhook_events")
@@ -68,6 +58,18 @@ export async function POST(req: Request) {
     // Duplicate event - already processed
     logger.info(`Duplicate webhook event ignored: ${eventId}`)
     return NextResponse.json({ received: true })
+  }
+
+  // Dispatch to the appropriate handler only for new events
+  const handler = WEBHOOK_HANDLERS[event.type]
+  if (handler) {
+    try {
+      await handler(event, supabase, stripe)
+    } catch (err) {
+      logger.error(`Webhook handler error for ${event.type}`, { error: err instanceof Error ? err.message : String(err) })
+      // Return 500 so Stripe retries the event
+      return NextResponse.json({ error: "Handler failed" }, { status: 500 })
+    }
   }
 
   return NextResponse.json({ received: true })

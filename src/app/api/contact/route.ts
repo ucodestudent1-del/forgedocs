@@ -1,7 +1,14 @@
 import { NextRequest, NextResponse } from "next/server"
+import { validateCSRF } from "@/lib/csrf"
+import { documentRateLimit } from "@/lib/rate-limiter"
 import { withErrorBoundary, createAppError } from "@/lib/api-error"
 
 export const POST = withErrorBoundary(async (request) => {
+  const rateLimitError = await documentRateLimit(request)
+  if (rateLimitError) return rateLimitError
+
+  await validateCSRF(request)
+
   const body = await request.json()
   const { fullName, email, company, subject, message } = body
 

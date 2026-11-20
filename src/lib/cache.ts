@@ -163,6 +163,14 @@ export async function cacheExists(key: string): Promise<boolean> {
   }
 }
 
+const INCR_WITH_EXPIRE_LUA = `
+  local count = redis.call('INCR', KEYS[1])
+  if count == 1 then
+    redis.call('EXPIRE', KEYS[1], ARGV[1])
+  end
+  return count
+`
+
 export async function cacheIncrement(key: string, ttlSeconds: number): Promise<number> {
   if (isTestEnv) {
     cleanExpired()
@@ -179,11 +187,10 @@ export async function cacheIncrement(key: string, ttlSeconds: number): Promise<n
     if (client.status === "wait") {
       await client.connect()
     }
-    const count = await client.incr(key)
-    if (count === 1) {
-      await client.expire(key, ttlSeconds)
-    }
-    return count
+    // Atomic INCR + EXPIRE via Lua so a crash between the two commands cannot
+    // leave a counter key without a TTL (which would distort rate limiting).
+    const count = await client.eval(INCR_WITH_EXPIRE_LUA, 1, key, ttlSeconds)
+    return Number(count)
   } catch {
     return 0
   }

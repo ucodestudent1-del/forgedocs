@@ -28,6 +28,7 @@ export const POST = withErrorBoundary(async (
     .from("templates")
     .select("*")
     .eq("id", id)
+    .eq("user_id", user.id)
     .single()
 
   if (templateError || !template) {
@@ -63,7 +64,9 @@ export const POST = withErrorBoundary(async (
   // Also apply defaults for any remaining unreplaced placeholders from schema
   for (const field of placeholderSchema) {
     if (!values[field.name] && field.default_value !== undefined) {
-      content = content.replace(new RegExp(`\\[${field.name}\\]`, "g"), String(field.default_value))
+      // Escape regex metacharacters to prevent ReDoS via crafted placeholder names
+      const escapedName = field.name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+      content = content.replace(new RegExp(`\\[${escapedName}\\]`, "g"), String(field.default_value))
     }
   }
 

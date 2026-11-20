@@ -8,7 +8,6 @@ import { withErrorBoundary, createAppError } from "@/lib/api-error"
 
 const verifySchema = z.object({
   token: z.string().length(6, "Token must be 6 digits"),
-  secret: z.string().optional(),
 })
 
 export const POST = withErrorBoundary(async (req) => {
@@ -25,7 +24,7 @@ export const POST = withErrorBoundary(async (req) => {
   }
 
   const body = await req.json()
-  const { token, secret } = verifySchema.parse(body)
+  const { token } = verifySchema.parse(body)
 
   const { data: profile } = await supabase
     .from("profiles")
@@ -42,8 +41,9 @@ export const POST = withErrorBoundary(async (req) => {
     return NextResponse.json({ error: "MFA not set up" }, { status: 400 })
   }
 
-  const storedSecret = profile.mfa_secret
-  const mfaSecret = secret || resolveStoredSecret(storedSecret)
+  // Always resolve the TOTP secret server-side from the stored profile.
+  // Never accept a client-supplied secret — that would allow bypassing MFA.
+  const mfaSecret = resolveStoredSecret(profile.mfa_secret)
 
   if (!mfaSecret) {
     return NextResponse.json({ error: "MFA not set up" }, { status: 400 })
@@ -56,7 +56,7 @@ export const POST = withErrorBoundary(async (req) => {
   }
 
   // Lazily re-encrypt any legacy plaintext MFA secret on first successful verify.
-  if (storedSecret && !isEncryptedSecret(storedSecret) && !secret) {
+  if (profile.mfa_secret && !isEncryptedSecret(profile.mfa_secret)) {
     void supabase
       .from("profiles")
       .update({ mfa_secret: encryptSecret(mfaSecret) })

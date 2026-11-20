@@ -196,7 +196,7 @@ export const POST = withErrorBoundary(async (req) => {
 
   // Track usage for exports/downloads
   if (action === "export") {
-    await trackUsage(user.id, "conversions", results.filter(r => r.success).length)
+    await trackUsage(user.id, "exports", results.filter(r => r.success).length)
   }
 
   const successCount = results.filter(r => r.success).length
