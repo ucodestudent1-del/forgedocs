@@ -4,6 +4,7 @@ import { v4 as uuidv4 } from "uuid"
 import { Resend } from "resend"
 import { escapeHtml } from "@/lib/email"
 import { validateCSRF } from "@/lib/csrf"
+import { scanFile } from "@/lib/malware-scan"
 import { documentRateLimit } from "@/lib/rate-limiter"
 import { withErrorBoundary, createAppError } from "@/lib/api-error"
 
@@ -70,6 +71,20 @@ export const POST = withErrorBoundary(async (request) => {
     if (!signer.name || !signer.email) {
       return NextResponse.json({ error: "All signers must have name and email" }, { status: 400 })
     }
+  }
+
+  // Malware scan the document before upload
+  const documentArrayBuffer = await document.arrayBuffer()
+  const documentBytes = new Uint8Array(documentArrayBuffer)
+  const docScanResult = await scanFile(documentBytes, document.name)
+  if (!docScanResult.clean) {
+    throw createAppError(
+      docScanResult.threat === "scanner_unavailable"
+        ? "Malware scanner unavailable — upload blocked"
+        : "Malware detected in file",
+      400,
+      "MALWARE_DETECTED"
+    )
   }
 
   // Upload document to Supabase Storage

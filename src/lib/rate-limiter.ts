@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
 import { cacheIncrement } from "@/lib/cache"
 import { getClientIdentifier } from "@/lib/client-identifier"
+import logger from "@/lib/logger"
+
+const FAIL_OPEN = process.env.RATE_LIMIT_FAIL_OPEN === "true"
 
 export interface RateLimitConfig {
   windowMs: number
@@ -76,13 +79,46 @@ export async function checkRateLimit(identifier: string, config: RateLimitConfig
     // Single shared store across all replicas — no per-replica divergence.
     count = await cacheIncrement(redisKey, ttlSeconds)
   } catch {
-    // Redis unavailable — fail closed. Reject all requests when the backing store is down.
+    // Redis unavailable — behavior depends on RATE_LIMIT_FAIL_OPEN
+    if (FAIL_OPEN) {
+      logger.warn("Redis unavailable — rate limiter fail-open, allowing request", {
+        redisKey,
+        identifier,
+      })
+      return {
+        limited: false,
+        remaining: config.maxRequests,
+        resetTime: now + config.windowMs,
+        total: config.maxRequests,
+      }
+    }
+    // Fail closed: reject all requests when the backing store is down.
+    logger.warn("Redis unavailable — rate limiter fail-closed, rejecting request", {
+      redisKey,
+      identifier,
+    })
     return { limited: true, remaining: 0, resetTime: now + config.windowMs, total: config.maxRequests }
   }
 
   // cacheIncrement returns 0 only when Redis is unavailable (INCR never returns 0).
-  // Fail closed: reject all requests when the backing store is down.
   if (count === 0) {
+    if (FAIL_OPEN) {
+      logger.warn("Redis returned empty count — rate limiter fail-open, allowing request", {
+        redisKey,
+        identifier,
+      })
+      return {
+        limited: false,
+        remaining: config.maxRequests,
+        resetTime: now + config.windowMs,
+        total: config.maxRequests,
+      }
+    }
+    // Fail closed: reject all requests when the backing store is down.
+    logger.warn("Redis returned empty count — rate limiter fail-closed, rejecting request", {
+      redisKey,
+      identifier,
+    })
     return { limited: true, remaining: 0, resetTime: now + config.windowMs, total: config.maxRequests }
   }
 

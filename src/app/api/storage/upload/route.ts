@@ -4,6 +4,7 @@ import { NextResponse } from "next/server"
 import { validateCSRF } from "@/lib/csrf"
 import { documentRateLimit } from "@/lib/rate-limiter"
 import { sanitizeFilename } from "@/lib/security"
+import { scanFile } from "@/lib/malware-scan"
 import { withErrorBoundary, createAppError } from "@/lib/api-error"
 
 export const maxDuration = 60
@@ -94,6 +95,18 @@ export const POST = withErrorBoundary(async (req) => {
   const magicBytesValid = validateFileMagicBytes(fileBytes, file.type)
   if (!magicBytesValid) {
     throw createAppError("File content does not match declared type", 400, "INVALID_FILE_CONTENT")
+  }
+
+  // Malware scan (ClamAV when available; permissive by default)
+  const scanResult = await scanFile(fileBytes, file.name)
+  if (!scanResult.clean) {
+    throw createAppError(
+      scanResult.threat === "scanner_unavailable"
+        ? "Malware scanner unavailable — upload blocked"
+        : "Malware detected in file",
+      400,
+      "MALWARE_DETECTED"
+    )
   }
 
   const fileName = `${user.id}/${crypto.randomUUID()}-${sanitizeFilename(file.name)}`

@@ -1,5 +1,11 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
+import {
+  parseApiVersion,
+  apiVersionHeaders,
+  SUPPORTED_API_VERSIONS,
+  DEFAULT_API_VERSION,
+} from "@/lib/api-version"
 
 function generateRequestId(): string {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
@@ -25,6 +31,35 @@ export async function middleware(request: NextRequest) {
 
     if (isStaticRoute) {
       return response
+    }
+
+    // Enforce API versioning on all /api/* routes
+    if (pathname.startsWith("/api/")) {
+      const versionInfo = parseApiVersion(request.headers)
+
+      if (!SUPPORTED_API_VERSIONS.includes(versionInfo.version)) {
+        const versionResponse = NextResponse.json(
+          {
+            error: `Unsupported API version: ${versionInfo.version}`,
+            supported_versions: SUPPORTED_API_VERSIONS,
+            default_version: DEFAULT_API_VERSION,
+          },
+          { status: 426 }
+        )
+        Object.entries(apiVersionHeaders(versionInfo.version)).forEach(([key, value]) => {
+          versionResponse.headers.set(key, value)
+        })
+        versionResponse.headers.set("x-request-id", requestId)
+        return versionResponse
+      }
+
+      // Add version headers to all API responses
+      Object.entries(apiVersionHeaders(versionInfo.version)).forEach(([key, value]) => {
+        response.headers.set(key, value)
+      })
+      if (versionInfo.version !== DEFAULT_API_VERSION) {
+        response.headers.set("API-Version-Default", DEFAULT_API_VERSION)
+      }
     }
 
     return response

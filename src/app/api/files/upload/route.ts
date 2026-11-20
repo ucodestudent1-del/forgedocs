@@ -5,6 +5,7 @@ import { documentRateLimit } from "@/lib/rate-limiter"
 import { checkTierLimit, trackUsage, getTierLimits } from "@/lib/tierLimits"
 import { validateFileMagicBytes } from "@/lib/security"
 import { sanitizeFilename } from "@/lib/security"
+import { scanFile } from "@/lib/malware-scan"
 import { withErrorBoundary, createAppError } from "@/lib/api-error"
 
 const ALLOWED_MIME_TYPES = [
@@ -112,6 +113,18 @@ export const POST = withErrorBoundary(async (req) => {
   const fileBytes = new Uint8Array(arrayBuffer)
   if (!validateFileMagicBytes(fileBytes, file.type)) {
     return NextResponse.json({ error: "File content does not match declared type" }, { status: 400 })
+  }
+
+  // Malware scan (ClamAV when available; permissive by default)
+  const scanResult = await scanFile(fileBytes, file.name)
+  if (!scanResult.clean) {
+    throw createAppError(
+      scanResult.threat === "scanner_unavailable"
+        ? "Malware scanner unavailable — upload blocked"
+        : "Malware detected in file",
+      400,
+      "MALWARE_DETECTED"
+    )
   }
 
   // Upload to Supabase Storage
