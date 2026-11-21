@@ -3,7 +3,7 @@ import { getRouteClient } from "@/lib/supabase"
 import { validateCSRF } from "@/lib/csrf"
 import { createAppError } from "@/lib/api-error"
 import logger from "@/lib/logger"
-import { isGuestMode, getGuestUserId } from "@/lib/guest-session"
+import { getGuestUserId } from "@/lib/guest-session"
 
 export interface AuthContext {
   user: { id: string; email: string; [key: string]: unknown }
@@ -46,18 +46,11 @@ export function withAuth(
 
     let effectiveUser = user
 
-    if ((error || !user) && isGuestMode()) {
+    if (!user) {
       effectiveUser = {
         id: getGuestUserId(),
         email: null,
       } as any
-    }
-
-    if ((error || !user) && !isGuestMode()) {
-      if (optional) {
-        return handler(req, { user: null as any, supabase }, ...args)
-      }
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
     // Validate CSRF for mutating methods

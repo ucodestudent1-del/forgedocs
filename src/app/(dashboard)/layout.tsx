@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic"
 import { createRouteClient } from "@/lib/supabase"
 import DashboardClient from "./dashboard-client"
 import { redirect } from "next/navigation"
-import { isGuestMode, getGuestUserId } from "@/lib/guest-session"
+import { getGuestUserId } from "@/lib/guest-session"
 
 export default async function DashboardLayout({
   children,
@@ -15,7 +15,7 @@ export default async function DashboardLayout({
 
   let effectiveUser = user
 
-  if (!user && isGuestMode()) {
+  if (!user) {
     effectiveUser = {
       id: getGuestUserId(),
       email: null,
