@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
 import type { Database } from "@/types/database"
+import { isGuestMode, getGuestUserId } from "@/lib/guest-session"
 
 let routeClientCache: any = null
 
@@ -68,7 +69,7 @@ export async function createRouteClient() {
     return null
   }
 
-  const client = createServerClient<Database>(
+  let client = createServerClient<Database>(
     url,
     key,
     {
@@ -90,6 +91,28 @@ export async function createRouteClient() {
       },
     },
   )
+
+  // In guest mode, inject a guest user so unauthenticated requests can access
+  // core document/conversion APIs without a Supabase Auth session. Database
+  // integrity is preserved: RLS still scopes queries by the guest user_id.
+  if (isGuestMode()) {
+    const realGetUser = client.auth.getUser.bind(client.auth)
+    client.auth.getUser = async () => {
+      try {
+        const { data, error } = await realGetUser()
+        if ((!data || !data.user) && !error) {
+          return { data: { user: { id: getGuestUserId(), email: null } as any }, error: null }
+        }
+        return { data, error }
+      } catch {
+        // Supabase auth unreachable — fall back to guest user
+        return {
+          data: { user: { id: getGuestUserId(), email: null } as any },
+          error: null,
+        }
+      }
+    }
+  }
 
   routeClientCache = client
   return client

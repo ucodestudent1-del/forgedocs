@@ -14,6 +14,16 @@ export const revalidate = 60
 export default function PricingPage() {
   const plans = [
     {
+      name: "Free",
+      price: "$0",
+      description: "For personal use",
+      interval: "/mo",
+      features: ["5 documents per month", "10 format conversions", "1GB storage", "Basic templates", "Community support"],
+      ctaText: "Get started",
+      ctaHref: "/auth/signup",
+      isFeatured: false,
+    },
+    {
       name: "Professional",
       price: "$29",
       description: "For individuals and small teams",
@@ -36,18 +46,17 @@ export default function PricingPage() {
   ]
 
   const compareFeatures = [
-    { label: "Documents per month", professional: "Unlimited", business: "Unlimited" },
-    { label: "Seats", professional: "Up to 5", business: "Unlimited" },
-    { label: "Template uses", professional: "Unlimited", business: "Unlimited" },
-    { label: "Format conversions", professional: "All 50+", business: "All 50+" },
-    { label: "Storage", professional: "20 GB", business: "100 GB" },
-    { label: "Team collaboration", professional: "Yes", business: "Yes" },
-    { label: "Version history", professional: "30 days", business: "Unlimited" },
-    { label: "Priority support", professional: "Email", business: "Dedicated" },
-    { label: "SSO / SAML", professional: "No", business: "Yes" },
-    { label: "Custom integrations", professional: "No", business: "Yes" },
-    { label: "SLA guarantee", professional: "No", business: "Yes" },
-    { label: "Audit logs", professional: "No", business: "Yes" },
+    { label: "Documents per month", free: "5", professional: "Unlimited", business: "Unlimited" },
+    { label: "Format conversions", free: "10", professional: "All 50+", business: "All 50+" },
+    { label: "Storage", free: "1 GB", professional: "20 GB", business: "100 GB" },
+    { label: "Templates", free: "Basic", professional: "Unlimited", business: "Unlimited" },
+    { label: "Team collaboration", free: "No", professional: "Yes (up to 5 seats)", business: "Yes (unlimited)" },
+    { label: "Version history", free: "No", professional: "30 days", business: "Unlimited" },
+    { label: "Priority support", free: "Community", professional: "Email", business: "Dedicated" },
+    { label: "SSO / SAML", free: "No", professional: "No", business: "Yes" },
+    { label: "Custom integrations", free: "No", professional: "No", business: "Yes" },
+    { label: "SLA guarantee", free: "No", professional: "No", business: "Yes" },
+    { label: "Audit logs", free: "No", professional: "No", business: "Yes" },
   ]
 
   return (

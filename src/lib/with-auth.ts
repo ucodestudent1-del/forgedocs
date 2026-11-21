@@ -3,6 +3,7 @@ import { getRouteClient } from "@/lib/supabase"
 import { validateCSRF } from "@/lib/csrf"
 import { createAppError } from "@/lib/api-error"
 import logger from "@/lib/logger"
+import { isGuestMode, getGuestUserId } from "@/lib/guest-session"
 
 export interface AuthContext {
   user: { id: string; email: string; [key: string]: unknown }
@@ -43,7 +44,16 @@ export function withAuth(
 
     const { data: { user }, error } = await supabase.auth.getUser()
 
-    if (error || !user) {
+    let effectiveUser = user
+
+    if ((error || !user) && isGuestMode()) {
+      effectiveUser = {
+        id: getGuestUserId(),
+        email: null,
+      } as any
+    }
+
+    if ((error || !user) && !isGuestMode()) {
       if (optional) {
         return handler(req, { user: null as any, supabase }, ...args)
       }
@@ -61,9 +71,9 @@ export function withAuth(
 
     const ctx: AuthContext = {
       user: {
-        id: user.id,
-        email: user.email,
-        ...(user.user_metadata ?? {}),
+        id: effectiveUser.id,
+        email: effectiveUser.email,
+        ...(user?.user_metadata ?? {}),
       },
       supabase,
     }

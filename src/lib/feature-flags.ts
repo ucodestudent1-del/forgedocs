@@ -5,6 +5,7 @@ const FEATURE_FLAGS: Record<string, boolean> = {
   enable_audit_log: true,
   enable_collaboration: false,
   enable_advanced_templates: false,
+  enable_guest_mode: false,
 }
 
 export function isFeatureEnabled(flag: string): boolean {
