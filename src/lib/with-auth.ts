@@ -83,7 +83,7 @@ export function withAuth(
     } catch (err) {
       logger.error("withAuth handler error", {
         error: err instanceof Error ? err.message : String(err),
-        userId: user.id,
+        userId: effectiveUser?.id ?? null,
       })
       throw err
     }

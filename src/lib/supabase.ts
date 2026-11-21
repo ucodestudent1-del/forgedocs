@@ -97,17 +97,17 @@ export async function createRouteClient() {
   // integrity is preserved: RLS still scopes queries by the guest user_id.
   if (isGuestMode()) {
     const realGetUser = client.auth.getUser.bind(client.auth)
-    client.auth.getUser = async () => {
+    ;(client.auth as any).getUser = async () => {
       try {
         const { data, error } = await realGetUser()
         if ((!data || !data.user) && !error) {
-          return { data: { user: { id: getGuestUserId(), email: null } as any }, error: null }
+          return { data: { user: { id: getGuestUserId(), email: null } }, error: null }
         }
         return { data, error }
       } catch {
         // Supabase auth unreachable — fall back to guest user
         return {
-          data: { user: { id: getGuestUserId(), email: null } as any },
+          data: { user: { id: getGuestUserId(), email: null } },
           error: null,
         }
       }
