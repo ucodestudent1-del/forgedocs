@@ -1,4 +1,5 @@
 import LoginForm from "./login-form"
+import { Suspense } from "react"
 import { isGuestMode } from "@/lib/guest-session"
 
 export default function LoginPage() {
@@ -22,5 +23,9 @@ export default function LoginPage() {
     )
   }
 
-  return <LoginForm />
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-background">Loading...</div>}>
+      <LoginForm />
+    </Suspense>
+  )
 }
