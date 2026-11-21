@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic"
 import { createRouteClient } from "@/lib/supabase"
 import DashboardClient from "./dashboard-client"
 import { redirect } from "next/navigation"
-import { getGuestUserId } from "@/lib/guest-session"
+import { getGuestUserId, isGuestMode } from "@/lib/guest-session"
 
 export default async function DashboardLayout({
   children,
@@ -16,12 +16,18 @@ export default async function DashboardLayout({
   let effectiveUser = user
 
   if (!user) {
-    effectiveUser = {
-      id: getGuestUserId(),
-      email: null,
-    } as any
+    if (isGuestMode()) {
+      effectiveUser = {
+        id: getGuestUserId(),
+        email: null,
+      } as any
+    } else {
+      redirect("/auth/login")
+    }
   }
 
+  // In secure mode unauthenticated requests are redirected above; in guest mode
+  // effectiveUser is always populated, so this guard is defensive.
   if (!effectiveUser) {
     redirect("/auth/login")
   }

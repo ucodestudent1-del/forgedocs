@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
 import type { Database } from "@/types/database"
-import { getGuestUserId } from "@/lib/guest-session"
+import { getGuestUserId, isGuestMode } from "@/lib/guest-session"
 
 let routeClientCache: any = null
 
@@ -92,23 +92,25 @@ export async function createRouteClient() {
     },
   )
 
-  // Inject a guest user so unauthenticated requests can access
-  // core document/conversion APIs without a Supabase Auth session. Database
-  // integrity is preserved: RLS still scopes queries by the guest user_id.
+  // In free-tier guest mode, inject a guest user so unauthenticated requests can access
+  // core document/conversion APIs without a Supabase Auth session. Database integrity is
+  // preserved: RLS still scopes queries by the guest user_id. Outside guest mode, unauthenticated
+  // requests resolve to no user so callers can enforce auth (e.g. 401 / redirect to login).
   const realGetUser = client.auth.getUser.bind(client.auth)
   ;(client.auth as any).getUser = async () => {
+    const provideGuest = () => ({
+      data: { user: { id: getGuestUserId(), email: null } },
+      error: null,
+    })
     try {
       const { data, error } = await realGetUser()
       if ((!data || !data.user) && !error) {
-        return { data: { user: { id: getGuestUserId(), email: null } }, error: null }
+        return isGuestMode() ? provideGuest() : { data: { user: null }, error: null }
       }
       return { data, error }
     } catch {
-      // Supabase auth unreachable — fall back to guest user
-      return {
-        data: { user: { id: getGuestUserId(), email: null } },
-        error: null,
-      }
+      // Supabase auth unreachable — fall back to guest only in guest mode
+      return isGuestMode() ? provideGuest() : { data: { user: null }, error: null }
     }
   }
 
