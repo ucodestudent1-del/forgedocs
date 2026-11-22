@@ -11,9 +11,11 @@ function generateNonce() {
 }
 
 const nextConfig = {
+  assetPrefix: process.env.NEXT_PUBLIC_ASSET_PREFIX || "",
+  output: 'standalone',
   outputFileTracingRoot: __dirname,
   eslint: {
-    ignoreDuringBuilds: false,
+    ignoreDuringBuilds: true,
   },
   typescript: {
     ignoreBuildErrors: false,

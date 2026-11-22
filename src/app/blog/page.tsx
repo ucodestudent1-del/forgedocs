@@ -4,11 +4,17 @@ import { Navbar } from "@/components/ui/navbar"
 import { Footer } from "@/components/marketing/footer"
 import { FileText, Calendar, Clock, ArrowRight, Tag } from "lucide-react"
 import { format } from "date-fns"
+import { Breadcrumb } from "@/components/ui/breadcrumb"
 
 export const metadata: Metadata = {
   title: "Blog - ForgeDocs",
   description: "Latest updates, tips, and insights from the ForgeDocs team on document management, productivity, and digital workflows.",
+  alternates: {
+    canonical: "/blog",
+  },
 }
+
+export const revalidate = 3600
 
 const blogPosts = [
   {
@@ -71,6 +77,7 @@ export default function BlogPage() {
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
+      <Breadcrumb />
       <section className="pt-32 pb-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-background to-muted/50">
         <div className="max-w-7xl mx-auto text-center">
           <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-foreground mb-6">

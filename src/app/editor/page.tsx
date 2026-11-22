@@ -1,12 +1,21 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { RichEditor } from "@/components/editor/RichEditor"
+import dynamic from "next/dynamic"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { FileText, Plus, Download, Share2, Loader2, AlertTriangle } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 import { ScrollIndicator } from "@/components/ui/scroll-indicator"
+
+const RichEditor = dynamic(() => import("@/components/editor/RichEditor").then((mod) => mod.RichEditor), {
+  loading: () => (
+    <div className="h-64 bg-muted rounded-lg border border-input flex items-center justify-center animate-pulse">
+      <Loader2 className="h-8 w-8 text-primary animate-spin" />
+    </div>
+  ),
+  ssr: false,
+})
 
 export default function EditorPage() {
   const [documentId, setDocumentId] = useState<string | null>(null)

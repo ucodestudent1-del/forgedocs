@@ -3,12 +3,17 @@ import Link from "next/link"
 import { Navbar } from "@/components/ui/navbar"
 import { Footer } from "@/components/marketing/footer"
 import { ClientFaqSection } from "@/components/client/FaqSection"
+import { Breadcrumb } from "@/components/ui/breadcrumb"
 
 export const metadata: Metadata = {
   title: "FAQ - Frequently Asked Questions",
   description: "Find answers to common questions about ForgeDocs pricing, security, features, and more.",
+  alternates: {
+    canonical: "/faq",
+  },
 }
 
+export const revalidate = 3600
 export default function FAQPage() {
   const faqs = [
     {
@@ -66,6 +71,7 @@ export default function FAQPage() {
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
+      <Breadcrumb />
       <section className="pt-32 pb-24 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">

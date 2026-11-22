@@ -11,11 +11,11 @@ export function Navbar() {
 
   const navLinks = [
     { href: "/", label: "Dashboard" },
-    { href: "#features", label: "Documents" },
-    { href: "#solutions", label: "Solutions" },
+    { href: "/features", label: "Documents" },
+    { href: "/solutions", label: "Solutions" },
+    { href: "/pricing", label: "Pricing" },
     { href: "#testimonials", label: "Testimonials" },
-    { href: "#pricing", label: "Pricing" },
-    { href: "#faq", label: "FAQ" },
+    { href: "/faq", label: "FAQ" },
   ]
 
   return (

@@ -22,7 +22,7 @@ ENV NEXT_PUBLIC_BUILD_MOCK=$NEXT_PUBLIC_BUILD_MOCK
 ENV NEXT_PUBLIC_GUEST_MODE=$NEXT_PUBLIC_GUEST_MODE
 
 COPY package.json package-lock.json ./
-RUN npm install
+RUN npm ci
 # Prebuild hook patches Next.js webpack internals (see scripts/patch-webpack.js)
 COPY . ./
 RUN npm run build
@@ -44,10 +44,9 @@ RUN mkdir -p /app/logs && chown -R nodejs:nodejs /app/logs
 
 USER nodejs
 
-# Copy built application from builder
-COPY --from=builder /app/package.json ./package.json
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/.next ./.next
+# Copy standalone output from builder
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
 
 # Secret keys must be provided at runtime via environment variables,

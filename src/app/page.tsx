@@ -5,7 +5,12 @@ export const metadata: Metadata = {
   title: "ForgeDocs - Professional Document Management for Modern Teams",
   description: "Create, organize, generate, and convert documents in the cloud. One platform for every document workflow. SOC 2 compliant, end-to-end encrypted, GDPR ready.",
   keywords: ["document management", "document conversion", "e-signatures", "team collaboration", "SOC 2", "GDPR"],
+  alternates: {
+    canonical: "/",
+  },
 }
+
+export const revalidate = 3600
 
 import {
   FileText,

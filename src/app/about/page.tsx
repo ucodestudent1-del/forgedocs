@@ -4,16 +4,23 @@ import { Navbar } from "@/components/ui/navbar"
 import { Footer } from "@/components/marketing/footer"
 import { PageHeader } from "@/components/marketing/page-header"
 import { CTASection } from "@/components/marketing/cta-section"
+import { Breadcrumb } from "@/components/ui/breadcrumb"
 
 export const metadata: Metadata = {
   title: "About ForgeDocs - Building Better Document Workflows",
   description: "Learn about ForgeDocs, our story, and our values. Professional document management for modern teams.",
+  alternates: {
+    canonical: "/about",
+  },
 }
+
+export const revalidate = 3600
 
 export default function AboutPage() {
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
+      <Breadcrumb />
       <section className="pt-32 pb-24 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
@@ -34,6 +41,8 @@ export default function AboutPage() {
                       alt="Document workflow platform showing document creation, editing, and management interface"
                       className="max-w-full max-h-full object-contain"
                       loading="lazy"
+                      width={600}
+                      height={400}
                     />
                   </div>
                 </div>
@@ -90,6 +99,8 @@ export default function AboutPage() {
                       alt="Our values in action: security, developer experience, team collaboration, and reliability"
                       className="max-w-full max-h-full object-contain"
                       loading="lazy"
+                      width={600}
+                      height={400}
                     />
                   </div>
                 </div>

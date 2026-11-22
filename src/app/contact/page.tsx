@@ -4,16 +4,23 @@ import { Navbar } from "@/components/ui/navbar"
 import { Footer } from "@/components/marketing/footer"
 import { ClientContactForm } from "@/components/client/ContactForm"
 import { Mail, DollarSign, Shield, Clock, Copy } from "lucide-react"
+import { Breadcrumb } from "@/components/ui/breadcrumb"
 
 export const metadata: Metadata = {
   title: "Contact ForgeDocs - Get in Touch",
   description: "Contact ForgeDocs for sales, support, security, or enterprise inquiries. Email hello@forgedocs.com or use our contact form.",
+  alternates: {
+    canonical: "/contact",
+  },
 }
+
+export const revalidate = 3600
 
 export default function ContactPage() {
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
+      <Breadcrumb />
       <section className="pt-32 pb-24 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">

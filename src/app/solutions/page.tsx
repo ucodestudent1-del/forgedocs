@@ -4,6 +4,7 @@ import { Navbar } from "@/components/ui/navbar"
 import { Footer } from "@/components/marketing/footer"
 import { PageHeader } from "@/components/marketing/page-header"
 import { Scale, DollarSign, Users, GraduationCap, Home, HeartPulse, Package } from "lucide-react"
+import { Breadcrumb } from "@/components/ui/breadcrumb"
 
 export const metadata: Metadata = {
   title: "Solutions - Built for Your Industry",
@@ -11,7 +12,6 @@ export const metadata: Metadata = {
 }
 
 export const revalidate = 60
-
 export default function SolutionsPage() {
   const solutions = [
     {
@@ -55,6 +55,7 @@ export default function SolutionsPage() {
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
+      <Breadcrumb />
       <PageHeader
         title="Built for your industry"
         description="See how ForgeDocs fits your specific workflow with industry-tailored templates and features."

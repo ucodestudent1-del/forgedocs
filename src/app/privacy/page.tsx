@@ -3,11 +3,17 @@ import Link from "next/link"
 import { Navbar } from "@/components/ui/navbar"
 import { Footer } from "@/components/marketing/footer"
 import { Clock, Shield, FileText, CheckCircle, Users, Globe, Database, Lock, Mail, ExternalLink } from "lucide-react"
+import { Breadcrumb } from "@/components/ui/breadcrumb"
 
 export const metadata: Metadata = {
   title: "Privacy Policy - ForgeDocs",
   description: "How ForgeDocs collects, uses, and protects your personal data and documents.",
+  alternates: {
+    canonical: "/privacy",
+  },
 }
+
+export const revalidate = 3600
 
 export default function PrivacyPage() {
   const lastUpdated = "March 15, 2024"
@@ -16,6 +22,7 @@ export default function PrivacyPage() {
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
+      <Breadcrumb />
       <section className="pt-32 pb-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-background to-muted/50">
         <div className="max-w-4xl mx-auto text-center">
           <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-foreground mb-6">

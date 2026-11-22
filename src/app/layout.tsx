@@ -33,6 +33,9 @@ export const metadata: Metadata = {
   authors: [{ name: "ForgeDocs" }],
   creator: "ForgeDocs",
   publisher: "ForgeDocs",
+  alternates: {
+    canonical: "/",
+  },
   robots: {
     index: true,
     follow: true,

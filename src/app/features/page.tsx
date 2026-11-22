@@ -4,6 +4,7 @@ import { Navbar } from "@/components/ui/navbar"
 import { Footer } from "@/components/marketing/footer"
 import { PageHeader } from "@/components/marketing/page-header"
 import { CTASection } from "@/components/marketing/cta-section"
+import { Breadcrumb } from "@/components/ui/breadcrumb"
 
 export const metadata: Metadata = {
   title: "Features - Everything You Need to Manage Documents",
@@ -16,6 +17,7 @@ export default function FeaturesPage() {
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
+      <Breadcrumb />
       <section className="pt-32 pb-24 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
@@ -121,6 +123,8 @@ function FeatureSection({ number, title, description, imageAlt, features }: { nu
               alt={imageAlt}
               className="max-w-full max-h-full object-contain"
               loading="lazy"
+              width={500}
+              height={350}
             />
           </div>
         </div>
