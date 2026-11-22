@@ -331,7 +331,7 @@ export function Sidebar({
           <div className="mt-2 flex items-center gap-2">
             {!collapsed && (
               <Link
-                href="/settings"
+                href="/dashboard/settings"
                 onClick={() => onClose()}
                 className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground rounded-lg transition-colors"
               >

@@ -113,7 +113,7 @@ export default function MfaSetupPage() {
           </CardContent>
           <CardFooter>
             <Button variant="outline" asChild className="w-full">
-              <Link href="/settings">
+              <Link href="/dashboard/settings">
                 <Mail className="h-4 w-4 mr-2" />
                 Back to Settings
               </Link>

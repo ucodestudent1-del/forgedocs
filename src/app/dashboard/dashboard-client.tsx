@@ -150,7 +150,7 @@ export default function DashboardClient({
                   if (e.key === "Enter" && searchResults.length > 0) {
                     const first = searchResults[0]
                     if (first.id) {
-                      router.push(`/documents/${first.id}`)
+                      router.push(`/reader/${first.id}`)
                     }
                   }
                 }}
@@ -170,7 +170,7 @@ export default function DashboardClient({
                     <button
                       key={doc.id}
                       onClick={() => {
-                        router.push(`/documents/${doc.id}`)
+                        router.push(`/reader/${doc.id}`)
                         setSearchQuery("")
                         setSearchResults([])
                       }}

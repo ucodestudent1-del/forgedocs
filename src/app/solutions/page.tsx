@@ -118,7 +118,7 @@ function SolutionCard({ solution }: { solution: { title: string; description: st
           </li>
         ))}
       </ul>
-      <Link href="/templates" className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline">
+      <Link href="/dashboard/templates" className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline">
         {solution.cta}
       </Link>
     </div>

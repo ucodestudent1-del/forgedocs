@@ -217,29 +217,29 @@ function StepChooseTemplate() {
           name="Business Proposal"
           description="Win clients with professional proposals"
           Icon={FileTextIcon}
-          href="/document-generator?template=business_proposal"
+          href="/dashboard/document-generator?template=business_proposal"
         />
         <TemplateCard
           name="Commercial Invoice"
           description="Create professional invoices in seconds"
           Icon={FileTextIcon}
-          href="/document-generator?template=commercial_invoice"
+          href="/dashboard/document-generator?template=commercial_invoice"
         />
         <TemplateCard
           name="NDA Agreement"
           description="Protect confidential information"
           Icon={Shield}
-          href="/document-generator?template=nondisclosure_agreement"
+          href="/dashboard/document-generator?template=nondisclosure_agreement"
         />
         <TemplateCard
           name="Meeting Minutes"
           description="Document meetings efficiently"
           Icon={Users}
-          href="/document-generator?template=meeting_minutes"
+          href="/dashboard/document-generator?template=meeting_minutes"
         />
       </div>
       <div className="text-center">
-        <Link href="/document-generator">
+        <Link href="/dashboard/document-generator">
           <Button variant="outline">Start from Blank Document</Button>
         </Link>
       </div>
@@ -282,7 +282,7 @@ function StepExploreConversions() {
         <ConversionExample from="JPG" to="PNG" />
         <ConversionExample from="PDF" to="TXT" />
       </div>
-      <Link href="/conversion">
+      <Link href="/dashboard/conversion">
         <Button size="lg">Try Conversion Now</Button>
       </Link>
     </div>
@@ -350,7 +350,7 @@ function StepConfigureBilling() {
         <PlanCard name="Free" price="$0" features={["500 docs/month", "100 conversions/month", "5GB storage", "Community support"]} current />
         <PlanCard name="Pro" price="$15/mo" features={["Unlimited documents", "Unlimited conversions", "100GB storage", "Priority support", "Audit logs", "Advanced templates"]} popular />
       </div>
-      <Link href="/billing">
+      <Link href="/dashboard/billing">
         <Button size="lg">View Plans & Upgrade</Button>
       </Link>
     </div>

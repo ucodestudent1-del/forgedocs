@@ -135,7 +135,7 @@ export default function LandingPage() {
                           <p className="text-xs text-muted-foreground">Blank document</p>
                         </div>
                       </a>
-                    <a href="/templates" className="flex items-center gap-3 p-3 rounded-lg bg-background border border-input hover:bg-muted w-full cursor-pointer transition-colors justify-start">
+                    <a href="/dashboard/templates" className="flex items-center gap-3 p-3 rounded-lg bg-background border border-input hover:bg-muted w-full cursor-pointer transition-colors justify-start">
                         <div className="h-8 w-8 rounded-md bg-primary/10 flex items-center justify-center text-primary">
                           <Plus className="h-4 w-4" />
                         </div>
