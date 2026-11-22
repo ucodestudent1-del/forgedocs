@@ -33,6 +33,7 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 ENV PORT=3000
+ENV NEXT_PUBLIC_GUEST_MODE=true
 
 # Add non-root user for security
 RUN addgroup --system --gid 1001 nodejs
