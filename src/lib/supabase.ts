@@ -149,14 +149,12 @@ export async function createRouteClient() {
 export async function getRouteClient() {
   const client = await createRouteClient()
 
-  // Ensure guest-mode wrapper is always applied, even to cached clients.
-  // This guarantees getUser() returns a guest user when no session exists
-  // and NEXT_PUBLIC_GUEST_MODE=true, preventing 401s on API routes.
+  // Ensure guest-mode wrapper is always applied. When no Supabase session exists,
+  // getUser() returns a guest user so API routes work without authentication.
   const realGetUser = client.auth.getUser.bind(client.auth)
-  const guestMode = process.env.NEXT_PUBLIC_GUEST_MODE === "true"
   client.auth.getUser = async () => {
     const { data, error } = await realGetUser()
-    if ((!data || !data.user) && !error && guestMode) {
+    if ((!data || !data.user) && !error) {
       return { data: { user: { id: getGuestUserId(), email: null } }, error: null }
     }
     return { data, error }
