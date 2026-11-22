@@ -9,6 +9,7 @@ import { cacheGet, cacheSet, cacheDel } from "@/lib/cache"
 import { logAuditEvent, getClientIp, getClientUserAgent } from "@/lib/audit"
 import { checkTierLimit, trackUsage } from "@/lib/tierLimits"
 import { withErrorBoundary, createAppError } from "@/lib/api-error"
+import { getGuestUserId, isGuestMode } from "@/lib/guest-session"
 import type { Database } from "@/types/database"
 
 export const GET = withErrorBoundary(async (req) => {
@@ -18,7 +19,11 @@ export const GET = withErrorBoundary(async (req) => {
   const supabase = await getRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  if (!user) {
+  let effectiveUser = user
+  if (!effectiveUser && isGuestMode()) {
+    effectiveUser = { id: getGuestUserId(), email: null } as any
+  }
+  if (!effectiveUser) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
@@ -28,7 +33,7 @@ export const GET = withErrorBoundary(async (req) => {
   const pinned = url.searchParams.get("pinned") === "true"
   const search = url.searchParams.get("search") || ""
 
-  const cacheKey = `documents:${user.id}:${page}:${limit}:${archived}:${pinned}:${search || ""}`
+  const cacheKey = `documents:${effectiveUser.id}:${page}:${limit}:${archived}:${pinned}:${search || ""}`
   const cached = await cacheGet<{ documents: any[]; count: number; page: number; limit: number }>(cacheKey)
   if (cached) {
     return NextResponse.json(cached)
@@ -40,7 +45,7 @@ export const GET = withErrorBoundary(async (req) => {
       *,
       templates ( id, name, category )
     `, { count: "exact" })
-    .eq("user_id", user.id)
+    .eq("user_id", effectiveUser.id)
     .eq("is_archived", archived)
 
   if (pinned) {
@@ -83,12 +88,16 @@ export const POST = withErrorBoundary(async (req) => {
   const supabase = await getRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  if (!user) {
+  let effectiveUser = user
+  if (!effectiveUser && isGuestMode()) {
+    effectiveUser = { id: getGuestUserId(), email: null } as any
+  }
+  if (!effectiveUser) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
   // Check document limit
-  const limitCheck = await checkTierLimit(user.id, "documents_created")
+  const limitCheck = await checkTierLimit(effectiveUser.id, "documents_created")
   if (!limitCheck.allowed) {
     return NextResponse.json(
       { error: `Document limit reached (${limitCheck.current}/${limitCheck.limit}). Upgrade your plan to create more documents.` },
@@ -108,7 +117,7 @@ export const POST = withErrorBoundary(async (req) => {
       .from("templates")
       .select("*")
       .eq("id", template_id)
-      .eq("user_id", user.id)
+      .eq("user_id", effectiveUser.id)
       .single()
 
     if (templateError || !template) {
@@ -121,12 +130,12 @@ export const POST = withErrorBoundary(async (req) => {
     content_type = "application/vnd.forgedocs.document+json"
   }
 
-  const storagePath = `documents/${user.id}/${randomUUID()}.json`
+  const storagePath = `documents/${effectiveUser.id}/${randomUUID()}.json`
 
   const { data: doc, error } = await supabase
     .from("documents")
     .insert({
-      user_id: user.id,
+      user_id: effectiveUser.id,
       title,
       description,
       content,
@@ -143,14 +152,14 @@ export const POST = withErrorBoundary(async (req) => {
   }
 
   // Track usage
-  await trackUsage(user.id, "documents_created", 1)
+  await trackUsage(effectiveUser.id, "documents_created", 1)
 
   // Invalidate document list cache
-  await cacheDel(`documents:${user.id}:*`)
+  await cacheDel(`documents:${effectiveUser.id}:*`)
 
   // Audit log document creation
   await logAuditEvent({
-    userId: user.id,
+    userId: effectiveUser.id,
     action: "document.create",
     entityType: "documents",
     entityId: doc.id,

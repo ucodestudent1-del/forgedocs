@@ -73,14 +73,16 @@ export async function getTierLimitsFromDB(userId: string): Promise<TierLimits | 
   const supabase = await getRouteClient()
   const { data: subscription } = await supabase
     .from("subscriptions")
-    .select("tier")
+    .select("status, tier")
     .eq("user_id", userId)
     .eq("status", "active")
     .order("created_at", { ascending: false })
     .limit(1)
-    .single()
+    .maybeSingle()
 
-  const tier = subscription?.tier || "free"
+  if (!subscription) return null
+
+  const tier = subscription.tier || "free"
 
   const { data: limits } = await supabase
     .from("tier_limits")
@@ -112,7 +114,7 @@ export async function getUserTier(userId: string): Promise<string> {
     .eq("status", "active")
     .order("created_at", { ascending: false })
     .limit(1)
-    .single()
+    .maybeSingle()
 
   return subscription?.tier || "free"
 }
