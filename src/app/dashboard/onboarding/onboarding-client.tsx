@@ -312,7 +312,7 @@ function StepInviteTeam() {
         <RoleCard name="Editor" description="Create and edit documents" permissions={["Create documents", "Edit own documents", "Convert files"]} />
         <RoleCard name="Viewer" description="Read-only access to shared documents" permissions={["View documents", "Download documents", "Comment"]} />
       </div>
-      <Link href="/admin/users">
+      <Link href="/dashboard/admin/users">
         <Button variant="outline">Manage Team Members</Button>
       </Link>
     </div>

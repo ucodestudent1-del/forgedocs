@@ -87,28 +87,28 @@ export default function DashboardPage() {
       label: "Create Document",
       description: "Start a new document from scratch",
       icon: Pen,
-      href: "/document-generator",
+      href: "/dashboard/document-generator",
       color: "bg-primary/10 text-primary",
     },
     {
       label: "Convert File",
       description: "Transform documents between formats",
       icon: RefreshCw,
-      href: "/conversion",
+      href: "/dashboard/conversion",
       color: "bg-blue/10 text-blue",
     },
     {
       label: "Merge PDFs",
       description: "Combine multiple PDFs into one",
       icon: FileImage,
-      href: "/pdf-tools?tool=merge",
+      href: "/dashboard/pdf-tools?tool=merge",
       color: "bg-purple/10 text-purple",
     },
     {
       label: "AI Generate",
       description: "Create content with AI assistance",
       icon: Bot,
-      href: "/ai-assistant",
+      href: "/dashboard/ai-assistant",
       color: "bg-green/10 text-green",
       badge: "New",
     },
@@ -116,14 +116,14 @@ export default function DashboardPage() {
       label: "E-Sign Document",
       description: "Add signatures to documents",
       icon: FileSignature,
-      href: "/e-signatures",
+      href: "/dashboard/e-signatures",
       color: "bg-orange/10 text-orange",
     },
     {
       label: "Upload Files",
       description: "Add files to your workspace",
       icon: FolderOpen,
-      href: "/files",
+      href: "/dashboard/files",
       color: "bg-indigo/10 text-indigo",
     },
   ], [])
@@ -281,7 +281,7 @@ export default function DashboardPage() {
         description="Overview of your workspace activity and usage"
         action={
           <Button className="flex items-center gap-2" asChild>
-            <Link href="/document-generator">
+            <Link href="/dashboard/document-generator">
               <Plus className="h-4 w-4" />
               New Document
             </Link>
@@ -338,7 +338,7 @@ export default function DashboardPage() {
                   <h3 className="font-medium">No documents yet</h3>
                   <p className="text-sm">Create your first document to get started.</p>
                   <Button className="mt-4" asChild>
-                    <Link href="/document-generator">Create Document</Link>
+                    <Link href="/dashboard/document-generator">Create Document</Link>
                   </Button>
                 </div>
               ) : (
@@ -384,7 +384,7 @@ export default function DashboardPage() {
                   "B"
                 )}
                 <Button variant="outline" className="w-full" asChild>
-                  <Link href="/usage">
+                  <Link href="/dashboard/usage">
                     View Detailed Usage
                   </Link>
                 </Button>
@@ -400,7 +400,7 @@ export default function DashboardPage() {
                 <CardDescription>Latest actions across your workspace</CardDescription>
               </div>
               <Button variant="ghost" size="sm" asChild>
-                <Link href="/activity">View All</Link>
+                <Link href="/dashboard/activity">View All</Link>
               </Button>
             </CardHeader>
             <CardContent>

@@ -32,7 +32,7 @@ export default function Error({
             Try Again
           </Button>
           <Button variant="outline" asChild className="flex-1 flex items-center justify-center gap-2">
-            <Link href="/">
+            <Link href="/dashboard">
               <Home className="h-4 w-4" />
               Go Home
             </Link>

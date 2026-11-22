@@ -202,7 +202,7 @@ export default function UsagePage() {
               </div>
               {nextTier && (
                 <Button className="gap-2" asChild>
-                  <a href="/billing">
+                  <a href="/dashboard/billing">
                     <ArrowUpRight className="h-4 w-4" />
                     Upgrade to {nextTier.name}
                   </a>
