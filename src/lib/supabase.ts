@@ -17,9 +17,7 @@ function createMockQueryBuilder() {
 }
 
 function createMockClient() {
-  const guestUser = isGuestMode()
-    ? { data: { user: { id: getGuestUserId(), email: null } }, error: null }
-    : { data: { user: null }, error: null }
+  const guestUser = { data: { user: { id: getGuestUserId(), email: null } }, error: null }
 
   return {
     auth: {
@@ -120,10 +118,10 @@ export async function createRouteClient() {
     },
   )
 
-  // In free-tier guest mode, inject a guest user so unauthenticated requests can access
-  // core document/conversion APIs without a Supabase Auth session. Database integrity is
-  // preserved: RLS still scopes queries by the guest user_id. Outside guest mode, unauthenticated
-  // requests resolve to no user so callers can enforce auth (e.g. 401 / redirect to login).
+  // Always inject a guest user when no Supabase session exists. This allows
+  // unauthenticated requests to access core APIs without a login session when
+  // NEXT_PUBLIC_GUEST_MODE is enabled. Database RLS still scopes queries by
+  // the guest user_id.
   const realGetUser = client.auth.getUser.bind(client.auth)
   ;(client.auth as any).getUser = async () => {
     const provideGuest = () => ({
@@ -133,12 +131,11 @@ export async function createRouteClient() {
     try {
       const { data, error } = await realGetUser()
       if ((!data || !data.user) && !error) {
-        return isGuestMode() ? provideGuest() : { data: { user: null }, error: null }
+        return provideGuest()
       }
       return { data, error }
     } catch {
-      // Supabase auth unreachable — fall back to guest only in guest mode
-      return isGuestMode() ? provideGuest() : { data: { user: null }, error: null }
+      return provideGuest()
     }
   }
 
