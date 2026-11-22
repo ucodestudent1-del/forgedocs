@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { apiFetch } from "@/lib/api-client"
 import { Badge } from "@/components/ui/badge"
@@ -36,22 +36,8 @@ import {
 import { DashboardHeader } from "@/components/dashboard/header"
 import { ScrollIndicator } from "@/components/ui/scroll-indicator"
 import { useToast } from "@/components/ui/use-toast"
-
-function formatFileSize(bytes: number): string {
-  if (bytes === 0) return "0 B"
-  const k = 1024
-  const sizes = ["B", "KB", "MB", "GB"]
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i]
-}
-
-const DOC_TYPE_ICONS: Record<string, React.ElementType> = {
-  pdf: File,
-  docx: File,
-  xlsx: FileSpreadsheet,
-  pptx: File,
-  txt: FileText,
-}
+import { DocumentRow } from "@/components/dashboard/DocumentRow"
+import { ActivityRow } from "@/components/dashboard/ActivityRow"
 
 interface Document {
   id: string
@@ -68,7 +54,7 @@ interface Document {
 interface UsageStats {
   documents: { current: number; limit: number }
   conversions: { current: number; limit: number }
-  storage: { current: number; limit: number } // in bytes
+  storage: { current: number; limit: number }
 }
 
 interface QuickAction {
@@ -80,16 +66,23 @@ interface QuickAction {
   badge?: string
 }
 
+// Optimized formatFileSize - avoids Math.log/Math.pow, uses simple comparisons
+function formatFileSize(bytes: number): string {
+  if (bytes === 0) return "0 B"
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`
+}
+
 export default function DashboardPage() {
   const [documents, setDocuments] = useState<Document[]>([])
   const [recentActivity, setRecentActivity] = useState<any[]>([])
   const [usageStats, setUsageStats] = useState<UsageStats | null>(null)
   const [loading, setLoading] = useState(true)
-  const [activityLoading, setActivityLoading] = useState(true)
-  const [usageLoading, setUsageLoading] = useState(true)
   const { toast } = useToast()
 
-  const quickActions: QuickAction[] = [
+  const quickActions: QuickAction[] = useMemo(() => [
     {
       label: "Create Document",
       description: "Start a new document from scratch",
@@ -133,58 +126,9 @@ export default function DashboardPage() {
       href: "/files",
       color: "bg-indigo/10 text-indigo",
     },
-  ]
+  ], [])
 
-  useEffect(() => {
-    fetchAllData()
-  }, [])
-
-  async function fetchAllData() {
-    try {
-      await Promise.all([fetchDocuments(), fetchRecentActivity(), fetchUsageStats()])
-    } catch (e) {
-      console.error(e)
-      toast({ title: "Failed to load dashboard data", variant: "destructive" })
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  async function fetchDocuments() {
-    try {
-      const res = await apiFetch("/api/documents?limit=10&pinned=true")
-      const data = await res.json()
-      setDocuments(data.documents || [])
-    } catch (e) {
-      console.error("Failed to fetch documents:", e)
-    }
-  }
-
-  async function fetchRecentActivity() {
-    try {
-      const res = await apiFetch("/api/activity?limit=10")
-      const data = await res.json()
-      setRecentActivity(data.activity || [])
-    } catch (e) {
-      console.error("Failed to fetch activity:", e)
-    } finally {
-      setActivityLoading(false)
-    }
-  }
-
-  async function fetchUsageStats() {
-    try {
-      const res = await apiFetch("/api/usage")
-      const data = await res.json()
-      setUsageStats(data.usage || null)
-    } catch (e) {
-      console.error("Failed to fetch usage:", e)
-    } finally {
-      setUsageLoading(false)
-    }
-  }
-
-  const getActivityIcon = (action: string) => {
+  const getActivityIcon = useMemo(() => {
     const icons: Record<string, React.ElementType> = {
       created: Plus,
       updated: Edit,
@@ -197,10 +141,10 @@ export default function DashboardPage() {
       pinned: Star,
       archived: Archive,
     }
-    return icons[action] || MoreHorizontal
-  }
+    return (action: string) => icons[action] || MoreHorizontal
+  }, [])
 
-  const getActivityColor = (action: string) => {
+  const getActivityColor = useMemo(() => {
     const colors: Record<string, string> = {
       created: "text-green-600 bg-green-100",
       updated: "text-blue-600 bg-blue-100",
@@ -213,10 +157,29 @@ export default function DashboardPage() {
       pinned: "text-yellow-600 bg-yellow-100",
       archived: "text-gray-600 bg-gray-100",
     }
-    return colors[action] || "text-gray-600 bg-gray-100"
+    return (action: string) => colors[action] || "text-gray-600 bg-gray-100"
+  }, [])
+
+  useEffect(() => {
+    fetchDashboardData()
+  }, [])
+
+  async function fetchDashboardData() {
+    try {
+      const res = await apiFetch("/api/dashboard/summary")
+      const data = await res.json()
+      setDocuments(data.documents || [])
+      setRecentActivity(data.activity || [])
+      setUsageStats(data.usage || null)
+    } catch (e) {
+      console.error("Failed to fetch dashboard data:", e)
+      toast({ title: "Failed to load dashboard data", variant: "destructive" })
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const renderUsageBar = (current: number, limit: number, label: string, unit: string = "") => {
+  const renderUsageBar = useMemo((current: number, limit: number, label: string, unit: string = "") => {
     if (limit < 0) {
       return (
         <div className="space-y-1">
@@ -257,7 +220,7 @@ export default function DashboardPage() {
         </div>
       </div>
     )
-  }
+  }, [])
 
   if (loading) {
     return (
@@ -374,14 +337,14 @@ export default function DashboardPage() {
                   <FileText className="h-12 w-12 mx-auto mb-2 opacity-50" />
                   <h3 className="font-medium">No documents yet</h3>
                   <p className="text-sm">Create your first document to get started.</p>
-                <Button className="mt-4" asChild>
+                  <Button className="mt-4" asChild>
                     <Link href="/document-generator">Create Document</Link>
-                </Button>
+                  </Button>
                 </div>
               ) : (
                 <div className="space-y-3">
                   {documents.map((doc) => (
-                    <DocumentRow key={doc.id} doc={doc} />
+                    <DocumentRow key={doc.id} doc={doc} formatFileSize={formatFileSize} />
                   ))}
                 </div>
               )}
@@ -401,44 +364,31 @@ export default function DashboardPage() {
               <CardDescription>Current period usage against your plan limits</CardDescription>
             </CardHeader>
             <CardContent>
-              {usageLoading ? (
-                <div className="space-y-4">
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="h-20 bg-muted rounded animate-pulse" />
-                  ))}
-                </div>
-              ) : usageStats ? (
-                <div className="space-y-6">
-                  {renderUsageBar(
-                    usageStats.documents.current,
-                    usageStats.documents.limit,
-                    "Documents",
-                    ""
-                  )}
-                  {renderUsageBar(
-                    usageStats.conversions.current,
-                    usageStats.conversions.limit,
-                    "Conversions",
-                    ""
-                  )}
-                  {renderUsageBar(
-                    usageStats.storage.current,
-                    usageStats.storage.limit,
-                    "Storage",
-                    "B"
-                  )}
-                  <Button variant="outline" className="w-full" asChild>
-                    <Link href="/usage">
-                      View Detailed Usage
-                    </Link>
-                  </Button>
-                </div>
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  <AlertTriangle className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                  <p>Unable to load usage data</p>
-                </div>
-              )}
+              <div className="space-y-6">
+                {renderUsageBar(
+                  usageStats?.documents.current ?? 0,
+                  usageStats?.documents.limit ?? 0,
+                  "Documents",
+                  ""
+                )}
+                {renderUsageBar(
+                  usageStats?.conversions.current ?? 0,
+                  usageStats?.conversions.limit ?? 0,
+                  "Conversions",
+                  ""
+                )}
+                {renderUsageBar(
+                  usageStats?.storage.current ?? 0,
+                  usageStats?.storage.limit ?? 0,
+                  "Storage",
+                  "B"
+                )}
+                <Button variant="outline" className="w-full" asChild>
+                  <Link href="/usage">
+                    View Detailed Usage
+                  </Link>
+                </Button>
+              </div>
             </CardContent>
           </Card>
 
@@ -454,20 +404,14 @@ export default function DashboardPage() {
               </Button>
             </CardHeader>
             <CardContent>
-              {activityLoading ? (
-                <div className="space-y-3">
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="h-12 bg-muted rounded animate-pulse" />
-                  ))}
-                </div>
-              ) : recentActivity.length === 0 ? (
+              {recentActivity.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
                   <Clock className="h-8 w-8 mx-auto mb-2 opacity-50" />
                   <p className="text-sm">No recent activity</p>
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {recentActivity.map((activity: any, index: number) => (
+                  {recentActivity.map((activity, index) => (
                     <ActivityRow
                       key={`${activity.id}-${index}`}
                       activity={activity}
@@ -498,17 +442,17 @@ function StatCard({
   change: string
   trend?: "up" | "down" | "neutral"
 }) {
-  const trendIcons = {
+  const trendIcons = useMemo(() => ({
     up: <TrendingUp className="h-3 w-3 text-green-600" />,
     down: <TrendingDown className="h-3 w-3 text-red-600" />,
     neutral: <span className="h-3 w-3" />,
-  }
+  }), [])
 
-  const trendColors = {
+  const trendColors = useMemo(() => ({
     up: "text-green-600",
     down: "text-red-600",
     neutral: "text-muted-foreground",
-  }
+  }), [])
 
   return (
     <Card>
@@ -549,76 +493,6 @@ function QuickActionCard({ action }: { action: QuickAction }) {
       </div>
       <p className="text-xs text-muted-foreground line-clamp-2">{action.description}</p>
     </Link>
-  )
-}
-
-function DocumentRow({ doc }: { doc: Document }) {
-  const Icon = DOC_TYPE_ICONS[doc.mime_type?.split("/").pop() || "txt"] || FileText
-
-  return (
-    <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-accent/50 transition-colors group">
-      <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center text-muted-foreground flex-shrink-0">
-        <Icon className="h-5 w-5" />
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <span className="font-medium truncate">{doc.title}</span>
-          {doc.is_pinned && <Star className="h-3 w-3 text-yellow-500 flex-shrink-0" />}
-          {doc.is_archived && <Archive className="h-3 w-3 text-muted-foreground flex-shrink-0" />}
-        </div>
-        <p className="text-xs text-muted-foreground truncate">
-          Updated {new Date(doc.updated_at).toLocaleDateString()} · {formatFileSize(doc.file_size)}
-        </p>
-      </div>
-      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-        <Button variant="ghost" size="icon" className="h-7 w-7" asChild>
-          <Link href={`/reader/${doc.id}`}>
-            <Eye className="h-4 w-4" />
-          </Link>
-        </Button>
-        <Button variant="ghost" size="icon" className="h-7 w-7" asChild>
-          <Link href={`/editor?id=${doc.id}`}>
-            <Edit className="h-4 w-4" />
-          </Link>
-        </Button>
-        <Button variant="ghost" size="icon" className="h-7 w-7" asChild>
-          <Link href={`/api/documents/${doc.id}/export`}>
-            <Download className="h-4 w-4" />
-          </Link>
-        </Button>
-      </div>
-    </div>
-  )
-}
-
-function ActivityRow({
-  activity,
-  getIcon,
-  getColor,
-}: {
-  activity: any
-  getIcon: (action: string) => React.ElementType
-  getColor: (action: string) => string
-}) {
-  const Icon = getIcon(activity.action)
-  const colorClass = getColor(activity.action)
-
-  return (
-    <div className="flex items-start gap-3 p-2 rounded-lg hover:bg-accent/50 transition-colors">
-      <div className={`flex-shrink-0 h-8 w-8 rounded-lg flex items-center justify-center ${colorClass}`}>
-        <Icon className="h-4 w-4" />
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium">{activity.entity_type}: {activity.metadata?.title || activity.entity_id}</p>
-        <p className="text-xs text-muted-foreground">
-          {activity.action.charAt(0).toUpperCase() + activity.action.slice(1)} ·
-          {new Date(activity.created_at).toLocaleString()}
-        </p>
-      </div>
-      <span className="text-xs text-muted-foreground whitespace-nowrap">
-        {new Date(activity.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-      </span>
-    </div>
   )
 }
 

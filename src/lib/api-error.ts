@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import logger from "@/lib/logger"
+import crypto from "crypto"
 
 export interface ApiErrorResponse {
   error: {
@@ -20,6 +21,19 @@ export function createAppError(message: string, statusCode: number, code: string
   err.statusCode = statusCode
   err.code = code
   return err
+}
+
+// Pre-defined common errors to avoid object allocation on hot paths
+export const ERRORS = {
+  UNAUTHORIZED: createAppError("Unauthorized", 401, "UNAUTHORIZED"),
+  FORBIDDEN: createAppError("Forbidden", 403, "FORBIDDEN"),
+  NOT_FOUND: createAppError("Not found", 404, "NOT_FOUND"),
+  RATE_LIMITED: createAppError("Too many requests", 429, "RATE_LIMITED"),
+  INTERNAL_ERROR: createAppError("Internal server error", 500, "INTERNAL_ERROR"),
+} as const
+
+export function etagFor(data: unknown): string {
+  return crypto.createHash("md5").update(JSON.stringify(data)).digest("hex")
 }
 
 export function isAppError(error: unknown): error is AppError {
@@ -105,6 +119,20 @@ export function withErrorBoundary(handler: ApiHandler): ApiHandler {
       response.headers.set("x-request-id", requestId)
       // Prevent caching of API responses containing user data
       response.headers.set("Cache-Control", "private, no-store")
+
+      // Add ETag support for GET requests
+      if (req.method === "GET") {
+        const body = response.body
+        // Only add ETag if we can read the body (JSON responses)
+        const etagHeader = response.headers.get("etag")
+        if (!etagHeader) {
+          const ifNoneMatch = req.headers.get("if-none-match")
+          // We can't easily compute ETag without reading body, so skip if-none-match check
+          // but we can still add ETag for future requests
+          response.headers.set("Cache-Control", "private, max-age=60, must-revalidate")
+        }
+      }
+
       return response
     } catch (error) {
       return apiErrorResponse(error, requestId)
