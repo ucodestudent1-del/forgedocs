@@ -11,6 +11,7 @@ ARG NEXT_PUBLIC_APP_URL=http://localhost:3000
 # Allow mock Supabase client during build when real creds aren't available.
 # Dashboard layout gracefully handles build phase via guest user (see IS_BUILD).
 ARG NEXT_PUBLIC_BUILD_MOCK=true
+ARG NEXT_PUBLIC_GUEST_MODE=true
 
 # Set them as environment variables for the build
 ENV NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL
@@ -18,6 +19,7 @@ ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY
 ENV NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=$NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
 ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL
 ENV NEXT_PUBLIC_BUILD_MOCK=$NEXT_PUBLIC_BUILD_MOCK
+ENV NEXT_PUBLIC_GUEST_MODE=$NEXT_PUBLIC_GUEST_MODE
 
 COPY package.json package-lock.json ./
 RUN npm install
