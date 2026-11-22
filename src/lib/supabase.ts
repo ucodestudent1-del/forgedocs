@@ -49,10 +49,9 @@ function createMockClient() {
 }
 
 export async function createRouteClient() {
-  if (routeClientCache) return routeClientCache
-
   // Return mock client during build only when explicitly opted in
   // or when Supabase env vars are placeholders (safe fallback for CI/build)
+  // Do NOT cache during build — the guest-mode wrapper must be applied at runtime
   if (typeof window === "undefined" && process.env.NEXT_PHASE === "phase-production-build") {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL
     const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -64,14 +63,13 @@ export async function createRouteClient() {
       key.includes("placeholder")
 
     if (useMock) {
-      routeClientCache = createMockClient()
-      return routeClientCache
+      return createMockClient()
     }
 
     // Build with real (non-placeholder) Supabase credentials: create a real client.
     // No session cookie exists at build time, so getUser() returns null —
     // callers (e.g. dashboard layout) must handle this gracefully.
-    let client = createServerClient<Database>(
+    return createServerClient<Database>(
       url,
       key,
       {
@@ -85,10 +83,9 @@ export async function createRouteClient() {
         },
       },
     )
-
-    routeClientCache = client
-    return client
   }
+
+  if (routeClientCache) return routeClientCache
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
