@@ -75,38 +75,38 @@ export function Sidebar({
       icon: Home,
       items: [
         { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-        { href: "/documents", label: "Documents", icon: FileText },
-        { href: "/files", label: "My Files", icon: FolderOpen },
+        { href: "/dashboard/documents", label: "Documents", icon: FileText },
+        { href: "/dashboard/files", label: "My Files", icon: FolderOpen },
         { href: "/editor", label: "Editor", icon: FilePen },
-        { href: "/templates", label: "Templates", icon: FileStack },
-        { href: "/tools", label: "Tools", icon: Wrench },
+        { href: "/dashboard/templates", label: "Templates", icon: FileStack },
+        { href: "/dashboard/tools", label: "Tools", icon: Wrench },
       ],
     },
     {
       title: "Conversion & AI",
       icon: Zap,
       items: [
-        { href: "/conversion", label: "Conversion", icon: RefreshCw },
-        { href: "/ai-assistant", label: "AI Assistant", icon: Bot },
-        { href: "/pdf-tools", label: "PDF Tools", icon: FileImage },
-        { href: "/e-signatures", label: "E-Signatures", icon: FileSignature },
+        { href: "/dashboard/conversion", label: "Conversion", icon: RefreshCw },
+        { href: "/dashboard/ai-assistant", label: "AI Assistant", icon: Bot },
+        { href: "/dashboard/pdf-tools", label: "PDF Tools", icon: FileImage },
+        { href: "/dashboard/e-signatures", label: "E-Signatures", icon: FileSignature },
       ],
     },
     {
       title: "Manage",
       icon: Users,
       items: [
-        { href: "/shared", label: "Shared", icon: Share2 },
-        { href: "/activity", label: "Activity", icon: History },
-        { href: "/notifications", label: "Notifications", icon: Bell, badge: "3" },
-        { href: "/usage", label: "Usage", icon: CreditCard },
+        { href: "/dashboard/shared", label: "Shared", icon: Share2 },
+        { href: "/dashboard/activity", label: "Activity", icon: History },
+        { href: "/dashboard/notifications", label: "Notifications", icon: Bell, badge: "3" },
+        { href: "/dashboard/usage", label: "Usage", icon: CreditCard },
       ],
     },
     {
       title: "Other",
       icon: Shield,
       items: [
-        { href: "/settings", label: "Settings", icon: Settings },
+        { href: "/dashboard/settings", label: "Settings", icon: Settings },
         { href: "/help", label: "Help", icon: HelpCircle },
       ],
     },
@@ -134,16 +134,16 @@ export function Sidebar({
   const handleQuickAction = (action: string) => {
     switch (action) {
       case "create":
-        router.push("/document-generator")
+        router.push("/dashboard/document-generator")
         break
       case "convert":
-        router.push("/conversion")
+        router.push("/dashboard/conversion")
         break
       case "merge":
-        router.push("/pdf-tools?tool=merge")
+        router.push("/dashboard/pdf-tools?tool=merge")
         break
       case "ai-generate":
-        router.push("/ai-assistant")
+        router.push("/dashboard/ai-assistant")
         break
       default:
         break
