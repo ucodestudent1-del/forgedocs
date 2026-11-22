@@ -17,8 +17,13 @@ export default async function DashboardLayout({
 
   let user = null
   if (supabase) {
-    const { data } = await supabase.auth.getUser()
-    user = data?.user ?? null
+    try {
+      const { data } = await supabase.auth.getUser()
+      user = data?.user ?? null
+    } catch {
+      // Supabase unreachable — fall back to guest mode
+      user = null
+    }
   }
 
   let effectiveUser = user
@@ -40,18 +45,23 @@ export default async function DashboardLayout({
 
   let tier = "free"
   if (supabase && !IS_BUILD) {
-    const { data: subscription } = await supabase
-      .from("subscriptions")
-      .select("status, tier")
-      .eq("user_id", effectiveUser.id)
-      .eq("status", "active")
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .single()
+    try {
+      const { data: subscription } = await supabase
+        .from("subscriptions")
+        .select("status, tier")
+        .eq("user_id", effectiveUser.id)
+        .eq("status", "active")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single()
 
-    tier = subscription?.tier || "free"
-    if (tier !== "free" && (!subscription || subscription.status !== "active")) {
-      redirect("/pricing")
+      tier = subscription?.tier || "free"
+      if (tier !== "free" && (!subscription || subscription.status !== "active")) {
+        redirect("/pricing")
+      }
+    } catch {
+      // Supabase unreachable — keep default free tier
+      tier = "free"
     }
   }
 
