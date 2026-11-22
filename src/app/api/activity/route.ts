@@ -3,6 +3,7 @@ import { NextResponse } from "next/server"
 import { documentRateLimit } from "@/lib/rate-limiter"
 import { MAX_PAGE_SIZE, DEFAULT_PAGE_SIZE, parsePagination } from "@/lib/pagination"
 import { withErrorBoundary, createAppError } from "@/lib/api-error"
+import { getGuestUserId, isGuestMode } from "@/lib/guest-session"
 
 export const GET = withErrorBoundary(async (req: Request): Promise<NextResponse> => {
   const rateLimitError = await documentRateLimit(req)
@@ -11,7 +12,11 @@ export const GET = withErrorBoundary(async (req: Request): Promise<NextResponse>
   const supabase = await getRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  if (!user) {
+  let effectiveUser = user
+  if (!effectiveUser && isGuestMode()) {
+    effectiveUser = { id: getGuestUserId(), email: null } as any
+  }
+  if (!effectiveUser) {
     throw createAppError("Unauthorized", 401, "UNAUTHORIZED")
   }
 
@@ -23,7 +28,7 @@ export const GET = withErrorBoundary(async (req: Request): Promise<NextResponse>
   let query = supabase
     .from("audit_logs")
     .select("*", { count: "exact" })
-    .eq("user_id", user.id)
+    .eq("user_id", effectiveUser.id)
     .order("created_at", { ascending: false })
 
   if (action) {

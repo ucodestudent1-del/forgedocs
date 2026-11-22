@@ -153,9 +153,10 @@ export async function getRouteClient() {
   // This guarantees getUser() returns a guest user when no session exists
   // and NEXT_PUBLIC_GUEST_MODE=true, preventing 401s on API routes.
   const realGetUser = client.auth.getUser.bind(client.auth)
+  const guestMode = process.env.NEXT_PUBLIC_GUEST_MODE === "true"
   client.auth.getUser = async () => {
     const { data, error } = await realGetUser()
-    if ((!data || !data.user) && !error && isGuestMode()) {
+    if ((!data || !data.user) && !error && guestMode) {
       return { data: { user: { id: getGuestUserId(), email: null } }, error: null }
     }
     return { data, error }
