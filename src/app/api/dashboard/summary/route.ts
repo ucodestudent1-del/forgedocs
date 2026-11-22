@@ -5,7 +5,7 @@ import { withErrorBoundary, createAppError, ERRORS } from "@/lib/api-error"
 import { cacheGet, cacheSet } from "@/lib/cache"
 import { getGuestUserId, isGuestMode } from "@/lib/guest-session"
 import { checkTierLimit } from "@/lib/tierLimits"
-import { MAX_PAGE_SIZE, DEFAULT_PAGE_SIZE, parsePagination } from "@/lib/pagination"
+import { MAX_PAGE_SIZE, parsePagination } from "@/lib/pagination"
 
 export const GET = withErrorBoundary(async (req) => {
   const rateLimitError = await documentRateLimit(req)
@@ -16,7 +16,7 @@ export const GET = withErrorBoundary(async (req) => {
 
   let effectiveUser = user
   if (!effectiveUser && isGuestMode()) {
-    effectiveUser = { id: getGuestUserId(), email: null } as any
+    effectiveUser = { id: getGuestUserId(), email: null } as { id: string; email: string | null }
   }
   if (!effectiveUser) {
     return NextResponse.json({ error: ERRORS.UNAUTHORIZED.message }, { status: 401 })
@@ -66,7 +66,7 @@ export const GET = withErrorBoundary(async (req) => {
   }
 
   // Fetch recent activity
-  const { page: actPage, limit: actLimit, offset: actOffset } = parsePagination(url.searchParams)
+  const { limit: actLimit, offset: actOffset } = parsePagination(url.searchParams)
   const actLimitVal = Math.min(actLimit || 10, MAX_PAGE_SIZE)
 
   let activityQuery = supabase
@@ -91,10 +91,9 @@ export const GET = withErrorBoundary(async (req) => {
     .eq("user_id", effectiveUser.id)
     .eq("is_archived", false)
 
-  let totalStorageBytes = 0
-  if (docs) {
-    totalStorageBytes = docs.reduce((sum, doc) => sum + (doc.file_size || 0), 0)
-  }
+  const totalStorageBytes = docs
+    ? docs.reduce((sum: number, doc: { file_size?: number }) => sum + (doc.file_size || 0), 0)
+    : 0
 
   const usage = {
     documents: {
