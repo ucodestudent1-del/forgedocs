@@ -11,7 +11,12 @@ export default async function DashboardLayout({
   children: React.ReactNode
 }) {
   const supabase = await createRouteClient()
-  const { data: { user } } = await supabase.auth.getUser()
+
+  let user = null
+  if (supabase) {
+    const { data } = await supabase.auth.getUser()
+    user = data?.user ?? null
+  }
 
   let effectiveUser = user
 
@@ -26,26 +31,25 @@ export default async function DashboardLayout({
     }
   }
 
-  // In secure mode unauthenticated requests are redirected above; in guest mode
-  // effectiveUser is always populated, so this guard is defensive.
   if (!effectiveUser) {
     redirect("/auth/login")
   }
 
-  // Check for active subscription
-  const { data: subscription } = await supabase
-    .from("subscriptions")
-    .select("status, tier")
-    .eq("user_id", effectiveUser.id)
-    .eq("status", "active")
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .single()
+  let tier = "free"
+  if (supabase) {
+    const { data: subscription } = await supabase
+      .from("subscriptions")
+      .select("status, tier")
+      .eq("user_id", effectiveUser.id)
+      .eq("status", "active")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .single()
 
-  // Allow free-tier users (no subscription or tier "free") to access the dashboard
-  const tier = subscription?.tier || "free"
-  if (tier !== "free" && (!subscription || subscription.status !== "active")) {
-    redirect("/pricing")
+    tier = subscription?.tier || "free"
+    if (tier !== "free" && (!subscription || subscription.status !== "active")) {
+      redirect("/pricing")
+    }
   }
 
   const userEmail = effectiveUser?.email || null
