@@ -25,22 +25,22 @@ export function Footer() {
               </h4>
               <ul className="space-y-2">
                 <li>
-                  <a href="#features" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  <a href="/features" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                     Features
                   </a>
                 </li>
                 <li>
-                  <a href="#solutions" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  <a href="/solutions" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                     Solutions
                   </a>
                 </li>
                 <li>
-                  <a href="#pricing" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  <a href="/pricing" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                     Pricing
                   </a>
                 </li>
                 <li>
-                  <a href="#faq" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  <a href="/faq" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                     FAQ
                   </a>
                 </li>

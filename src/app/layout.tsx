@@ -35,6 +35,14 @@ export const metadata: Metadata = {
   publisher: "ForgeDocs",
   alternates: {
     canonical: "/",
+    languages: {
+      en: "/",
+      es: "/es",
+      fr: "/fr",
+      de: "/de",
+      zh: "/zh",
+      ja: "/ja",
+    },
   },
   robots: {
     index: true,

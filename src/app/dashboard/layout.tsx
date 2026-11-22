@@ -57,7 +57,8 @@ export default async function DashboardLayout({
 
       tier = subscription?.tier || "free"
       if (tier !== "free" && (!subscription || subscription.status !== "active")) {
-        redirect("/pricing")
+        // Allow access to dashboard; show warning banner instead of redirecting
+        tier = "free"
       }
     } catch {
       // Supabase unreachable — keep default free tier
