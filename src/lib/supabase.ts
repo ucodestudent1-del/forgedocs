@@ -147,7 +147,21 @@ export async function createRouteClient() {
 }
 
 export async function getRouteClient() {
-  return createRouteClient()
+  const client = await createRouteClient()
+
+  // Ensure guest-mode wrapper is always applied, even to cached clients.
+  // This guarantees getUser() returns a guest user when no session exists
+  // and NEXT_PUBLIC_GUEST_MODE=true, preventing 401s on API routes.
+  const realGetUser = client.auth.getUser.bind(client.auth)
+  client.auth.getUser = async () => {
+    const { data, error } = await realGetUser()
+    if ((!data || !data.user) && !error && isGuestMode()) {
+      return { data: { user: { id: getGuestUserId(), email: null } }, error: null }
+    }
+    return { data, error }
+  }
+
+  return client
 }
 
 export async function createServiceRoleClient() {
