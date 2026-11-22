@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback, useRef } from "react"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { useGlobalHotkeys } from "@/hooks/useHotkeys"
 import { Search, Bell, ChevronLeft, ChevronRight, Menu, FileText } from "lucide-react"
 import { Sidebar } from "@/components/layout/Sidebar"
@@ -29,6 +29,7 @@ export default function DashboardClient({
   const [searchLoading, setSearchLoading] = useState(false)
   const { toast } = useToast()
   const pathname = usePathname()
+  const router = useRouter()
   const searchDebounceRef = useRef<NodeJS.Timeout | null>(null)
 
   // Global keyboard shortcuts
@@ -43,7 +44,7 @@ export default function DashboardClient({
     },
     "mod+n": () => {
       // Navigate to new document
-      window.location.href = "/editor"
+      router.push("/editor")
     },
     "mod+b": () => {
       // Toggle sidebar
@@ -148,7 +149,7 @@ export default function DashboardClient({
                   if (e.key === "Enter" && searchResults.length > 0) {
                     const first = searchResults[0]
                     if (first.id) {
-                      window.location.href = `/documents/${first.id}`
+                      router.push(`/documents/${first.id}`)
                     }
                   }
                 }}
@@ -168,7 +169,7 @@ export default function DashboardClient({
                     <button
                       key={doc.id}
                       onClick={() => {
-                        window.location.href = `/documents/${doc.id}`
+                        router.push(`/documents/${doc.id}`)
                         setSearchQuery("")
                         setSearchResults([])
                       }}

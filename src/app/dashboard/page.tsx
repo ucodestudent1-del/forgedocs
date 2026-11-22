@@ -316,9 +316,11 @@ export default function DashboardPage() {
         title="Dashboard"
         description="Overview of your workspace activity and usage"
         action={
-          <Button className="flex items-center gap-2" onClick={() => window.location.href = "/document-generator"}>
-            <Plus className="h-4 w-4" />
-            New Document
+          <Button className="flex items-center gap-2" asChild>
+            <Link href="/document-generator">
+              <Plus className="h-4 w-4" />
+              New Document
+            </Link>
           </Button>
         }
       />
@@ -371,9 +373,9 @@ export default function DashboardPage() {
                   <FileText className="h-12 w-12 mx-auto mb-2 opacity-50" />
                   <h3 className="font-medium">No documents yet</h3>
                   <p className="text-sm">Create your first document to get started.</p>
-                  <Button className="mt-4" onClick={() => window.location.href = "/document-generator"}>
-                    Create Document
-                  </Button>
+                <Button className="mt-4" asChild>
+                    <Link href="/document-generator">Create Document</Link>
+                </Button>
                 </div>
               ) : (
                 <div className="space-y-3">

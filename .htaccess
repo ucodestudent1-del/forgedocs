@@ -1,0 +1,9 @@
+RewriteEngine On
+
+# Serve static files directly when they exist
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# Fallback to Next.js entry point for all other routes (SPA routing)
+RewriteRule ^ /index.html [L,QSA]
