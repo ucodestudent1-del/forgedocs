@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/components/theme/ThemeProvider"
 import { ThemeInitializer } from "@/components/theme/ThemeInitializer"
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary"
 import { CookieConsentProvider } from "@/components/ui/cookie-consent"
+import { headers } from "next/headers"
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" })
 
 const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://forgedocs.com"
@@ -78,7 +79,10 @@ export const metadata: Metadata = {
   },
 }
 
-function JsonLdScript() {
+async function JsonLdScript() {
+  const headersList = await headers()
+  const nonce = headersList.get("x-csp-nonce")
+
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
@@ -107,6 +111,7 @@ function JsonLdScript() {
   return (
     <script
       type="application/ld+json"
+      nonce={nonce || undefined}
       dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
     />
   )

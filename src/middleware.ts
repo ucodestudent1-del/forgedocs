@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
+import crypto from "crypto"
 import {
   parseApiVersion,
   apiVersionHeaders,
@@ -8,6 +9,24 @@ import {
 } from "@/lib/api-version"
 import { validateApiKey, checkApiKeyPermissions, requiresApiKeyPermission } from "@/lib/api-key"
 import { checkRateLimit } from "@/lib/rate-limiter"
+
+function generateCspNonce(): string {
+  return crypto.randomUUID().replace(/-/g, "")
+}
+
+function buildCspHeader(nonce: string): string {
+  return [
+    "default-src 'self'",
+    `script-src 'self' 'nonce-${nonce}'`,
+    `style-src 'self' 'nonce-${nonce}'`,
+    "img-src 'self' data: https:",
+    "font-src 'self'",
+    "connect-src 'self' https: wss:",
+    "frame-ancestors 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+  ].join("; ")
+}
 
 function generateRequestId(): string {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
@@ -20,6 +39,7 @@ export async function middleware(request: NextRequest) {
   try {
     const pathname = request.nextUrl?.pathname ?? "/"
     const requestId = request.headers.get("x-request-id") ?? generateRequestId()
+    const cspNonce = generateCspNonce()
 
     // Skip non-page routes (static assets, internals, RSC payloads)
     const isStaticRoute =
@@ -31,6 +51,7 @@ export async function middleware(request: NextRequest) {
 
     const response = NextResponse.next()
     response.headers.set("x-request-id", requestId)
+    response.headers.set("x-csp-nonce", cspNonce)
 
     if (isStaticRoute) {
       return response
@@ -53,6 +74,8 @@ export async function middleware(request: NextRequest) {
           versionResponse.headers.set(key, value)
         })
         versionResponse.headers.set("x-request-id", requestId)
+        versionResponse.headers.set("x-csp-nonce", cspNonce)
+        versionResponse.headers.set("Content-Security-Policy", buildCspHeader(cspNonce))
         return versionResponse
       }
 
@@ -64,6 +87,9 @@ export async function middleware(request: NextRequest) {
         response.headers.set("API-Version-Default", DEFAULT_API_VERSION)
       }
 
+      // Set CSP header with nonce for API responses
+      response.headers.set("Content-Security-Policy", buildCspHeader(cspNonce))
+
       // Authenticate API key if present
       const apiKey = request.headers.get("x-api-key")
       if (apiKey) {
@@ -74,6 +100,8 @@ export async function middleware(request: NextRequest) {
             { status: 401 }
           )
           unauthorized.headers.set("x-request-id", requestId)
+          unauthorized.headers.set("x-csp-nonce", cspNonce)
+          unauthorized.headers.set("Content-Security-Policy", buildCspHeader(cspNonce))
           return unauthorized
         }
 
@@ -94,6 +122,8 @@ export async function middleware(request: NextRequest) {
               { status: 403 }
             )
             forbidden.headers.set("x-request-id", requestId)
+            forbidden.headers.set("x-csp-nonce", cspNonce)
+            forbidden.headers.set("Content-Security-Policy", buildCspHeader(cspNonce))
             return forbidden
           }
         }
@@ -137,6 +167,8 @@ export async function middleware(request: NextRequest) {
             rateLimited.headers.set("X-RateLimit-Reset", Math.ceil(limitInfo.resetTime / 1000).toString())
             rateLimited.headers.set("Retry-After", Math.ceil((limitInfo.resetTime - Date.now()) / 1000).toString())
             rateLimited.headers.set("x-request-id", requestId)
+            rateLimited.headers.set("x-csp-nonce", cspNonce)
+            rateLimited.headers.set("Content-Security-Policy", buildCspHeader(cspNonce))
             return rateLimited
           }
           response.headers.set("X-RateLimit-Limit", limitInfo.total.toString())
@@ -147,6 +179,9 @@ export async function middleware(request: NextRequest) {
 
       return response
     }
+
+    // Set CSP header with nonce for page responses
+    response.headers.set("Content-Security-Policy", buildCspHeader(cspNonce))
 
     return response
   } catch {

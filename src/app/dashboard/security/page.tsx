@@ -1,12 +1,15 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Shield, CheckCircle, XCircle, Key, AlertTriangle, Smartphone } from "lucide-react"
+import { Shield, CheckCircle, Key, AlertTriangle, Smartphone } from "lucide-react"
 import Link from "next/link"
 import { SessionList } from "@/components/security/SessionList"
+import { createRouteClient } from "@/lib/supabase"
 
-export default function SecurityPage() {
-  // TEMPORARILY DISABLED: Auth check removed for development
+export default async function SecurityPage() {
+  const supabase = await createRouteClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
   return (
     <div className="space-y-6">
       <div>
@@ -54,7 +57,7 @@ export default function SecurityPage() {
       </Card>
 
       {/* Active Sessions */}
-      <SessionList userId="demo-user" />
+      <SessionList userId={user?.id || "unknown"} />
 
       {/* Security Recommendations */}
       <Card>

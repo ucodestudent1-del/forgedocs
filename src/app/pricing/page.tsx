@@ -3,6 +3,7 @@ import Link from "next/link"
 import { Navbar } from "@/components/ui/navbar"
 import { Footer } from "@/components/marketing/footer"
 import { PricingCard } from "@/components/ui/pricing-card"
+import { headers } from "next/headers"
 
 export const metadata: Metadata = {
   title: "Pricing - Simple, Transparent Document Management",
@@ -11,7 +12,10 @@ export const metadata: Metadata = {
 
 export const revalidate = 60
 
-export default function PricingPage() {
+export default async function PricingPage() {
+  const headersList = await headers()
+  const nonce = headersList.get("x-csp-nonce")
+
   const plans = [
     {
       name: "Free",
@@ -112,6 +116,7 @@ export default function PricingPage() {
 
     <script
       type="application/ld+json"
+      nonce={nonce || undefined}
       dangerouslySetInnerHTML={{
         __html: JSON.stringify({
           "@context": "https://schema.org",
