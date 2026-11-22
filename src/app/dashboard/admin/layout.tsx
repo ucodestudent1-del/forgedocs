@@ -7,13 +7,18 @@ import Link from "next/link"
 import { format } from "date-fns"
 import { getRouteClient } from "@/lib/supabase"
 import { redirect } from "next/navigation"
+import { headers } from "next/headers"
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+  const headersList = await headers()
+  const referer = headersList.get("referer") || ""
+  const redirectUrl = referer ? new URL(referer).pathname + new URL(referer).search : "/dashboard"
+
   const supabase = await getRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
-    redirect("/auth/login")
+    redirect(`/auth/login?redirect=${encodeURIComponent(redirectUrl)}`)
   }
 
   const { data: profile } = await supabase

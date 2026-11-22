@@ -4,6 +4,7 @@ import { createRouteClient } from "@/lib/supabase"
 import DashboardClient from "./dashboard-client"
 import { AuthHandler } from "@/components/auth/AuthHandler"
 import { redirect } from "next/navigation"
+import { headers } from "next/headers"
 import { getGuestUserId, isGuestMode } from "@/lib/guest-session"
 
 const IS_BUILD = typeof process !== "undefined" && process.env.NEXT_PHASE === "phase-production-build"
@@ -13,6 +14,10 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode
 }) {
+  const headersList = await headers()
+  const referer = headersList.get("referer") || ""
+  const redirectUrl = referer ? new URL(referer).pathname + new URL(referer).search : "/dashboard"
+
   const supabase = await createRouteClient()
 
   let user = null
@@ -35,12 +40,12 @@ export default async function DashboardLayout({
         email: null,
       } as any
     } else {
-      redirect("/auth/login")
+      redirect(`/auth/login?redirect=${encodeURIComponent(redirectUrl)}`)
     }
   }
 
   if (!effectiveUser) {
-    redirect("/auth/login")
+    redirect(`/auth/login?redirect=${encodeURIComponent(redirectUrl)}`)
   }
 
   let tier = "free"
