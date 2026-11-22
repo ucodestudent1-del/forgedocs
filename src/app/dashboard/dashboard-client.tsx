@@ -10,6 +10,7 @@ import { useToast } from "@/components/ui/use-toast"
 import { ThemeToggle } from "@/components/theme/ThemeToggle"
 import { OfflineBanner } from "@/components/ui/offline-banner"
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary"
+import { apiFetch } from "@/lib/api-client"
 
 interface DashboardClientProps {
   userEmail: string | null
@@ -69,7 +70,7 @@ export default function DashboardClient({
     searchDebounceRef.current = setTimeout(async () => {
       setSearchLoading(true)
       try {
-        const res = await fetch(`/api/documents?search=${encodeURIComponent(value)}`)
+        const res = await apiFetch(`/api/documents?search=${encodeURIComponent(value)}`)
         const data = await res.json()
         setSearchResults(data.documents || [])
       } catch {

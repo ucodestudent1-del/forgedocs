@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { CreditCard, DollarSign, Users, Settings } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary"
+import { apiFetch } from "@/lib/api-client"
 import { useState } from "react"
 
 interface PlanCardProps {
@@ -47,10 +48,10 @@ export default function BillingPage() {
   const handleChoosePlan = async (priceId: string | null) => {
     if (!priceId) return
     try {
-      const csrfRes = await fetch("/api/csrf")
+      const csrfRes = await apiFetch("/api/csrf")
       const csrfData = await csrfRes.json()
 
-      const res = await fetch("/api/billing", {
+      const res = await apiFetch("/api/billing", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

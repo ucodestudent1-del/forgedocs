@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { DashboardHeader } from "@/components/dashboard/header"
 import { useToast } from "@/components/ui/use-toast"
+import { apiFetch } from "@/lib/api-client"
 import {
   Bot,
   Sparkles,
@@ -81,7 +82,7 @@ export default function AIAssistantPage() {
 
     setProcessing(true)
     try {
-      const res = await fetch("/api/ai/assistant", {
+      const res = await apiFetch("/api/ai/assistant", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -124,7 +125,7 @@ export default function AIAssistantPage() {
 
     setProcessing(true)
     try {
-      const res = await fetch("/api/ai/chat", {
+      const res = await apiFetch("/api/ai/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

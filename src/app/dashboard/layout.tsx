@@ -2,8 +2,11 @@ export const dynamic = "force-dynamic"
 
 import { createRouteClient } from "@/lib/supabase"
 import DashboardClient from "./dashboard-client"
+import { AuthHandler } from "@/components/auth/AuthHandler"
 import { redirect } from "next/navigation"
 import { getGuestUserId, isGuestMode } from "@/lib/guest-session"
+
+const IS_BUILD = typeof process !== "undefined" && process.env.NEXT_PHASE === "phase-production-build"
 
 export default async function DashboardLayout({
   children,
@@ -21,7 +24,7 @@ export default async function DashboardLayout({
   let effectiveUser = user
 
   if (!user) {
-    if (isGuestMode()) {
+    if (isGuestMode() || IS_BUILD) {
       effectiveUser = {
         id: getGuestUserId(),
         email: null,
@@ -36,7 +39,7 @@ export default async function DashboardLayout({
   }
 
   let tier = "free"
-  if (supabase) {
+  if (supabase && !IS_BUILD) {
     const { data: subscription } = await supabase
       .from("subscriptions")
       .select("status, tier")
@@ -56,10 +59,13 @@ export default async function DashboardLayout({
   const userInitial = effectiveUser?.email?.charAt(0).toUpperCase() || "G"
 
   return (
-    <DashboardClient
-      userEmail={userEmail}
-      userInitial={userInitial}
-      children={children}
-    />
+    <>
+      <AuthHandler />
+      <DashboardClient
+        userEmail={userEmail}
+        userInitial={userInitial}
+        children={children}
+      />
+    </>
   )
 }

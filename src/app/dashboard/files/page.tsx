@@ -32,6 +32,7 @@ import {
 } from "lucide-react"
 import { DashboardHeader } from "@/components/dashboard/header"
 import { useToast } from "@/components/ui/use-toast"
+import { apiFetch } from "@/lib/api-client"
 
 interface FileItem {
   id: string
@@ -82,7 +83,7 @@ export default function FilesPage() {
         sort_by: sortBy,
         sort_order: sortOrder,
       })
-      const res = await fetch(`/api/files?${params}`)
+      const res = await apiFetch(`/api/files?${params}`)
       const data = await res.json()
       setFiles(data.files || [])
     } catch (e) {
@@ -103,7 +104,7 @@ export default function FilesPage() {
       formData.append("file", file)
       if (currentFolderId) formData.append("folder_id", currentFolderId)
 
-      const res = await fetch("/api/files/upload", {
+      const res = await apiFetch("/api/files/upload", {
         method: "POST",
         body: formData,
       })
@@ -125,7 +126,7 @@ export default function FilesPage() {
 
     setCreatingFolder(true)
     try {
-      const res = await fetch("/api/files/folder", {
+      const res = await apiFetch("/api/files/folder", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

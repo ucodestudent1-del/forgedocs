@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { DashboardHeader } from "@/components/dashboard/header"
 import { useToast } from "@/components/ui/use-toast"
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary"
+import { apiFetch } from "@/lib/api-client"
 import {
   CreditCard,
   FileText,
@@ -59,7 +60,7 @@ export default function UsagePage() {
   const fetchUsage = async () => {
     setLoading(true)
     try {
-      const res = await fetch("/api/usage")
+      const res = await apiFetch("/api/usage")
       const data = await res.json()
       if (data.usage) {
         setUsage(data.usage)

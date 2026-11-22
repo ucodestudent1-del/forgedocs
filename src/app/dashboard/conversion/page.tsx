@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useCallback, useRef } from "react"
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary"
+import { apiFetch } from "@/lib/api-client"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -101,7 +102,7 @@ export default function ConversionPage() {
 
   const fetchJobs = useCallback(async () => {
     try {
-      const res = await fetch("/api/conversion")
+      const res = await apiFetch("/api/conversion")
       const data = await res.json()
       setJobs(data.jobs || [])
     } catch (e) {
@@ -147,14 +148,14 @@ export default function ConversionPage() {
       if (sourceFile) {
         const formData = new FormData()
         formData.append("file", sourceFile)
-        const uploadRes = await fetch("/api/storage/upload", {
+        const uploadRes = await apiFetch("/api/storage/upload", {
           method: "POST",
           body: formData,
         })
         if (!uploadRes.ok) throw new Error("File upload failed")
         const uploadData = await uploadRes.json()
         const sourceUrl = uploadData.url || uploadData.path
-        const res = await fetch("/api/conversion", {
+        const res = await apiFetch("/api/conversion", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -172,7 +173,7 @@ export default function ConversionPage() {
         setJobs([data.job, ...jobs])
       } else if (selectedSourceUrl) {
         const ext = selectedSourceUrl.split(".").pop() || "txt"
-        const res = await fetch("/api/conversion", {
+        const res = await apiFetch("/api/conversion", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -258,7 +259,7 @@ export default function ConversionPage() {
 
   const handleDownload = async (url: string, targetFormat?: string) => {
     try {
-      const res = await fetch(url)
+      const res = await apiFetch(url)
       if (!res.ok) throw new Error("Download failed")
       const blob = await res.blob()
       const disposition = res.headers.get("Content-Disposition")

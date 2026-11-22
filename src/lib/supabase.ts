@@ -48,17 +48,42 @@ export async function createRouteClient() {
   if (routeClientCache) return routeClientCache
 
   // Return mock client during build only when explicitly opted in
+  // or when Supabase env vars are placeholders (safe fallback for CI/build)
   if (typeof window === "undefined" && process.env.NEXT_PHASE === "phase-production-build") {
-    if (process.env.NEXT_PUBLIC_BUILD_MOCK !== "true") {
-      const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-      const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-      if (!url || !key || url.includes("placeholder") || key.includes("placeholder")) {
-        routeClientCache = createMockClient()
-        return routeClientCache
-      }
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    const useMock =
+      process.env.NEXT_PUBLIC_BUILD_MOCK === "true" ||
+      !url ||
+      !key ||
+      url.includes("placeholder") ||
+      key.includes("placeholder")
+
+    if (useMock) {
+      routeClientCache = createMockClient()
+      return routeClientCache
     }
-    routeClientCache = createMockClient()
-    return routeClientCache
+
+    // Build with real (non-placeholder) Supabase credentials: create a real client.
+    // No session cookie exists at build time, so getUser() returns null —
+    // callers (e.g. dashboard layout) must handle this gracefully.
+    let client = createServerClient<Database>(
+      url,
+      key,
+      {
+        cookies: {
+          async getAll() {
+            return []
+          },
+          async setAll() {
+            // No-op during build
+          },
+        },
+      },
+    )
+
+    routeClientCache = client
+    return client
   }
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL

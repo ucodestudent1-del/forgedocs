@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { DashboardHeader } from "@/components/dashboard/header"
 import { useToast } from "@/components/ui/use-toast"
+import { apiFetch } from "@/lib/api-client"
 import {
   Clock,
   Search,
@@ -106,7 +107,7 @@ export default function ActivityPage() {
         ...(filterAction !== "all" && { action: filterAction }),
         ...(filterEntity !== "all" && { entity_type: filterEntity }),
       })
-      const res = await fetch(`/api/activity?${params}`)
+      const res = await apiFetch(`/api/activity?${params}`)
       const data = await res.json()
       setActivities(data.activity || [])
     } catch (e) {

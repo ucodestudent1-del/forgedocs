@@ -8,7 +8,8 @@ ARG NEXT_PUBLIC_SUPABASE_URL=https://placeholder.supabase.co
 ARG NEXT_PUBLIC_SUPABASE_ANON_KEY=placeholder-anon-key
 ARG NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_placeholder
 ARG NEXT_PUBLIC_APP_URL=http://localhost:3000
-# Allow mock Supabase client during build so static generation works without real DB
+# Allow mock Supabase client during build when real creds aren't available.
+# Dashboard layout gracefully handles build phase via guest user (see IS_BUILD).
 ARG NEXT_PUBLIC_BUILD_MOCK=true
 
 # Set them as environment variables for the build

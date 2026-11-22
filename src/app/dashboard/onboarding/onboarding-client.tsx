@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { CheckCircle, ArrowRight, FileText, Zap, Shield, Users, Settings, FileText as FileTextIcon } from "lucide-react"
 import Link from "next/link"
 import { useToast } from "@/components/ui/use-toast"
+import { apiFetch } from "@/lib/api-client"
 
 const ONBOARDING_STEPS = [
   {
@@ -62,7 +63,7 @@ export default function OnboardingClient({
   const StepIcon = ONBOARDING_STEPS[currentStep - 1].Icon
 
   async function goToStep(step: number) {
-    const res = await fetch("/api/onboarding/step", {
+    const res = await apiFetch("/api/onboarding/step", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ step }),
@@ -76,7 +77,7 @@ export default function OnboardingClient({
   }
 
   async function completeOnboarding() {
-    const res = await fetch("/api/onboarding/complete", {
+    const res = await apiFetch("/api/onboarding/complete", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
     })

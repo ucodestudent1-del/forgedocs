@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { apiFetch } from "@/lib/api-client"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -151,7 +152,7 @@ export default function DashboardPage() {
 
   async function fetchDocuments() {
     try {
-      const res = await fetch("/api/documents?limit=10&pinned=true")
+      const res = await apiFetch("/api/documents?limit=10&pinned=true")
       const data = await res.json()
       setDocuments(data.documents || [])
     } catch (e) {
@@ -161,7 +162,7 @@ export default function DashboardPage() {
 
   async function fetchRecentActivity() {
     try {
-      const res = await fetch("/api/activity?limit=10")
+      const res = await apiFetch("/api/activity?limit=10")
       const data = await res.json()
       setRecentActivity(data.activity || [])
     } catch (e) {
@@ -173,7 +174,7 @@ export default function DashboardPage() {
 
   async function fetchUsageStats() {
     try {
-      const res = await fetch("/api/usage")
+      const res = await apiFetch("/api/usage")
       const data = await res.json()
       setUsageStats(data.usage || null)
     } catch (e) {

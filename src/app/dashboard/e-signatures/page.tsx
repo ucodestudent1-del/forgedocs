@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { DashboardHeader } from "@/components/dashboard/header"
 import { useToast } from "@/components/ui/use-toast"
+import { apiFetch } from "@/lib/api-client"
 import {
   FileSignature,
   PenTool,
@@ -186,7 +187,7 @@ export default function ESignaturesPage() {
         formData.append("signers", JSON.stringify(signers))
         formData.append("message", message)
 
-        const res = await fetch("/api/e-signatures/send", {
+        const res = await apiFetch("/api/e-signatures/send", {
           method: "POST",
           body: formData,
         })

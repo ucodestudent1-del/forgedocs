@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { File, Plus, Search } from "lucide-react"
+import { apiFetch } from "@/lib/api-client"
 
 export default function TemplatesPage() {
   const [templates, setTemplates] = useState<any[]>([])
@@ -16,7 +17,7 @@ export default function TemplatesPage() {
 
   async function fetchTemplates() {
     try {
-      const res = await fetch("/api/templates")
+      const res = await apiFetch("/api/templates")
       const data = await res.json()
       setTemplates(data.templates || [])
     } catch (e) {

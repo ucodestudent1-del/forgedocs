@@ -10,6 +10,7 @@ import { DashboardHeader } from "@/components/dashboard/header"
 import { useToast } from "@/components/ui/use-toast"
 import { updateProfile, updateProfileLanguage, updateNotificationPreferences } from "@/app/actions/settings"
 import { createBrowserSupabaseClient } from "@/lib/supabase-browser"
+import { apiFetch } from "@/lib/api-client"
 import {
   User,
   Mail,
@@ -266,7 +267,7 @@ export default function SettingsPage() {
   const handleRevokeSession = async (sessionId: string) => {
     setRevoking(true)
     try {
-      const res = await fetch(`/api/auth/sessions/${sessionId}`, { method: "DELETE" })
+      const res = await apiFetch(`/api/auth/sessions/${sessionId}`, { method: "DELETE" })
       if (!res.ok) throw new Error("Failed to revoke session")
       setSessions(sessions.filter((s) => s.id !== sessionId))
       toast({ title: "Session revoked", variant: "success" })
@@ -292,7 +293,7 @@ export default function SettingsPage() {
         setImporting(false)
         return
       }
-      const res = await fetch("/api/documents/import", {
+      const res = await apiFetch("/api/documents/import", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
@@ -310,7 +311,7 @@ export default function SettingsPage() {
     if (confirm("Revoke all other sessions? You'll be logged out everywhere except this device.")) {
       setRevoking(true)
       try {
-        const res = await fetch("/api/auth/sessions", { method: "DELETE" })
+        const res = await apiFetch("/api/auth/sessions", { method: "DELETE" })
         if (!res.ok) throw new Error("Failed to revoke sessions")
         setSessions(sessions.filter((s) => s.current))
         toast({ title: "All other sessions revoked", variant: "success" })

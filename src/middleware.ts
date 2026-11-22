@@ -19,11 +19,12 @@ export async function middleware(request: NextRequest) {
     const pathname = request.nextUrl?.pathname ?? "/"
     const requestId = request.headers.get("x-request-id") ?? generateRequestId()
 
-    // Skip non-page routes (static assets, internals)
+    // Skip non-page routes (static assets, internals, RSC payloads)
     const isStaticRoute =
       pathname.startsWith("/_next") ||
       pathname.startsWith("/_vercel") ||
       pathname.startsWith("/_not-found") ||
+      pathname.startsWith("/_rsc") ||
       pathname.includes(".")
 
     const response = NextResponse.next()

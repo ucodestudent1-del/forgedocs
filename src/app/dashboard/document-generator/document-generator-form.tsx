@@ -8,6 +8,7 @@ import { TEMPLATE_LIBRARY, getTemplateById } from "@/lib/templateLibrary"
 import { DocumentGenerator } from "@/lib/documentGenerator"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useToast } from "@/components/ui/use-toast"
+import { apiFetch } from "@/lib/api-client"
 
 interface ServerTemplate {
   id: string
@@ -43,7 +44,7 @@ export default function DocumentGeneratorForm() {
   useEffect(() => {
     const loadTemplates = async () => {
       try {
-        const res = await fetch("/api/templates?is_system=true")
+        const res = await apiFetch("/api/templates?is_system=true")
         if (res.ok) {
           const data = await res.json()
           if (data.templates && data.templates.length > 0) {

@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { DashboardHeader } from "@/components/dashboard/header"
 import { useToast } from "@/components/ui/use-toast"
+import { apiFetch } from "@/lib/api-client"
 import {
   FileImage,
   Files,
@@ -119,7 +120,7 @@ export default function PDFToolsPage() {
       files.forEach((file) => formData.append("files", file))
       formData.append("tool", selectedTool!)
 
-      const res = await fetch("/api/pdf-tools/process", {
+      const res = await apiFetch("/api/pdf-tools/process", {
         method: "POST",
         body: formData,
       })

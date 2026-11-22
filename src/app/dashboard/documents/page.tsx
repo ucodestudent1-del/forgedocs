@@ -8,6 +8,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Checkbox } from "@/components/ui/checkbox"
 import { FileText, File, FileSpreadsheet, Search, Plus, Trash2, FolderOpen, Download, Share2, Archive, MoreHorizontal, Check } from "lucide-react"
 import { DashboardHeader } from "@/components/dashboard/header"
+import { apiFetch } from "@/lib/api-client"
 import { useToast } from "@/components/ui/use-toast"
 import { cn } from "@/lib/utils"
 
@@ -22,7 +23,7 @@ export default function DocumentsPage() {
   async function fetchDocuments() {
     try {
       const params = new URLSearchParams({ search, limit: "50" })
-      const res = await fetch(`/api/documents?${params}`)
+      const res = await apiFetch(`/api/documents?${params}`)
       const data = await res.json()
       setDocuments(data.documents || [])
     } catch (e) {
@@ -57,7 +58,7 @@ export default function DocumentsPage() {
     if (selectedIds.length === 0) return
     setBulkActionLoading(action)
     try {
-      const res = await fetch("/api/documents/bulk", {
+      const res = await apiFetch("/api/documents/bulk", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action, ids: selectedIds, ...extraData }),

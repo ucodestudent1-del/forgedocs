@@ -6,6 +6,7 @@ import { useToast } from "@/components/ui/use-toast"
 import Link from "next/link"
 import { useState } from "react"
 import { ChevronLeft } from "lucide-react"
+import { apiFetch } from "@/lib/api-client"
 
 export default function AdminInviteUserPage() {
   const [email, setEmail] = useState("")
@@ -23,7 +24,7 @@ export default function AdminInviteUserPage() {
         .map(b => b.toString(16).padStart(2, '0'))
         .join('')
       
-      const res = await fetch("/api/auth/signup", {
+      const res = await apiFetch("/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password, full_name: email, role }),
