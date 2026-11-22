@@ -73,7 +73,7 @@ export async function createRouteClient() {
           const cookieStore = await cookies()
           return cookieStore.getAll()
         },
-        async setAll(cookiesToSet) {
+        async setAll(cookiesToSet: { name: string; value: string; options: any }[]) {
           try {
             const cookieStore = await cookies()
             cookiesToSet.forEach(({ name, value, options }) =>

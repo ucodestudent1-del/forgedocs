@@ -9,15 +9,18 @@ import { cacheGet, cacheSet, cacheDel } from "@/lib/cache"
 import { logAuditEvent, getClientIp, getClientUserAgent } from "@/lib/audit"
 import { checkTierLimit, trackUsage } from "@/lib/tierLimits"
 import { withErrorBoundary, createAppError } from "@/lib/api-error"
+import { withTimeout } from "@/lib/with-timeout"
 import { getGuestUserId, isGuestMode } from "@/lib/guest-session"
 import type { Database } from "@/types/database"
+
+const SUPABASE_TIMEOUT_MS = 10000
 
 export const GET = withErrorBoundary(async (req) => {
   const rateLimitError = await documentRateLimit(req)
   if (rateLimitError) return rateLimitError
 
   const supabase = await getRouteClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { data: { user } } = await withTimeout<{ data: { user: any } }>(supabase.auth.getUser(), SUPABASE_TIMEOUT_MS)
 
   let effectiveUser = user
   if (!effectiveUser && isGuestMode()) {
@@ -60,8 +63,10 @@ export const GET = withErrorBoundary(async (req) => {
     query = query.order("updated_at", { ascending: false })
   }
 
-  const { data, error, count } = await query
-    .range(offset, offset + limit - 1)
+  const { data, error, count } = await withTimeout<{ data: any[]; error: any; count: number }>(
+    query.range(offset, offset + limit - 1),
+    SUPABASE_TIMEOUT_MS
+  )
 
   if (error) {
     throw createAppError(error.message, 500, "DATABASE_ERROR")
@@ -86,7 +91,7 @@ export const POST = withErrorBoundary(async (req) => {
   await validateCSRF(req)
 
   const supabase = await getRouteClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { data: { user } } = await withTimeout<{ data: { user: any } }>(supabase.auth.getUser(), SUPABASE_TIMEOUT_MS)
 
   let effectiveUser = user
   if (!effectiveUser && isGuestMode()) {
@@ -113,12 +118,15 @@ export const POST = withErrorBoundary(async (req) => {
 
   // If template_id provided, fetch template and use its content as starting point
   if (template_id) {
-    const { data: template, error: templateError } = await supabase
-      .from("templates")
-      .select("*")
-      .eq("id", template_id)
-      .eq("user_id", effectiveUser.id)
-      .single()
+    const { data: template, error: templateError } = await withTimeout<{ data: any; error: any }>(
+      supabase
+        .from("templates")
+        .select("*")
+        .eq("id", template_id)
+        .eq("user_id", effectiveUser.id)
+        .single(),
+      SUPABASE_TIMEOUT_MS
+    )
 
     if (templateError || !template) {
       return NextResponse.json({ error: "Template not found" }, { status: 404 })
@@ -132,27 +140,34 @@ export const POST = withErrorBoundary(async (req) => {
 
   const storagePath = `documents/${effectiveUser.id}/${randomUUID()}.json`
 
-  const { data: doc, error } = await supabase
-    .from("documents")
-    .insert({
-      user_id: effectiveUser.id,
-      title,
-      description,
-      content,
-      storage_path: storagePath,
-      mime_type: content_type,
-      file_size: Buffer.byteLength(content),
-      version: 1,
-    })
-    .select()
-    .single()
+  const { data: doc, error } = await withTimeout<{ data: any; error: any }>(
+    supabase
+      .from("documents")
+      .insert({
+        user_id: effectiveUser.id,
+        title,
+        description,
+        content,
+        storage_path: storagePath,
+        mime_type: content_type,
+        file_size: Buffer.byteLength(content),
+        version: 1,
+      })
+      .select()
+      .single(),
+    SUPABASE_TIMEOUT_MS
+  )
 
   if (error) {
     throw createAppError(error.message, 500, "DATABASE_ERROR")
   }
 
-  // Track usage
-  await trackUsage(effectiveUser.id, "documents_created", 1)
+  // Track usage (non-blocking — failure must not break document creation)
+  try {
+    await trackUsage(effectiveUser.id, "documents_created", 1)
+  } catch {
+    // Usage tracking failure must not break the primary request
+  }
 
   // Invalidate document list cache
   await cacheDel(`documents:${effectiveUser.id}:*`)

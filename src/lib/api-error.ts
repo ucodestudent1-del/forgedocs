@@ -45,12 +45,18 @@ export function getErrorStatusCode(error: unknown): number {
     return error.statusCode
   }
   if (error instanceof Error) {
+    // Network errors (DNS, connection refused, TLS, unreachable host) → 503
+    if ((error as any).isNetworkError) {
+      return 503
+    }
     const msg = error.message.toLowerCase()
     if (msg.includes("unauthorized") || msg.includes("401")) return 401
     if (msg.includes("forbidden") || msg.includes("403")) return 403
     if (msg.includes("not found") || msg.includes("404")) return 404
     if (msg.includes("conflict") || msg.includes("409")) return 409
     if (msg.includes("rate limit") || msg.includes("429")) return 429
+    if (msg.includes("timeout") || msg.includes("timed out")) return 504
+    if (msg.includes("fetch") || msg.includes("network")) return 503
   }
   return 500
 }
@@ -89,7 +95,18 @@ export function apiErrorResponse(error: unknown, requestId: string): NextRespons
 
   // Log full error server-side (including stack trace) but never return it to client
   if (statusCode >= 500) {
-    logger.error(`[${requestId}] Server error`, { error: error instanceof Error ? error.message : String(error), stack: error instanceof Error ? error.stack : undefined })
+    const errorMeta: Record<string, unknown> = {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    }
+    // Include endpoint context for network errors (without credentials)
+    if ((error as any)?.endpoint) {
+      errorMeta.endpoint = (error as any).endpoint
+    }
+    if ((error as any)?.cause) {
+      errorMeta.cause = (error as any).cause instanceof Error ? (error as any).cause.message : String((error as any).cause)
+    }
+    logger.error(`[${requestId}] Server error`, errorMeta)
   }
 
   return NextResponse.json(response, { status: statusCode })
