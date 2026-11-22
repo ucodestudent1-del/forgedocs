@@ -1,5 +1,6 @@
 import ReaderPage from "@/components/reader/ReaderPage"
 import { getDocumentWithTranslation } from "@/app/actions/translations"
+import { notFound } from "next/navigation"
 
 export const dynamic = "force-dynamic"
 
@@ -13,7 +14,7 @@ export default async function ReaderPageRoute({
   const doc = await getDocumentWithTranslation(id)
 
   if (!doc) {
-    return <ReaderPage document={{ error: "Document not found" }} />
+    notFound()
   }
 
   return <ReaderPage document={doc} />
