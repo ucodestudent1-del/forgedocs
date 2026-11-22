@@ -17,9 +17,13 @@ function createMockQueryBuilder() {
 }
 
 function createMockClient() {
+  const guestUser = isGuestMode()
+    ? { data: { user: { id: getGuestUserId(), email: null } }, error: null }
+    : { data: { user: null }, error: null }
+
   return {
     auth: {
-      getUser: async () => ({ data: { user: null }, error: null }),
+      getUser: async () => guestUser,
       getSession: async () => ({ data: { session: null }, error: null }),
       signInWithOAuth: async () => ({ data: { url: "" }, error: null }),
       signInWithPassword: async () => ({ data: { user: null }, error: { message: "Build mode" } }),
@@ -89,9 +93,11 @@ export async function createRouteClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-  // Return null if env vars are missing instead of throwing — prevents SSR crashes
+  // Return mock client when env vars are missing or placeholders — prevents SSR crashes
+  // and lets API routes return clean 401s instead of crashing on null client
   if (!url || !key || url.includes("placeholder") || key.includes("placeholder")) {
-    return null
+    routeClientCache = createMockClient()
+    return routeClientCache
   }
 
   let client = createServerClient<Database>(

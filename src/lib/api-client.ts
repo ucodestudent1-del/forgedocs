@@ -45,6 +45,25 @@ export async function apiFetch(
   return res
 }
 
+export async function fetchJson(
+  input: RequestInfo | URL,
+  init?: RequestInit,
+): Promise<{ ok: boolean; status: number; data: any; error?: string }> {
+  try {
+    const res = await apiFetch(input, init)
+    let data: any = null
+    try {
+      data = await res.json()
+    } catch {
+      data = null
+    }
+    return { ok: res.ok, status: res.status, data, error: res.ok ? undefined : `HTTP ${res.status}` }
+  } catch (err) {
+    await handleUnauthorized()
+    return { ok: false, status: 0, data: null, error: err instanceof Error ? err.message : "Request failed" }
+  }
+}
+
 export function useAuth() {
   const router = useRouter()
   const [authenticated, setAuthenticated] = useAuthState()
