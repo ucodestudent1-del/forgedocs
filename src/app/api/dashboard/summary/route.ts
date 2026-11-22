@@ -85,10 +85,6 @@ export const GET = withErrorBoundary(async (req) => {
   // Fetch usage stats
   const limits = await checkTierLimit(effectiveUser.id, "documents_created")
 
-  const now = new Date()
-  const monthKey = `${now.getFullYear()}-${now.getMonth()}`
-  const storageRedisKey = `tierlimit:${effectiveUser.id}:storage_bytes:${monthKey}`
-
   const { data: docs } = await supabase
     .from("documents")
     .select("file_size")

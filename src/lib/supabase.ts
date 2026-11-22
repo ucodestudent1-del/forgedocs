@@ -144,33 +144,7 @@ export async function createRouteClient() {
 }
 
 export async function getRouteClient() {
-  const client = await createRouteClient()
-
-  // Wrap auth.getUser in a Proxy so that any access to supabase.auth.getUser
-  // returns the guest-user version when no session exists. Using a Proxy
-  // ensures the wrapper works even if supabase.auth is a getter that returns
-  // a new object on each access.
-  return new Proxy(client, {
-    get(target, prop) {
-      if (prop === 'auth') {
-        return new Proxy(target.auth, {
-          get(authTarget, authProp) {
-            if (authProp === 'getUser') {
-              return async () => {
-                const { data, error } = await authTarget.getUser()
-                if ((!data || !data.user) && !error) {
-                  return { data: { user: { id: getGuestUserId(), email: null } }, error: null }
-                }
-                return { data, error }
-              }
-            }
-            return authTarget[authProp]
-          }
-        })
-      }
-      return target[prop]
-    }
-  })
+  return createRouteClient()
 }
 
 export async function createServiceRoleClient() {
