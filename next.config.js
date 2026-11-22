@@ -25,12 +25,12 @@ const nextConfig = {
     minimumCacheTTL: 31536000,
   },
   async headers() {
-    let csp = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self' https: wss:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+    let csp = "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: https:; font-src 'self'; connect-src 'self' https: wss:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
     try {
       csp = [
         "default-src 'self'",
-        "script-src 'self' 'unsafe-inline'",
-        "style-src 'self' 'unsafe-inline'",
+        "script-src 'self'",
+        "style-src 'self'",
         "img-src 'self' data: https:",
         "font-src 'self'",
         "connect-src 'self' https: wss:",

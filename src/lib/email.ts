@@ -1,5 +1,6 @@
 import { Resend } from "resend"
 import { resendCircuitBreaker } from "@/lib/circuit-breaker"
+import logger from "@/lib/logger"
 
 let resendInstance: Resend | null = null
 
@@ -35,7 +36,7 @@ export function escapeHtml(unsafe: string): string {
 
 export async function sendEmail(template: EmailTemplate): Promise<{ success: boolean; error?: string }> {
   if (!process.env.RESEND_API_KEY) {
-    console.error("RESEND_API_KEY not configured")
+    logger.error("RESEND_API_KEY not configured")
     return { success: false, error: "Email service not configured" }
   }
 
@@ -52,13 +53,13 @@ export async function sendEmail(template: EmailTemplate): Promise<{ success: boo
     )
 
     if (result.error) {
-      console.error("Resend error:", result.error)
+      logger.error("Resend error:", { error: result.error.message })
       return { success: false, error: result.error.message }
     }
 
     return { success: true }
   } catch (error) {
-    console.error("Email send failed:", error)
+    logger.error("Email send failed:", { error: error instanceof Error ? error.message : String(error) })
     return { success: false, error: error instanceof Error ? error.message : "Unknown error" }
   }
 }

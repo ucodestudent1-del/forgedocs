@@ -11,7 +11,7 @@ ARG NEXT_PUBLIC_APP_URL=http://localhost:3000
 # Allow mock Supabase client during build when real creds aren't available.
 # Dashboard layout gracefully handles build phase via guest user (see IS_BUILD).
 ARG NEXT_PUBLIC_BUILD_MOCK=true
-ARG NEXT_PUBLIC_GUEST_MODE=true
+ARG NEXT_PUBLIC_GUEST_MODE=false
 
 # Set them as environment variables for the build
 ENV NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL
@@ -33,7 +33,7 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 ENV PORT=3000
-ENV NEXT_PUBLIC_GUEST_MODE=true
+ENV NEXT_PUBLIC_GUEST_MODE=false
 
 # Add non-root user for security
 RUN addgroup --system --gid 1001 nodejs

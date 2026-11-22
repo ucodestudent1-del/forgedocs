@@ -631,6 +631,7 @@ export function RichEditor({
           <div className="flex items-center gap-3">
             <Input
               ref={titleRef}
+              id="editor-title-label"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Document title..."
@@ -646,7 +647,13 @@ export function RichEditor({
 
           <div className="flex items-center gap-1">
             {TOOLBAR_GROUPS.map((group) => (
-              <ToolbarGroup key={group.name} group={group} readOnly={readOnly} executeFormat={executeFormat} />
+              <ToolbarGroup
+                key={group.name}
+                group={group}
+                readOnly={readOnly}
+                executeFormat={executeFormat}
+                activeFormats={activeFormats}
+              />
             ))}
 
             <Separator className="h-6 mx-2" />
@@ -755,7 +762,24 @@ export function RichEditor({
             className="prose prose-lg max-w-none min-h-[500px] p-6 bg-white rounded-lg shadow-sm border focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
             spellCheck={true}
             data-placeholder={readOnly ? "" : "Start writing..."}
+            role="textbox"
+            aria-multiline="true"
+            aria-label="Document content"
+            aria-readonly={readOnly}
+            aria-disabled={readOnly}
+            aria-labelledby="editor-title-label editor-content-live"
           />
+
+          {/* Live region for screen reader announcements */}
+          <div
+            id="editor-content-live"
+            aria-live="polite"
+            aria-atomic="true"
+            className="sr-only"
+          >
+            {content.length > 0 ? `${wordCount} words, ${charCount} characters` : "Empty document"}
+            {Object.entries(activeFormats).some(([, active]) => active) ? ` · Active formats: ${Object.entries(activeFormats).filter(([, active]) => active).map(([format]) => format).join(", ")}` : ""}
+          </div>
 
           {/* Link Dialog */}
           {showLinkDialog && (
@@ -826,41 +850,51 @@ function ToolbarGroup({
   group,
   readOnly,
   executeFormat,
+  activeFormats,
 }: {
   group: ToolbarGroup
   readOnly: boolean
   executeFormat: (command: string, value?: string) => void
+  activeFormats: Record<string, boolean>
 }) {
   return (
     <div className="flex items-center gap-1">
-      {group.items.map((item) => (
-        <Button
-          key={item.id}
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8"
-          onClick={() => {
-            if (item.action === "link") {
-              // Handled by parent
-            } else if (item.action === "image") {
-              // Handled by parent
-            } else if (item.action === "table") {
-              executeFormat("insertHTML", "<table><tr><td>Cell</td></tr></table>")
-            } else if (item.format) {
-              if (item.value) {
-                executeFormat(item.format, item.value)
-              } else {
-                executeFormat(item.format)
+      {group.items.map((item) => {
+        const isActive = group.name === "formatting" || group.name === "blocks" || group.name === "alignment" || group.name === "textStyle"
+          ? activeFormats[item.id] === true
+          : false
+        return (
+          <Button
+            key={item.id}
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={() => {
+              if (item.action === "link") {
+                // Handled by parent
+              } else if (item.action === "image") {
+                // Handled by parent
+              } else if (item.action === "table") {
+                executeFormat("insertHTML", "<table><tr><td>Cell</td></tr></table>")
+              } else if (item.format) {
+                if (item.value) {
+                  executeFormat(item.format, item.value)
+                } else {
+                  executeFormat(item.format)
+                }
               }
-            }
-          }}
-          disabled={readOnly}
-          title={item.title + (item.shortcut ? ` (${item.shortcut})` : "")}
-        >
-          <item.icon className="h-4 w-4" />
-        </Button>
-      ))}
-      {group.name !== "textStyle" && <Separator className="h-6 mx-1" />}
+            }}
+            disabled={readOnly}
+            title={item.title + (item.shortcut ? ` (${item.shortcut})` : "")}
+            aria-label={item.title}
+            aria-pressed={isActive || undefined}
+            tabIndex={0}
+          >
+            <item.icon className="h-4 w-4" aria-hidden="true" />
+          </Button>
+        )
+      })}
+      {group.name !== "textStyle" && <Separator className="h-6 mx-1" aria-hidden="true" />}
     </div>
   )
 }

@@ -1,9 +1,7 @@
 import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
 import type { Database } from "@/types/database"
-import { getGuestUserId, isGuestMode } from "@/lib/guest-session"
-
-let routeClientCache: any = null
+import { getGuestUserId } from "@/lib/guest-session"
 
 // Mock query builder that chains all Supabase query methods
 function createMockQueryBuilder() {
@@ -16,8 +14,9 @@ function createMockQueryBuilder() {
   return chain
 }
 
-function createMockClient() {
-  const guestUser = { data: { user: { id: getGuestUserId(), email: null } }, error: null }
+async function createMockClient() {
+  const guestUserId = await getGuestUserId()
+  const guestUser = { data: { user: { id: guestUserId, email: null } }, error: null }
 
   return {
     auth: {
@@ -46,11 +45,30 @@ function createMockClient() {
   }
 }
 
+function injectGuestUser(client: any): any {
+  const realGetUser = client.auth.getUser.bind(client.auth)
+  ;(client.auth as any).getUser = async () => {
+    const provideGuest = async () => ({
+      data: { user: { id: await getGuestUserId(), email: null } },
+      error: null,
+    })
+    try {
+      const { data, error } = await realGetUser()
+      if ((!data || !data.user) && !error) {
+        return provideGuest()
+      }
+      return { data, error }
+    } catch {
+      return provideGuest()
+    }
+  }
+  return client
+}
+
 export async function createRouteClient() {
-  // Return mock client during build only when explicitly opted in
-  // or when Supabase env vars are placeholders (safe fallback for CI/build)
-  // Do NOT cache during build — the guest-mode wrapper must be applied at runtime
-  if (typeof window === "undefined" && process.env.NEXT_PHASE === "phase-production-build") {
+  const isBuild = typeof window === "undefined" && process.env.NEXT_PHASE === "phase-production-build"
+
+  if (isBuild) {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL
     const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
     const useMock =
@@ -61,12 +79,9 @@ export async function createRouteClient() {
       key.includes("placeholder")
 
     if (useMock) {
-      return createMockClient()
+      return await createMockClient()
     }
 
-    // Build with real (non-placeholder) Supabase credentials: create a real client.
-    // No session cookie exists at build time, so getUser() returns null —
-    // callers (e.g. dashboard layout) must handle this gracefully.
     return createServerClient<Database>(
       url,
       key,
@@ -83,19 +98,14 @@ export async function createRouteClient() {
     )
   }
 
-  if (routeClientCache) return routeClientCache
-
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-  // Return mock client when env vars are missing or placeholders — prevents SSR crashes
-  // and lets API routes return clean 401s instead of crashing on null client
   if (!url || !key || url.includes("placeholder") || key.includes("placeholder")) {
-    routeClientCache = createMockClient()
-    return routeClientCache
+    return await createMockClient()
   }
 
-  let client = createServerClient<Database>(
+  const client = createServerClient<Database>(
     url,
     key,
     {
@@ -118,28 +128,12 @@ export async function createRouteClient() {
     },
   )
 
-  // Always inject a guest user when no Supabase session exists. This allows
-  // unauthenticated requests to access core APIs without a login session when
-  // NEXT_PUBLIC_GUEST_MODE is enabled. Database RLS still scopes queries by
-  // the guest user_id.
-  const realGetUser = client.auth.getUser.bind(client.auth)
-  ;(client.auth as any).getUser = async () => {
-    const provideGuest = () => ({
-      data: { user: { id: getGuestUserId(), email: null } },
-      error: null,
-    })
-    try {
-      const { data, error } = await realGetUser()
-      if ((!data || !data.user) && !error) {
-        return provideGuest()
-      }
-      return { data, error }
-    } catch {
-      return provideGuest()
-    }
+  // Inject guest user when no Supabase session exists and guest mode is enabled.
+  // Each call returns a fresh client — no cross-request caching of cookies or state.
+  if (process.env.NEXT_PUBLIC_GUEST_MODE === "true") {
+    return injectGuestUser(client)
   }
 
-  routeClientCache = client
   return client
 }
 

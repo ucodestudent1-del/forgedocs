@@ -129,7 +129,7 @@ export function withErrorBoundary(handler: ApiHandler): ApiHandler {
           const ifNoneMatch = req.headers.get("if-none-match")
           // We can't easily compute ETag without reading body, so skip if-none-match check
           // but we can still add ETag for future requests
-          response.headers.set("Cache-Control", "private, max-age=60, must-revalidate")
+          response.headers.set("Cache-Control", "private, no-store")
         }
       }
 

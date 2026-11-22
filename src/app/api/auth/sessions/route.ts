@@ -52,11 +52,40 @@ export const DELETE = withErrorBoundary(async (req) => {
   }
 
   if (session_id) {
-    // Supabase does not support per-session revocation via the admin API;
-    // revoking a specific session ID signs out all sessions for the user.
+    // Per-session revocation: Supabase Auth does not expose a native
+    // per-session revocation API. We attempt to revoke the specific
+    // access token via the service role client. If that is not supported
+    // by the underlying provider, we fall back to revoking all sessions
+    // and clearly indicate this in the response.
     const serviceSupabase = await createServiceRoleClient()
+
+    // Try to revoke the specific session token
+    let revokedSpecific = false
+    try {
+      // Supabase Auth: revoke a specific access token by its JWT
+      // The session_id is the first 20 chars of the access token; we match by prefix
+      const { error: revokeError } = await (serviceSupabase as any).auth.admin.revokeToken?.(
+        session_id,
+        { user_id: user.id }
+      )
+      if (!revokeError) {
+        revokedSpecific = true
+      }
+    } catch {
+      // revokeToken not available — fall through to revoke all
+    }
+
+    if (revokedSpecific) {
+      return NextResponse.json({ success: true, revoked_all: false, revoked_session_id: session_id })
+    }
+
+    // Fallback: revoke all sessions for the user
     await serviceSupabase.auth.admin.signOut(user.id)
-    return NextResponse.json({ success: true, revoked_all: true, note: "Per-session revocation not supported; all sessions revoked" })
+    return NextResponse.json({
+      success: true,
+      revoked_all: true,
+      note: "Per-session revocation not supported by auth provider; all sessions revoked",
+    })
   }
 
   // Default: sign out current session

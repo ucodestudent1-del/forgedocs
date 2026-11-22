@@ -206,6 +206,10 @@ export const POST = withErrorBoundary(async (req: Request): Promise<NextResponse
       if (source_url.includes("..") || source_url.includes("://") || source_url.startsWith("/")) {
         throw createAppError("Invalid source_url path", 400, "INVALID_SOURCE_URL")
       }
+      // Verify the source file belongs to the authenticated user
+      if (!source_url.startsWith(`${user.id}/`)) {
+        throw createAppError("Source file does not belong to the authenticated user", 403, "FORBIDDEN")
+      }
     }
   }
 

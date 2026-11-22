@@ -6,54 +6,76 @@ export const MFA_ISSUER = "ForgeDocs"
 
 const ENCRYPTION_ALGORITHM = "aes-256-gcm"
 const IV_LENGTH = 16
+const CURRENT_KEY_VERSION = 1
 
-function getEncryptionKey(): Buffer {
-  const raw = process.env.MFA_SECRET_ENCRYPTION_KEY
+function getEncryptionKey(version: number): Buffer {
+  const envVar = version === 1 ? "MFA_SECRET_ENCRYPTION_KEY" : `MFA_SECRET_ENCRYPTION_KEY_V${version}`
+  const raw = process.env[envVar]
   if (!raw) {
-    throw new Error("MFA_SECRET_ENCRYPTION_KEY is not configured")
+    throw new Error(`${envVar} is not configured`)
   }
   return createHash("sha256").update(raw).digest()
 }
 
 /**
  * Encrypt an MFA TOTP secret at rest using AES-256-GCM.
- * Returns `iv:authTag:ciphertext` (all hex).
+ * Returns `v<version>:iv:authTag:ciphertext` (all hex).
  */
 export function encryptSecret(plaintext: string): string {
-  const key = getEncryptionKey()
+  const key = getEncryptionKey(CURRENT_KEY_VERSION)
   const iv = randomBytes(IV_LENGTH)
   const cipher = createCipheriv(ENCRYPTION_ALGORITHM, key, iv)
   const ciphertext = Buffer.concat([cipher.update(plaintext, "utf8"), cipher.final()])
   const authTag = cipher.getAuthTag()
-  return `${iv.toString("hex")}:${authTag.toString("hex")}:${ciphertext.toString("hex")}`
+  return `v${CURRENT_KEY_VERSION}:${iv.toString("hex")}:${authTag.toString("hex")}:${ciphertext.toString("hex")}`
 }
 
 /**
- * Decrypt an MFA TOTP secret stored as `iv:authTag:ciphertext` (hex).
+ * Decrypt an MFA TOTP secret stored as `v<version>:iv:authTag:ciphertext` (hex).
+ * Tries all configured encryption key versions to support key rotation.
  * Falls back to returning the value unchanged when it is not in encrypted format
  * (plaintext secrets from before encryption was introduced).
  */
-export function decryptSecret(ciphertext: string): string {
-  const key = getEncryptionKey()
-  const [ivHex, tagHex, dataHex] = ciphertext.split(":")
-  if (!ivHex || !tagHex || !dataHex) {
-    throw new Error("Invalid encrypted secret format")
+export function decryptSecret(ciphertext: string): string | null {
+  const [versionStr, ivHex, tagHex, dataHex] = ciphertext.split(":")
+  if (!versionStr || !ivHex || !tagHex || !dataHex) {
+    return null
   }
-  const decipher = createDecipheriv(ENCRYPTION_ALGORITHM, key, Buffer.from(ivHex, "hex"))
-  decipher.setAuthTag(Buffer.from(tagHex, "hex"))
-  const decrypted = Buffer.concat([decipher.update(Buffer.from(dataHex, "hex")), decipher.final()])
-  return decrypted.toString("utf8")
+
+  const version = parseInt(versionStr.replace("v", ""), 10)
+  if (isNaN(version)) {
+    return null
+  }
+
+  // Try the key version that encrypted the data, plus fallback versions
+  const versionsToTry = [version, CURRENT_KEY_VERSION].filter((v, i, arr) => arr.indexOf(v) === i)
+
+  for (const v of versionsToTry) {
+    try {
+      const key = getEncryptionKey(v)
+      const decipher = createDecipheriv(ENCRYPTION_ALGORITHM, key, Buffer.from(ivHex, "hex"))
+      decipher.setAuthTag(Buffer.from(tagHex, "hex"))
+      const decrypted = Buffer.concat([decipher.update(Buffer.from(dataHex, "hex")), decipher.final()])
+      return decrypted.toString("utf8")
+    } catch {
+      // Wrong key version — try next
+      continue
+    }
+  }
+
+  return null
 }
 
 /**
- * Returns true when the stored value is in encrypted `iv:tag:data` form.
+ * Returns true when the stored value is in encrypted `v<version>:iv:tag:data` form.
  */
 export function isEncryptedSecret(value: string | null): boolean {
   if (!value) return false
   const parts = value.split(":")
   return (
-    parts.length === 3 &&
-    parts.every((p) => /^[0-9a-f]+$/.test(p))
+    parts.length === 4 &&
+    /^v\d+$/.test(parts[0]) &&
+    parts.slice(1).every((p) => /^[0-9a-f]+$/.test(p))
   )
 }
 
@@ -64,13 +86,19 @@ export function isEncryptedSecret(value: string | null): boolean {
 export function resolveStoredSecret(stored: string | null): string | null {
   if (!stored) return null
   if (isEncryptedSecret(stored)) {
-    try {
-      return decryptSecret(stored)
-    } catch {
-      return null
-    }
+    return decryptSecret(stored)
   }
   return stored
+}
+
+/**
+ * Re-encrypt a secret using the current key version. Use this during key rotation
+ * to migrate existing secrets to a new encryption key.
+ */
+export function reEncryptSecret(encryptedValue: string): string | null {
+  const decrypted = decryptSecret(encryptedValue)
+  if (!decrypted) return null
+  return encryptSecret(decrypted)
 }
 
 export function generateSecret(): string {

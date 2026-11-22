@@ -4,7 +4,7 @@ import { documentRateLimit } from "@/lib/rate-limiter"
 import { withErrorBoundary, createAppError, ERRORS } from "@/lib/api-error"
 import { cacheGet, cacheSet } from "@/lib/cache"
 import { getGuestUserId, isGuestMode } from "@/lib/guest-session"
-import { checkTierLimit } from "@/lib/tierLimits"
+import { checkTierLimit, getTierLimits } from "@/lib/tierLimits"
 import { MAX_PAGE_SIZE, parsePagination } from "@/lib/pagination"
 
 export const GET = withErrorBoundary(async (req) => {
@@ -16,7 +16,7 @@ export const GET = withErrorBoundary(async (req) => {
 
   let effectiveUser = user
   if (!effectiveUser && isGuestMode()) {
-    effectiveUser = { id: getGuestUserId(), email: null } as { id: string; email: string | null }
+    effectiveUser = { id: await getGuestUserId(), email: null } as { id: string; email: string | null }
   }
   if (!effectiveUser) {
     return NextResponse.json({ error: ERRORS.UNAUTHORIZED.message }, { status: 401 })
@@ -82,8 +82,10 @@ export const GET = withErrorBoundary(async (req) => {
     throw createAppError(actError.message, 500, "DATABASE_ERROR")
   }
 
-  // Fetch usage stats
-  const limits = await checkTierLimit(effectiveUser.id, "documents_created")
+  // Fetch tier limits for storage cap
+  const tierLimits = await getTierLimits(effectiveUser.id)
+  // Fetch usage stats (rate limit for documents)
+  const rateLimit = await checkTierLimit(effectiveUser.id, "documents_created")
 
   const { data: docs } = await supabase
     .from("documents")
@@ -95,10 +97,13 @@ export const GET = withErrorBoundary(async (req) => {
     ? docs.reduce((sum: number, doc: { file_size?: number }) => sum + (doc.file_size || 0), 0)
     : 0
 
+  const documentsLimit = tierLimits.documents_per_month
+  const storageLimitBytes = tierLimits.storage_gb * 1024 * 1024 * 1024
+
   const usage = {
     documents: {
       current: docCount ?? 0,
-      limit: limits.limit < 0 ? -1 : limits.limit,
+      limit: documentsLimit < 0 ? -1 : documentsLimit,
     },
     conversions: {
       current: 0,
@@ -106,9 +111,9 @@ export const GET = withErrorBoundary(async (req) => {
     },
     storage: {
       current: totalStorageBytes,
-      limit: limits.limit < 0 ? -1 : limits.storage_gb * 1024 * 1024 * 1024,
+      limit: storageLimitBytes,
     },
-    tier: limits.limit < 0 ? "unlimited" : "free",
+    tier: rateLimit.limit < 0 ? "unlimited" : "free",
   }
 
   const response = {

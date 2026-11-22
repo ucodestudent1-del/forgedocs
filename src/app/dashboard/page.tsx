@@ -179,7 +179,7 @@ export default function DashboardPage() {
     }
   }
 
-  const renderUsageBar = useMemo((current: number, limit: number, label: string, unit: string = "") => {
+  const renderUsageBar = (current: number, limit: number, label: string, unit: string = "") => {
     if (limit < 0) {
       return (
         <div className="space-y-1">
@@ -220,7 +220,7 @@ export default function DashboardPage() {
         </div>
       </div>
     )
-  }, [])
+  }
 
   if (loading) {
     return (

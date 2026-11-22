@@ -128,7 +128,7 @@ export async function cacheDel(key: string): Promise<void> {
       let cursor = "0"
       const keysToDelete: string[] = []
       do {
-        const [newCursor, keys] = await client.scan(cursor, { MATCH: pattern, COUNT: 100 } as any)
+        const [newCursor, keys] = await client.scan(cursor, "MATCH", pattern, "COUNT", 100)
         cursor = newCursor
         keysToDelete.push(...keys)
       } while (cursor !== "0")

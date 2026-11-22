@@ -41,8 +41,13 @@ export function sanitizeFilename(filename: string): string {
 export async function generateSignedUrl(bucket: string, path: string, expiresIn: number = 900): Promise<string> {
   const { createRouteClient } = await import("@/lib/supabase")
   const supabase = await createRouteClient()
-  const { data } = await supabase.storage.from(bucket).createSignedUrl(path, expiresIn)
-  return data?.signedUrl || `${process.env.NEXT_PUBLIC_APP_URL}/api/storage/download?bucket=${bucket}&path=${encodeURIComponent(path)}&expires=${expiresIn}`
+  const { data, error } = await supabase.storage.from(bucket).createSignedUrl(path, expiresIn)
+
+  if (error || !data?.signedUrl) {
+    throw new Error(`Failed to generate signed URL: ${error?.message || "No signed URL returned"}`)
+  }
+
+  return data.signedUrl
 }
 
 const MAGIC_BYTES: Record<string, Buffer[]> = {
@@ -59,8 +64,8 @@ const MAGIC_BYTES: Record<string, Buffer[]> = {
   "application/vnd.openxmlformats-officedocument.presentationml.presentation": [
     Buffer.from([0x50, 0x4B, 0x03, 0x04]), // ZIP-based (PPTX)
   ],
-  "text/plain": [Buffer.from([])], // Any text (can't validate magic bytes)
-  "text/csv": [Buffer.from([])], // Any text (can't validate magic bytes)
+  "text/plain": [Buffer.from([])], // Any text (validated via content scan below)
+  "text/csv": [Buffer.from([])], // Any text (validated via content scan below)
   "image/jpeg": [Buffer.from([0xFF, 0xD8, 0xFF])], // JPEG
   "image/png": [Buffer.from([0x89, 0x50, 0x4E, 0x47])], // PNG
   "image/webp": [Buffer.from([0x52, 0x49, 0x46, 0x46])], // RIFF (WEBP)
@@ -73,10 +78,23 @@ const MAGIC_BYTES: Record<string, Buffer[]> = {
   "application/rtf": [Buffer.from([0x7B, 0x5C, 0x52, 0x54, 0x46])], // {\RTF
 }
 
+const DANGEROUS_TEXT_PATTERNS: RegExp[] = [
+  /<script[\s\S]*?>[\s\S]*?<\/script>/gi,
+  /<iframe[\s\S]*?>[\s\S]*?<\/iframe>/gi,
+  /<embed[\s\S]*?>/gi,
+  /<object[\s\S]*?>[\s\S]*?<\/object>/gi,
+  /<\?php/gi,
+  /<\?=/gi,
+  /javascript:/gi,
+  /on\w+\s*=/gi,
+]
+
 export function validateFileMagicBytes(fileBytes: Uint8Array, mimeType: string): boolean {
   const expected = MAGIC_BYTES[mimeType]
   if (!expected || expected.length === 0 || expected[0].length === 0) {
-    return true // Cannot validate magic bytes for text files
+    // Text files: scan the full content for dangerous patterns
+    const text = Buffer.from(fileBytes).toString("utf8")
+    return !DANGEROUS_TEXT_PATTERNS.some((pattern) => pattern.test(text))
   }
 
   // Check if file starts with any of the expected magic byte sequences

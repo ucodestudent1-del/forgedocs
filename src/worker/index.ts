@@ -307,6 +307,28 @@ const worker = new Worker<ConversionJobData, { success: boolean; outputUrl?: str
   }
 )
 
+function cleanupTempFiles(): void {
+  try {
+    const entries = fs.readdirSync("/tmp", { withFileTypes: true })
+    for (const entry of entries) {
+      const name = entry.name
+      // Clean up orphaned conversion source/output files from previous crashes
+      if (
+        (name.endsWith("_source") || name.match(/^.*_output\.(pdf|docx|doc|xlsx|xls|pptx|ppt|odt|ods|odp|rtf|txt|html|md|epub|jpg|jpeg|png|webp|gif|bmp|tiff|svg)$/)) &&
+        entry.isFile()
+      ) {
+        try {
+          fs.unlinkSync(`/tmp/${name}`)
+        } catch {
+          // Ignore errors on individual file cleanup
+        }
+      }
+    }
+  } catch {
+    // /tmp may not be readable in all environments
+  }
+}
+
 // Worker health tracking
 interface WorkerHealth {
   status: string
@@ -388,6 +410,7 @@ healthServer.on("listening", () => {
 
 // Initialize leader election
 startLeaderElection()
+cleanupTempFiles()
 
 async function gracefulShutdown(signal: string): Promise<void> {
   console.log(`Received ${signal}, shutting down worker gracefully...`)

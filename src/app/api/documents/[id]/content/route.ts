@@ -7,6 +7,7 @@ import { sanitizeHtml } from "@/lib/sanitize"
 import { cacheDel } from "@/lib/cache"
 import { logAuditEvent, getClientIp, getClientUserAgent } from "@/lib/audit"
 import { withErrorBoundary, createAppError } from "@/lib/api-error"
+import logger from "@/lib/logger"
 
 export const GET = withErrorBoundary(async (req, { params }: { params: Promise<{ id: string }> }) => {
   const rateLimitError = await documentRateLimit(req)
@@ -99,7 +100,9 @@ export const PUT = withErrorBoundary(async (req, { params }: { params: Promise<{
     )
   }
 
-  // Insert version record only after successful update (no orphan versions)
+  // Insert version record after successful update.
+  // Version history is best-effort: the document update is the primary operation.
+  // If version insert fails, log and continue — the document content is already saved.
   const { error: versionError } = await supabase.from("document_versions").insert({
     document_id: id,
     version: currentDoc.version,
@@ -108,7 +111,11 @@ export const PUT = withErrorBoundary(async (req, { params }: { params: Promise<{
   })
 
   if (versionError) {
-    throw createAppError(versionError.message, 500, "DATABASE_ERROR")
+    logger.error(`Failed to insert document version for ${id}`, {
+      error: versionError.message,
+      documentId: id,
+      version: currentDoc.version,
+    })
   }
 
   // Invalidate document list cache so clients see updated content
