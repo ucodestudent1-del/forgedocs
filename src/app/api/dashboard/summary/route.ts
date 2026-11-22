@@ -12,7 +12,14 @@ export const GET = withErrorBoundary(async (req) => {
   if (rateLimitError) return rateLimitError
 
   const supabase = await getRouteClient()
-  const { data: { user } } = await supabase.auth.getUser()
+
+  let user = null
+  try {
+    const { data } = await supabase.auth.getUser()
+    user = data?.user ?? null
+  } catch {
+    // Supabase unreachable — degrade gracefully
+  }
 
   let effectiveUser = user
   if (!effectiveUser && isGuestMode()) {
@@ -36,73 +43,117 @@ export const GET = withErrorBoundary(async (req) => {
     })
   }
 
-  // Fetch documents
-  let docQuery = supabase
-    .from("documents")
-    .select(`
-      *,
-      templates ( id, name, category )
-    `, { count: "exact" })
-    .eq("user_id", effectiveUser.id)
-    .eq("is_archived", archived)
+  // Fetch documents — degrade gracefully if Supabase is unreachable
+  let documents: any[] = []
+  let docCount = 0
+  try {
+    let docQuery = supabase
+      .from("documents")
+      .select(`
+        *,
+        templates ( id, name, category )
+      `, { count: "exact" })
+      .eq("user_id", effectiveUser.id)
+      .eq("is_archived", archived)
 
-  if (pinned) {
-    docQuery = docQuery.eq("is_pinned", true)
+    if (pinned) {
+      docQuery = docQuery.eq("is_pinned", true)
+    }
+
+    if (search) {
+      docQuery = docQuery
+        .textSearch("search_vector", search, { type: "plain" })
+        .order("rank", { ascending: false }, { referencedTable: "documents" })
+    } else {
+      docQuery = docQuery.order("updated_at", { ascending: false })
+    }
+
+    const { data, error: docError, count } = await docQuery
+      .range(docOffset, docOffset + docLimit - 1)
+
+    if (docError) {
+      throw createAppError(docError.message, 500, "DATABASE_ERROR")
+    }
+
+    documents = data || []
+    docCount = count ?? 0
+  } catch {
+    documents = []
+    docCount = 0
   }
 
-  if (search) {
-    docQuery = docQuery
-      .textSearch("search_vector", search, { type: "plain" })
-      .order("rank", { ascending: false }, { referencedTable: "documents" })
-  } else {
-    docQuery = docQuery.order("updated_at", { ascending: false })
+  // Fetch recent activity — degrade gracefully if Supabase is unreachable
+  let activity: any[] = []
+  try {
+    const { limit: actLimit, offset: actOffset } = parsePagination(url.searchParams)
+    const actLimitVal = Math.min(actLimit || 10, MAX_PAGE_SIZE)
+
+    let activityQuery = supabase
+      .from("audit_log")
+      .select("*", { count: "exact" })
+      .eq("user_id", effectiveUser.id)
+      .order("created_at", { ascending: false })
+
+    const { data: activityData, error: actError } = await activityQuery
+      .range(actOffset, actOffset + actLimitVal - 1)
+
+    if (actError) {
+      throw createAppError(actError.message, 500, "DATABASE_ERROR")
+    }
+
+    activity = activityData || []
+  } catch {
+    activity = []
   }
 
-  const { data: documents, error: docError, count: docCount } = await docQuery
-    .range(docOffset, docOffset + docLimit - 1)
-
-  if (docError) {
-    throw createAppError(docError.message, 500, "DATABASE_ERROR")
+  // Fetch tier limits — degrade gracefully if Supabase is unreachable
+  let tierLimits: any
+  try {
+    tierLimits = await getTierLimits(effectiveUser.id)
+  } catch {
+    tierLimits = {
+      documents_per_month: 500,
+      conversions_per_month: 100,
+      storage_gb: 5,
+      max_file_size_mb: 10,
+      api_requests_per_minute: 30,
+      has_priority_support: false,
+      has_audit_logs: false,
+      has_advanced_templates: false,
+      max_seats: 1,
+    }
   }
 
-  // Fetch recent activity
-  const { limit: actLimit, offset: actOffset } = parsePagination(url.searchParams)
-  const actLimitVal = Math.min(actLimit || 10, MAX_PAGE_SIZE)
-
-  let activityQuery = supabase
-    .from("audit_log")
-    .select("*", { count: "exact" })
-    .eq("user_id", effectiveUser.id)
-    .order("created_at", { ascending: false })
-
-  const { data: activity, error: actError } = await activityQuery
-    .range(actOffset, actOffset + actLimitVal - 1)
-
-  if (actError) {
-    throw createAppError(actError.message, 500, "DATABASE_ERROR")
+  // Fetch usage stats — degrade gracefully if Supabase is unreachable
+  let rateLimit: any
+  try {
+    rateLimit = await checkTierLimit(effectiveUser.id, "documents_created")
+  } catch {
+    rateLimit = { limit: 500, remaining: 500, current: 0 }
   }
 
-  // Fetch tier limits for storage cap
-  const tierLimits = await getTierLimits(effectiveUser.id)
-  // Fetch usage stats (rate limit for documents)
-  const rateLimit = await checkTierLimit(effectiveUser.id, "documents_created")
+  // Fetch storage usage — degrade gracefully if Supabase is unreachable
+  let totalStorageBytes = 0
+  try {
+    const { data: docs } = await supabase
+      .from("documents")
+      .select("file_size")
+      .eq("user_id", effectiveUser.id)
+      .eq("is_archived", false)
 
-  const { data: docs } = await supabase
-    .from("documents")
-    .select("file_size")
-    .eq("user_id", effectiveUser.id)
-    .eq("is_archived", false)
-
-  const totalStorageBytes = docs
-    ? docs.reduce((sum: number, doc: { file_size?: number }) => sum + (doc.file_size || 0), 0)
-    : 0
+    totalStorageBytes = docs
+      ? docs.reduce((sum: number, doc: { file_size?: number }) => sum + (doc.file_size || 0), 0)
+      : 0
+  } catch {
+    totalStorageBytes = 0
+  }
 
   const documentsLimit = tierLimits.documents_per_month
   const storageLimitBytes = tierLimits.storage_gb * 1024 * 1024 * 1024
 
   const usage = {
     documents: {
-      current: docCount ?? 0,
+      current: docCount,
       limit: documentsLimit < 0 ? -1 : documentsLimit,
     },
     conversions: {
@@ -117,14 +168,14 @@ export const GET = withErrorBoundary(async (req) => {
   }
 
   const response = {
-    documents: documents || [],
-    activity: activity || [],
+    documents,
+    activity,
     usage,
     pagination: {
       page: docPage,
       limit: docLimit,
-      total: docCount ?? 0,
-      hasMore: (docOffset + docLimit) < (docCount ?? 0),
+      total: docCount,
+      hasMore: (docOffset + docLimit) < docCount,
     },
   }
 
