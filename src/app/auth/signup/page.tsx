@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation"
+import { Suspense } from "react"
 import { isGuestMode } from "@/lib/guest-session"
 import SignupForm from "./signup-form"
 
@@ -10,8 +11,8 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4">
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-background px-4">Loading...</div>}>
       <SignupForm />
-    </div>
+    </Suspense>
   )
 }
