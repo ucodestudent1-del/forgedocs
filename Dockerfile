@@ -47,6 +47,7 @@ USER nodejs
 # Copy standalone output from builder
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
+COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/public ./public
 
 # Secret keys must be provided at runtime via environment variables,
