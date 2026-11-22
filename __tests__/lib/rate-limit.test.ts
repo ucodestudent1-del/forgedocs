@@ -1,4 +1,4 @@
-import { rateLimit, authRateLimit, documentRateLimit, apiRateLimit, rateLimitStore } from '@/lib/rate-limit'
+import { createRateLimiter as rateLimit, authRateLimit, documentRateLimit, apiRateLimit } from '@/lib/rate-limiter'
 
 // Mock NextResponse
 jest.mock('next/server', () => ({
@@ -14,7 +14,8 @@ jest.mock('next/server', () => ({
 
 describe('Rate Limiter', () => {
   beforeEach(() => {
-    rateLimitStore.clear()
+    // rateLimitStore was removed — rate limiting is now Redis-backed via cache.ts
+    // The in-memory test store in cache.ts is cleared automatically per test env
   })
 
   describe('rateLimit', () => {

@@ -2,7 +2,7 @@ import { Metadata } from "next"
 import Link from "next/link"
 import { Navbar } from "@/components/ui/navbar"
 import { Footer } from "@/components/marketing/footer"
-import { FileText, Calendar, Clock, ArrowRight, Tag } from "lucide-react"
+import { Calendar, Clock, ArrowRight, Tag } from "lucide-react"
 import { format } from "date-fns"
 import { Breadcrumb } from "@/components/ui/breadcrumb"
 

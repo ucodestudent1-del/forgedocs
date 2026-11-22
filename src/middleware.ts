@@ -8,7 +8,7 @@ import {
   DEFAULT_API_VERSION,
 } from "@/lib/api-version"
 import { validateApiKey, checkApiKeyPermissions, requiresApiKeyPermission } from "@/lib/api-key"
-import { checkRateLimit } from "@/lib/rate-limiter"
+import { checkRateLimit, API_KEY_RATE_LIMIT_CONFIGS, type RateLimitConfig } from "@/lib/rate-limiter"
 
 function generateCspNonce(): string {
   return crypto.randomUUID().replace(/-/g, "")
@@ -128,26 +128,10 @@ export async function middleware(request: NextRequest) {
           }
         }
 
-        // Per-key rate limiting
-        const rateLimitConfigs: Record<string, { windowMs: number; maxRequests: number; keyPrefix: string }> = {
-          "/api/documents": { windowMs: 60 * 1000, maxRequests: 2000, keyPrefix: "apikey:docs" },
-          "/api/conversion": { windowMs: 60 * 1000, maxRequests: 600, keyPrefix: "apikey:conversion" },
-          "/api/pdf-tools/process": { windowMs: 60 * 1000, maxRequests: 200, keyPrefix: "apikey:pdf" },
-          "/api/ai/assistant": { windowMs: 60 * 1000, maxRequests: 400, keyPrefix: "apikey:ai" },
-          "/api/ai/chat": { windowMs: 60 * 1000, maxRequests: 600, keyPrefix: "apikey:ai-chat" },
-          "/api/e-signatures/send": { windowMs: 60 * 1000, maxRequests: 100, keyPrefix: "apikey:esign" },
-          "/api/templates": { windowMs: 60 * 1000, maxRequests: 1000, keyPrefix: "apikey:templates" },
-          "/api/auth/login": { windowMs: 15 * 60 * 1000, maxRequests: 200, keyPrefix: "apikey:login" },
-          "/api/auth/signup": { windowMs: 60 * 60 * 1000, maxRequests: 50, keyPrefix: "apikey:signup" },
-          "/api/auth/forgot-password": { windowMs: 60 * 60 * 1000, maxRequests: 50, keyPrefix: "apikey:forgot" },
-          "/api/auth/reset-password": { windowMs: 15 * 60 * 1000, maxRequests: 100, keyPrefix: "apikey:reset" },
-          "/api/auth/mfa/verify": { windowMs: 5 * 60 * 1000, maxRequests: 200, keyPrefix: "apikey:mfa" },
-          "/api/contact": { windowMs: 15 * 60 * 1000, maxRequests: 100, keyPrefix: "apikey:contact" },
-        }
-
-        let matchedConfig: { windowMs: number; maxRequests: number; keyPrefix: string } | null = null
+        // Per-key rate limiting — uses shared config from rate-limiter.ts
+        let matchedConfig: RateLimitConfig | null = null
         let matchedPathLen = 0
-        for (const [pathPattern, config] of Object.entries(rateLimitConfigs)) {
+        for (const [pathPattern, config] of Object.entries(API_KEY_RATE_LIMIT_CONFIGS)) {
           if (pathname.startsWith(pathPattern) && pathPattern.length > matchedPathLen) {
             matchedConfig = config
             matchedPathLen = pathPattern.length

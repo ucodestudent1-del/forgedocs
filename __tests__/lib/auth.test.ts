@@ -1,35 +1,36 @@
-import { validatePassword, checkLoginAttempts, recordFailedAttempt, clearFailedAttempts, passwordSchema } from '@/lib/auth'
+import { checkLoginAttempts, recordFailedAttempt, clearFailedAttempts } from '@/lib/auth'
+import { validatePassword, passwordSchema } from '@/lib/password'
 
 describe('Auth Utilities', () => {
   describe('validatePassword', () => {
     it('should reject passwords shorter than 8 characters', () => {
       const result = validatePassword('short1!')
       expect(result.valid).toBe(false)
-      expect(result.errors).toContain('Password must be at least 8 characters')
+      expect(result.errors).toContain('Password does not meet security requirements')
     })
 
     it('should reject passwords without uppercase', () => {
       const result = validatePassword('lowercase1!')
       expect(result.valid).toBe(false)
-      expect(result.errors).toContain('Password must contain at least one uppercase letter')
+      expect(result.errors).toContain('Password does not meet security requirements')
     })
 
     it('should reject passwords without lowercase', () => {
       const result = validatePassword('UPPERCASE1!')
       expect(result.valid).toBe(false)
-      expect(result.errors).toContain('Password must contain at least one lowercase letter')
+      expect(result.errors).toContain('Password does not meet security requirements')
     })
 
     it('should reject passwords without numbers', () => {
       const result = validatePassword('NoNumbers!')
       expect(result.valid).toBe(false)
-      expect(result.errors).toContain('Password must contain at least one number')
+      expect(result.errors).toContain('Password does not meet security requirements')
     })
 
     it('should reject passwords without special characters', () => {
       const result = validatePassword('NoSpecial123')
       expect(result.valid).toBe(false)
-      expect(result.errors).toContain('Password must contain at least one special character')
+      expect(result.errors).toContain('Password does not meet security requirements')
     })
 
     it('should accept valid passwords', () => {

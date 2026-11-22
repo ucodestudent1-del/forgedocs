@@ -1,8 +1,6 @@
 import { Metadata } from "next"
-import Link from "next/link"
 import { Navbar } from "@/components/ui/navbar"
 import { Footer } from "@/components/marketing/footer"
-import { PageHeader } from "@/components/marketing/page-header"
 import { CTASection } from "@/components/marketing/cta-section"
 import { Breadcrumb } from "@/components/ui/breadcrumb"
 

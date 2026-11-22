@@ -3,7 +3,7 @@ import Link from "next/link"
 import { Navbar } from "@/components/ui/navbar"
 import { Footer } from "@/components/marketing/footer"
 import { ClientContactForm } from "@/components/client/ContactForm"
-import { Mail, DollarSign, Shield, Clock, Copy } from "lucide-react"
+import { Mail, DollarSign, Shield, Clock } from "lucide-react"
 import { Breadcrumb } from "@/components/ui/breadcrumb"
 
 export const metadata: Metadata = {

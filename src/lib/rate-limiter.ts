@@ -28,7 +28,7 @@ const RATE_LIMIT_CONFIGS: Record<string, RateLimitConfig> = {
 }
 
 // Per-API-key rate limits (more generous than IP-based limits, but still bounded)
-const API_KEY_RATE_LIMIT_CONFIGS: Record<string, RateLimitConfig> = {
+export const API_KEY_RATE_LIMIT_CONFIGS: Record<string, RateLimitConfig> = {
   "/api/contact": { windowMs: 15 * 60 * 1000, maxRequests: 100, keyPrefix: "apikey:contact" },
   "/api/auth/login": { windowMs: 15 * 60 * 1000, maxRequests: 200, keyPrefix: "apikey:login" },
   "/api/auth/signup": { windowMs: 60 * 60 * 1000, maxRequests: 50, keyPrefix: "apikey:signup" },

@@ -52,4 +52,4 @@ COPY --from=builder /app/public ./public
 # Secret keys must be provided at runtime via environment variables,
 # never baked into image layers (prevents secret exposure via docker history)
 EXPOSE 3000
-CMD ["node_modules/.bin/next", "start"]
+CMD ["node", "server.js"]

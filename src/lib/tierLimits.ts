@@ -69,44 +69,10 @@ const TIER_LIMITS: Record<string, TierLimits> = {
       },
 }
 
-export async function getTierLimitsFromDB(userId: string): Promise<TierLimits | null> {
+export async function getTierLimits(userId: string): Promise<TierLimits> {
   const supabase = await getRouteClient()
-  const { data: subscription } = await supabase
-    .from("subscriptions")
-    .select("status, tier")
-    .eq("user_id", userId)
-    .eq("status", "active")
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle()
 
-  if (!subscription) return null
-
-  const tier = subscription.tier || "free"
-
-  const { data: limits } = await supabase
-    .from("tier_limits")
-    .select("*")
-    .eq("tier", tier)
-    .single()
-
-  if (!limits) return null
-
-  return {
-    documents_per_month: limits.documents_per_month,
-    conversions_per_month: limits.conversions_per_month,
-    storage_gb: limits.storage_gb,
-    max_file_size_mb: limits.max_file_size_mb,
-    api_requests_per_minute: limits.api_requests_per_minute,
-    has_priority_support: limits.has_priority_support,
-    has_audit_logs: limits.has_audit_logs,
-    has_advanced_templates: limits.has_advanced_templates,
-    max_seats: limits.max_seats,
-  }
-}
-
-export async function getUserTier(userId: string): Promise<string> {
-  const supabase = await getRouteClient()
+  // Single query to determine the user's active tier
   const { data: subscription } = await supabase
     .from("subscriptions")
     .select("tier")
@@ -114,16 +80,34 @@ export async function getUserTier(userId: string): Promise<string> {
     .eq("status", "active")
     .order("created_at", { ascending: false })
     .limit(1)
-    .maybeSingle()
+    .single()
 
-  return subscription?.tier || "free"
-}
+  const tier = subscription?.tier || "free"
 
-export async function getTierLimits(userId: string): Promise<TierLimits> {
-  const dbLimits = await getTierLimitsFromDB(userId)
-  if (dbLimits) return dbLimits
+  // If the user has an active subscription, fetch the tier limits from the DB
+  if (subscription) {
+    const { data: limits } = await supabase
+      .from("tier_limits")
+      .select("*")
+      .eq("tier", tier)
+      .single()
 
-  const tier = await getUserTier(userId)
+    if (limits) {
+      return {
+        documents_per_month: limits.documents_per_month,
+        conversions_per_month: limits.conversions_per_month,
+        storage_gb: limits.storage_gb,
+        max_file_size_mb: limits.max_file_size_mb,
+        api_requests_per_minute: limits.api_requests_per_minute,
+        has_priority_support: limits.has_priority_support,
+        has_audit_logs: limits.has_audit_logs,
+        has_advanced_templates: limits.has_advanced_templates,
+        max_seats: limits.max_seats,
+      }
+    }
+  }
+
+  // Fallback to hardcoded defaults when DB tier_limits row is missing
   return TIER_LIMITS[tier] || TIER_LIMITS.free
 }
 

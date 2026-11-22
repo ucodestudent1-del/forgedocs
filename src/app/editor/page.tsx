@@ -3,8 +3,7 @@
 import { useState, useEffect } from "react"
 import dynamic from "next/dynamic"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { FileText, Plus, Download, Share2, Loader2, AlertTriangle } from "lucide-react"
+import { FileText, Plus, Loader2 } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 import { ScrollIndicator } from "@/components/ui/scroll-indicator"
 
