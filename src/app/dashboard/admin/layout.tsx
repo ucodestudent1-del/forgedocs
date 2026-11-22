@@ -2,7 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { Shield, Settings, TrendingUp, Users, CreditCard, FileText, AlertTriangle, Clock, Download, Search, Filter, Activity } from "lucide-react"
+import { Shield, Settings, TrendingUp, Users, CreditCard, FileText, AlertTriangle, Clock, Download, Search, Filter, Activity, Home } from "lucide-react"
 import Link from "next/link"
 import { format } from "date-fns"
 import { getRouteClient } from "@/lib/supabase"
@@ -23,7 +23,28 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     .single()
 
   if (!profile || !["admin"].includes(profile.role)) {
-    redirect("/dashboard")
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4">
+        <div className="text-center w-full max-w-md">
+          <div className="flex items-center justify-center gap-3 mb-6">
+            <div className="h-16 w-16 rounded-full bg-destructive/10 flex items-center justify-center">
+              <Shield className="h-8 w-8 text-destructive" />
+            </div>
+          </div>
+          <h1 className="text-6xl font-bold text-foreground mb-4">403</h1>
+          <p className="mt-4 text-lg text-muted-foreground mb-8">
+            Access Denied — Admin privileges required.
+          </p>
+          <Link
+            href="/dashboard"
+            className="inline-flex items-center gap-2 px-6 py-3 text-sm font-medium text-primary-foreground bg-primary rounded-lg hover:bg-primary/90 transition-colors"
+          >
+            <Home className="h-4 w-4" />
+            Back to Dashboard
+          </Link>
+        </div>
+      </div>
+    )
   }
 
   const navItems = [

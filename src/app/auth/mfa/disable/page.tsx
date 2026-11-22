@@ -39,7 +39,7 @@ export default function MfaDisablePage() {
         return
       }
       toast({ title: "Two-factor authentication disabled", variant: "success" })
-      router.push("/settings")
+      router.push("/dashboard/settings")
     } catch {
       toast({ title: "Failed to disable 2FA", variant: "destructive" })
     } finally {
@@ -49,7 +49,7 @@ export default function MfaDisablePage() {
 
   return (
     <div className="max-w-md mx-auto py-8">
-      <Link href="/settings">
+      <Link href="/dashboard/settings">
         <Button variant="outline" size="sm" className="flex items-center gap-2 mb-6">
           <ArrowLeft className="h-4 w-4" />
           Back to Settings

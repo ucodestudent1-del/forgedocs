@@ -188,7 +188,7 @@ export default function EditorPage() {
                 </a>
               </Button>
               <Button variant="outline" asChild>
-                <a href="/document-generator">
+                <a href="/dashboard/document-generator">
                   <Plus className="h-4 w-4 mr-2" />
                   Create New Document
                 </a>

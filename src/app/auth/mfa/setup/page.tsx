@@ -90,7 +90,7 @@ export default function MfaSetupPage() {
   }
 
   const handleDone = () => {
-    router.push("/settings")
+    router.push("/dashboard/settings")
     router.refresh()
   }
 
