@@ -23,6 +23,7 @@ import {
   HelpCircle,
   ChevronDown,
   ChevronRight,
+  ChevronLeft,
   X,
   Home,
   Upload,
@@ -182,22 +183,21 @@ export function Sidebar({
               <span className="font-bold text-lg tracking-tight text-primary">F</span>
             )}
           </div>
-          {!collapsed && (
+          {!collapsed && typeof window !== "undefined" && window.innerWidth < 1024 ? (
             <button
               onClick={onClose}
-              className="lg:hidden p-2 rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+              className="p-2 rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
               aria-label="Close sidebar"
             >
               <X className="h-5 w-5" />
             </button>
-          )}
-          {collapsed && (
+          ) : (
             <button
               onClick={onToggleCollapse}
               className="p-2 rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-              aria-label="Expand sidebar"
+              aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             >
-              <ChevronRight className="h-5 w-5" />
+              {collapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
             </button>
           )}
         </div>

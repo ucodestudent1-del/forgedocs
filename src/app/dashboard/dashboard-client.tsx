@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import { useGlobalHotkeys } from "@/hooks/useHotkeys"
-import { Search, Bell, ChevronLeft, ChevronRight, Menu, FileText } from "lucide-react"
+import { Search, Bell, Menu, FileText } from "lucide-react"
 import { Sidebar } from "@/components/layout/Sidebar"
 import { DashboardHeader } from "@/components/dashboard/header"
 import { useToast } from "@/components/ui/use-toast"
@@ -88,7 +88,6 @@ export default function DashboardClient({
     }
   }, [])
 
-  const headerAriaLabel = sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"
   const mobileMenuAriaLabel = "Open navigation menu"
 
   return (
@@ -104,18 +103,7 @@ export default function DashboardClient({
         userInitial={userInitial}
       />
 
-      <div className="flex-1 overflow-hidden relative">
-        {sidebarCollapsed && (
-          <button
-            onClick={() => setSidebarCollapsed(false)}
-            className="fixed lg:static top-4 left-4 z-50 p-2 rounded-md bg-card border shadow-lg text-muted-foreground hover:bg-accent hover:text-foreground transition-colors lg:hidden"
-            aria-label="Expand sidebar"
-          >
-            <ChevronRight className="h-5 w-5" />
-          </button>
-        )}
-
-        <header className="flex items-center justify-between h-16 px-4 border-b bg-background/50 backdrop-blur md:px-6 lg:px-8" dir="ltr">
+      <header className="flex items-center justify-between h-16 px-4 border-b bg-background/50 backdrop-blur md:px-6 lg:px-8" dir="ltr">
           <div className="flex items-center gap-4">
             <button
               onClick={() => setSidebarOpen(true)}
@@ -123,18 +111,6 @@ export default function DashboardClient({
               aria-label="Open navigation menu"
             >
               <Menu className="h-5 w-5" />
-            </button>
-
-            <button
-              onClick={() => setSidebarCollapsed((prev) => !prev)}
-              className="hidden lg:flex p-2 rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-              aria-label={headerAriaLabel}
-            >
-              {sidebarCollapsed ? (
-                <ChevronRight className="h-5 w-5" />
-              ) : (
-                <ChevronLeft className="h-5 w-5" />
-              )}
             </button>
 
             <div className="relative w-full md:w-96 lg:w-80">
@@ -203,7 +179,6 @@ export default function DashboardClient({
           {children}
         </main>
       </div>
-    </div>
-  </ErrorBoundary>
+    </ErrorBoundary>
   )
 }
