@@ -153,7 +153,7 @@ export function Sidebar({
 
   return (
     <>
-      {!isOpen && typeof window !== "undefined" && window.innerWidth < 1024 ? (
+      {isOpen && typeof window !== "undefined" && window.innerWidth < 1024 ? (
         <div
           className="fixed inset-0 z-40 bg-black/50 lg:hidden"
           onClick={onClose}
