@@ -85,7 +85,7 @@ export default function DocumentsPage() {
 
   const handleCreateDocument = () => {
     toast({ title: "Creating document...", variant: "info" })
-    window.location.href = "/document-generator"
+    window.location.href = "/dashboard/document-generator"
   }
 
   return (
