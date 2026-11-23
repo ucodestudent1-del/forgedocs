@@ -236,14 +236,6 @@ export function Sidebar({
             </div>
           </div>
           <div className="mt-2 flex items-center gap-2">
-            <Link
-              href="/dashboard/settings"
-              onClick={() => onClose()}
-              className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground rounded-lg transition-colors"
-            >
-              <Settings className="h-4 w-4" />
-              Settings
-            </Link>
             <button
               onClick={async () => {
                 try {
