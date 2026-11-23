@@ -36,7 +36,7 @@ export default async function DashboardLayout({
   if (!user) {
     if (isGuestMode() || IS_BUILD) {
       effectiveUser = {
-        id: getGuestUserId(),
+        id: await getGuestUserId(),
         email: null,
       } as any
     } else {

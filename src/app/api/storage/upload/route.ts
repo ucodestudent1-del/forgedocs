@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
+import { randomUUID } from "crypto"
 import { validateCSRF } from "@/lib/csrf"
 import { documentRateLimit } from "@/lib/rate-limiter"
 import { sanitizeFilename } from "@/lib/security"
@@ -109,7 +110,7 @@ export const POST = withErrorBoundary(async (req) => {
     )
   }
 
-  const fileName = `${user.id}/${crypto.randomUUID()}-${sanitizeFilename(file.name)}`
+  const fileName = `${user.id}/${randomUUID()}-${sanitizeFilename(file.name)}`
 
   const { data, error } = await supabase.storage
     .from("documents")

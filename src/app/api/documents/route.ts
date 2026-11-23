@@ -132,10 +132,8 @@ export const POST = withErrorBoundary(async (req) => {
       return NextResponse.json({ error: "Template not found" }, { status: 404 })
     }
 
-    content = template.placeholder_schema
-      ? JSON.stringify(template.placeholder_schema, null, 2)
-      : ""
-    content_type = "application/vnd.forgedocs.document+json"
+    content = template.content || ""
+    content_type = template.mime_type || "application/vnd.forgedocs.document+json"
   }
 
   const storagePath = `documents/${effectiveUser.id}/${randomUUID()}.json`

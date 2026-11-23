@@ -43,7 +43,29 @@ const DEFAULT_LIMITS: TierLimits = isDemoMode
 // Hardcoded fallback used only if the DB tier_limits table is unavailable
 const TIER_LIMITS: Record<string, TierLimits> = {
   free: DEFAULT_LIMITS,
-  pro: DEFAULT_LIMITS,
+  pro: isDemoMode
+    ? {
+        documents_per_month: parseInt(process.env.NEXT_PUBLIC_DEMO_MAX_DOCUMENTS || "5000", 10),
+        conversions_per_month: parseInt(process.env.NEXT_PUBLIC_DEMO_MAX_CONVERSIONS || "1000", 10),
+        storage_gb: parseInt(process.env.NEXT_PUBLIC_DEMO_MAX_STORAGE_GB || "50", 10),
+        max_file_size_mb: parseInt(process.env.NEXT_PUBLIC_DEMO_MAX_FILE_SIZE_MB || "50", 10),
+        api_requests_per_minute: parseInt(process.env.NEXT_PUBLIC_DEMO_MAX_API_REQUESTS_PER_MIN || "100", 10),
+        has_priority_support: process.env.NEXT_PUBLIC_DEMO_HAS_PRIORITY_SUPPORT === "true",
+        has_audit_logs: process.env.NEXT_PUBLIC_DEMO_HAS_AUDIT_LOGS === "true",
+        has_advanced_templates: process.env.NEXT_PUBLIC_DEMO_HAS_ADVANCED_TEMPLATES === "true",
+        max_seats: parseInt(process.env.NEXT_PUBLIC_DEMO_MAX_SEATS || "5", 10),
+      }
+    : {
+        documents_per_month: 5000,
+        conversions_per_month: 1000,
+        storage_gb: 50,
+        max_file_size_mb: 50,
+        api_requests_per_minute: 100,
+        has_priority_support: true,
+        has_audit_logs: true,
+        has_advanced_templates: true,
+        max_seats: 5,
+      },
   business: isDemoMode
     ? {
         documents_per_month: -1,
