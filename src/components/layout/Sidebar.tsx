@@ -194,6 +194,7 @@ export function Sidebar({
                   {section.icon && (
                     <section.icon className="h-4 w-4" />
                   )}
+                  <span className="flex-1 text-left">{section.title}</span>
                   <span className="ml-auto flex items-center gap-1">
                     {isExpanded ? (
                       <ChevronDown className="h-4 w-4 transition-transform" />
