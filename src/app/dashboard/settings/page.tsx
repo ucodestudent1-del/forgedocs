@@ -350,8 +350,10 @@ export default function SettingsPage() {
         ))}
       </div>
 
-      {/* Profile Tab */}
-      {activeTab === "profile" && (
+      {/* Tab Content - Independent Scroll */}
+      <div className="flex-1 overflow-y-auto pr-2 max-h-[calc(100vh-320px)]">
+        {/* Profile Tab */}
+        {activeTab === "profile" && (
         <Card>
           <CardHeader>
             <CardTitle>Profile Information</CardTitle>
@@ -790,6 +792,7 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
       )}
+      </div>
     </div>
   )
 }
