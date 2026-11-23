@@ -168,7 +168,7 @@ export default function DashboardClient({
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 [scroll-padding-top:80px]" dir="ltr">
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8" dir="ltr">
           {children}
         </main>
       </div>

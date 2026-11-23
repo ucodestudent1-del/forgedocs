@@ -33,7 +33,7 @@ import { ScrollIndicator } from "@/components/ui/scroll-indicator"
 export default function LandingPage() {
 
   return (
-    <div className="flex flex-col [scroll-behavior:smooth] [scroll-padding-top:80px]">
+    <div className="flex flex-col [scroll-behavior:smooth]">
       <ScrollIndicator position="top" />
       <Navbar />
 

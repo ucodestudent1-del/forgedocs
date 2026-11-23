@@ -37,6 +37,10 @@
     --ring: 221.2 83.2% 53.3%;
 
     --radius: 0.5rem;
+
+    /* Layout structural tokens */
+    --layout-header-height: 64px;
+    --layout-sidebar-width: 256px;
   }
 
   .dark {
@@ -71,6 +75,10 @@
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
     --ring: 221.2 83.2% 53.3%;
+
+    /* Layout structural tokens (dark) */
+    --layout-header-height: 64px;
+    --layout-sidebar-width: 256px;
   }
 }
 
@@ -81,6 +89,7 @@
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
+    scroll-padding-top: var(--layout-header-height);
   }
 }
 

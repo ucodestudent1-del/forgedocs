@@ -141,13 +141,13 @@ export default function RootLayout({
         <link rel="preconnect" href="https://api.forgedocs.com" />
         <JsonLdScript />
       </head>
-      <body className={`${inter.variable} font-sans antialiased min-h-screen bg-background text-foreground [scroll-padding-top:80px]`}>
+      <body className={`${inter.variable} font-sans antialiased dv-screen bg-background text-foreground`}>
         <ErrorBoundary>
           <ThemeInitializer />
           <ThemeProvider>
             <ToastProvider>
               <CookieConsentProvider>
-                <main className="min-h-screen">{children}</main>
+                <main className="dv-screen">{children}</main>
               </CookieConsentProvider>
             </ToastProvider>
           </ThemeProvider>
