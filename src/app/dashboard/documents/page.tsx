@@ -6,11 +6,12 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
 import { Checkbox } from "@/components/ui/checkbox"
-import { FileText, File, FileSpreadsheet, Search, Plus, Trash2, FolderOpen, Download, Share2, Archive, MoreHorizontal, Check } from "lucide-react"
+import { FileText, File, FileSpreadsheet, Search, Plus, Trash2, FolderOpen, Download, Share2, Archive, MoreHorizontal, Check, List, Grid, Archive as ArchiveIcon, Star } from "lucide-react"
 import { DashboardHeader } from "@/components/dashboard/header"
 import { apiFetch } from "@/lib/api-client"
 import { useToast } from "@/components/ui/use-toast"
 import { cn } from "@/lib/utils"
+import { DocumentRow } from "@/components/dashboard/DocumentRow"
 
 export default function DocumentsPage() {
   const [documents, setDocuments] = useState<any[]>([])
@@ -18,11 +19,17 @@ export default function DocumentsPage() {
   const [loading, setLoading] = useState(true)
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [bulkActionLoading, setBulkActionLoading] = useState<string | null>(null)
+  const [viewMode, setViewMode] = useState<"list" | "grid">("list")
+  const [showArchived, setShowArchived] = useState(false)
   const { toast } = useToast()
 
   async function fetchDocuments() {
     try {
-      const params = new URLSearchParams({ search, limit: "50" })
+      const params = new URLSearchParams({ 
+        search, 
+        limit: "50",
+        archived: showArchived ? "true" : "false",
+      })
       const res = await apiFetch(`/api/documents?${params}`)
       const data = await res.json()
       setDocuments(data.documents || [])
@@ -36,7 +43,7 @@ export default function DocumentsPage() {
 
   React.useEffect(() => {
     fetchDocuments()
-  }, [search])
+  }, [search, showArchived])
 
   const filtered = documents.filter((d) =>
     d.title.toLowerCase().includes(search.toLowerCase())
@@ -88,18 +95,31 @@ export default function DocumentsPage() {
     window.location.href = "/dashboard/document-generator"
   }
 
+  const toggleArchive = () => {
+    setShowArchived(!showArchived)
+    setSelectedIds([])
+  }
+
   return (
     <div className="space-y-6">
       <DashboardHeader
-        title="Documents"
-        description="All your documents"
-        action={<Button className="flex items-center gap-2" onClick={handleCreateDocument}>
-          <Plus className="h-4 w-4" />
-          New Document
-        </Button>}
+        title={showArchived ? "Archived Documents" : "Documents"}
+        description={showArchived ? "Your archived documents" : "All your documents"}
+        action={
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={toggleArchive} className={showArchived ? "bg-primary/10 text-primary" : ""}>
+              {showArchived ? <ArchiveIcon className="h-4 w-4" /> : <Archive className="h-4 w-4" />}
+              {showArchived ? "Show Active" : "Show Archived"}
+            </Button>
+            <Button className="flex items-center gap-2" onClick={handleCreateDocument}>
+              <Plus className="h-4 w-4" />
+              New Document
+            </Button>
+          </div>
+        }
       />
 
-<div className="relative">
+      <div className="relative">
         <label htmlFor="document-search" className="sr-only">Search documents</label>
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <input
@@ -110,6 +130,28 @@ export default function DocumentsPage() {
           onChange={(e) => setSearch(e.target.value)}
           className="h-10 pl-10 pr-4 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary w-full md:w-96"
         />
+      </div>
+
+      {/* View Toggle */}
+      <div className="flex items-center gap-2 mb-2">
+        <Button
+          variant={viewMode === "list" ? "outline" : "ghost"}
+          size="icon"
+          className="h-9 w-9"
+          onClick={() => setViewMode("list")}
+          aria-label="List view"
+        >
+          <List className="h-4 w-4" />
+        </Button>
+        <Button
+          variant={viewMode === "grid" ? "outline" : "ghost"}
+          size="icon"
+          className="h-9 w-9"
+          onClick={() => setViewMode("grid")}
+          aria-label="Grid view"
+        >
+          <Grid className="h-4 w-4" />
+        </Button>
       </div>
 
       {/* Bulk Action Toolbar */}
@@ -142,7 +184,7 @@ export default function DocumentsPage() {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => handleBulkAction("export")} disabled={bulkActionLoading !== null}>
                   <Download className="h-4 w-4 mr-2" />
-                  Export (ZIP)
+                  Export
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => handleBulkAction("share")} disabled={bulkActionLoading !== null}>
                   <Share2 className="h-4 w-4 mr-2" />
@@ -168,88 +210,136 @@ export default function DocumentsPage() {
       )}
 
       <div className="overflow-hidden overflow-y-auto rounded-md border">
-        <div className="bg-muted px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-            <div className="grid grid-cols-12">
-              <div className="col-span-1">
-                <Checkbox
-                  checked={selectedIds.length === filtered.length && filtered.length > 0}
-                  indeterminate={selectedIds.length > 0 && selectedIds.length < filtered.length}
-                  onCheckedChange={selectedIds.length === filtered.length ? clearSelection : selectAll}
-                  disabled={loading}
-                />
-              </div>
-              <div className="col-span-5">Title</div>
-              <div className="col-span-3">Type</div>
-              <div className="col-span-2">Updated</div>
-              <div className="col-span-1">Status</div>
-            </div>
-        </div>
-        <div className="divide-y overflow-x-auto">
-          {loading ? (
-            <div className="p-6 animate-pulse rounded-lg bg-card min-w-[600px]">
-              <div className="h-4 bg-muted w-1/3 rounded mb-2" />
-              <div className="h-4 bg-muted w-1/4 rounded mb-2" />
-              <div className="h-4 bg-muted w-1/6 rounded" />
-            </div>
-          ) : filtered.length === 0 ? (
-            <div className="p-8 text-center text-muted-foreground min-w-[600px]">
-              <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
-              <p>No documents found</p>
-              <Button
-                className="mt-4"
-                onClick={handleCreateDocument}
-              >
-                Create Document
-              </Button>
-            </div>
-          ) : (
-            filtered.map((doc) => (
-              <div
-                key={doc.id}
-                className={cn(
-                  "grid grid-cols-12 items-center px-4 py-3 hover:bg-accent/50 transition-colors group min-w-[600px]",
-                  selectedIds.includes(doc.id) && "bg-primary/5 ring-1 ring-primary"
-                )}
-                onClick={(e) => {
-                  const target = e.target as HTMLElement
-                  if (target instanceof HTMLInputElement || target.closest("a, button, label")) return
-                  window.location.href = `/editor?id=${doc.id}`
-                }}
-              >
-                <div className="col-span-1 flex items-center justify-center">
+        {viewMode === "list" ? (
+          <div className="list-view-container">
+            <div className="bg-muted px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              <div className="grid grid-cols-12">
+                <div className="col-span-1">
                   <Checkbox
-                    checked={selectedIds.includes(doc.id)}
-                    onCheckedChange={(checked) => toggleSelect(doc.id)}
-                    onClick={(e) => e.stopPropagation()}
+                    checked={selectedIds.length === filtered.length && filtered.length > 0}
+                    indeterminate={selectedIds.length > 0 && selectedIds.length < filtered.length}
+                    onCheckedChange={selectedIds.length === filtered.length ? clearSelection : selectAll}
+                    disabled={loading}
                   />
                 </div>
-                <div className="col-span-5">
-                  <div className="flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center text-muted-foreground">
-                      <DocIcon mime={doc.mime_type} />
-                    </div>
-                    <span className="font-medium truncate">{doc.title}</span>
-                  </div>
-                </div>
-                <div className="col-span-3">
-                  <Badge variant="outline">{doc.mime_type?.split("/").pop()?.toUpperCase() || "DOC"}</Badge>
-                </div>
-                <div className="col-span-2 text-sm text-muted-foreground">
-                  {new Date(doc.updated_at).toLocaleDateString()}
-                </div>
-                <div className="col-span-1 text-sm">
-                  <Badge variant="secondary">{doc.version}</Badge>
-                </div>
+                <div className="col-span-5">Title</div>
+                <div className="col-span-3">Type</div>
+                <div className="col-span-2">Updated</div>
+                <div className="col-span-1">Version</div>
               </div>
-            ))
-          )}
-        </div>
+            </div>
+            <div className="divide-y overflow-x-auto">
+              {loading ? (
+                <div className="p-6 animate-pulse rounded-lg bg-card min-w-[600px]">
+                  <div className="h-4 bg-muted w-1/3 rounded mb-2" />
+                  <div className="h-4 bg-muted w-1/4 rounded mb-2" />
+                  <div className="h-4 bg-muted w-1/6 rounded" />
+                </div>
+              ) : filtered.length === 0 ? (
+                <div className="p-8 text-center text-muted-foreground min-w-[600px]">
+                  <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p>{showArchived ? "No archived documents found" : "No documents found"}</p>
+                  {!showArchived && (
+                    <Button
+                      className="mt-4"
+                      onClick={handleCreateDocument}
+                    >
+                      Create Document
+                    </Button>
+                  )}
+                </div>
+              ) : (
+                filtered.map((doc) => (
+                  <DocumentRow
+                    key={doc.id}
+                    doc={doc}
+                    formatFileSize={(bytes: number) => {
+                      if (bytes === 0) return "0 B"
+                      if (bytes < 1024) return `${bytes} B`
+                      if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+                      if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+                      return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`
+                    }}
+                    onDocumentChange={fetchDocuments}
+                  />
+                ))
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="grid-view-container">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4">
+              {loading ? (
+                <div className="col-span-4 p-6 animate-pulse rounded-lg bg-card">
+                  <div className="h-48 bg-muted rounded mb-4" />
+                  <div className="h-4 bg-muted w-3/4 rounded mb-2" />
+                  <div className="h-3 bg-muted w-1/2 rounded" />
+                </div>
+              ) : filtered.length === 0 ? (
+                <div className="col-span-4 p-8 text-center text-muted-foreground">
+                  <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p>{showArchived ? "No archived documents found" : "No documents found"}</p>
+                  {!showArchived && (
+                    <Button
+                      className="mt-4"
+                      onClick={handleCreateDocument}
+                    >
+                      Create Document
+                    </Button>
+                  )}
+                </div>
+              ) : (
+                filtered.map((doc) => (
+                  <div
+                    key={doc.id}
+                    className={cn(
+                      "group relative flex flex-col h-64 rounded-lg border border-input hover:border-primary/50 transition-colors cursor-pointer",
+                      selectedIds.includes(doc.id) && "ring-1 ring-primary bg-primary/5"
+                    )}
+                    onClick={(e) => {
+                      const target = e.target as HTMLElement
+                      if (target instanceof HTMLInputElement || target.closest("button, label")) return
+                      window.location.href = `/editor?id=${doc.id}`
+                    }}
+                  >
+                    <div className="absolute top-4 right-4 z-10 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+                      <Checkbox
+                        checked={selectedIds.includes(doc.id)}
+                        onCheckedChange={(checked) => toggleSelect(doc.id)}
+                      />
+                    </div>
+                    <div className="h-32 rounded-t-lg bg-muted flex items-center justify-center mb-3">
+                      <DocIcon mime={doc.mime_type} className="h-12 w-12" />
+                    </div>
+                    <div className="p-3 flex-1 flex flex-col">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-medium truncate">{doc.title}</span>
+                        {doc.is_pinned && <Star className="h-3 w-3 text-yellow-500 flex-shrink-0" />}
+                        {doc.is_archived && <ArchiveIcon className="h-3 w-3 text-muted-foreground flex-shrink-0" />}
+                      </div>
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span>{doc.mime_type?.split("/").pop()?.toUpperCase() || "DOC"}</span>
+                        <span>{new Date(doc.updated_at).toLocaleDateString()}</span>
+                      </div>
+                      <div className="mt-auto flex items-center justify-between pt-2 border-t">
+                        <Badge variant="secondary" className="text-[10px]">{doc.version}</Badge>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" asChild onClick={(e) => { e.stopPropagation(); window.location.href = `/api/documents/${doc.id}/export` }}>
+                          <Download className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
 }
 
-function DocIcon({ mime }: { mime: string }) {
+function DocIcon({ mime, className }: { mime: string; className?: string }) {
   const ext = mime?.split("/").pop() || "txt"
   const Icons: Record<string, React.ElementType> = {
     pdf: File,
@@ -258,5 +348,5 @@ function DocIcon({ mime }: { mime: string }) {
     txt: FileText,
   }
   const Icon = Icons[ext] || FileText
-  return <Icon className="h-5 w-5" />
+  return <Icon className={cn("h-5 w-5", className)} />
 }
