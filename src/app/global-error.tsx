@@ -14,6 +14,7 @@ export default function GlobalError({
   return (
     <html lang="en">
       <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="color-scheme" content="light dark" />
         <title>ForgeDocs - Something went wrong</title>
       </head>

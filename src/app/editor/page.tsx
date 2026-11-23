@@ -158,14 +158,14 @@ export default function EditorPage() {
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center">
+      <div className="flex dv-screen items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     )
   }
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex dv-screen bg-background">
       <div className="flex-1 overflow-auto relative">
         <ScrollIndicator position="right" className="opacity-50" />
         {documentId ? (
@@ -176,7 +176,7 @@ export default function EditorPage() {
             onExport={handleExport}
           />
         ) : (
-          <div className="flex flex-col items-center justify-center h-screen text-muted-foreground">
+          <div className="flex flex-col items-center justify-center dv-screen text-muted-foreground">
             <FileText className="h-16 w-16 mb-4 opacity-50" />
             <h2 className="text-xl font-medium mb-2">No Document Selected</h2>
             <p className="mb-4">Select a document from the dashboard or create a new one.</p>

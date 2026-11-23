@@ -136,16 +136,19 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="color-scheme" content="light dark" />
         <link rel="preconnect" href="https://api.forgedocs.com" />
         <JsonLdScript />
       </head>
-      <body className={`${inter.variable} font-sans antialiased min-h-screen bg-background text-foreground`}>
+      <body className={`${inter.variable} font-sans antialiased min-h-screen bg-background text-foreground [scroll-padding-top:80px]`}>
         <ErrorBoundary>
           <ThemeInitializer />
           <ThemeProvider>
             <ToastProvider>
-              <CookieConsentProvider>{children}</CookieConsentProvider>
+              <CookieConsentProvider>
+                <main className="min-h-screen">{children}</main>
+              </CookieConsentProvider>
             </ToastProvider>
           </ThemeProvider>
         </ErrorBoundary>

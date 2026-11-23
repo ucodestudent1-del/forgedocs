@@ -127,6 +127,24 @@
   }
 }
 
+/* Dynamic viewport height for mobile address bar support */
+.dv-screen {
+  height: 100dvh;
+}
+.sv-screen {
+  height: 100svh;
+}
+.lv-screen {
+  height: 100lvh;
+}
+
+/* Fallback for browsers that don't support dvh/svh/lvh */
+@supports not (height: 100dvh) {
+  .dv-screen {
+    height: 100vh;
+  }
+}
+
 /* RTL layout utilities */
 [dir="rtl"] {
   .text-right {
