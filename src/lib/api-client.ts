@@ -23,6 +23,30 @@ async function handleUnauthorized() {
   }
 }
 
+// Request deduplication cache - prevents duplicate concurrent requests
+const pendingRequests = new Map<string, Promise<Response>>()
+const cache = new Map<string, { data: any; timestamp: number }>()
+const CACHE_TTL = 30 * 1000 // 30 seconds
+
+function getCacheKey(input: RequestInfo | URL, init?: RequestInit): string {
+  const method = init?.method || "GET"
+  const body = init?.body ? JSON.stringify(init.body) : ""
+  return `${method}:${input}:${body}`
+}
+
+function getCached(key: string): any | null {
+  const entry = cache.get(key)
+  if (entry && Date.now() - entry.timestamp < CACHE_TTL) {
+    return entry.data
+  }
+  cache.delete(key)
+  return null
+}
+
+function setCached(key: string, data: any): void {
+  cache.set(key, { data, timestamp: Date.now() })
+}
+
 export async function apiFetch(
   input: RequestInfo | URL,
   init?: RequestInit,
@@ -49,6 +73,25 @@ export async function fetchJson(
   input: RequestInfo | URL,
   init?: RequestInit,
 ): Promise<{ ok: boolean; status: number; data: any; error?: string }> {
+  // Deduplicate GET requests
+  const isGet = !init || init.method === "GET" || init.method === undefined
+  const cacheKey = isGet ? getCacheKey(input, init) : null
+
+  if (cacheKey && cache.has(cacheKey)) {
+    const cached = getCached(cacheKey)
+    if (cached !== null) {
+      return { ok: true, status: 200, data: cached, error: undefined }
+    }
+  }
+
+  // Deduplicate in-flight requests
+  if (cacheKey && pendingRequests.has(cacheKey)) {
+    const res = await pendingRequests.get(cacheKey)!
+    let data: any = null
+    try { data = await res.json() } catch {}
+    return { ok: res.ok, status: res.status, data, error: res.ok ? undefined : `HTTP ${res.status}` }
+  }
+
   try {
     const res = await apiFetch(input, init)
     let data: any = null
@@ -57,6 +100,16 @@ export async function fetchJson(
     } catch {
       data = null
     }
+
+    // Cache successful GET responses
+    if (cacheKey && res.ok) {
+      const promise = Promise.resolve(res)
+      pendingRequests.set(cacheKey, promise)
+      setCached(cacheKey, data)
+      // Remove from pending after resolution
+      promise.finally(() => pendingRequests.delete(cacheKey))
+    }
+
     return { ok: res.ok, status: res.status, data, error: res.ok ? undefined : `HTTP ${res.status}` }
   } catch (err) {
     await handleUnauthorized()

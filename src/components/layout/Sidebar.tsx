@@ -64,7 +64,6 @@ export function Sidebar({
   const pathname = usePathname()
   const router = useRouter()
   const [expandedSections, setExpandedSections] = useState<string[]>([])
-  const [isClient, setIsClient] = useState(false)
   const { toast } = useToast()
 
   const NAV_SECTIONS: NavSection[] = [
@@ -111,10 +110,6 @@ export function Sidebar({
   ]
 
   useEffect(() => {
-    setIsClient(true)
-  }, [])
-
-  useEffect(() => {
     setExpandedSections(NAV_SECTIONS.map((s) => s.title))
   }, [])
 
@@ -133,13 +128,15 @@ export function Sidebar({
     return pathname.startsWith(href)
   }
 
-  if (!isOpen && isClient && window.innerWidth < 1024) {
+  const isMobile = typeof window !== "undefined" && window.innerWidth < 1024
+
+  if (!isOpen && isMobile) {
     return null
   }
 
   return (
     <>
-      {isOpen && isClient && window.innerWidth < 1024 ? (
+      {isOpen && isMobile ? (
         <div
           className="fixed inset-0 z-40 bg-black/50 lg:hidden"
           onClick={onClose}
@@ -156,7 +153,7 @@ export function Sidebar({
               ForgeDocs
             </span>
           </div>
-          {isClient && window.innerWidth < 1024 ? (
+          {isMobile ? (
             <button
               onClick={onClose}
               className="p-2 rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"

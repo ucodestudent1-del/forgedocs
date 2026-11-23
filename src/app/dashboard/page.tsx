@@ -38,6 +38,7 @@ import { ScrollIndicator } from "@/components/ui/scroll-indicator"
 import { useToast } from "@/components/ui/use-toast"
 import { DocumentRow } from "@/components/dashboard/DocumentRow"
 import { ActivityRow } from "@/components/dashboard/ActivityRow"
+import Link from "next/link"
 
 interface Document {
   id: string
@@ -75,6 +76,34 @@ function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`
 }
 
+// Activity icon mapping - defined once at module level
+const ACTIVITY_ICONS: Record<string, React.ElementType> = {
+  created: Plus,
+  updated: Edit,
+  deleted: Trash2,
+  converted: RefreshCw,
+  shared: Share2,
+  downloaded: Download,
+  viewed: Eye,
+  signed: FileSignature,
+  pinned: Star,
+  archived: Archive,
+}
+
+// Activity color mapping - defined once at module level
+const ACTIVITY_COLORS: Record<string, string> = {
+  created: "text-green-600 bg-green-100",
+  updated: "text-blue-600 bg-blue-100",
+  deleted: "text-red-600 bg-red-100",
+  converted: "text-purple-600 bg-purple-100",
+  shared: "text-indigo-600 bg-indigo-100",
+  downloaded: "text-orange-600 bg-orange-100",
+  viewed: "text-gray-600 bg-gray-100",
+  signed: "text-pink-600 bg-pink-100",
+  pinned: "text-yellow-600 bg-yellow-100",
+  archived: "text-gray-600 bg-gray-100",
+}
+
 export default function DashboardPage() {
   const [documents, setDocuments] = useState<Document[]>([])
   const [recentActivity, setRecentActivity] = useState<any[]>([])
@@ -82,7 +111,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
   const { toast } = useToast()
 
-  const quickActions: QuickAction[] = useMemo(() => [
+  const quickActions: QuickAction[] = [
     {
       label: "Create Document",
       description: "Start a new document from scratch",
@@ -126,39 +155,11 @@ export default function DashboardPage() {
       href: "/dashboard/files",
       color: "bg-indigo/10 text-indigo",
     },
-  ], [])
+  ]
 
-  const getActivityIcon = useMemo(() => {
-    const icons: Record<string, React.ElementType> = {
-      created: Plus,
-      updated: Edit,
-      deleted: Trash2,
-      converted: RefreshCw,
-      shared: Share2,
-      downloaded: Download,
-      viewed: Eye,
-      signed: FileSignature,
-      pinned: Star,
-      archived: Archive,
-    }
-    return (action: string) => icons[action] || MoreHorizontal
-  }, [])
+  const getActivityIcon = (action: string) => ACTIVITY_ICONS[action] || MoreHorizontal
 
-  const getActivityColor = useMemo(() => {
-    const colors: Record<string, string> = {
-      created: "text-green-600 bg-green-100",
-      updated: "text-blue-600 bg-blue-100",
-      deleted: "text-red-600 bg-red-100",
-      converted: "text-purple-600 bg-purple-100",
-      shared: "text-indigo-600 bg-indigo-100",
-      downloaded: "text-orange-600 bg-orange-100",
-      viewed: "text-gray-600 bg-gray-100",
-      signed: "text-pink-600 bg-pink-100",
-      pinned: "text-yellow-600 bg-yellow-100",
-      archived: "text-gray-600 bg-gray-100",
-    }
-    return (action: string) => colors[action] || "text-gray-600 bg-gray-100"
-  }, [])
+  const getActivityColor = (action: string) => ACTIVITY_COLORS[action] || "text-gray-600 bg-gray-100"
 
   useEffect(() => {
     fetchDashboardData()
@@ -444,17 +445,17 @@ function StatCard({
   change: string
   trend?: "up" | "down" | "neutral"
 }) {
-  const trendIcons = useMemo(() => ({
+  const trendIcons: Record<string, React.ReactNode> = {
     up: <TrendingUp className="h-3 w-3 text-green-600" />,
     down: <TrendingDown className="h-3 w-3 text-red-600" />,
     neutral: <span className="h-3 w-3" />,
-  }), [])
+  }
 
-  const trendColors = useMemo(() => ({
+  const trendColors: Record<string, string> = {
     up: "text-green-600",
     down: "text-red-600",
     neutral: "text-muted-foreground",
-  }), [])
+  }
 
   return (
     <Card>
@@ -497,6 +498,3 @@ function QuickActionCard({ action }: { action: QuickAction }) {
     </Link>
   )
 }
-
-// Import Link for use in components
-import Link from "next/link"

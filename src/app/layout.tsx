@@ -7,7 +7,7 @@ import { ThemeInitializer } from "@/components/theme/ThemeInitializer"
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary"
 import { CookieConsentProvider } from "@/components/ui/cookie-consent"
 import { headers } from "next/headers"
-const inter = Inter({ subsets: ["latin"], variable: "--font-sans" })
+const inter = Inter({ subsets: ["latin"], variable: "--font-sans", display: "swap" })
 
 const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://forgedocs.com"
 

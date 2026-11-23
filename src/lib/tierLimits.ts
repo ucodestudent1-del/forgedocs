@@ -1,6 +1,6 @@
 import { getRouteClient } from "@/lib/supabase"
 import { NextResponse } from "next/server"
-import { cacheIncrement, cacheGet } from "@/lib/cache"
+import { cacheIncrement, cacheGet, cacheSet } from "@/lib/cache"
 
 export interface TierLimits {
   documents_per_month: number
@@ -91,7 +91,13 @@ const TIER_LIMITS: Record<string, TierLimits> = {
       },
 }
 
+const TIER_LIMITS_CACHE_TTL = 60 * 1000 // 1 minute cache for tier limits
+
 export async function getTierLimits(userId: string): Promise<TierLimits> {
+  const cacheKey = `tierlimits:${userId}`
+  const cached = await cacheGet<TierLimits>(cacheKey)
+  if (cached) return cached
+
   const supabase = await getRouteClient()
 
   // Single query to determine the user's active tier
@@ -115,7 +121,7 @@ export async function getTierLimits(userId: string): Promise<TierLimits> {
       .single()
 
     if (limits) {
-      return {
+      const result: TierLimits = {
         documents_per_month: limits.documents_per_month,
         conversions_per_month: limits.conversions_per_month,
         storage_gb: limits.storage_gb,
@@ -126,11 +132,15 @@ export async function getTierLimits(userId: string): Promise<TierLimits> {
         has_advanced_templates: limits.has_advanced_templates,
         max_seats: limits.max_seats,
       }
+      await cacheSet(cacheKey, result, TIER_LIMITS_CACHE_TTL)
+      return result
     }
   }
 
   // Fallback to hardcoded defaults when DB tier_limits row is missing
-  return TIER_LIMITS[tier] || TIER_LIMITS.free
+  const result = TIER_LIMITS[tier] || TIER_LIMITS.free
+  await cacheSet(cacheKey, result, TIER_LIMITS_CACHE_TTL)
+  return result
 }
 
 export async function checkTierLimit(
