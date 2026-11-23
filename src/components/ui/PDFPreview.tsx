@@ -65,6 +65,12 @@ export function PDFPreview({ url, title, onClose, className }: PDFPreviewProps) 
     }
   }, [pdfjsLib, url])
 
+  useEffect(() => {
+    if (canvasRef.current) {
+      canvasRef.current.style.transform = `rotate(${rotation}deg)`
+    }
+  }, [rotation])
+
   const renderPage = async (pageNum: number) => {
     if (!pdfDocRef.current || !canvasRef.current) return
     setLoading(true)
@@ -179,13 +185,12 @@ export function PDFPreview({ url, title, onClose, className }: PDFPreviewProps) 
         </div>
       </CardHeader>
       <CardContent className="p-0">
-        <div 
+        <div
           ref={containerRef}
           className={cn(
-            "relative bg-muted/50 rounded-lg overflow-hidden",
-            isFullscreen && "fixed inset-0 z-50 bg-black w-screen h-screen rounded-none"
+            "relative bg-muted/50 rounded-lg overflow-hidden min-h-[600px]",
+            isFullscreen && "fixed inset-0 z-50 bg-black w-screen h-screen rounded-none min-h-screen"
           )}
-          style={{ minHeight: isFullscreen ? "100vh" : "600px" }}
         >
           {loading && (
             <div className="absolute inset-0 flex items-center justify-center bg-muted/50 z-10">
@@ -194,14 +199,10 @@ export function PDFPreview({ url, title, onClose, className }: PDFPreviewProps) 
             </div>
           )}
           
-          <div className="flex items-center justify-center p-4" style={{ minHeight: "400px" }}>
+          <div className="flex items-center justify-center p-4 min-h-[400px]">
             <canvas
               ref={canvasRef}
               className="shadow-lg bg-white max-w-full max-h-[70vh]"
-              style={{
-                transform: `rotate(${rotation}deg)`,
-                maxWidth: "100%",
-              }}
             />
           </div>
 

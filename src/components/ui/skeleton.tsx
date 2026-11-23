@@ -15,6 +15,9 @@ export function Skeleton({
   height,
   ...props
 }: SkeletonProps) {
+  const widthClass = width ? `w-[${typeof width === "number" ? `${width}px` : width}]` : ""
+  const heightClass = height ? `h-[${typeof height === "number" ? `${height}px` : height}]` : ""
+
   return (
     <div
       className={cn(
@@ -24,12 +27,10 @@ export function Skeleton({
           "rounded-md": variant === "rectangular",
           "h-4 w-full max-w-[250px]": variant === "text",
         },
+        widthClass,
+        heightClass,
         className
       )}
-      style={{
-        width: width ? (typeof width === "number" ? `${width}px` : width) : undefined,
-        height: height ? (typeof height === "number" ? `${height}px` : height) : undefined,
-      }}
       {...props}
     />
   )

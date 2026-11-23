@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -141,7 +141,9 @@ export default function UsagePage() {
             >
               <div
                 className={`h-full rounded-full transition-all duration-500 ${getProgressColor(percentage)}`}
-                style={{ width: `${percentage}%` }}
+                ref={(el) => {
+                  if (el) el.style.width = `${percentage}%`
+                }}
               />
             </div>
           )}
@@ -385,7 +387,7 @@ function StorageBreakdown({ usage }: { usage: UsageData }) {
           <div key={item.label} className="space-y-1">
             <div className="flex justify-between text-sm">
               <span className="flex items-center gap-2">
-                <span className="h-3 w-3 rounded" style={{ backgroundColor: item.color }} />
+                <span className="h-3 w-3 rounded" ref={(el) => { if (el) el.style.backgroundColor = item.color }} />
                 {item.label}
               </span>
               <span className="font-medium">{formatBytes(item.value)} ({percentage}%)</span>
@@ -393,7 +395,12 @@ function StorageBreakdown({ usage }: { usage: UsageData }) {
             <div className="h-2 bg-muted rounded-full overflow-hidden">
               <div
                 className="h-full rounded-full"
-                style={{ width: `${percentage}%`, backgroundColor: item.color }}
+                ref={(el) => {
+                  if (el) {
+                    el.style.width = `${percentage}%`
+                    el.style.backgroundColor = item.color
+                  }
+                }}
               />
             </div>
           </div>
@@ -424,17 +431,23 @@ function UsageChart() {
           <div className="flex gap-1 h-[200px] items-end w-full justify-around">
             <div
               className="bg-blue-500 rounded-t w-6 transition-all hover:opacity-80"
-              style={{ height: `${(week.documents / maxVal) * 100}%` }}
+              ref={(el) => {
+                if (el) el.style.height = `${(week.documents / maxVal) * 100}%`
+              }}
               title={`${week.documents} documents`}
             />
             <div
               className="bg-purple-500 rounded-t w-6 transition-all hover:opacity-80"
-              style={{ height: `${(week.conversions * 2 / maxVal) * 100}%` }}
+              ref={(el) => {
+                if (el) el.style.height = `${(week.conversions * 2 / maxVal) * 100}%`
+              }}
               title={`${week.conversions} conversions`}
             />
             <div
               className="bg-green-500 rounded-t w-6 transition-all hover:opacity-80"
-              style={{ height: `${(week.storage * 20 / maxVal) * 100}%` }}
+              ref={(el) => {
+                if (el) el.style.height = `${(week.storage * 20 / maxVal) * 100}%`
+              }}
               title={`${week.storage.toFixed(1)} GB storage`}
             />
           </div>
@@ -538,7 +551,9 @@ function renderUsageCard(
           >
             <div
               className={`h-full rounded-full transition-all duration-500 ${getProgressColor(percentage)}`}
-              style={{ width: `${percentage}%` }}
+              ref={(el) => {
+                if (el) el.style.width = `${percentage}%`
+              }}
             />
           </div>
         )}

@@ -2,9 +2,14 @@ import { randomUUID, timingSafeEqual } from "crypto"
 import { cookies } from "next/headers"
 
 export class CSRFError extends Error {
-  constructor(message: string) {
+  statusCode: number
+  code: string
+
+  constructor(message: string, statusCode: number = 400, code: string = "CSRF_ERROR") {
     super(message)
     this.name = "CSRFError"
+    this.statusCode = statusCode
+    this.code = code
   }
 }
 

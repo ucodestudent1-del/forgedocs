@@ -34,6 +34,7 @@ import {
   Archive,
 } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
+import { cn } from "@/lib/utils"
 
 interface NavItem {
   href: string
@@ -63,6 +64,7 @@ export function Sidebar({
   const pathname = usePathname()
   const router = useRouter()
   const [expandedSections, setExpandedSections] = useState<string[]>([])
+  const [isClient, setIsClient] = useState(false)
   const { toast } = useToast()
 
   const NAV_SECTIONS: NavSection[] = [
@@ -109,6 +111,10 @@ export function Sidebar({
   ]
 
   useEffect(() => {
+    setIsClient(true)
+  }, [])
+
+  useEffect(() => {
     setExpandedSections(NAV_SECTIONS.map((s) => s.title))
   }, [])
 
@@ -127,13 +133,13 @@ export function Sidebar({
     return pathname.startsWith(href)
   }
 
-  if (!isOpen && typeof window !== "undefined" && window.innerWidth < 1024) {
+  if (!isOpen && isClient && window.innerWidth < 1024) {
     return null
   }
 
   return (
     <>
-      {isOpen && typeof window !== "undefined" && window.innerWidth < 1024 ? (
+      {isOpen && isClient && window.innerWidth < 1024 ? (
         <div
           className="fixed inset-0 z-40 bg-black/50 lg:hidden"
           onClick={onClose}
@@ -150,7 +156,7 @@ export function Sidebar({
               ForgeDocs
             </span>
           </div>
-          {typeof window !== "undefined" && window.innerWidth < 1024 ? (
+          {isClient && window.innerWidth < 1024 ? (
             <button
               onClick={onClose}
               className="p-2 rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
@@ -185,8 +191,11 @@ export function Sidebar({
                 </button>
 
                 <div
-                  className={`${isExpanded ? "block" : "hidden"} animate-slide-down overflow-hidden`}
-                  style={{ maxHeight: isExpanded ? "500px" : "0" }}
+                  data-expanded={isExpanded}
+                  className={cn(
+                    "overflow-hidden transition-all duration-300",
+                    isExpanded ? "max-h-[500px]" : "max-h-0"
+                  )}
                 >
                   {section.items.map((item) => (
                     <Link
@@ -253,14 +262,6 @@ export function Sidebar({
           </div>
         </div>
       </aside>
-
-      <style jsx>{`
-        @keyframes slide-down {
-          from { opacity: 0; transform: translateY(-10px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        .animate-slide-down { animation: slide-down 0.2s ease-out; }
-      `}</style>
     </>
   )
 }

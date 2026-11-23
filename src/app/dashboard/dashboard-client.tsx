@@ -87,7 +87,7 @@ export default function DashboardClient({
 
   return (
     <ErrorBoundary>
-      <div className="flex dv-screen overflow-hidden bg-background" dir="ltr">
+      <div className="flex dv-screen overflow-hidden bg-background">
       <OfflineBanner />
       <Sidebar
         isOpen={sidebarOpen}
@@ -97,7 +97,7 @@ export default function DashboardClient({
       />
 
       <div className="flex-1 flex-col dv-screen">
-        <header className="flex items-center justify-between h-16 px-4 border-b bg-background/50 backdrop-blur md:px-6 lg:px-8 w-full" dir="ltr">
+        <header className="flex items-center justify-between h-16 px-4 border-b bg-background/50 backdrop-blur md:px-6 lg:px-8 w-full">
           <div className="flex items-center gap-4">
             <button
               onClick={() => setSidebarOpen(true)}
@@ -169,7 +169,7 @@ export default function DashboardClient({
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8" dir="ltr">
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 [scroll-padding-top:var(--layout-header-height)]">
           {children}
         </main>
       </div>

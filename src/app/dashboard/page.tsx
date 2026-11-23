@@ -187,9 +187,9 @@ export default function DashboardPage() {
             <span className="text-muted-foreground">{label}</span>
             <span className="font-medium text-green-600">Unlimited</span>
           </div>
-          <div className="h-2 bg-green-100 rounded-full overflow-hidden">
-            <div className="h-full bg-green-500 rounded-full" style={{ width: "100%" }} />
-          </div>
+            <div className="h-2 bg-green-100 rounded-full overflow-hidden">
+              <div className="h-full bg-green-500 rounded-full w-full" />
+            </div>
         </div>
       )
     }
@@ -211,7 +211,9 @@ export default function DashboardPage() {
             className={`h-full rounded-full transition-all duration-300 ${
               isDanger ? "bg-red-500" : isWarning ? "bg-yellow-500" : "bg-primary"
             }`}
-            style={{ width: `${percentage}%` }}
+            ref={(el) => {
+              if (el) el.style.width = `${percentage}%`
+            }}
           />
         </div>
         <div className="flex justify-between text-xs text-muted-foreground">

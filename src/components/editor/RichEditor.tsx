@@ -566,12 +566,12 @@ export function RichEditor({
   }
 
   const insertTable = (rows = 3, cols = 3) => {
-    let html = "<table style='width:100%;border-collapse:collapse;margin:1em 0;'><thead><tr>"
-    for (let i = 0; i < cols; i++) html += "<th style='border:1px solid #ddd;padding:8px;background:#f2f2f2;'>Header</th>"
+    let html = "<table class='w-full border-collapse m-4'><thead><tr>"
+    for (let i = 0; i < cols; i++) html += "<th class='border border-gray-300 p-2 bg-gray-100'>Header</th>"
     html += "</tr></thead><tbody>"
     for (let r = 0; r < rows; r++) {
       html += "<tr>"
-      for (let c = 0; c < cols; c++) html += "<td style='border:1px solid #ddd;padding:8px;'>Cell</td>"
+      for (let c = 0; c < cols; c++) html += "<td class='border border-gray-300 p-2'>Cell</td>"
       html += "</tr>"
     }
     html += "</tbody></table>"

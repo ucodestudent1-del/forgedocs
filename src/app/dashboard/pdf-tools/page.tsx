@@ -287,10 +287,12 @@ export default function PDFToolsPage() {
                     <span>{progress}%</span>
                   </div>
                   <div className="h-3 bg-muted rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-primary rounded-full transition-all duration-300"
-                      style={{ width: `${progress}%` }}
-                    />
+              <div
+                className="h-full bg-primary rounded-full transition-all duration-300"
+                ref={(el) => {
+                  if (el) el.style.width = `${progress}%`
+                }}
+              />
                   </div>
                 </div>
               </CardContent>
