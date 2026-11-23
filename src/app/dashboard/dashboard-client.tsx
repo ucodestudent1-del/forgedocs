@@ -96,7 +96,8 @@ export default function DashboardClient({
         userInitial={userInitial}
       />
 
-      <header className="flex items-center justify-between h-16 px-4 border-b bg-background/50 backdrop-blur md:px-6 lg:px-8" dir="ltr">
+      <div className="flex-1 flex-col dv-screen">
+        <header className="flex items-center justify-between h-16 px-4 border-b bg-background/50 backdrop-blur md:px-6 lg:px-8 w-full" dir="ltr">
           <div className="flex items-center gap-4">
             <button
               onClick={() => setSidebarOpen(true)}
@@ -172,6 +173,7 @@ export default function DashboardClient({
           {children}
         </main>
       </div>
+    </div>
     </ErrorBoundary>
   )
 }
