@@ -23,7 +23,6 @@ import {
   HelpCircle,
   ChevronDown,
   ChevronRight,
-  ChevronLeft,
   X,
   Home,
   Upload,
@@ -53,15 +52,11 @@ interface NavSection {
 export function Sidebar({
   isOpen,
   onClose,
-  collapsed,
-  onToggleCollapse,
   userEmail,
   userInitial = "U",
 }: {
   isOpen: boolean
   onClose: () => void
-  collapsed: boolean
-  onToggleCollapse: () => void
   userEmail?: string | null
   userInitial?: string
 }) {
@@ -158,32 +153,24 @@ export function Sidebar({
 
   return (
     <>
-      {!collapsed && (
+      {!isOpen && typeof window !== "undefined" && window.innerWidth < 1024 ? (
         <div
           className="fixed inset-0 z-40 bg-black/50 lg:hidden"
           onClick={onClose}
           aria-hidden="true"
         />
-      )}
+      ) : null}
 
       <aside
-        className={`
-          fixed lg:static left-0 top-0 z-50 h-full border-r bg-card flex flex-col transition-all duration-300 ease-in-out lg:z-auto
-          ${collapsed ? "w-16" : "w-64"}
-        `}
+        className="fixed lg:static left-0 top-0 z-50 h-full border-r bg-card flex flex-col lg:z-auto w-64"
       >
         <div className="flex items-center justify-between h-16 px-3 border-b">
           <div className="flex items-center gap-2">
-            {!collapsed && (
-              <span className="font-bold text-lg tracking-tight text-primary">
-                ForgeDocs
-              </span>
-            )}
-            {collapsed && (
-              <span className="font-bold text-lg tracking-tight text-primary">F</span>
-            )}
+            <span className="font-bold text-lg tracking-tight text-primary">
+              ForgeDocs
+            </span>
           </div>
-          {!collapsed && typeof window !== "undefined" && window.innerWidth < 1024 ? (
+          {typeof window !== "undefined" && window.innerWidth < 1024 ? (
             <button
               onClick={onClose}
               className="p-2 rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
@@ -191,15 +178,7 @@ export function Sidebar({
             >
               <X className="h-5 w-5" />
             </button>
-          ) : (
-            <button
-              onClick={onToggleCollapse}
-              className="p-2 rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-              aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-            >
-              {collapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
-            </button>
-          )}
+          ) : null}
         </div>
 
         <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-6" aria-label="Main navigation">
@@ -213,25 +192,20 @@ export function Sidebar({
                   aria-expanded={isExpanded}
                 >
                   {section.icon && (
-                    <section.icon className={`h-4 w-4 ${collapsed ? "mx-auto" : ""}`} />
+                    <section.icon className="h-4 w-4" />
                   )}
-                  {!collapsed && section.title}
-                  {!collapsed && (
-                    <span className="ml-auto flex items-center gap-1">
-                      {isExpanded ? (
-                        <ChevronDown className="h-4 w-4 transition-transform" />
-                      ) : (
-                        <ChevronRight className="h-4 w-4 transition-transform" />
-                      )}
-                    </span>
-                  )}
+                  <span className="ml-auto flex items-center gap-1">
+                    {isExpanded ? (
+                      <ChevronDown className="h-4 w-4 transition-transform" />
+                    ) : (
+                      <ChevronRight className="h-4 w-4 transition-transform" />
+                    )}
+                  </span>
                 </button>
 
                 <div
-                  className={`${
-                    isExpanded && !collapsed ? "block" : "hidden"
-                  } animate-slide-down overflow-hidden`}
-                  style={{ maxHeight: isExpanded && !collapsed ? "500px" : "0" }}
+                  className={`${isExpanded ? "block" : "hidden"} animate-slide-down overflow-hidden`}
+                  style={{ maxHeight: isExpanded ? "500px" : "0" }}
                 >
                   {section.items.map((item) => (
                     <Link
@@ -250,18 +224,16 @@ export function Sidebar({
                       <item.icon
                         className={`h-5 w-5 flex-shrink-0 ${
                           isActive(item.href) ? "text-primary" : ""
-                        } ${collapsed ? "mx-auto" : ""}`}
+                        }`}
                       />
-                      {!collapsed && (
-                        <>
-                          <span className="truncate">{item.label}</span>
-                          {item.badge && (
-                            <span className="ml-auto px-1.5 py-0.5 text-xs font-medium bg-primary/10 text-primary rounded-full">
-                              {item.badge}
-                            </span>
-                          )}
-                        </>
-                      )}
+                      <>
+                        <span className="truncate">{item.label}</span>
+                        {item.badge && (
+                          <span className="ml-auto px-1.5 py-0.5 text-xs font-medium bg-primary/10 text-primary rounded-full">
+                            {item.badge}
+                          </span>
+                        )}
+                      </>
                     </Link>
                   ))}
                 </div>
@@ -276,39 +248,31 @@ export function Sidebar({
             <div className="px-2 space-y-1">
               <button
                 onClick={() => handleQuickAction("create")}
-                className={`w-full flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors ${
-                  collapsed ? "justify-center px-2" : ""
-                }`}
+                className="w-full flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
               >
-                <FilePen className={`h-5 w-5 ${collapsed ? "mx-0" : ""}`} />
-                {!collapsed && <span>Create Document</span>}
+                <FilePen className="h-5 w-5" />
+                <span>Create Document</span>
               </button>
               <button
                 onClick={() => handleQuickAction("convert")}
-                className={`w-full flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors ${
-                  collapsed ? "justify-center px-2" : ""
-                }`}
+                className="w-full flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
               >
-                <RefreshCw className={`h-5 w-5 ${collapsed ? "mx-0" : ""}`} />
-                {!collapsed && <span>Convert File</span>}
+                <RefreshCw className="h-5 w-5" />
+                <span>Convert File</span>
               </button>
               <button
                 onClick={() => handleQuickAction("merge")}
-                className={`w-full flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors ${
-                  collapsed ? "justify-center px-2" : ""
-                }`}
+                className="w-full flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
               >
-                <FileImage className={`h-5 w-5 ${collapsed ? "mx-0" : ""}`} />
-                {!collapsed && <span>Merge PDFs</span>}
+                <FileImage className="h-5 w-5" />
+                <span>Merge PDFs</span>
               </button>
               <button
                 onClick={() => handleQuickAction("ai-generate")}
-                className={`w-full flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors ${
-                  collapsed ? "justify-center px-2" : ""
-                }`}
+                className="w-full flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
               >
-                <Bot className={`h-5 w-5 ${collapsed ? "mx-0" : ""}`} />
-                {!collapsed && <span>AI Generate</span>}
+                <Bot className="h-5 w-5" />
+                <span>AI Generate</span>
               </button>
             </div>
           </div>
@@ -319,35 +283,22 @@ export function Sidebar({
             <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium text-primary">
               {userInitial}
             </div>
-            {!collapsed && (
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground truncate">
-                  {userEmail || "User"}
-                </p>
-                <p className="text-xs text-muted-foreground truncate">Signed in</p>
-              </div>
-            )}
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-foreground truncate">
+                {userEmail || "User"}
+              </p>
+              <p className="text-xs text-muted-foreground truncate">Signed in</p>
+            </div>
           </div>
           <div className="mt-2 flex items-center gap-2">
-            {!collapsed && (
-              <Link
-                href="/dashboard/settings"
-                onClick={() => onClose()}
-                className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground rounded-lg transition-colors"
-              >
-                <Settings className="h-4 w-4" />
-                Settings
-              </Link>
-            )}
-            {collapsed && (
-              <button
-                onClick={() => onClose()}
-                className="p-2 rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-                aria-label="Settings"
-              >
-                <Settings className="h-4 w-4" />
-              </button>
-            )}
+            <Link
+              href="/dashboard/settings"
+              onClick={() => onClose()}
+              className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground rounded-lg transition-colors"
+            >
+              <Settings className="h-4 w-4" />
+              Settings
+            </Link>
             <button
               onClick={async () => {
                 try {
@@ -357,9 +308,7 @@ export function Sidebar({
                 }
                 router.push("/auth/login")
               }}
-              className={`p-2 rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors ${
-                collapsed ? "mx-auto" : ""
-              }`}
+              className={`p-2 rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors`}
               aria-label="Sign out"
             >
               <Download className="h-4 w-4" />

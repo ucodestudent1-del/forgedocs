@@ -24,7 +24,6 @@ export default function DashboardClient({
   children,
 }: DashboardClientProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [searchResults, setSearchResults] = useState<any[]>([])
   const [searchLoading, setSearchLoading] = useState(false)
@@ -46,10 +45,6 @@ export default function DashboardClient({
     "mod+n": () => {
       // Navigate to new document
       router.push("/editor")
-    },
-    "mod+b": () => {
-      // Toggle sidebar
-      setSidebarCollapsed((prev) => !prev)
     },
   })
 
@@ -97,8 +92,6 @@ export default function DashboardClient({
       <Sidebar
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
-        collapsed={sidebarCollapsed}
-        onToggleCollapse={() => setSidebarCollapsed((prev) => !prev)}
         userEmail={userEmail}
         userInitial={userInitial}
       />
