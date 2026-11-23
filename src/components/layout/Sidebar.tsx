@@ -127,26 +127,6 @@ export function Sidebar({
     return pathname.startsWith(href)
   }
 
-  const handleQuickAction = (action: string) => {
-    switch (action) {
-      case "create":
-        router.push("/dashboard/document-generator")
-        break
-      case "convert":
-        router.push("/dashboard/conversion")
-        break
-      case "merge":
-        router.push("/dashboard/pdf-tools?tool=merge")
-        break
-      case "ai-generate":
-        router.push("/dashboard/ai-assistant")
-        break
-      default:
-        break
-    }
-    onClose()
-  }
-
   if (!isOpen && typeof window !== "undefined" && window.innerWidth < 1024) {
     return null
   }
@@ -241,42 +221,6 @@ export function Sidebar({
               </div>
             )
           })}
-
-          <div className="pt-4 border-t space-y-2">
-            <p className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Quick Actions
-            </p>
-            <div className="px-2 space-y-1">
-              <button
-                onClick={() => handleQuickAction("create")}
-                className="w-full flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
-              >
-                <FilePen className="h-5 w-5" />
-                <span>Create Document</span>
-              </button>
-              <button
-                onClick={() => handleQuickAction("convert")}
-                className="w-full flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
-              >
-                <RefreshCw className="h-5 w-5" />
-                <span>Convert File</span>
-              </button>
-              <button
-                onClick={() => handleQuickAction("merge")}
-                className="w-full flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
-              >
-                <FileImage className="h-5 w-5" />
-                <span>Merge PDFs</span>
-              </button>
-              <button
-                onClick={() => handleQuickAction("ai-generate")}
-                className="w-full flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
-              >
-                <Bot className="h-5 w-5" />
-                <span>AI Generate</span>
-              </button>
-            </div>
-          </div>
         </nav>
 
         <div className="p-3 border-t">
