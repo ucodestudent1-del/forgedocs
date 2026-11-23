@@ -358,10 +358,12 @@ export default function FilesPage() {
                     </span>
                   </div>
                   <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
-                    <div
-                      className={`h-full ${up.status === "error" ? "bg-destructive" : "bg-primary"} rounded-full transition-all duration-300`}
-                      style={{ width: `${up.progress}%` }}
-                    />
+                  <div
+                    className={`h-full ${up.status === "error" ? "bg-destructive" : "bg-primary"} rounded-full transition-all duration-300`}
+                    ref={(el) => {
+                      if (el) el.style.width = `${up.progress}%`
+                    }}
+                  />
                   </div>
                 </div>
                 {up.status === "error" && (
