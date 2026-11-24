@@ -49,8 +49,6 @@ COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/public ./public
-# Copy custom server.js for proxy control (Railway SSL termination)
-COPY server.js ./server.js
 
 # Secret keys must be provided at runtime via environment variables,
 # never baked into image layers (prevents secret exposure via docker history)

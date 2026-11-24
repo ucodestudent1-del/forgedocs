@@ -45,8 +45,10 @@ export async function middleware(request: NextRequest) {
     const cspNonce = generateCspNonce()
 
     // REDIRECT LOOP PROTECTION — detect and break infinite redirect cycles
-    const redirectCountHeader = request.headers.get("x-redirect-count")
-    const redirectCount = redirectCountHeader ? parseInt(redirectCountHeader, 10) : 0
+    // Cookies are used instead of headers because browsers forward cookies
+    // (but not custom headers) across redirects.
+    const redirectCountCookie = request.cookies.get("redirect_count")
+    const redirectCount = redirectCountCookie ? parseInt(redirectCountCookie.value, 10) : 0
     const isLooping = redirectCount > 3
     if (isLooping) {
       logger.error("Redirect loop detected, breaking cycle", {
@@ -110,9 +112,12 @@ export async function middleware(request: NextRequest) {
       if (isProtectedRoute && (!user || error) && !isLooping) {
         const loginUrl = new URL("/auth/login", request.nextUrl)
         loginUrl.searchParams.set("callbackUrl", pathname)
-        const response = NextResponse.redirect(loginUrl)
-        response.headers.set("x-redirect-count", String(redirectCount + 1))
-        return response
+        const redirectResponse = NextResponse.redirect(loginUrl)
+        redirectResponse.cookies.set("redirect_count", String(redirectCount + 1), {
+          path: "/",
+          maxAge: 60,
+        })
+        return redirectResponse
       }
     }
 
@@ -121,9 +126,12 @@ export async function middleware(request: NextRequest) {
       const supabase = await getRouteClient()
       const { data: { user }, error } = await supabase.auth.getUser()
       if (user && !error) {
-        const response = NextResponse.redirect(new URL("/dashboard", request.nextUrl))
-        response.headers.set("x-redirect-count", String(redirectCount + 1))
-        return response
+        const redirectResponse = NextResponse.redirect(new URL("/dashboard", request.nextUrl))
+        redirectResponse.cookies.set("redirect_count", String(redirectCount + 1), {
+          path: "/",
+          maxAge: 60,
+        })
+        return redirectResponse
       }
     }
 
@@ -242,6 +250,9 @@ export async function middleware(request: NextRequest) {
     response.headers.set("X-Frame-Options", "DENY")
     response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin")
     response.headers.set("Permissions-Policy", "geolocation=(), microphone=(), camera=()")
+
+    // Clear redirect_count cookie on successful page load to reset loop counter
+    response.cookies.set("redirect_count", "", { path: "/", maxAge: 0 })
 
     return response
   } catch (error) {
