@@ -231,9 +231,10 @@ export function requiresApiKeyPermission(pathname: string): string[] | null {
     "/api/admin": ["admin:*"],
     "/api/admin/": ["admin:*"],
 
-    // Auth routes are not accessible via API key
-    "/api/auth": [],
-    "/api/auth/": [],
+    // Auth routes are NOT accessible via API key - return null to skip permission check entirely
+    // This means API keys cannot access auth routes
+    "/api/auth": null,
+    "/api/auth/": null,
 
     // Onboarding is session-based
     "/api/onboarding": null,

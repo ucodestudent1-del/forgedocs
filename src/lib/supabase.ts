@@ -38,7 +38,7 @@ export async function createRouteClient() {
       key.includes("placeholder")
 
     if (useMock) {
-      return createMockSupabaseClient(await getGuestUserId())
+      return createMockSupabaseClient()
     }
 
     return createServerClient<Database>(
@@ -103,8 +103,7 @@ export async function createRouteClient() {
     },
   )
 
-  // Inject guest user when no Supabase session exists and guest mode is enabled.
-  // Each call returns a fresh client — no cross-request caching of cookies or state.
+  // Only inject guest user when explicitly enabled via env var
   if (process.env.NEXT_PUBLIC_GUEST_MODE === "true") {
     return injectGuestUser(client)
   }

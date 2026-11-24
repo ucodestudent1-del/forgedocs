@@ -63,6 +63,20 @@ export async function middleware(request: NextRequest) {
       return response
     }
 
+    // ---- Body size limit for all POST/PUT/PATCH requests ----
+    if (request.method === "POST" || request.method === "PUT" || request.method === "PATCH") {
+      const contentLength = request.headers.get("content-length")
+      if (contentLength) {
+        const size = parseInt(contentLength, 10)
+        if (size > 10 * 1024 * 1024) { // 10MB max request body
+          return NextResponse.json(
+            { error: "Request body too large" },
+            { status: 413 }
+          )
+        }
+      }
+    }
+
     // ---- Authentication check for page routes ----
     if (!pathname.startsWith("/api/") && !pathname.startsWith("/auth/")) {
       const supabase = await getRouteClient()
@@ -201,6 +215,12 @@ export async function middleware(request: NextRequest) {
 
     // Set CSP header with nonce for page responses
     response.headers.set("Content-Security-Policy", buildCspHeader(cspNonce))
+
+    // Add security headers
+    response.headers.set("X-Content-Type-Options", "nosniff")
+    response.headers.set("X-Frame-Options", "DENY")
+    response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin")
+    response.headers.set("Permissions-Policy", "geolocation=(), microphone=(), camera=()")
 
     return response
   } catch (error) {
