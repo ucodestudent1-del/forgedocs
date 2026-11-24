@@ -765,9 +765,7 @@ export function RichEditor({
             role="textbox"
             aria-multiline="true"
             aria-label="Document content"
-            aria-readonly={readOnly}
-            aria-disabled={readOnly}
-            aria-labelledby="editor-title-label editor-content-live"
+            suppressHydrationWarning
           />
 
           {/* Live region for screen reader announcements */}
