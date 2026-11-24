@@ -47,15 +47,12 @@ export async function middleware(request: NextRequest) {
     // REDIRECT LOOP PROTECTION — detect and break infinite redirect cycles
     const redirectCountHeader = request.headers.get("x-redirect-count")
     const redirectCount = redirectCountHeader ? parseInt(redirectCountHeader, 10) : 0
-    if (redirectCount > 3) {
-      logger.error("Redirect loop detected", {
+    const isLooping = redirectCount > 3
+    if (isLooping) {
+      logger.error("Redirect loop detected, breaking cycle", {
         url: request.url,
         count: redirectCount,
       })
-      return NextResponse.json(
-        { error: "Redirect loop detected" },
-        { status: 500 }
-      )
     }
 
     // Skip non-page routes (static assets, internals, RSC payloads)
@@ -69,6 +66,11 @@ export async function middleware(request: NextRequest) {
     const response = NextResponse.next()
     response.headers.set("x-request-id", requestId)
     response.headers.set("x-csp-nonce", cspNonce)
+
+    // Skip auth callback route — handled by route handler directly
+    if (pathname === "/auth/callback") {
+      return response
+    }
 
     if (isStaticRoute) {
       return response
@@ -105,16 +107,20 @@ export async function middleware(request: NextRequest) {
         pathname === route || pathname.startsWith(route + "/")
       )
 
-      if (isProtectedRoute && (!user || error)) {
+      if (isProtectedRoute && (!user || error) && !isLooping) {
         const loginUrl = new URL("/auth/login", request.nextUrl)
         loginUrl.searchParams.set("callbackUrl", pathname)
         const response = NextResponse.redirect(loginUrl)
         response.headers.set("x-redirect-count", String(redirectCount + 1))
         return response
       }
+    }
 
-      // Auth routes should redirect to dashboard if already authenticated
-      if (pathname.startsWith("/auth/") && user && !error) {
+    // Redirect authenticated users away from auth pages
+    if (pathname.startsWith("/auth/") && !isLooping && !pathname.startsWith("/auth/callback")) {
+      const supabase = await getRouteClient()
+      const { data: { user }, error } = await supabase.auth.getUser()
+      if (user && !error) {
         const response = NextResponse.redirect(new URL("/dashboard", request.nextUrl))
         response.headers.set("x-redirect-count", String(redirectCount + 1))
         return response
