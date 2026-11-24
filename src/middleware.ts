@@ -39,9 +39,6 @@ function generateRequestId(): string {
 }
 
 export async function middleware(request: NextRequest) {
-  // Validate required environment variables on first request
-  await validateEnv()
-
   try {
     const pathname = request.nextUrl?.pathname ?? "/"
     const requestId = request.headers.get("x-request-id") ?? generateRequestId()
@@ -80,7 +77,7 @@ export async function middleware(request: NextRequest) {
     // ---- Authentication check for page routes ----
     if (!pathname.startsWith("/api/") && !pathname.startsWith("/auth/")) {
       const supabase = await getRouteClient()
-      const { data: { user } } = await supabase.auth.getUser()
+      const { data: { user }, error } = await supabase.auth.getUser()
 
       // Protected routes that require authentication
       const protectedRoutes = [
@@ -94,14 +91,14 @@ export async function middleware(request: NextRequest) {
         pathname === route || pathname.startsWith(route + "/")
       )
 
-      if (isProtectedRoute && !user) {
+      if (isProtectedRoute && (!user || error)) {
         const loginUrl = new URL("/auth/login", request.nextUrl)
         loginUrl.searchParams.set("callbackUrl", pathname)
         return NextResponse.redirect(loginUrl)
       }
 
       // Auth routes should redirect to dashboard if already authenticated
-      if (pathname.startsWith("/auth/") && user) {
+      if (pathname.startsWith("/auth/") && user && !error) {
         return NextResponse.redirect(new URL("/dashboard", request.nextUrl))
       }
     }
