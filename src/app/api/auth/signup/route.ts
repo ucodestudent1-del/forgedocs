@@ -4,6 +4,7 @@ import { validateCSRF, CSRFError } from "@/lib/csrf"
 import { authRateLimit } from "@/lib/rate-limiter"
 import { validatePassword } from "@/lib/password"
 import { withErrorBoundary, createAppError } from "@/lib/api-error"
+import logger from "@/lib/logger"
 import { z } from "zod"
 
 const signupSchema = z.object({
@@ -52,7 +53,7 @@ export const POST = withErrorBoundary(async (req) => {
     })
 
     if (profileError) {
-      console.error("Failed to create profile:", profileError)
+      logger.error("Failed to create profile:", { error: profileError })
     }
   }
 

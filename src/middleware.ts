@@ -154,6 +154,10 @@ export async function middleware(request: NextRequest) {
         versionResponse.headers.set("x-request-id", requestId)
         versionResponse.headers.set("x-csp-nonce", cspNonce)
         versionResponse.headers.set("Content-Security-Policy", buildCspHeader(cspNonce))
+        versionResponse.headers.set("X-Content-Type-Options", "nosniff")
+        versionResponse.headers.set("X-Frame-Options", "DENY")
+        versionResponse.headers.set("Referrer-Policy", "strict-origin-when-cross-origin")
+        versionResponse.headers.set("Permissions-Policy", "geolocation=(), microphone=(), camera=()")
         return versionResponse
       }
 
@@ -168,6 +172,12 @@ export async function middleware(request: NextRequest) {
       // Set CSP header with nonce for API responses
       response.headers.set("Content-Security-Policy", buildCspHeader(cspNonce))
 
+      // Add security headers to API responses
+      response.headers.set("X-Content-Type-Options", "nosniff")
+      response.headers.set("X-Frame-Options", "DENY")
+      response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin")
+      response.headers.set("Permissions-Policy", "geolocation=(), microphone=(), camera=()")
+
       // Authenticate API key if present
       const apiKey = request.headers.get("x-api-key")
       if (apiKey) {
@@ -180,6 +190,10 @@ export async function middleware(request: NextRequest) {
           unauthorized.headers.set("x-request-id", requestId)
           unauthorized.headers.set("x-csp-nonce", cspNonce)
           unauthorized.headers.set("Content-Security-Policy", buildCspHeader(cspNonce))
+          unauthorized.headers.set("X-Content-Type-Options", "nosniff")
+          unauthorized.headers.set("X-Frame-Options", "DENY")
+          unauthorized.headers.set("Referrer-Policy", "strict-origin-when-cross-origin")
+          unauthorized.headers.set("Permissions-Policy", "geolocation=(), microphone=(), camera=()")
           return unauthorized
         }
 
@@ -202,6 +216,10 @@ export async function middleware(request: NextRequest) {
             forbidden.headers.set("x-request-id", requestId)
             forbidden.headers.set("x-csp-nonce", cspNonce)
             forbidden.headers.set("Content-Security-Policy", buildCspHeader(cspNonce))
+            forbidden.headers.set("X-Content-Type-Options", "nosniff")
+            forbidden.headers.set("X-Frame-Options", "DENY")
+            forbidden.headers.set("Referrer-Policy", "strict-origin-when-cross-origin")
+            forbidden.headers.set("Permissions-Policy", "geolocation=(), microphone=(), camera=()")
             return forbidden
           }
         }
@@ -231,6 +249,10 @@ export async function middleware(request: NextRequest) {
             rateLimited.headers.set("x-request-id", requestId)
             rateLimited.headers.set("x-csp-nonce", cspNonce)
             rateLimited.headers.set("Content-Security-Policy", buildCspHeader(cspNonce))
+            rateLimited.headers.set("X-Content-Type-Options", "nosniff")
+            rateLimited.headers.set("X-Frame-Options", "DENY")
+            rateLimited.headers.set("Referrer-Policy", "strict-origin-when-cross-origin")
+            rateLimited.headers.set("Permissions-Policy", "geolocation=(), microphone=(), camera=()")
             return rateLimited
           }
           response.headers.set("X-RateLimit-Limit", limitInfo.total.toString())

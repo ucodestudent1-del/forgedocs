@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { validateCSRF } from "@/lib/csrf"
 import { documentRateLimit } from "@/lib/rate-limiter"
+import logger from "@/lib/logger"
 import { withErrorBoundary, createAppError } from "@/lib/api-error"
 
 export const POST = withErrorBoundary(async (request) => {
@@ -30,7 +31,7 @@ export const POST = withErrorBoundary(async (request) => {
     subject: String(subject || "").replace(/[\r\n]/g, " "),
     message: String(message || "").replace(/[\r\n]/g, " "),
   }
-  console.log("Contact form submission:", safeLog)
+  logger.info("Contact form submission:", { data: safeLog })
 
   return NextResponse.json({ 
     message: "Message sent successfully" 

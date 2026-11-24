@@ -1,4 +1,5 @@
 import { performOCR as performTesseractOCR, terminateOCR } from './tesseract'
+import logger from "@/lib/logger"
 export { performOCR as performTesseractOCR, terminateOCR } from './tesseract'
 export type TesseractResult = OCRResult
 export type { CloudOCRResult } from './cloud'
@@ -139,12 +140,12 @@ export async function performOCR(
       }
     }
   } catch (error) {
-    console.error(`[OCR] ${selectedProvider} failed:`, error)
+    logger.error(`[OCR] ${selectedProvider} failed:`, { error: error })
     
     if (selectedProvider === 'tesseract' && fallbackToCloud) {
       const cloudProviders = (await getAvailableProviders()).filter(p => p.name !== 'Tesseract.js (Local)')
       if (cloudProviders.length > 0) {
-        console.log('[OCR] Falling back to cloud provider')
+          console.log('[OCR] Falling back to cloud provider')
         const fallbackProvider = cloudProviders[0].name.toLowerCase().replace(/\s+/g, '')
         const { performCloudOCR } = await import('./cloud')
         const result = await performCloudOCR(file, fallbackProvider as 'aws' | 'google' | 'azure')

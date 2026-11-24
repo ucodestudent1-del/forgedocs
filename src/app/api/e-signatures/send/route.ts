@@ -6,6 +6,7 @@ import { escapeHtml } from "@/lib/email"
 import { validateCSRF } from "@/lib/csrf"
 import { scanFile } from "@/lib/malware-scan"
 import { documentRateLimit } from "@/lib/rate-limiter"
+import logger from "@/lib/logger"
 import { withErrorBoundary, createAppError } from "@/lib/api-error"
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
@@ -144,7 +145,7 @@ export const POST = withErrorBoundary(async (request) => {
       })
 
     if (signerError) {
-      console.error("Signer creation error:", signerError)
+      logger.error("Signer creation error:", { error: signerError })
       continue
     }
 
@@ -178,7 +179,7 @@ export const POST = withErrorBoundary(async (request) => {
           `,
         })
       } catch (emailError) {
-        console.error(`Failed to send email to ${signer.email}:`, emailError)
+        logger.error(`Failed to send email to ${signer.email}:`, { error: emailError })
       }
     }
   }

@@ -4,6 +4,7 @@ import { validateCSRF } from "@/lib/csrf"
 import { documentRateLimit } from "@/lib/rate-limiter"
 import { withErrorBoundary, createAppError } from "@/lib/api-error"
 import { trackUsage } from "@/lib/tierLimits"
+import logger from "@/lib/logger"
 
 export const POST = withErrorBoundary(async (req) => {
   const rateLimitError = await documentRateLimit(req)
@@ -189,7 +190,7 @@ export const POST = withErrorBoundary(async (req) => {
 
       results.push(result)
     } catch (error) {
-      console.error(`Bulk action ${action} failed for ${doc.id}:`, error)
+      logger.error(`Bulk action ${action} failed for ${doc.id}:`, { error: error })
       results.push({ id: doc.id, success: false, error: error instanceof Error ? error.message : "Unknown error" })
     }
   }

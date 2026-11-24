@@ -3,8 +3,8 @@ const FEATURE_FLAGS: Record<string, boolean> = {
   enable_conversion: true,
   enable_billing: true,
   enable_audit_log: true,
-  enable_collaboration: false,
-  enable_advanced_templates: false,
+  enable_collaboration: true,
+  enable_advanced_templates: true,
   enable_guest_mode: false,
 }
 

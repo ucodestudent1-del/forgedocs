@@ -1,4 +1,5 @@
 import { createWorker, PSM, OEM, RecognizeResult } from 'tesseract.js'
+import logger from "@/lib/logger"
 
 let worker: Tesseract.Worker | null = null
 let isInitializing = false
@@ -25,7 +26,7 @@ export async function initializeOCR(language = 'eng'): Promise<void> {
     
     console.log('[OCR] Worker initialized')
   } catch (error) {
-    console.error('[OCR] Failed to initialize:', error)
+    logger.error('[OCR] Failed to initialize:', { error: error })
     worker = null
     throw error
   } finally {
@@ -88,7 +89,7 @@ export async function performOCR(
       language
     }
   } catch (error) {
-    console.error('[OCR] Recognition failed:', error)
+    logger.error('[OCR] Recognition failed:', { error: error })
     throw error
   } finally {
     // Terminate worker after each OCR operation to prevent memory accumulation

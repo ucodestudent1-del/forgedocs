@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import logger from "@/lib/logger"
 
 export interface CloudOCRResult {
   text: string
@@ -28,7 +29,7 @@ async function uploadToTempStorage(file: File): Promise<{ path: string; signedUr
     .upload(path, file, { contentType: file.type, upsert: false })
   
   if (uploadError || !upload) {
-    console.error('OCR temp upload failed:', uploadError)
+    logger.error('OCR temp upload failed:', { error: uploadError })
     return null
   }
   
@@ -67,7 +68,7 @@ async function callAWS_Textract(signedUrl: string): Promise<{ text: string; conf
       pages: data.documentMetadata?.pages || 1,
     }
   } catch (error) {
-    console.error('AWS Textract error:', error)
+    logger.error('AWS Textract error:', { error: error })
     throw error
   }
 }
@@ -95,7 +96,7 @@ async function callGoogleVision(signedUrl: string): Promise<{ text: string; conf
       pages: annotations?.pages?.length || 1,
     }
   } catch (error) {
-    console.error('Google Vision error:', error)
+    logger.error('Google Vision error:', { error: error })
     throw error
   }
 }
@@ -130,7 +131,7 @@ async function callAzureVision(signedUrl: string): Promise<{ text: string; confi
     }
     throw new Error('Azure Vision timeout')
   } catch (error) {
-    console.error('Azure Vision error:', error)
+    logger.error('Azure Vision error:', { error: error })
     throw error
   }
 }

@@ -219,7 +219,7 @@ export default function ConversionPage() {
         const result = await convertCurrency(value, unitFrom, unitTo)
         toast({ title: `${unitValue} ${unitFrom} = ${result.result.toFixed(4)} ${unitTo}`, variant: "success" })
       } else {
-        result = convertUnit(value, unitFrom, unitTo, unitCategory)
+        result = convertUnit(value, unitCategory, unitFrom, unitTo)
         toast({ title: `${unitValue} ${UNIT_LABELS[unitFrom] || unitFrom} = ${result.toFixed(4)} ${UNIT_LABELS[unitTo] || unitTo}`, variant: "success" })
       }
     } catch (e) {

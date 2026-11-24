@@ -1,3 +1,5 @@
+import logger from "@/lib/logger"
+
 type CleanupFn = () => Promise<void> | void
 
 const cleanups: CleanupFn[] = []
@@ -25,10 +27,10 @@ async function runShutdown(signal: string) {
   )
 
   if (errors.length > 0) {
-    console.error("Shutdown errors:", errors)
+    logger.error("Shutdown errors:", { errors })
     process.exit(1)
   } else {
-    console.log("Graceful shutdown complete")
+    logger.info("Graceful shutdown complete")
     process.exit(0)
   }
 }

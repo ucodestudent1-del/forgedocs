@@ -26,7 +26,7 @@ if (!supabaseServiceKey) missingWorkerEnv.push("SUPABASE_SERVICE_ROLE_KEY")
 if (!redisUrl) missingWorkerEnv.push("REDIS_URL")
 
 if (missingWorkerEnv.length > 0) {
-  console.error(`Missing required worker environment variables: ${missingWorkerEnv.join(", ")}`)
+  logger.error(`Missing required worker environment variables: ${missingWorkerEnv.join(", ")}`)
   process.exit(1)
 }
 
@@ -460,7 +460,7 @@ healthServer.listen(HEALTH_PORT).on("error", (err: NodeJS.ErrnoException) => {
   if (err.code === "EADDRINUSE") {
     console.warn(`Worker health port ${HEALTH_PORT} already in use — health endpoint disabled`)
   } else {
-    console.error(`Worker health server error:`, err)
+    logger.error(`Worker health server error:`, err)
   }
 })
 healthServer.on("listening", () => {

@@ -3,7 +3,7 @@ import { ClientFaqSection } from "@/components/client/FaqSection"
 
 export const metadata: Metadata = {
   title: "ForgeDocs - Professional Document Management for Modern Teams",
-  description: "Create, organize, generate, and convert documents in the cloud. One platform for every document workflow. SOC 2 compliant, end-to-end encrypted, GDPR ready.",
+  description: "Create, organize, generate, and convert documents in the cloud. One platform for every document workflow. SOC 2 ready, encrypted at rest & in transit, GDPR ready.",
   keywords: ["document management", "document conversion", "e-signatures", "team collaboration", "SOC 2", "GDPR"],
   alternates: {
     canonical: "/",
@@ -67,11 +67,11 @@ export default function LandingPage() {
             <div className="flex flex-wrap items-center justify-center gap-8 md:gap-16 opacity-60 text-xs font-medium uppercase tracking-tighter text-muted-foreground">
               <span className="flex items-center gap-1">
                 <CheckCircle2 className="h-4 w-4 text-success" />
-                SOC 2 compliant
+                SOC 2 ready
               </span>
               <span className="flex items-center gap-1">
                 <Lock className="h-4 w-4 text-primary" />
-                End-to-end encrypted
+                Encrypted at rest & in transit
               </span>
               <span className="flex items-center gap-1">
                 <GlobeIcon className="h-4 w-4 text-primary" />
@@ -230,7 +230,7 @@ export default function LandingPage() {
               key="enterprise-security"
               icon={<Shield className="h-6 w-6 text-primary" />}
               title="Enterprise Security"
-              description="SOC 2 Type II compliant, end-to-end encryption, and granular permissions for every document."
+              description="SOC 2 ready, encryption at rest & in transit, and granular permissions for every document."
             />
             <FeatureCard
               key="fast-search"
@@ -267,15 +267,15 @@ export default function LandingPage() {
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
-            <TrustCard icon={<Lock className="h-6 w-6 text-primary" />} title="End-to-end encryption" description="All documents are encrypted at rest and in transit using AES-256 encryption standards." />
+            <TrustCard icon={<Lock className="h-6 w-6 text-primary" />} title="Encryption at rest & in transit" description="All documents are encrypted using AES-256 encryption standards." />
             <TrustCard icon={<Shield className="h-6 w-6 text-primary" />} title="Access control" description="Role-based permissions ensure only authorized team members can view or edit sensitive documents." />
-            <TrustCard icon={<BarChart3 className="h-6 w-6 text-primary" />} title="Audit trails" description="Complete activity logs track every document change, access, and share event for full compliance visibility." />
+            <TrustCard icon={<BarChart3 className="h-6 w-6 text-primary" />} title="Audit trails" description="Complete activity logs track every document change, access, and share event for compliance visibility." />
           </div>
 
           <div className="mt-12 flex flex-wrap items-center justify-center gap-8 md:gap-16 opacity-50 text-sm font-medium uppercase tracking-tighter text-muted-foreground">
             <span className="flex items-center gap-1">
               <CheckCircle2 className="h-4 w-4 text-success" />
-              SOC 2 Type II
+              SOC 2 ready
             </span>
             <span className="flex items-center gap-1">
               <GlobeIcon className="h-4 w-4 text-primary" />
@@ -364,18 +364,14 @@ export default function LandingPage() {
             />
           </div>
 
-          <div className="mt-16 flex flex-wrap items-center justify-center gap-8 md:gap-16 opacity-50 text-sm font-medium uppercase tracking-tighter text-muted-foreground">
-            <span className="flex items-center gap-1">
-              <CheckCircle2 className="h-4 w-4 text-green-500" />
-              10,000+ teams
-            </span>
+          <div className="mt-16 flex flex-wrap items-center justify-center gap-8 md:gap-16 opacity-50 text-xs font-medium uppercase tracking-tighter text-muted-foreground">
             <span className="flex items-center gap-1">
               <BarChart3 className="h-4 w-4 text-primary" />
-              99.9% uptime
+              Built for modern teams
             </span>
             <span className="flex items-center gap-1">
               <GlobeIcon className="h-4 w-4 text-primary" />
-              50+ countries
+              Global document workflows
             </span>
           </div>
         </div>

@@ -2,6 +2,7 @@ import type { Stripe } from "stripe"
 import { createServiceRoleClient } from "@/lib/supabase"
 import { stripeCircuitBreaker } from "@/lib/circuit-breaker"
 import { sendEmail } from "@/lib/email"
+import logger from "@/lib/logger"
 import {
   getPaymentFailedHtml,
   getTrialEndingHtml,
@@ -56,7 +57,7 @@ export async function handleCheckoutSessionCompleted(
   })
 
   if (error) {
-    console.error("Failed to upsert subscription:", error)
+    logger.error("Failed to upsert subscription:", { error: error })
   }
 }
 

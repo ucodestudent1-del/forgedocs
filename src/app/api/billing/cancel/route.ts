@@ -4,6 +4,7 @@ import { validateCSRF } from "@/lib/csrf"
 import { authRateLimit } from "@/lib/rate-limiter"
 import { withErrorBoundary, createAppError } from "@/lib/api-error"
 import { stripeCircuitBreaker } from "@/lib/circuit-breaker"
+import logger from "@/lib/logger"
 
 export const POST = withErrorBoundary(async (req) => {
   const rateLimitError = await authRateLimit(req)
@@ -48,7 +49,7 @@ export const POST = withErrorBoundary(async (req) => {
       .update({ cancel_at_period_end: true })
       .eq("id", subscription.id)
     if (dbError) {
-      console.error(`Failed to mark subscription cancel-at-period-end for ${subscription.id}:`, dbError)
+      logger.error(`Failed to mark subscription cancel-at-period-end for ${subscription.id}:`, { error: dbError })
     }
 
     return NextResponse.json({
@@ -68,7 +69,7 @@ export const POST = withErrorBoundary(async (req) => {
       .update({ status: "canceled", tier: null, cancel_at_period_end: false })
       .eq("id", subscription.id)
     if (dbError) {
-      console.error(`Failed to mark subscription canceled for ${subscription.id}:`, dbError)
+      logger.error(`Failed to mark subscription canceled for ${subscription.id}:`, { error: dbError })
     }
 
     return NextResponse.json({

@@ -70,7 +70,7 @@ export default function FeaturesPage() {
               title="Security & Compliance"
               description="Enterprise-grade security with SOC 2 Type II compliance, end-to-end encryption, and comprehensive audit logging."
               imageAlt="Security dashboard showing compliance badges, encryption status, and audit log overview"
-              features={["SOC 2 Type II compliant", "End-to-end encryption", "SSO / SAML authentication", "Two-factor authentication", "GDPR and CCPA ready", "99.9% uptime SLA"]}
+              features={["SOC 2 ready", "Encryption at rest & in transit", "SSO / SAML authentication", "Two-factor authentication", "GDPR and CCPA ready", "Uptime monitoring"]}
             />
             <FeatureSection
               number="06"
