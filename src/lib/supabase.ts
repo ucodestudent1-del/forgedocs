@@ -93,7 +93,11 @@ export async function createRouteClient() {
           try {
             const cookieStore = await cookies()
             cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
+              cookieStore.set(name, value, {
+                ...options,
+                secure: true,
+                sameSite: options.sameSite ?? "lax",
+              })
             )
           } catch {
             // The `set` method was called from a Server Component.

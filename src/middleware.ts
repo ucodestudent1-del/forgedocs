@@ -44,6 +44,20 @@ export async function middleware(request: NextRequest) {
     const requestId = request.headers.get("x-request-id") ?? generateRequestId()
     const cspNonce = generateCspNonce()
 
+    // REDIRECT LOOP PROTECTION — detect and break infinite redirect cycles
+    const redirectCountHeader = request.headers.get("x-redirect-count")
+    const redirectCount = redirectCountHeader ? parseInt(redirectCountHeader, 10) : 0
+    if (redirectCount > 3) {
+      logger.error("Redirect loop detected", {
+        url: request.url,
+        count: redirectCount,
+      })
+      return NextResponse.json(
+        { error: "Redirect loop detected" },
+        { status: 500 }
+      )
+    }
+
     // Skip non-page routes (static assets, internals, RSC payloads)
     const isStaticRoute =
       pathname.startsWith("/_next") ||
@@ -94,12 +108,16 @@ export async function middleware(request: NextRequest) {
       if (isProtectedRoute && (!user || error)) {
         const loginUrl = new URL("/auth/login", request.nextUrl)
         loginUrl.searchParams.set("callbackUrl", pathname)
-        return NextResponse.redirect(loginUrl)
+        const response = NextResponse.redirect(loginUrl)
+        response.headers.set("x-redirect-count", String(redirectCount + 1))
+        return response
       }
 
       // Auth routes should redirect to dashboard if already authenticated
       if (pathname.startsWith("/auth/") && user && !error) {
-        return NextResponse.redirect(new URL("/dashboard", request.nextUrl))
+        const response = NextResponse.redirect(new URL("/dashboard", request.nextUrl))
+        response.headers.set("x-redirect-count", String(redirectCount + 1))
+        return response
       }
     }
 
