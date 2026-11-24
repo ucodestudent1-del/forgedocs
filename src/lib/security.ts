@@ -38,13 +38,16 @@ export function sanitizeFilename(filename: string): string {
   return filename.replace(/[^a-zA-Z0-9._-]/g, "_")
 }
 
+import logger from "@/lib/logger"
+
 export async function generateSignedUrl(bucket: string, path: string, expiresIn: number = 900): Promise<string> {
   const { createRouteClient } = await import("@/lib/supabase")
   const supabase = await createRouteClient()
   const { data, error } = await supabase.storage.from(bucket).createSignedUrl(path, expiresIn)
 
   if (error || !data?.signedUrl) {
-    throw new Error(`Failed to generate signed URL: ${error?.message || "No signed URL returned"}`)
+    logger.error("Failed to generate signed URL", { bucket, path, error: error?.message })
+    throw new Error("Failed to generate signed URL")
   }
 
   return data.signedUrl

@@ -36,7 +36,7 @@ export const GET = withErrorBoundary(async (req) => {
   const pinned = url.searchParams.get("pinned") === "true"
   const search = url.searchParams.get("search") || ""
 
-  const cacheKey = `documents:${effectiveUser.id}:${page}:${limit}:${archived}:${pinned}:${search || ""}`
+  const cacheKey = `documents:user:${effectiveUser.id}:page:${page}:limit:${limit}:archived:${archived}:pinned:${pinned}:search:${encodeURIComponent(search || "")}`
   const cached = await cacheGet<{ documents: any[]; count: number; page: number; limit: number }>(cacheKey)
   if (cached) {
     return NextResponse.json(cached)

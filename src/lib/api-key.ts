@@ -105,27 +105,35 @@ export async function validateApiKey(rawKey: string): Promise<{ userId: string; 
 
   const keys = (data ?? []) as ApiKeyRow[]
 
-  // Multiple keys may share the same prefix; compare each hash in constant time
-  // to avoid prefix-collision denial of service and to avoid maybeSingle() errors.
+  // Multiple keys may share the same prefix; compare all keys in constant time
+  // to avoid timing side channels that could reveal which key prefix matches.
+  let matched = false
+  let matchedKey: ApiKeyRow | null = null
+
   for (const key of keys) {
     // Check expiry
     if (key.expires_at && new Date(key.expires_at) < new Date()) {
       continue
     }
 
-    // Constant-time comparison
+    // Constant-time comparison for each key
     if (compareApiKey(rawKey, key.key_hash)) {
-      // Update last_used_at (non-blocking)
-      void supabase
-        .from("api_keys")
-        .update({ last_used_at: new Date().toISOString() })
-        .eq("id", key.id)
-
-      return { userId: key.user_id, key }
+      matched = true
+      matchedKey = key
     }
   }
 
-  return null
+  if (!matched) {
+    return null
+  }
+
+  // Update last_used_at (non-blocking) for the matched key only
+  void supabase
+    .from("api_keys")
+    .update({ last_used_at: new Date().toISOString() })
+    .eq("id", matchedKey!.id)
+
+  return { userId: matchedKey!.user_id, key: matchedKey! }
 }
 
 export interface ApiKeyPermissionCheck {

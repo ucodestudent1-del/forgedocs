@@ -4,6 +4,20 @@ import { randomBytes, createHash, timingSafeEqual, createCipheriv, createDeciphe
 
 export const MFA_ISSUER = "ForgeDocs"
 
+export class MFAError extends Error {
+  constructor(public code: string, message: string) {
+    super(message)
+    this.name = "MFAError"
+  }
+}
+
+export class DecryptionError extends MFAError {
+  constructor(reason: "wrong_key" | "corrupt_data" | "tampered") {
+    super(reason, `Decryption failed: ${reason}`)
+    this.code = `MFA_DECRYPT_${reason.toUpperCase()}`
+  }
+}
+
 const ENCRYPTION_ALGORITHM = "aes-256-gcm"
 const IV_LENGTH = 16
 const CURRENT_KEY_VERSION = 1
@@ -39,16 +53,18 @@ export function encryptSecret(plaintext: string): string {
 export function decryptSecret(ciphertext: string): string | null {
   const [versionStr, ivHex, tagHex, dataHex] = ciphertext.split(":")
   if (!versionStr || !ivHex || !tagHex || !dataHex) {
-    return null
+    throw new DecryptionError("corrupt_data")
   }
 
   const version = parseInt(versionStr.replace("v", ""), 10)
   if (isNaN(version)) {
-    return null
+    throw new DecryptionError("corrupt_data")
   }
 
   // Try the key version that encrypted the data, plus fallback versions
   const versionsToTry = [version, CURRENT_KEY_VERSION].filter((v, i, arr) => arr.indexOf(v) === i)
+
+  let lastError: Error | null = null
 
   for (const v of versionsToTry) {
     try {
@@ -57,13 +73,13 @@ export function decryptSecret(ciphertext: string): string | null {
       decipher.setAuthTag(Buffer.from(tagHex, "hex"))
       const decrypted = Buffer.concat([decipher.update(Buffer.from(dataHex, "hex")), decipher.final()])
       return decrypted.toString("utf8")
-    } catch {
-      // Wrong key version — try next
+    } catch (err) {
+      lastError = err instanceof Error ? err : new Error(String(err))
       continue
     }
   }
 
-  return null
+  throw new DecryptionError("wrong_key")
 }
 
 /**
