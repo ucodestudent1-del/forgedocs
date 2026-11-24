@@ -3,11 +3,18 @@ import { NextResponse } from "next/server"
 import { validateCSRF } from "@/lib/csrf"
 import { authRateLimit } from "@/lib/rate-limiter"
 import { z } from "zod"
-import { verifyToken, hashBackupCode, generateBackupCodes, encryptSecret, isEncryptedSecret, resolveStoredSecret } from "@/lib/mfa"
+import {
+  verifyToken,
+  hashBackupCode,
+  generateBackupCodes,
+  decryptSecret,
+} from "@/lib/mfa"
 import { withErrorBoundary, createAppError } from "@/lib/api-error"
+import { logAuditEvent, getClientIp, getClientUserAgent } from "@/lib/audit"
 
 const verifySchema = z.object({
   token: z.string().length(6, "Token must be 6 digits"),
+  backup_code: z.string().optional(),
 })
 
 export const POST = withErrorBoundary(async (req) => {
@@ -24,71 +31,91 @@ export const POST = withErrorBoundary(async (req) => {
   }
 
   const body = await req.json()
-  const { token } = verifySchema.parse(body)
+  const { token, backup_code } = verifySchema.parse(body)
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("mfa_secret, mfa_enabled, mfa_backup_codes, mfa_pending")
-    .eq("id", user.id)
+  const { data: mfa } = await supabase
+    .from("mfa_profiles")
+    .select("totp_secret_encrypted, enabled, backup_codes")
+    .eq("user_id", user.id)
     .single()
 
-  if (!profile) {
-    throw createAppError("Profile not found", 404, "PROFILE_NOT_FOUND")
+  if (!mfa) {
+    throw createAppError("MFA not set up", 400, "MFA_NOT_SETUP")
   }
 
-  // Only allow verification if MFA is pending (enable was started but not completed)
-  if (!profile.mfa_pending && !profile.mfa_enabled) {
-    return NextResponse.json({ error: "MFA not set up" }, { status: 400 })
-  }
-
-  // Always resolve the TOTP secret server-side from the stored profile.
-  // Never accept a client-supplied secret — that would allow bypassing MFA.
-  const mfaSecret = resolveStoredSecret(profile.mfa_secret)
+  // Resolve the TOTP secret (decrypt if needed)
+  const mfaSecret = mfa.totp_secret_encrypted ? decryptSecret(mfa.totp_secret_encrypted) : null
 
   if (!mfaSecret) {
-    return NextResponse.json({ error: "MFA not set up" }, { status: 400 })
+    throw createAppError("MFA not set up", 400, "MFA_NOT_SETUP")
   }
 
-  const isValid = verifyToken(mfaSecret, token)
+  let isValid = false
+
+  // Verify TOTP token
+  if (token) {
+    isValid = verifyToken(mfaSecret, token)
+  }
+
+  // Verify backup code
+  if (!isValid && backup_code) {
+    const backupCodes = mfa.backup_codes ?? []
+    const providedHash = hashBackupCode(backup_code)
+    const matchedIndex = backupCodes.findIndex((c: string) => c === providedHash)
+    if (matchedIndex >= 0) {
+      isValid = true
+      // Consume the backup code (remove it)
+      const remainingCodes = backupCodes.filter((_: string, i: number) => i !== matchedIndex)
+      void supabase
+        .from("mfa_profiles")
+        .update({ backup_codes: remainingCodes })
+        .eq("user_id", user.id)
+    }
+  }
 
   if (!isValid) {
+    await logAuditEvent({
+      userId: user.id,
+      action: "mfa.verify_failed",
+      entityType: "mfa_profiles",
+      entityId: user.id,
+      severity: "medium",
+      ipAddress: getClientIp(req),
+      userAgent: getClientUserAgent(req),
+    })
     return NextResponse.json({ error: "Invalid token" }, { status: 400 })
   }
 
-  // Lazily re-encrypt any legacy plaintext MFA secret on first successful verify.
-  if (profile.mfa_secret && !isEncryptedSecret(profile.mfa_secret)) {
-    void supabase
-      .from("profiles")
-      .update({ mfa_secret: encryptSecret(mfaSecret) })
-      .eq("id", user.id)
-  }
-
-  // If this is the initial enrollment (pending), generate and return backup codes once
-  if (profile.mfa_pending && !profile.mfa_enabled) {
-    const backupCodes = generateBackupCodes(10)
-    const hashedBackupCodes = backupCodes.map(hashBackupCode)
-
+  // If MFA not yet enabled, this is the enrollment completion
+  if (!mfa.enabled) {
     await supabase
-      .from("profiles")
-      .update({
-        mfa_enabled: true,
-        mfa_pending: false,
-        mfa_backup_codes: hashedBackupCodes,
-      })
-      .eq("id", user.id)
+      .from("mfa_profiles")
+      .update({ enabled: true })
+      .eq("user_id", user.id)
 
-    return NextResponse.json({
-      success: true,
-      mfa_enabled: true,
-      backup_codes: backupCodes,
+    await logAuditEvent({
+      userId: user.id,
+      action: "mfa.enabled",
+      entityType: "mfa_profiles",
+      entityId: user.id,
+      severity: "high",
+      ipAddress: getClientIp(req),
+      userAgent: getClientUserAgent(req),
     })
+
+    return NextResponse.json({ success: true, mfa_enabled: true })
   }
 
-  // Re-verification for already-enabled MFA
-  await supabase
-    .from("profiles")
-    .update({ mfa_enabled: true, mfa_pending: false })
-    .eq("id", user.id)
+  // Re-verification (e.g. step-up auth)
+  await logAuditEvent({
+    userId: user.id,
+    action: "mfa.verified",
+    entityType: "mfa_profiles",
+    entityId: user.id,
+    severity: "low",
+    ipAddress: getClientIp(req),
+    userAgent: getClientUserAgent(req),
+  })
 
   return NextResponse.json({ success: true, mfa_enabled: true })
 })

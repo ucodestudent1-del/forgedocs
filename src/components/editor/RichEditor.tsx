@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Separator } from "@/components/ui/separator"
 import { useToast } from "@/components/ui/use-toast"
+import { CollaborativePresence } from "@/components/collaboration/CollaborativePresence"
 import {
   FileText,
   Save,
@@ -49,12 +50,15 @@ import {
   Superscript,
   Subscript,
   Minus,
+  Users,
 } from "lucide-react"
 
 interface EditorProps {
   documentId?: string
   initialContent?: string
   readOnly?: boolean
+  userName?: string | null
+  userAvatarUrl?: string | null
   onSave?: (content: string) => Promise<void>
   onExport?: (format: "pdf" | "docx" | "html" | "md") => Promise<void>
 }
@@ -144,6 +148,8 @@ export function RichEditor({
   documentId,
   initialContent = "",
   readOnly = false,
+  userName,
+  userAvatarUrl,
   onSave,
   onExport,
 }: EditorProps) {
@@ -642,6 +648,13 @@ export function RichEditor({
               <Badge variant="secondary" className="text-xs">
                 {documentId.slice(0, 8)}
               </Badge>
+            )}
+            {documentId && userName && (
+              <CollaborativePresence
+                documentId={documentId}
+                userName={userName}
+                userAvatarUrl={userAvatarUrl}
+              />
             )}
           </div>
 

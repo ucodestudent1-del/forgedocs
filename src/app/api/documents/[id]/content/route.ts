@@ -7,6 +7,7 @@ import { sanitizeHtml } from "@/lib/sanitize"
 import { cacheDel } from "@/lib/cache"
 import { logAuditEvent, getClientIp, getClientUserAgent } from "@/lib/audit"
 import { withErrorBoundary, createAppError } from "@/lib/api-error"
+import { fireWebhookEvent, type WebhookEvent } from "@/lib/webhooks"
 import logger from "@/lib/logger"
 
 export const GET = withErrorBoundary(async (req, { params }: { params: Promise<{ id: string }> }) => {
@@ -24,7 +25,7 @@ export const GET = withErrorBoundary(async (req, { params }: { params: Promise<{
 
   const { data: doc, error } = await supabase
     .from("documents")
-    .select("content, title, version")
+    .select("content, title, version, encryption_key_wrapped, encryption_iv, encryption_algorithm")
     .eq("id", id)
     .eq("user_id", user.id)
     .single()
@@ -33,12 +34,24 @@ export const GET = withErrorBoundary(async (req, { params }: { params: Promise<{
     throw createAppError("Document not found", 404, "DOCUMENT_NOT_FOUND")
   }
 
-  return NextResponse.json({ document: { ...doc, content: sanitizeHtml(doc.content || "") } })
+  return NextResponse.json({
+    document: {
+      ...doc,
+      content: sanitizeHtml(doc.content || ""),
+      encryption_key_wrapped: doc.encryption_key_wrapped,
+      encryption_iv: doc.encryption_iv,
+      encryption_algorithm: doc.encryption_algorithm,
+    },
+  })
 })
 
 const updateContentSchema = z.object({
   content: z.string().max(1000000),
   expected_version: z.number().int().nonnegative().optional(),
+  encrypted: z.boolean().optional().default(false),
+  encryption_key_wrapped: z.string().optional(),
+  encryption_iv: z.string().optional(),
+  encryption_algorithm: z.string().optional(),
 })
 
 export const PUT = withErrorBoundary(async (req, { params }: { params: Promise<{ id: string }> }) => {
@@ -55,14 +68,14 @@ export const PUT = withErrorBoundary(async (req, { params }: { params: Promise<{
   }
 
   const body = await req.json()
-  const { content, expected_version } = updateContentSchema.parse(body)
+  const { content, expected_version, encrypted, encryption_key_wrapped, encryption_iv, encryption_algorithm } = updateContentSchema.parse(body)
   const sanitizedContent = sanitizeHtml(content)
 
   const { id } = await params
 
   const { data: currentDoc } = await supabase
     .from("documents")
-    .select("version, content")
+    .select("version, content, encryption_key_wrapped, encryption_iv, encryption_algorithm")
     .eq("id", id)
     .eq("user_id", user.id)
     .single()
@@ -79,10 +92,22 @@ export const PUT = withErrorBoundary(async (req, { params }: { params: Promise<{
     )
   }
 
+  const updateData: Record<string, unknown> = {
+    content: sanitizedContent,
+    version: currentDoc.version + 1,
+  }
+
+  // Preserve or update encryption fields
+  if (encrypted) {
+    updateData.encryption_key_wrapped = encryption_key_wrapped ?? currentDoc.encryption_key_wrapped
+    updateData.encryption_iv = encryption_iv ?? currentDoc.encryption_iv
+    updateData.encryption_algorithm = encryption_algorithm ?? currentDoc.encryption_algorithm ?? "AES-256-GCM"
+  }
+
   // Atomic update with optimistic locking — only proceeds if version still matches
   const { data, error } = await supabase
     .from("documents")
-    .update({ content: sanitizedContent, version: currentDoc.version + 1 })
+    .update(updateData)
     .eq("id", id)
     .eq("user_id", user.id)
     .eq("version", currentDoc.version)
@@ -101,8 +126,6 @@ export const PUT = withErrorBoundary(async (req, { params }: { params: Promise<{
   }
 
   // Insert version record after successful update.
-  // Version history is best-effort: the document update is the primary operation.
-  // If version insert fails, log and continue — the document content is already saved.
   const { error: versionError } = await supabase.from("document_versions").insert({
     document_id: id,
     version: currentDoc.version,
@@ -127,10 +150,17 @@ export const PUT = withErrorBoundary(async (req, { params }: { params: Promise<{
     action: "document.update",
     entityType: "documents",
     entityId: id,
-    newValues: { version: currentDoc.version + 1 },
+    newValues: { version: currentDoc.version + 1, encrypted },
     severity: "medium",
     ipAddress: getClientIp(req),
     userAgent: getClientUserAgent(req),
+  })
+
+  // Fire webhook (non-blocking)
+  void fireWebhookEvent(user.id, "document.content.updated" as WebhookEvent, {
+    document_id: id,
+    user_id: user.id,
+    version: currentDoc.version + 1,
   })
 
   return NextResponse.json({ document: data })

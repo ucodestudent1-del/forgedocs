@@ -194,6 +194,8 @@ export function requiresApiKeyPermission(pathname: string): string[] | null {
     // Conversion (read + write)
     "/api/conversion": ["conversion:read", "conversion:write"],
     "/api/conversion/": ["conversion:read", "conversion:write"],
+    "/api/conversion/batch": ["conversion:read", "conversion:write"],
+    "/api/conversion/batch/": ["conversion:read", "conversion:write"],
 
     // OCR (read + write)
     "/api/ocr": ["conversion:read", "conversion:write"],
@@ -235,6 +237,24 @@ export function requiresApiKeyPermission(pathname: string): string[] | null {
     // This means API keys cannot access auth routes
     "/api/auth": null,
     "/api/auth/": null,
+    "/api/auth/saml": null,
+    "/api/auth/saml/": null,
+
+    // Custom domains are session-based
+    "/api/custom-domains": null,
+    "/api/custom-domains/": null,
+
+    // Webhooks are session-based
+    "/api/webhooks": null,
+    "/api/webhooks/": null,
+
+    // Integrations are session-based
+    "/api/integrations": null,
+    "/api/integrations/": null,
+
+    // MFA is session-based
+    "/api/auth/mfa": null,
+    "/api/auth/mfa/": null,
 
     // Onboarding is session-based
     "/api/onboarding": null,

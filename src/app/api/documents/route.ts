@@ -11,6 +11,8 @@ import { checkTierLimit, trackUsage } from "@/lib/tierLimits"
 import { withErrorBoundary, createAppError } from "@/lib/api-error"
 import { withTimeout } from "@/lib/with-timeout"
 import { getGuestUserId, isGuestMode } from "@/lib/guest-session"
+import { encryptDocument, decryptDocument, isEncryptedDocument } from "@/lib/encryption"
+import { fireWebhookEvent, type WebhookEvent } from "@/lib/webhooks"
 import type { Database } from "@/types/database"
 
 const SUPABASE_TIMEOUT_MS = 10000
@@ -82,6 +84,10 @@ const createDocSchema = z.object({
   title: z.string().min(1).max(200),
   description: z.string().optional(),
   template_id: z.string().uuid().optional(),
+  encrypted: z.boolean().optional().default(false),
+  encrypted_content: z.string().optional(),
+  encryption_key_wrapped: z.string().optional(),
+  encryption_iv: z.string().optional(),
 })
 
 export const POST = withErrorBoundary(async (req) => {
@@ -111,10 +117,12 @@ export const POST = withErrorBoundary(async (req) => {
   }
 
   const body = await req.json()
-  const { title, description, template_id } = createDocSchema.parse(body)
+  const { title, description, template_id, encrypted, encrypted_content, encryption_key_wrapped, encryption_iv } = createDocSchema.parse(body)
 
-  let content = ""
+  let content: string | null = null
   let content_type = "text/plain"
+  let encryptionKeyWrapped: string | null = null
+  let encryptionIv: string | null = null
 
   // If template_id provided, fetch template and use its content as starting point
   if (template_id) {
@@ -136,6 +144,16 @@ export const POST = withErrorBoundary(async (req) => {
     content_type = template.mime_type || "application/vnd.forgedocs.document+json"
   }
 
+  // Handle client-side encrypted content
+  if (encrypted && encrypted_content) {
+    content = encrypted_content
+    encryptionKeyWrapped = encryption_key_wrapped ?? null
+    encryptionIv = encryption_iv ?? null
+    content_type = content_type || "application/vnd.forgedocs.encrypted+json"
+  } else if (content === null) {
+    content = ""
+  }
+
   const storagePath = `documents/${effectiveUser.id}/${randomUUID()}.json`
 
   const { data: doc, error } = await withTimeout<{ data: any; error: any }>(
@@ -148,8 +166,11 @@ export const POST = withErrorBoundary(async (req) => {
         content,
         storage_path: storagePath,
         mime_type: content_type,
-        file_size: Buffer.byteLength(content),
+        file_size: Buffer.byteLength(String(content ?? "")),
         version: 1,
+        encryption_key_wrapped: encryptionKeyWrapped,
+        encryption_iv: encryptionIv,
+        encryption_algorithm: encrypted ? "AES-256-GCM" : null,
       })
       .select()
       .single(),
@@ -180,6 +201,13 @@ export const POST = withErrorBoundary(async (req) => {
     severity: "low",
     ipAddress: getClientIp(req),
     userAgent: getClientUserAgent(req),
+  })
+
+  // Fire webhook (non-blocking)
+  void fireWebhookEvent(effectiveUser.id, "document.created" as WebhookEvent, {
+    document_id: doc.id,
+    title,
+    user_id: effectiveUser.id,
   })
 
   return NextResponse.json({ document: doc }, { status: 201 })

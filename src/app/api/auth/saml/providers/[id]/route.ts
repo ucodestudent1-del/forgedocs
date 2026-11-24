@@ -1,0 +1,93 @@
+import { getRouteClient } from "@/lib/supabase"
+import { NextResponse } from "next/server"
+import { validateCSRF } from "@/lib/csrf"
+import { z } from "zod"
+import { withErrorBoundary, createAppError } from "@/lib/api-error"
+
+const updateProviderSchema = z.object({
+  entity_id: z.string().min(1).optional(),
+  sso_url: z.string().url().optional(),
+  x509_certificate: z.string().min(1).optional(),
+  name_id_format: z.string().optional(),
+  attribute_mapping: z.record(z.string(), z.string()).optional(),
+  is_active: z.boolean().optional(),
+})
+
+// GET/PATCH/DELETE /api/auth/saml/providers/[id]
+export const GET = withErrorBoundary(async (req, { params }: { params: Promise<{ id: string }> }) => {
+  const supabase = await getRouteClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) {
+    throw createAppError("Unauthorized", 401, "UNAUTHORIZED")
+  }
+
+  const { id } = await params
+
+  const { data: provider, error } = await supabase
+    .from("saml_providers")
+    .select("*")
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .single()
+
+  if (error || !provider) {
+    throw createAppError("SAML provider not found", 404, "SAML_PROVIDER_NOT_FOUND")
+  }
+
+  return NextResponse.json({ provider })
+})
+
+export const PATCH = withErrorBoundary(async (req, { params }: { params: Promise<{ id: string }> }) => {
+  await validateCSRF(req)
+
+  const supabase = await getRouteClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) {
+    throw createAppError("Unauthorized", 401, "UNAUTHORIZED")
+  }
+
+  const { id } = await params
+  const body = await req.json()
+  const updates = updateProviderSchema.parse(body)
+
+  const { data, error } = await supabase
+    .from("saml_providers")
+    .update({ ...updates, updated_at: new Date().toISOString() })
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .select()
+    .single()
+
+  if (error || !data) {
+    throw createAppError("SAML provider not found", 404, "SAML_PROVIDER_NOT_FOUND")
+  }
+
+  return NextResponse.json({ provider: data })
+})
+
+export const DELETE = withErrorBoundary(async (req, { params }: { params: Promise<{ id: string }> }) => {
+  await validateCSRF(req)
+
+  const supabase = await getRouteClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) {
+    throw createAppError("Unauthorized", 401, "UNAUTHORIZED")
+  }
+
+  const { id } = await params
+
+  const { error } = await supabase
+    .from("saml_providers")
+    .delete()
+    .eq("id", id)
+    .eq("user_id", user.id)
+
+  if (error) {
+    throw createAppError(error.message, 500, "DATABASE_ERROR")
+  }
+
+  return NextResponse.json({ success: true })
+})

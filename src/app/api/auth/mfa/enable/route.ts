@@ -3,8 +3,17 @@ import { NextResponse } from "next/server"
 import { validateCSRF } from "@/lib/csrf"
 import { authRateLimit } from "@/lib/rate-limiter"
 import { z } from "zod"
-import { generateSecret, getTotpUri, generateQrCode, generateBackupCodes, hashBackupCode, encryptSecret } from "@/lib/mfa"
+import {
+  generateSecret,
+  getTotpUri,
+  generateQrCode,
+  generateBackupCodes,
+  hashBackupCode,
+  encryptSecret,
+  verifyToken,
+} from "@/lib/mfa"
 import { withErrorBoundary, createAppError } from "@/lib/api-error"
+import { logAuditEvent, getClientIp, getClientUserAgent } from "@/lib/audit"
 
 export const POST = withErrorBoundary(async (req) => {
   const rateLimitError = await authRateLimit(req)
@@ -19,13 +28,14 @@ export const POST = withErrorBoundary(async (req) => {
     throw createAppError("Unauthorized", 401, "UNAUTHORIZED")
   }
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("mfa_enabled, mfa_secret")
-    .eq("id", user.id)
+  // Check if MFA already enabled
+  const { data: existing } = await supabase
+    .from("mfa_profiles")
+    .select("enabled")
+    .eq("user_id", user.id)
     .single()
 
-  if (profile?.mfa_enabled) {
+  if (existing?.enabled) {
     return NextResponse.json({ error: "MFA already enabled" }, { status: 400 })
   }
 
@@ -33,21 +43,31 @@ export const POST = withErrorBoundary(async (req) => {
   const otpUri = getTotpUri(secret, user.email || "")
   const qrCode = await generateQrCode(otpUri)
   const backupCodes = generateBackupCodes(10)
-  const hashedBackupCodes = backupCodes.map(hashBackupCode)
+  const hashedBackupCodes = backupCodes.map((c) => hashBackupCode(c))
 
+  // Upsert MFA profile (pending verification)
   await supabase
-    .from("profiles")
-    .update({
-      mfa_secret: encryptSecret(secret),
-      mfa_backup_codes: hashedBackupCodes,
-      mfa_enabled: false,
-      mfa_pending: true,
+    .from("mfa_profiles")
+    .upsert({
+      user_id: user.id,
+      totp_secret_encrypted: encryptSecret(secret),
+      enabled: false,
+      backup_codes: hashedBackupCodes,
     })
-    .eq("id", user.id)
+    .eq("user_id", user.id)
 
-  // Return QR code only; the TOTP secret is embedded in the QR image and never
-  // transmitted as plaintext, preventing secret interception via logs/DevTools.
+  await logAuditEvent({
+    userId: user.id,
+    action: "mfa.setup_started",
+    entityType: "mfa_profiles",
+    entityId: user.id,
+    severity: "medium",
+    ipAddress: getClientIp(req),
+    userAgent: getClientUserAgent(req),
+  })
+
   return NextResponse.json({
     qr_code: qrCode,
+    backup_codes: backupCodes, // shown once to user
   })
 })

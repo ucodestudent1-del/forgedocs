@@ -24,7 +24,7 @@ const DEFAULT_LIMITS: TierLimits = isDemoMode
       max_file_size_mb: parseInt(process.env.NEXT_PUBLIC_DEMO_MAX_FILE_SIZE_MB || "10", 10),
       api_requests_per_minute: parseInt(process.env.NEXT_PUBLIC_DEMO_MAX_API_REQUESTS_PER_MIN || "30", 10),
       has_priority_support: process.env.NEXT_PUBLIC_DEMO_HAS_PRIORITY_SUPPORT === "true",
-      has_audit_logs: process.env.NEXT_PUBLIC_DEMO_HAS_AUDIT_LOGS === "true",
+      has_audit_logs: process.env.NEXT_PUBLIC_DEMO_HAS_AUDIT_LOGS !== "false",
       has_advanced_templates: process.env.NEXT_PUBLIC_DEMO_HAS_ADVANCED_TEMPLATES === "true",
       max_seats: parseInt(process.env.NEXT_PUBLIC_DEMO_MAX_SEATS || "3", 10),
     }
@@ -35,7 +35,7 @@ const DEFAULT_LIMITS: TierLimits = isDemoMode
       max_file_size_mb: 10,
       api_requests_per_minute: 30,
       has_priority_support: false,
-      has_audit_logs: false,
+      has_audit_logs: true,
       has_advanced_templates: false,
       max_seats: 1,
     }

@@ -5,6 +5,7 @@ import { validateCSRF } from "@/lib/csrf"
 import { documentRateLimit } from "@/lib/rate-limiter"
 import { cacheDel } from "@/lib/cache"
 import { withErrorBoundary, createAppError } from "@/lib/api-error"
+import { fireWebhookEvent, type WebhookEvent } from "@/lib/webhooks"
 
 export const GET = withErrorBoundary(async (req, { params }: { params: Promise<{ id: string }> }) => {
   const rateLimitError = await documentRateLimit(req)
@@ -102,6 +103,12 @@ export const DELETE = withErrorBoundary(async (req, { params }: { params: Promis
 
   // Invalidate document list cache
   await cacheDel(`documents:${user.id}:*`)
+
+  // Fire webhook (non-blocking)
+  void fireWebhookEvent(user.id, "document.deleted" as WebhookEvent, {
+    document_id: id,
+    user_id: user.id,
+  })
 
   return NextResponse.json({ success: true })
 })

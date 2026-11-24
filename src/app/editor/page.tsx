@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { FileText, Plus, Loader2 } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 import { ScrollIndicator } from "@/components/ui/scroll-indicator"
+import { createClient } from "@supabase/supabase-js"
 
 const RichEditor = dynamic(() => import("@/components/editor/RichEditor").then((mod) => mod.RichEditor), {
   loading: () => (
@@ -21,7 +22,13 @@ export default function EditorPage() {
   const [initialContent, setInitialContent] = useState<string>("");
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [userName, setUserName] = useState<string | null>(null)
+  const [userAvatarUrl, setUserAvatarUrl] = useState<string | null>(null)
   const { toast } = useToast()
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
 
   useEffect(() => {
     const params = new URLSearchParams(typeof window !== "undefined" ? window.location.search : "")
@@ -32,6 +39,20 @@ export default function EditorPage() {
     } else {
       setLoading(false)
     }
+  }, [])
+
+  useEffect(() => {
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("full_name, avatar_url")
+          .eq("id", user.id)
+          .single()
+        setUserName(profile?.full_name ?? user.email ?? "Anonymous")
+        setUserAvatarUrl(profile?.avatar_url ?? null)
+      }
+    })
   }, [])
 
   async function loadDocument(id: string) {
@@ -172,6 +193,8 @@ export default function EditorPage() {
           <RichEditor
             documentId={documentId}
             initialContent={initialContent}
+            userName={userName}
+            userAvatarUrl={userAvatarUrl}
             onSave={handleSave}
             onExport={handleExport}
           />

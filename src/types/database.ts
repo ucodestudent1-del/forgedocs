@@ -154,6 +154,9 @@ export type Database = {
           is_archived: boolean
           is_pinned: boolean
           version: number
+          encryption_key_wrapped: string | null
+          encryption_iv: string | null
+          encryption_algorithm: string | null
           created_at: string
           updated_at: string
         }
@@ -172,6 +175,9 @@ export type Database = {
           is_archived?: boolean
           is_pinned?: boolean
           version?: number
+          encryption_key_wrapped?: string | null
+          encryption_iv?: string | null
+          encryption_algorithm?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -190,8 +196,357 @@ export type Database = {
           is_archived?: boolean
           is_pinned?: boolean
           version?: number
+          encryption_key_wrapped?: string | null
+          encryption_iv?: string | null
+          encryption_algorithm?: string | null
           created_at?: string
           updated_at?: string
+        }
+      }
+      document_presence: {
+        Row: {
+          id: string
+          document_id: string
+          user_id: string
+          user_name: string | null
+          user_avatar_url: string | null
+          cursor_position: Json
+          selection: Json
+          last_seen_at: string
+        }
+        Insert: {
+          id?: string
+          document_id: string
+          user_id: string
+          user_name?: string | null
+          user_avatar_url?: string | null
+          cursor_position?: Json
+          selection?: Json
+          last_seen_at?: string
+        }
+        Update: {
+          id?: string
+          document_id?: string
+          user_id?: string
+          user_name?: string | null
+          user_avatar_url?: string | null
+          cursor_position?: Json
+          selection?: Json
+          last_seen_at?: string
+        }
+      }
+      saml_providers: {
+        Row: {
+          id: string
+          user_id: string
+          entity_id: string
+          sso_url: string
+          x509_certificate: string
+          name_id_format: string | null
+          attribute_mapping: Json
+          is_active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          entity_id: string
+          sso_url: string
+          x509_certificate: string
+          name_id_format?: string | null
+          attribute_mapping?: Json
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          entity_id?: string
+          sso_url?: string
+          x509_certificate?: string
+          name_id_format?: string | null
+          attribute_mapping?: Json
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      saml_relay_states: {
+        Row: {
+          id: string
+          relay_state: string
+          user_id: string
+          provider_id: string
+          expires_at: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          relay_state: string
+          user_id: string
+          provider_id: string
+          expires_at?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          relay_state?: string
+          user_id?: string
+          provider_id?: string
+          expires_at?: string
+          created_at?: string
+        }
+      }
+      saml_accounts: {
+        Row: {
+          id: string
+          user_id: string
+          provider_id: string
+          external_id: string
+          email: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          provider_id: string
+          external_id: string
+          email: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          provider_id?: string
+          external_id?: string
+          email?: string
+          created_at?: string
+        }
+      }
+      custom_domains: {
+        Row: {
+          id: string
+          user_id: string
+          hostname: string
+          dns_verified: boolean
+          verification_token: string | null
+          ssl_certificate: string | null
+          ssl_private_key: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          hostname: string
+          dns_verified?: boolean
+          verification_token?: string | null
+          ssl_certificate?: string | null
+          ssl_private_key?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          hostname?: string
+          dns_verified?: boolean
+          verification_token?: string | null
+          ssl_certificate?: string | null
+          ssl_private_key?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      webhook_endpoints: {
+        Row: {
+          id: string
+          user_id: string
+          url: string
+          secret: string
+          events: string[]
+          is_active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          url: string
+          secret: string
+          events?: string[]
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          url?: string
+          secret?: string
+          events?: string[]
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      webhook_deliveries: {
+        Row: {
+          id: string
+          endpoint_id: string
+          event: string
+          payload: Json
+          response_status: number | null
+          response_body: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          endpoint_id: string
+          event: string
+          payload?: Json
+          response_status?: number | null
+          response_body?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          endpoint_id?: string
+          event?: string
+          payload?: Json
+          response_status?: number | null
+          response_body?: string | null
+          created_at?: string
+        }
+      }
+      user_integrations: {
+        Row: {
+          id: string
+          user_id: string
+          integration_id: string
+          access_token_encrypted: string | null
+          refresh_token_encrypted: string | null
+          scopes: string[] | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          integration_id: string
+          access_token_encrypted?: string | null
+          refresh_token_encrypted?: string | null
+          scopes?: string[] | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          integration_id?: string
+          access_token_encrypted?: string | null
+          refresh_token_encrypted?: string | null
+          scopes?: string[] | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      batch_job_tasks: {
+        Row: {
+          id: string
+          batch_job_id: string
+          task_type: string
+          input: Json
+          output: Json | null
+          status: string
+          error_message: string | null
+          created_at: string
+          completed_at: string | null
+        }
+        Insert: {
+          id?: string
+          batch_job_id: string
+          task_type: string
+          input?: Json
+          output?: Json | null
+          status?: string
+          error_message?: string | null
+          created_at?: string
+          completed_at?: string | null
+        }
+        Update: {
+          id?: string
+          batch_job_id?: string
+          task_type?: string
+          input?: Json
+          output?: Json | null
+          status?: string
+          error_message?: string | null
+          created_at?: string
+          completed_at?: string | null
+        }
+      }
+      mfa_profiles: {
+        Row: {
+          id: string
+          user_id: string
+          totp_secret: string | null
+          totp_secret_encrypted: string | null
+          enabled: boolean
+          backup_codes: string[] | null
+          verified_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          totp_secret?: string | null
+          totp_secret_encrypted?: string | null
+          enabled?: boolean
+          backup_codes?: string[] | null
+          verified_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          totp_secret?: string | null
+          totp_secret_encrypted?: string | null
+          enabled?: boolean
+          backup_codes?: string[] | null
+          verified_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      document_collab_snapshots: {
+        Row: {
+          id: string
+          document_id: string
+          yjs_state: Json
+          version_number: number
+          created_by: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          document_id: string
+          yjs_state?: Json
+          version_number?: number
+          created_by?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          document_id?: string
+          yjs_state?: Json
+          version_number?: number
+          created_by?: string | null
+          created_at?: string
         }
       }
       document_versions: {

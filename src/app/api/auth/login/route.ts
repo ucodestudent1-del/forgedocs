@@ -44,6 +44,32 @@ export const POST = withErrorBoundary(async (req) => {
 
   await clearFailedAttempts(identifier)
 
+  // Check if MFA is enabled for this user
+  const { data: mfa } = await supabase
+    .from("mfa_profiles")
+    .select("enabled")
+    .eq("id", (await supabase.auth.getUser()).data.user?.id)
+    .single()
+
+  if (mfa?.enabled) {
+    // MFA required — return a challenge that the user must complete
+    const { data: { user } } = await supabase.auth.getUser()
+    // Set a temporary mfa_required flag in session
+    const cookieStore = await cookies()
+    cookieStore.set("mfa_required", user.id, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "strict",
+      path: "/",
+      maxAge: 600, // 10 minutes to complete MFA
+    })
+
+    return NextResponse.json({
+      mfa_required: true,
+      message: "MFA verification required",
+    }, { status: 200 })
+  }
+
   // Rotate CSRF token after successful authentication to prevent session fixation
   const newCsrfToken = generateCSRFToken()
   const cookieStore = await cookies()
