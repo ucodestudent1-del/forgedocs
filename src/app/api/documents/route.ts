@@ -13,9 +13,20 @@ import { withTimeout } from "@/lib/with-timeout"
 import { getGuestUserId, isGuestMode } from "@/lib/guest-session"
 import { encryptDocument, decryptDocument, isEncryptedDocument } from "@/lib/encryption"
 import { fireWebhookEvent, type WebhookEvent } from "@/lib/webhooks"
+import {
+  requireAccountMembership,
+  validateResourceAccountAccess,
+  accountScope,
+} from "@/lib/account-authz"
 import type { Database } from "@/types/database"
 
 const SUPABASE_TIMEOUT_MS = 10000
+
+const accountIdSchema = z
+  .string()
+  .uuid()
+  .optional()
+  .transform((val) => (val === undefined ? null : val))
 
 export const GET = withErrorBoundary(async (req) => {
   const rateLimitError = await documentRateLimit(req)
@@ -37,13 +48,20 @@ export const GET = withErrorBoundary(async (req) => {
   const archived = url.searchParams.get("archived") === "true"
   const pinned = url.searchParams.get("pinned") === "true"
   const search = url.searchParams.get("search") || ""
+  const accountId = accountIdSchema.parse(url.searchParams.get("account_id"))
 
-  const cacheKey = `documents:user:${effectiveUser.id}:page:${page}:limit:${limit}:archived:${archived}:pinned:${pinned}:search:${encodeURIComponent(search || "")}`
+  // Account-scoped requests require verified membership.
+  if (accountId) {
+    await requireAccountMembership(effectiveUser.id, accountId, "member")
+  }
+
+  const cacheKey = `documents:user:${effectiveUser.id}:account:${accountId ?? "personal"}:page:${page}:limit:${limit}:archived:${archived}:pinned:${pinned}:search:${encodeURIComponent(search || "")}`
   const cached = await cacheGet<{ documents: any[]; count: number; page: number; limit: number }>(cacheKey)
   if (cached) {
     return NextResponse.json(cached)
   }
 
+  // Scope to personal resources (no account) unless an account is selected.
   let query = supabase
     .from("documents")
     .select(`
@@ -52,6 +70,7 @@ export const GET = withErrorBoundary(async (req) => {
     `, { count: "exact" })
     .eq("user_id", effectiveUser.id)
     .eq("is_archived", archived)
+    .filter("account_id", accountId ? "eq" : "is", accountId ?? null)
 
   if (pinned) {
     query = query.eq("is_pinned", true)
@@ -84,6 +103,7 @@ const createDocSchema = z.object({
   title: z.string().min(1).max(200),
   description: z.string().optional(),
   template_id: z.string().uuid().optional(),
+  account_id: z.string().uuid().optional().transform((val) => (val === undefined ? null : val)),
   encrypted: z.boolean().optional().default(false),
   encrypted_content: z.string().optional(),
   encryption_key_wrapped: z.string().optional(),
@@ -107,6 +127,14 @@ export const POST = withErrorBoundary(async (req) => {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
+  const body = await req.json()
+  const { title, description, template_id, account_id, encrypted, encrypted_content, encryption_key_wrapped, encryption_iv } = createDocSchema.parse(body)
+
+  // Account-scoped documents require verified membership.
+  if (account_id) {
+    await requireAccountMembership(effectiveUser.id, account_id, "member")
+  }
+
   // Check document limit
   const limitCheck = await checkTierLimit(effectiveUser.id, "documents_created")
   if (!limitCheck.allowed) {
@@ -115,9 +143,6 @@ export const POST = withErrorBoundary(async (req) => {
       { status: 403 }
     )
   }
-
-  const body = await req.json()
-  const { title, description, template_id, encrypted, encrypted_content, encryption_key_wrapped, encryption_iv } = createDocSchema.parse(body)
 
   let content: string | null = null
   let content_type = "text/plain"
@@ -161,6 +186,7 @@ export const POST = withErrorBoundary(async (req) => {
       .from("documents")
       .insert({
         user_id: effectiveUser.id,
+        account_id,
         title,
         description,
         content,

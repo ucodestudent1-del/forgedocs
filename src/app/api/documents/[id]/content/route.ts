@@ -9,6 +9,7 @@ import { logAuditEvent, getClientIp, getClientUserAgent } from "@/lib/audit"
 import { withErrorBoundary, createAppError } from "@/lib/api-error"
 import { fireWebhookEvent, type WebhookEvent } from "@/lib/webhooks"
 import logger from "@/lib/logger"
+import { requireAccountMembership } from "@/lib/account-authz"
 
 export const GET = withErrorBoundary(async (req, { params }: { params: Promise<{ id: string }> }) => {
   const rateLimitError = await documentRateLimit(req)
@@ -25,12 +26,17 @@ export const GET = withErrorBoundary(async (req, { params }: { params: Promise<{
 
   const { data: doc, error } = await supabase
     .from("documents")
-    .select("content, title, version, encryption_key_wrapped, encryption_iv, encryption_algorithm")
+    .select("content, title, version, encryption_key_wrapped, encryption_iv, encryption_algorithm, user_id, account_id")
     .eq("id", id)
-    .eq("user_id", user.id)
     .single()
 
   if (error || !doc) {
+    throw createAppError("Document not found", 404, "DOCUMENT_NOT_FOUND")
+  }
+
+  if (doc.user_id !== user.id && doc.account_id) {
+    await requireAccountMembership(user.id, doc.account_id, "member")
+  } else if (doc.user_id !== user.id) {
     throw createAppError("Document not found", 404, "DOCUMENT_NOT_FOUND")
   }
 
@@ -75,12 +81,17 @@ export const PUT = withErrorBoundary(async (req, { params }: { params: Promise<{
 
   const { data: currentDoc } = await supabase
     .from("documents")
-    .select("version, content, encryption_key_wrapped, encryption_iv, encryption_algorithm")
+    .select("version, content, encryption_key_wrapped, encryption_iv, encryption_algorithm, user_id, account_id")
     .eq("id", id)
-    .eq("user_id", user.id)
     .single()
 
   if (!currentDoc) {
+    throw createAppError("Document not found", 404, "DOCUMENT_NOT_FOUND")
+  }
+
+  if (currentDoc.user_id !== user.id && currentDoc.account_id) {
+    await requireAccountMembership(user.id, currentDoc.account_id, "member")
+  } else if (currentDoc.user_id !== user.id) {
     throw createAppError("Document not found", 404, "DOCUMENT_NOT_FOUND")
   }
 
@@ -104,12 +115,12 @@ export const PUT = withErrorBoundary(async (req, { params }: { params: Promise<{
     updateData.encryption_algorithm = encryption_algorithm ?? currentDoc.encryption_algorithm ?? "AES-256-GCM"
   }
 
-  // Atomic update with optimistic locking — only proceeds if version still matches
+  // Atomic update with optimistic locking — only proceeds if version still matches.
+  // Access was already verified above; RLS enforces account membership as a backstop.
   const { data, error } = await supabase
     .from("documents")
     .update(updateData)
     .eq("id", id)
-    .eq("user_id", user.id)
     .eq("version", currentDoc.version)
     .select()
     .single()

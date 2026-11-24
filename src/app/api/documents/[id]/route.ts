@@ -6,6 +6,7 @@ import { documentRateLimit } from "@/lib/rate-limiter"
 import { cacheDel } from "@/lib/cache"
 import { withErrorBoundary, createAppError } from "@/lib/api-error"
 import { fireWebhookEvent, type WebhookEvent } from "@/lib/webhooks"
+import { requireAccountMembership } from "@/lib/account-authz"
 
 export const GET = withErrorBoundary(async (req, { params }: { params: Promise<{ id: string }> }) => {
   const rateLimitError = await documentRateLimit(req)
@@ -24,10 +25,16 @@ export const GET = withErrorBoundary(async (req, { params }: { params: Promise<{
     .from("documents")
     .select("*, templates ( * )")
     .eq("id", id)
-    .eq("user_id", user.id)
     .single()
 
   if (error || !doc) {
+    throw createAppError("Document not found", 404, "DOCUMENT_NOT_FOUND")
+  }
+
+  // Access control: owner, or member of the document's account.
+  if (doc.user_id !== user.id && doc.account_id) {
+    await requireAccountMembership(user.id, doc.account_id, "member")
+  } else if (doc.user_id !== user.id) {
     throw createAppError("Document not found", 404, "DOCUMENT_NOT_FOUND")
   }
 
@@ -58,11 +65,26 @@ export const PATCH = withErrorBoundary(async (req, { params }: { params: Promise
   const { title, description, is_pinned, is_archived } = updateDocSchema.parse(body)
   const { id } = await params
 
+  // Enforce access before mutating.
+  const { data: existing } = await supabase
+    .from("documents")
+    .select("user_id, account_id")
+    .eq("id", id)
+    .single()
+
+  if (!existing) {
+    throw createAppError("Document not found", 404, "DOCUMENT_NOT_FOUND")
+  }
+  if (existing.user_id !== user.id && existing.account_id) {
+    await requireAccountMembership(user.id, existing.account_id, "member")
+  } else if (existing.user_id !== user.id) {
+    throw createAppError("Document not found", 404, "DOCUMENT_NOT_FOUND")
+  }
+
   const { data, error } = await supabase
     .from("documents")
     .update({ title, description, is_pinned, is_archived })
     .eq("id", id)
-    .eq("user_id", user.id)
     .select()
     .single()
 
@@ -91,11 +113,26 @@ export const DELETE = withErrorBoundary(async (req, { params }: { params: Promis
 
   const { id } = await params
 
+  // Enforce access before mutating.
+  const { data: existing } = await supabase
+    .from("documents")
+    .select("user_id, account_id")
+    .eq("id", id)
+    .single()
+
+  if (!existing) {
+    throw createAppError("Document not found", 404, "DOCUMENT_NOT_FOUND")
+  }
+  if (existing.user_id !== user.id && existing.account_id) {
+    await requireAccountMembership(user.id, existing.account_id, "member")
+  } else if (existing.user_id !== user.id) {
+    throw createAppError("Document not found", 404, "DOCUMENT_NOT_FOUND")
+  }
+
   const { error } = await supabase
     .from("documents")
     .delete()
     .eq("id", id)
-    .eq("user_id", user.id)
 
   if (error) {
     throw createAppError(error.message, 500, "DATABASE_ERROR")

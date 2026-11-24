@@ -142,6 +142,7 @@ export type Database = {
         Row: {
           id: string
           user_id: string
+          account_id: string | null
           template_id: string | null
           parent_id: string | null
           title: string
@@ -163,6 +164,7 @@ export type Database = {
         Insert: {
           id?: string
           user_id: string
+          account_id?: string | null
           template_id?: string | null
           parent_id?: string | null
           title: string
@@ -184,6 +186,7 @@ export type Database = {
         Update: {
           id?: string
           user_id?: string
+          account_id?: string | null
           template_id?: string | null
           parent_id?: string | null
           title?: string

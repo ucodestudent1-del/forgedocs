@@ -6,6 +6,7 @@ import { validateCSRF } from "@/lib/csrf"
 import { authRateLimit } from "@/lib/rate-limiter"
 import { withErrorBoundary, createAppError } from "@/lib/api-error"
 import { stripeCircuitBreaker } from "@/lib/circuit-breaker"
+import { isAllowedPriceId } from "@/lib/billing/prices"
 
 export const GET = withErrorBoundary(async () => {
   const supabase = await createRouteClient()
@@ -43,6 +44,11 @@ export const POST = withErrorBoundary(async (req) => {
 
   const body = await req.json()
   const { priceId, trialDays } = body
+
+  // Never trust client-provided pricing: validate against server-controlled prices.
+  if (!priceId || typeof priceId !== "string" || !isAllowedPriceId(priceId)) {
+    throw createAppError("Invalid or unsupported price", 400, "INVALID_PRICE")
+  }
 
   // Create Stripe checkout session
   const session = await stripeCircuitBreaker.execute(async () => {

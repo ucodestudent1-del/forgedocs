@@ -119,19 +119,50 @@ export async function middleware(request: NextRequest) {
         })
         return redirectResponse
       }
-    }
 
-    // Redirect authenticated users away from auth pages
-    if (pathname.startsWith("/auth/") && !isLooping && !pathname.startsWith("/auth/callback")) {
-      const supabase = await getRouteClient()
-      const { data: { user }, error } = await supabase.auth.getUser()
-      if (user && !error) {
-        const redirectResponse = NextResponse.redirect(new URL("/dashboard", request.nextUrl))
+      // Enforce email verification on protected routes.
+      // Unverified users are sent to the verification page instead of the app.
+      if (
+        isProtectedRoute &&
+        user &&
+        !error &&
+        !user.email_confirmed_at &&
+        !isLooping
+      ) {
+        const verifyUrl = new URL("/auth/verify", request.nextUrl)
+        verifyUrl.searchParams.set("callbackUrl", pathname)
+        const redirectResponse = NextResponse.redirect(verifyUrl)
         redirectResponse.cookies.set("redirect_count", String(redirectCount + 1), {
           path: "/",
           maxAge: 60,
         })
         return redirectResponse
+      }
+    }
+
+    // Redirect authenticated users away from auth pages.
+    // Fully verified users go to the dashboard; unverified users stay on auth
+    // pages so they can complete verification / request a new code.
+    if (pathname.startsWith("/auth/") && !isLooping && !pathname.startsWith("/auth/callback")) {
+      const supabase = await getRouteClient()
+      const { data: { user }, error } = await supabase.auth.getUser()
+      if (user && !error) {
+        if (user.email_confirmed_at) {
+          const redirectResponse = NextResponse.redirect(new URL("/dashboard", request.nextUrl))
+          redirectResponse.cookies.set("redirect_count", String(redirectCount + 1), {
+            path: "/",
+            maxAge: 60,
+          })
+          return redirectResponse
+        }
+        if (!pathname.startsWith("/auth/verify") && !pathname.startsWith("/auth/login") && !pathname.startsWith("/auth/resend-verification")) {
+          const redirectResponse = NextResponse.redirect(new URL("/auth/verify", request.nextUrl))
+          redirectResponse.cookies.set("redirect_count", String(redirectCount + 1), {
+            path: "/",
+            maxAge: 60,
+          })
+          return redirectResponse
+        }
       }
     }
 

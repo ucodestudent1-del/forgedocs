@@ -3,6 +3,7 @@ import { NextResponse } from "next/server"
 import { sanitizeForExport } from "@/lib/sanitize"
 import { documentRateLimit } from "@/lib/rate-limiter"
 import { withErrorBoundary, createAppError } from "@/lib/api-error"
+import { requireAccountMembership } from "@/lib/account-authz"
 
 export const GET = withErrorBoundary(async (
   req: Request,
@@ -24,12 +25,17 @@ export const GET = withErrorBoundary(async (
 
   const { data: doc, error } = await supabase
     .from("documents")
-    .select("content, title, mime_type, version")
+    .select("content, title, mime_type, version, user_id, account_id")
     .eq("id", id)
-    .eq("user_id", user.id)
     .single()
 
   if (error || !doc) {
+    throw createAppError("Document not found", 404, "NOT_FOUND")
+  }
+
+  if (doc.user_id !== user.id && doc.account_id) {
+    await requireAccountMembership(user.id, doc.account_id, "member")
+  } else if (doc.user_id !== user.id) {
     throw createAppError("Document not found", 404, "NOT_FOUND")
   }
 

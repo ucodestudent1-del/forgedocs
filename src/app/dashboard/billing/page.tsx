@@ -1,56 +1,129 @@
 "use client"
 
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { CreditCard, DollarSign, Users, Settings } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary"
 import { apiFetch } from "@/lib/api-client"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
-interface PlanCardProps {
+interface Price {
+  id: string
+  tier: string
+  interval: "month" | "year"
+  amount: number
   name: string
-  price: string
-  priceId: string | null
   description: string
-  features: string[]
-  popular: boolean
-  currentTier: string
-  onChoosePlan: (priceId: string | null) => void
+  featured?: boolean
+}
+
+function formatCurrency(cents: number): string {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 2,
+  }).format(cents / 100)
 }
 
 export default function BillingPage() {
-  const [tier, setTier] = useState<"pro" | "business">("pro")
   const { toast } = useToast()
-  const [mrr, setMrr] = useState(0)
+  const [prices, setPrices] = useState<Price[]>([])
+  const [subscription, setSubscription] = useState<{ tier: string; status: string } | null>(null)
+  const [interval, setInterval] = useState<"month" | "year">("month")
+  const [loading, setLoading] = useState(true)
 
-  const tierInfo = {
-    pro: {
-      name: "Pro",
-      price: "$15",
-      priceId: "price_pro_monthly",
-      description: "For power users and growing teams",
-      features: ["Unlimited documents", "Unlimited conversions", "100 GB storage", "Priority support", "Advanced templates", "Audit logs"],
-      limits: { documents: null, conversions: null, storage: "100 GB" },
-    },
-    business: {
-      name: "Business",
-      price: "$49",
-      priceId: "price_business_monthly",
-      description: "For established organizations",
-      features: ["Everything in Pro", "SSO/SAML authentication", "Advanced analytics & reporting", "Dedicated account manager", "Custom integrations", "Unlimited version history", "SLA guarantee"],
-      limits: { documents: null, conversions: null, storage: "500 GB" },
-    },
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      try {
+        const [pricesRes, subRes] = await Promise.all([
+          apiFetch("/api/billing/prices"),
+          apiFetch("/api/billing"),
+        ])
+        if (pricesRes.ok) {
+          const data = await pricesRes.json()
+          setPrices(data.prices || [])
+        }
+        if (subRes.ok) {
+          const data = await subRes.json()
+          setSubscription(data.subscription || null)
+        }
+      } catch {
+        // Swallow; prices fall back to empty and UI shows empty state.
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const handlePortal = async () => {
+    try {
+      const csrfRes = await apiFetch("/api/csrf")
+      const csrfData = await csrfRes.json()
+      const res = await apiFetch("/api/billing/portal", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(csrfData.csrf_token ? { "X-CSRF-Token": csrfData.csrf_token } : {}),
+        },
+      })
+      if (!res.ok) {
+        const err = await res.json()
+        toast({ title: err.error || "Unable to open billing portal", variant: "destructive" })
+        return
+      }
+      const data = await res.json()
+      if (data.portal_url) {
+        window.location.href = data.portal_url
+      }
+    } catch {
+      toast({ title: "Unable to open billing portal", variant: "destructive" })
+    }
   }
 
-  const currentTier = tierInfo[tier]
+  const handleCancel = async () => {
+    if (!window.confirm("Cancel your subscription? You'll lose access at the end of the period.")) {
+      return
+    }
+    try {
+      const csrfRes = await apiFetch("/api/csrf")
+      const csrfData = await csrfRes.json()
+      const res = await apiFetch("/api/billing/cancel", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(csrfData.csrf_token ? { "X-CSRF-Token": csrfData.csrf_token } : {}),
+        },
+        body: JSON.stringify({ cancel_at_period_end: true }),
+      })
+      if (!res.ok) {
+        const err = await res.json()
+        toast({ title: err.error || "Cancel failed", variant: "destructive" })
+        return
+      }
+      toast({ title: "Subscription will cancel at period end" })
+      setSubscription((prev) => (prev ? { ...prev, status: "canceled" } : prev))
+    } catch {
+      toast({ title: "Cancel failed", variant: "destructive" })
+    }
+  }
 
   const handleChoosePlan = async (priceId: string | null) => {
     if (!priceId) return
     try {
       const csrfRes = await apiFetch("/api/csrf")
       const csrfData = await csrfRes.json()
-
       const res = await apiFetch("/api/billing", {
         method: "POST",
         headers: {
@@ -59,13 +132,11 @@ export default function BillingPage() {
         },
         body: JSON.stringify({ priceId }),
       })
-
       if (!res.ok) {
         const err = await res.json()
         toast({ title: err.error || "Checkout failed", variant: "destructive" })
         return
       }
-
       const data = await res.json()
       if (data.checkoutUrl) {
         window.location.href = data.checkoutUrl
@@ -75,35 +146,73 @@ export default function BillingPage() {
     }
   }
 
+  const filteredPrices = prices.filter((p) => p.interval === interval)
+
+  if (loading) {
+    return (
+      <ErrorBoundary>
+        <div className="space-y-6 p-6">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Billing</h1>
+          <p className="text-muted-foreground">Loading your billing details...</p>
+        </div>
+      </ErrorBoundary>
+    )
+  }
+
   return (
     <ErrorBoundary>
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">Billing</h1>
-          <p className="text-muted-foreground">Manage your subscription and usage</p>
+      <div className="space-y-6 p-6">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">Billing</h1>
+            <p className="text-muted-foreground">Manage your subscription and payment method</p>
+          </div>
+          <div className="flex items-center gap-2">
+            {subscription ? (
+              <>
+                <Button variant="outline" size="sm" onClick={handlePortal}>
+                  Manage subscription
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={handleCancel}
+                  disabled={subscription.status !== "active"}
+                >
+                  Cancel subscription
+                </Button>
+              </>
+            ) : (
+              <Button variant="outline" size="sm" onClick={handlePortal}>
+                Manage subscription
+              </Button>
+            )}
+          </div>
         </div>
 
-        {/* Current plan */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-foreground">Current Plan</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-            <div>
-              <h2 className="text-lg font-semibold text-foreground">{currentTier.name}</h2>
-              <p className="text-muted-foreground text-sm">{currentTier.description}</p>
-            </div>
-            <div className="flex items-center gap-4">
-              <span className="text-2xl font-bold text-foreground">{currentTier.price}</span>
-              <span className="text-muted-foreground text-sm">/month</span>
-            </div>
-            <div className="flex items-center gap-3 w-full lg:w-auto">
-              <Button className="w-full lg:w-auto" disabled>
-                Current Plan
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        {subscription && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-foreground">Current Plan</CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+              <div>
+                <h2 className="text-lg font-semibold text-foreground">
+                  {subscription.tier.charAt(0).toUpperCase() + subscription.tier.slice(1)}
+                </h2>
+                <p className="text-muted-foreground text-sm">
+                  Status:{" "}
+                  {subscription.status.charAt(0).toUpperCase() + subscription.status.slice(1)}
+                </p>
+              </div>
+              <div className="flex items-center gap-3 w-full lg:w-auto">
+                <Button className="w-full lg:w-auto" disabled>
+                  Current Plan
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Usage */}
         <Card>
@@ -112,66 +221,51 @@ export default function BillingPage() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <UsageStat title="Documents Created" value="0/Unlimited" icon={CreditCard} />
-              <UsageStat title="Conversions" value="0/Unlimited" icon={DollarSign} />
-              <UsageStat title="Storage" value="0 MB / 100 GB" icon={Users} />
-              <UsageStat title="MRR" value={`$${mrr}`} icon={Settings} />
+              <UsageStat title="Documents" value="--/--" icon={CreditCard} />
+              <UsageStat title="Conversions" value="--/--" icon={DollarSign} />
+              <UsageStat title="Storage" value="-- MB / -- GB" icon={Users} />
+              <UsageStat title="Plan" value={subscription ? subscription.tier : "Free"} icon={Settings} />
             </div>
           </CardContent>
         </Card>
 
         {/* Plans */}
         <Card>
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-foreground">Choose a Plan</CardTitle>
+            <div className="flex items-center gap-2">
+              <Button size="sm" variant={interval === "month" ? "default" : "outline"} onClick={() => setInterval("month")}>
+                Monthly
+              </Button>
+              <Button size="sm" variant={interval === "year" ? "default" : "outline"} onClick={() => setInterval("year")}>
+                Annual
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <PlanCard
-                name="Pro"
-                price="$15"
-                priceId={tierInfo.pro.priceId}
-                description="For power users and growing teams"
-                features={["Unlimited documents", "Unlimited conversions", "100 GB storage", "Priority support", "Advanced templates", "Audit logs"]}
-                popular={tier === "pro"}
-                currentTier={tier}
-                onChoosePlan={handleChoosePlan}
-              />
-              <PlanCard
-                name="Business"
-                price="$49"
-                priceId={tierInfo.business.priceId}
-                description="For established organizations"
-                features={tierInfo.business.features}
-                popular={tier === "business"}
-                currentTier={tier}
-                onChoosePlan={handleChoosePlan}
-              />
+              {filteredPrices.map((price) => {
+                const proPrices = prices.filter((p) => p.tier === "pro")
+                const isPopular = price.tier === "pro" && proPrices.some((p) => p.featured && p.id === price.id)
+                return (
+                  <PlanCard
+                    key={price.id}
+                    name={price.name}
+                    price={formatCurrency(price.amount)}
+                    priceId={price.id}
+                    description={price.description}
+                    features={price.tier === "pro" ? ["Unlimited documents", "Unlimited conversions", "100 GB storage", "Priority support", "Advanced templates", "Audit logs"] : ["Everything in Pro", "SSO/SAML authentication", "Advanced analytics & reporting", "Dedicated account manager", "Custom integrations", "Unlimited version history", "SLA guarantee"]}
+                    popular={isPopular}
+                    onChoosePlan={handleChoosePlan}
+                  />
+                )
+              })}
             </div>
           </CardContent>
         </Card>
       </div>
     </ErrorBoundary>
   )
-}
-
-const tierInfo = {
-  pro: {
-    name: "Pro",
-    price: "$15",
-    priceId: "price_pro_monthly",
-    description: "For power users and growing teams",
-    features: ["Unlimited documents", "Unlimited conversions", "100 GB storage", "Priority support", "Advanced templates", "Audit logs"],
-    limits: { documents: null, conversions: null, storage: "100 GB" },
-  },
-  business: {
-    name: "Business",
-    price: "$49",
-    priceId: "price_business_monthly",
-    description: "For established organizations",
-    features: ["Everything in Pro", "SSO/SAML authentication", "Advanced analytics & reporting", "Dedicated account manager", "Custom integrations", "Unlimited version history", "SLA guarantee"],
-    limits: { documents: null, conversions: null, storage: "500 GB" },
-  },
 }
 
 function UsageStat({ title, value, icon: Icon }: { title: string; value: string; icon: React.ElementType }) {
@@ -186,9 +280,23 @@ function UsageStat({ title, value, icon: Icon }: { title: string; value: string;
   )
 }
 
-function PlanCard({ name, price, priceId, description, features, popular, currentTier, onChoosePlan }: PlanCardProps) {
-  const isCurrent = name.toLowerCase() === currentTier
-
+function PlanCard({
+  name,
+  price,
+  priceId,
+  description,
+  features,
+  popular,
+  onChoosePlan,
+}: {
+  name: string
+  price: string
+  priceId: string | null
+  description: string
+  features: string[]
+  popular: boolean
+  onChoosePlan: (priceId: string | null) => void
+}) {
   return (
     <Card className={`relative flex flex-col border ${popular ? "border-primary ring-1 ring-primary" : ""}`}>
       {popular && (
@@ -215,10 +323,10 @@ function PlanCard({ name, price, priceId, description, features, popular, curren
         <Button
           className="w-full"
           variant="outline"
-          disabled={isCurrent || !priceId}
+          disabled={!priceId}
           onClick={() => onChoosePlan(priceId)}
         >
-          {isCurrent ? "Current Plan" : "Choose Plan"}
+          {priceId ? "Choose Plan" : "Unavailable"}
         </Button>
       </CardFooter>
     </Card>
