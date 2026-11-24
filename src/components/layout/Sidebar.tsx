@@ -64,6 +64,7 @@ export function Sidebar({
   const pathname = usePathname()
   const router = useRouter()
   const [expandedSections, setExpandedSections] = useState<string[]>([])
+  const [isClient, setIsClient] = useState(false)
   const { toast } = useToast()
 
   const NAV_SECTIONS: NavSection[] = [
@@ -114,6 +115,10 @@ export function Sidebar({
   }, [])
 
   useEffect(() => {
+    setIsClient(true)
+  }, [])
+
+  useEffect(() => {
     if (pathname) onClose()
   }, [pathname, onClose])
 
@@ -128,7 +133,7 @@ export function Sidebar({
     return pathname.startsWith(href)
   }
 
-  const isMobile = typeof window !== "undefined" && window.innerWidth < 1024
+  const isMobile = isClient && typeof window !== "undefined" && window.innerWidth < 1024
 
   if (!isOpen && isMobile) {
     return null
