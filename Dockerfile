@@ -35,6 +35,10 @@ ENV NODE_ENV=production
 ENV PORT=3000
 ENV NEXT_PUBLIC_GUEST_MODE=false
 
+# Container resource limits (applied at runtime via orchestration)
+# CPU: 2 cores, Memory: 2GB — adjust based on production load testing
+ENV NODE_OPTIONS="--max-old-space-size=1536"
+
 # Add non-root user for security
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nodejs

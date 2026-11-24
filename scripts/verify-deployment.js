@@ -44,11 +44,12 @@ check("Build output valid", () => {
   console.log(`   Build ID: ${buildId}`);
 });
 
-// 4. Check middleware.ts uses inline config
-check("Middleware uses inline routing config", () => {
-  const middleware = fs.readFileSync("src/middleware.ts", "utf-8");
-  if (!middleware.includes("const routing = {")) throw new Error("Missing inline routing config");
-});
+// 4. Check middleware exports config
+  check("Middleware exports config object", () => {
+    const middleware = fs.readFileSync("src/middleware.ts", "utf-8");
+    if (!middleware.includes("export const config")) throw new Error("Missing middleware config export");
+    if (!middleware.includes("matcher")) throw new Error("Missing matcher in middleware config");
+  });
 
 // 5. Check package.json has start script
 check("package.json has start script", () => {

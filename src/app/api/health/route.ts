@@ -2,6 +2,7 @@ import { createServerClient } from "@supabase/ssr"
 import { NextResponse } from "next/server"
 import { getRedisClient } from "@/lib/cache"
 import Stripe from "stripe"
+import { getAllCircuitStates } from "@/lib/circuit-breaker"
 
 export async function GET() {
   const checks: Record<string, { status: string; latency?: number; error?: string; [key: string]: any }> = {}
@@ -91,6 +92,24 @@ export async function GET() {
   } catch (err) {
     const workerLatency = Date.now() - workerStart
     checks.worker = { status: "unhealthy", latency: workerLatency, error: String(err) }
+  }
+
+  // ---- Circuit breaker status ----
+  let circuitBreakersHealthy = true
+  const circuitStates = getAllCircuitStates()
+  const circuitBreakers: Record<string, { state: string; failures: number }> = {}
+  for (const [name, state] of Object.entries(circuitStates)) {
+    circuitBreakers[name] = {
+      state: state.state,
+      failures: state.failures,
+    }
+    if (state.state === "open") {
+      circuitBreakersHealthy = false
+    }
+  }
+  checks.circuit_breakers = {
+    status: circuitBreakersHealthy ? "healthy" : "degraded",
+    breakers: circuitBreakers,
   }
 
   const allHealthy = Object.values(checks).every((c) => c.status === "healthy")
