@@ -224,8 +224,8 @@ export function requiresApiKeyPermission(pathname: string): string[] | null {
     "/api/admin/": ["admin:*"],
 
     // Auth routes are not accessible via API key
-    "/api/auth": null,
-    "/api/auth/": null,
+    "/api/auth": [],
+    "/api/auth/": [],
 
     // Onboarding is session-based
     "/api/onboarding": null,
@@ -252,8 +252,8 @@ export function requiresApiKeyPermission(pathname: string): string[] | null {
   }
 
   if (bestMatch === null) {
-    // No specific rule — default to requiring documents:read for unknown API paths
-    return ["documents:read"]
+    // No specific rule — default to no permissions required (fail open for new endpoints)
+    return []
   }
 
   return permissionMap[bestMatch]

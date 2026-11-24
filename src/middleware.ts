@@ -9,6 +9,8 @@ import {
 } from "@/lib/api-version"
 import { validateApiKey, checkApiKeyPermissions, requiresApiKeyPermission } from "@/lib/api-key"
 import { checkRateLimit, API_KEY_RATE_LIMIT_CONFIGS, type RateLimitConfig } from "@/lib/rate-limiter"
+import { getRouteClient } from "@/lib/supabase"
+import logger from "@/lib/logger"
 
 function generateCspNonce(): string {
   return crypto.randomUUID().replace(/-/g, "")
@@ -55,6 +57,35 @@ export async function middleware(request: NextRequest) {
 
     if (isStaticRoute) {
       return response
+    }
+
+    // ---- Authentication check for page routes ----
+    if (!pathname.startsWith("/api/") && !pathname.startsWith("/auth/")) {
+      const supabase = await getRouteClient()
+      const { data: { user } } = await supabase.auth.getUser()
+
+      // Protected routes that require authentication
+      const protectedRoutes = [
+        "/dashboard",
+        "/editor",
+        "/billing",
+        "/settings",
+      ]
+
+      const isProtectedRoute = protectedRoutes.some(route =>
+        pathname === route || pathname.startsWith(route + "/")
+      )
+
+      if (isProtectedRoute && !user) {
+        const loginUrl = new URL("/auth/login", request.nextUrl)
+        loginUrl.searchParams.set("callbackUrl", pathname)
+        return NextResponse.redirect(loginUrl)
+      }
+
+      // Auth routes should redirect to dashboard if already authenticated
+      if (pathname.startsWith("/auth/") && user) {
+        return NextResponse.redirect(new URL("/dashboard", request.nextUrl))
+      }
     }
 
     // ---- API key authentication & permission enforcement ----
@@ -168,9 +199,17 @@ export async function middleware(request: NextRequest) {
     response.headers.set("Content-Security-Policy", buildCspHeader(cspNonce))
 
     return response
-  } catch {
-    const response = NextResponse.next()
+  } catch (error) {
+    logger.error("Middleware error", {
+      error: error instanceof Error ? error.message : String(error),
+    })
+    const response = NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    )
     response.headers.set("x-request-id", generateRequestId())
+    response.headers.set("x-csp-nonce", generateCspNonce())
+    response.headers.set("Content-Security-Policy", buildCspHeader(generateCspNonce()))
     return response
   }
 }

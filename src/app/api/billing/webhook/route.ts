@@ -4,6 +4,7 @@ import { stripeCircuitBreaker } from "@/lib/circuit-breaker"
 import type { Stripe } from "stripe"
 import { WEBHOOK_HANDLERS } from "@/lib/billing/webhook-handlers"
 import logger from "@/lib/logger"
+import { createAppError } from "@/lib/api-error"
 
 export const dynamic = "force-dynamic"
 export const runtime = "nodejs"
@@ -42,8 +43,20 @@ export async function POST(req: Request) {
 
   const eventId = `stripe_${event.id}`
 
-  // Idempotency: try to record the event first. If the unique constraint on
-  // event_id is violated, this is a duplicate retry — skip handler and return 200.
+  // Idempotency: check if event was already processed.
+  // Use SELECT first to avoid race conditions, then INSERT with ON CONFLICT fallback.
+  const { data: existingEvent } = await (supabase as any)
+    .from("webhook_events")
+    .select("event_id")
+    .eq("event_id", eventId)
+    .single()
+
+  if (existingEvent) {
+    // Duplicate event - already processed
+    logger.info(`Duplicate webhook event ignored: ${eventId}`)
+    return NextResponse.json({ received: true })
+  }
+
   const { error: insertError } = await (supabase as any)
     .from("webhook_events")
     .insert({
@@ -52,12 +65,14 @@ export async function POST(req: Request) {
       processed_at: new Date().toISOString(),
     })
     .select("id")
-    .single()
 
   if (insertError) {
-    // Duplicate event - already processed
-    logger.info(`Duplicate webhook event ignored: ${eventId}`)
-    return NextResponse.json({ received: true })
+    // Unique constraint violation - another request inserted first (race condition)
+    if (insertError.code === "23505") {
+      logger.info(`Duplicate webhook event ignored (race): ${eventId}`)
+      return NextResponse.json({ received: true })
+    }
+    throw createAppError(insertError.message, 500, "DATABASE_ERROR")
   }
 
   // Dispatch to the appropriate handler only for new events
