@@ -31,25 +31,38 @@ export const GET = withErrorBoundary(async (req, { params }: { params: Promise<{
     throw createAppError("Job not found", 404, "JOB_NOT_FOUND")
   }
 
-  // Handle file download for completed conversion jobs
-  if (download) {
-    const format = getFormat(job.target_format)
-    const mimeType = format?.mimeType || "application/octet-stream"
-    const extension = format?.extension || ".bin"
+    // Handle file download for completed conversion jobs
+    if (download) {
+      const format = getFormat(job.target_format)
+      const mimeType = format?.mimeType || "application/octet-stream"
+      const extension = format?.extension || ".bin"
 
-    // Generate output content from the conversion job
-    let outputContent = `Converted document\nSource: ${job.source_format}\nTarget: ${job.target_format}\nJob ID: ${job.id}\nStatus: ${job.status}\nCreated: ${job.created_at}\n`
-    if (job.source_url) {
-      outputContent += `\nSource URL: ${job.source_url}\n`
+      if (job.status !== "completed" || !job.output_url) {
+        throw createAppError("Conversion output not available", 404, "OUTPUT_NOT_AVAILABLE")
+      }
+
+      // Extract storage path from signed URL or use output_url path
+      const storagePath = `converted/${user.id}/${job.id}${extension}`
+
+      const { data: fileData, error: downloadError } = await supabase
+        .storage.from("converted")
+        .download(storagePath)
+
+      if (downloadError || !fileData) {
+        throw createAppError("Converted file not found in storage", 404, "FILE_NOT_FOUND")
+      }
+
+      const arrayBuffer = await fileData.arrayBuffer()
+      const buffer = Buffer.from(arrayBuffer)
+
+      return new Response(buffer, {
+        headers: {
+          "Content-Type": mimeType,
+          "Content-Disposition": `attachment; filename="converted-${job.id}${extension}"`,
+          "Content-Length": buffer.length.toString(),
+        },
+      }) as unknown as NextResponse
     }
-
-    return new Response(outputContent, {
-      headers: {
-        "Content-Type": mimeType,
-        "Content-Disposition": `attachment; filename="converted-${job.id}${extension}"`,
-      },
-    }) as unknown as NextResponse
-  }
 
   return NextResponse.json({ job })
 })

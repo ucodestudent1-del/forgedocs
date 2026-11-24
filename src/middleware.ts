@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import crypto from "crypto"
+import { validateEnv } from "@/lib/env"
 import {
   parseApiVersion,
   apiVersionHeaders,
@@ -13,7 +14,7 @@ import { getRouteClient } from "@/lib/supabase"
 import logger from "@/lib/logger"
 
 function generateCspNonce(): string {
-  return crypto.randomUUID().replace(/-/g, "")
+  return crypto.randomBytes(16).toString("base64")
 }
 
 function buildCspHeader(nonce: string): string {
@@ -38,6 +39,9 @@ function generateRequestId(): string {
 }
 
 export async function middleware(request: NextRequest) {
+  // Validate required environment variables on first request
+  await validateEnv()
+
   try {
     const pathname = request.nextUrl?.pathname ?? "/"
     const requestId = request.headers.get("x-request-id") ?? generateRequestId()

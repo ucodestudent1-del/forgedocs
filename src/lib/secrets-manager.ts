@@ -85,7 +85,6 @@ export class SecretsManager {
     try {
       // Lazy load AWS SDK to avoid hard dependency when not using AWS provider
       const { SecretsManagerClient, GetSecretValueCommand }: any = await (
-        // @ts-expect-error - AWS SDK is optional, may not be installed
         import("@aws-sdk/client-secrets-manager")
       )
 

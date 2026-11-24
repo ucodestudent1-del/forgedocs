@@ -43,7 +43,8 @@ export class DocumentGenerator {
   private replacePlaceholders(text: string): string {
     let result = text;
     Object.entries(this.data).forEach(([key, value]) => {
-      const pattern = new RegExp(`\\[${key}\\]`, 'g');
+      const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const pattern = new RegExp(`\\[${escapedKey}\\]`, 'g');
       result = result.replace(pattern, String(value));
     });
     return result;
@@ -98,7 +99,14 @@ export class DocumentGenerator {
         html += this.renderPartiesSection();
         break;
       case 'scope':
-        html += this.renderTextSection('scope_of_services');
+        // Render scope of services/work - check which field is available
+        if (this.data.scope_of_services) {
+          html += this.renderTextSection('scope_of_services');
+        } else if (this.data.scope_details) {
+          html += this.renderTextSection('scope_details', 'Scope Details');
+        } else {
+          html += `<p>${sectionLabel} section content would be rendered here.</p>`;
+        }
         break;
       case 'term':
         html += this.renderTextSection('term_details', 'Term & Termination Details');
@@ -151,9 +159,6 @@ export class DocumentGenerator {
       case 'solution':
         html += this.renderTextSection('proposed_solution');
         break;
-      case 'scope':
-        html += this.renderTextSection('scope_details', 'Scope Details');
-        break;
       case 'pricing':
         html += this.renderTextSection('package_name', 'Package:') +
                 this.renderTextSection('package_price', 'Price:');
@@ -164,10 +169,7 @@ export class DocumentGenerator {
       case 'next_steps':
         html += this.renderTextSection('next_steps_details', 'Next Steps:');
         break;
-      case 'cover':
-        html += this.renderCoverSection();
-        break;
-      case 'toc':
+      case 'table_of_contents':
         html += this.renderTableOfContents();
         break;
       case 'introduction':
@@ -202,7 +204,7 @@ export class DocumentGenerator {
         html += this.renderTextSection('next_meeting_date', 'Next Meeting Date:') +
                 this.renderTextSection('next_meeting_time', 'Next Meeting Time:');
         break;
-      case 'approval':
+      case 'meeting_approval':
         html += this.renderTextSection('prepared_by', 'Prepared By:') +
                 this.renderTextSection('approved_by', 'Approved By:');
         break;

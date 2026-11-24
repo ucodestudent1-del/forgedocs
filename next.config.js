@@ -104,6 +104,10 @@ const nextConfig = {
         if (request === "node:diagnostics_channel") {
           return callback(null, "empty-module-stub")
         }
+        // AWS SDK is an optional dependency only used when SECRETS_MANAGER_PROVIDER=aws
+        if (request === "@aws-sdk/client-secrets-manager") {
+          return callback(null, "empty-module-stub")
+        }
         callback()
       },
     ]

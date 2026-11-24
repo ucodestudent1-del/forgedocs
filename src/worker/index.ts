@@ -6,14 +6,28 @@ import fs from "fs"
 import path from "path"
 import { createClient } from "@supabase/supabase-js"
 import Redis from "ioredis"
+import { getDocument, GlobalWorkerOptions } from "pdfjs-dist"
 import logger from "@/lib/logger"
+
+// Configure pdfjs-dist worker for Node.js environment
+if (typeof window === "undefined") {
+  GlobalWorkerOptions.workerSrc = require.resolve("pdfjs-dist/legacy/build/pdf.worker.entry")
+}
+
 const createRedisClient = (opts: any) => new Redis(opts)
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+const redisUrl = process.env.REDIS_URL
 
-if (!supabaseUrl || !supabaseServiceKey) {
-  console.warn("Supabase env vars missing - worker will not function correctly")
+const missingWorkerEnv: string[] = []
+if (!supabaseUrl) missingWorkerEnv.push("NEXT_PUBLIC_SUPABASE_URL")
+if (!supabaseServiceKey) missingWorkerEnv.push("SUPABASE_SERVICE_ROLE_KEY")
+if (!redisUrl) missingWorkerEnv.push("REDIS_URL")
+
+if (missingWorkerEnv.length > 0) {
+  console.error(`Missing required worker environment variables: ${missingWorkerEnv.join(", ")}`)
+  process.exit(1)
 }
 
 const supabase = createClient(supabaseUrl!, supabaseServiceKey!)
@@ -119,7 +133,47 @@ async function convertWithLibreOffice(sourcePath: string, targetFormat: string, 
 }
 
 async function reconstructFromPDF(sourcePath: string, targetFormat: string): Promise<string> {
-  throw new Error(`PDF to ${targetFormat} reconstruction not yet implemented`)
+  if (targetFormat !== "docx") {
+    throw new Error(`PDF to ${targetFormat} reconstruction not yet implemented`)
+  }
+
+  const pdfBytes = fs.readFileSync(sourcePath)
+  const loadingTask = getDocument({ data: pdfBytes })
+  const pdf = await loadingTask.promise
+  const numPages = pdf.numPages
+  const textParts: string[] = []
+
+  for (let i = 1; i <= numPages; i++) {
+    const page = await pdf.getPage(i)
+    const content = await page.getTextContent()
+    const text = content.items
+      .map((item: any) => (item as any).str || "")
+      .join(" ")
+    textParts.push(text)
+  }
+
+  const textContent = textParts.join("\n\n--- Page Break ---\n\n")
+
+  // Build a minimal DOCX (Office Open XML) as a zip of XML parts
+  const docxXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:body>
+${textContent.split("\n--- Page Break ---\n").map((block, i) => {
+    const paragraphs = block.split("\n").map((p) => `    <w:p><w:r><w:t xml:space="preserve">${escapeXml(p)}</w:t></w:r></w:p>`).join("\n")
+    const pageBreak = i > 0 ? `    <w:p><w:r><w:br w:type="page"/></w:r></w:p>` : ""
+    return `    <w:sectPr>${pageBreak}</w:sectPr>\n${paragraphs}`
+  }).join("\n")}
+  </w:body>
+</w:document>`
+
+  const docxContent = Buffer.from(docxXml, "utf8")
+  const outputPath = sourcePath.replace(/\.pdf$/i, ".docx")
+  fs.writeFileSync(outputPath, docxContent)
+  return outputPath
+}
+
+function escapeXml(str: string): string {
+  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;")
 }
 
 function getExt(url: string | undefined): string {
@@ -182,11 +236,16 @@ const worker = new Worker<ConversionJobData, { success: boolean; outputUrl?: str
       throw new Error("Worker is not the leader")
     }
 
-    // Update job status to processing
-    await supabase
+    // Update job status to processing (only if still pending to avoid stale transitions)
+    const { error: statusError } = await supabase
       .from("conversion_jobs")
       .update({ status: "processing", started_at: new Date().toISOString() })
       .eq("id", jobId)
+      .eq("status", "pending")
+
+    if (statusError) {
+      throw statusError
+    }
 
     try {
       // ---- Unit conversion ----

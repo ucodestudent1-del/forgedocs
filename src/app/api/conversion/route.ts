@@ -197,19 +197,25 @@ export const POST = withErrorBoundary(async (req: Request): Promise<NextResponse
 
   // SSRF protection: validate source_url is a safe storage path, not an arbitrary URL
   if (source_url) {
-    try {
-      const url = new URL(source_url)
-      // Reject absolute URLs — only relative storage paths are allowed
+    // Reject absolute URLs, protocols, path traversal, and leading slashes
+    if (
+      source_url.includes("://") ||
+      source_url.startsWith("/") ||
+      source_url.includes("..") ||
+      source_url.startsWith("\\\\")
+    ) {
+      throw createAppError("Invalid source_url path", 400, "INVALID_SOURCE_URL")
+    }
+
+    // Validate storage path format: userId/filename.extension
+    const pathParts = source_url.split("/")
+    if (pathParts.length < 2) {
       throw createAppError("source_url must be a relative storage path", 400, "INVALID_SOURCE_URL")
-    } catch {
-      // Not a URL — treat as storage path, validate it
-      if (source_url.includes("..") || source_url.includes("://") || source_url.startsWith("/")) {
-        throw createAppError("Invalid source_url path", 400, "INVALID_SOURCE_URL")
-      }
-      // Verify the source file belongs to the authenticated user
-      if (!source_url.startsWith(`${user.id}/`)) {
-        throw createAppError("Source file does not belong to the authenticated user", 403, "FORBIDDEN")
-      }
+    }
+
+    // Verify the source file belongs to the authenticated user
+    if (!source_url.startsWith(`${user.id}/`)) {
+      throw createAppError("Source file does not belong to the authenticated user", 403, "FORBIDDEN")
     }
   }
 

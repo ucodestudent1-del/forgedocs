@@ -1,5 +1,6 @@
 export const dynamic = "force-dynamic"
 
+import crypto from "crypto"
 import { getRouteClient } from "@/lib/supabase"
 import { NextResponse } from "next/server"
 import { validateCSRF } from "@/lib/csrf"
