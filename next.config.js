@@ -108,6 +108,11 @@ const nextConfig = {
         if (request === "@aws-sdk/client-secrets-manager") {
           return callback(null, "empty-module-stub")
         }
+        // Valkey-glide native binary (used by bullmq) cannot be bundled by webpack.
+        // BullMQ is only used by the worker (Dockerfile.worker), not the Next.js app.
+        if (request.startsWith("@valkey/valkey-glide")) {
+          return callback(null, "empty-module-stub")
+        }
         callback()
       },
     ]
