@@ -61,23 +61,9 @@ export async function createRouteClient() {
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
   if (!url || !key || url.includes("placeholder") || key.includes("placeholder")) {
-    // Return a real Supabase client (will fail gracefully when used)
-    // rather than a mock client that bypasses authentication
-    if (typeof window === "undefined" && process.env.NEXT_PHASE === "phase-production-build") {
-      return createMockSupabaseClient()
-    }
-    // At runtime without valid Supabase env vars, return a real client
-    // that will fail on auth calls, causing unauthenticated users to be redirected
-    return createServerClient<Database>(url || "", key || "", {
-      cookies: {
-        async getAll() {
-          return []
-        },
-        async setAll() {
-          // No-op
-        },
-      },
-    })
+    // Fail safe: return mock client rather than a real client with empty
+    // credentials that could allow unauthenticated access or silent failures.
+    return createMockSupabaseClient()
   }
 
   const client = createServerClient<Database>(
@@ -96,7 +82,7 @@ export async function createRouteClient() {
               cookieStore.set(name, value, {
                 ...options,
                 secure: true,
-                sameSite: options.sameSite ?? "lax",
+                sameSite: options.sameSite ?? "strict",
               })
             )
           } catch {

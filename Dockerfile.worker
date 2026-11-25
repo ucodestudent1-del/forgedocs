@@ -1,28 +1,49 @@
 # ForgeDocs Document Conversion Worker
-FROM node:24-alpine
+FROM node:24-alpine AS builder
 
-# Install LibreOffice and dependencies for document conversion
+WORKDIR /app
+
+# Install LibreOffice and build dependencies
 RUN apk add --no-cache libreoffice fontconfig \
     && apk add --no-cache --virtual .build-deps python3 make g++ \
     && rm -rf /var/cache/apk/*
 
+# Copy package files and install all dependencies
+COPY package.json package-lock.json ./
+RUN npm ci
+
+# Copy source code and tsconfig
+COPY tsconfig.json ./
+COPY src ./src
+
+# Compile TypeScript to JavaScript for production
+RUN npx tsc --outDir dist --module esnext --moduleResolution bundler --target ES2017 --esModuleInterop --skipLibCheck
+
+# Runner stage
+FROM node:24-alpine AS runner
+
+# Install LibreOffice runtime only
+RUN apk add --no-cache libreoffice fontconfig \
+    && rm -rf /var/cache/apk/*
+
 WORKDIR /app
 
-# Copy package files and install dependencies
-COPY package.json package-lock.json ./
-RUN npm ci --omit=dev
-
-# Copy worker source and shared lib
-COPY src/worker ./src/worker
-COPY src/lib ./src/lib
-COPY src/types ./src/types
-
-# Set environment defaults
+ENV NODE_ENV=production
 ENV WORKER_CONCURRENCY=5
 ENV WORKER_HEALTH_PORT=3001
 ENV REDIS_HOST=localhost
 ENV REDIS_PORT=6379
 
+# Add non-root user for security
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nodejs
+
+# Copy compiled output from builder
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/node_modules ./node_modules
+
+USER nodejs
+
 EXPOSE 3001
 
-CMD ["node", "src/worker/index.ts"]
+CMD ["node", "dist/worker/index.js"]

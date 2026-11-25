@@ -5,7 +5,11 @@ const GUEST_SESSION_COOKIE = "guest_session_id"
 const GUEST_USER_ID_COOKIE = "guest_user_id"
 
 function getGuestSecret(): string | null {
-  return process.env.GUEST_SESSION_SECRET ?? null
+  const secret = process.env.GUEST_SESSION_SECRET
+  if (!secret && process.env.NEXT_PUBLIC_GUEST_MODE === "true") {
+    throw new Error("GUEST_SESSION_SECRET is required when NEXT_PUBLIC_GUEST_MODE=true")
+  }
+  return secret ?? null
 }
 
 function signGuestId(id: string): string {
@@ -42,8 +46,8 @@ export async function getGuestUserId(): Promise<string> {
   try {
     cookieStore.set(GUEST_USER_ID_COOKIE, signed, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      secure: true,
+      sameSite: "strict",
       path: "/",
       maxAge: 60 * 60 * 2, // 2 hours
     })
@@ -60,13 +64,13 @@ export async function getOrCreateGuestSessionId(): Promise<string> {
   if (!sessionId) {
     sessionId = randomUUID()
     try {
-      cookieStore.set(GUEST_SESSION_COOKIE, sessionId, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        path: "/",
-        maxAge: 60 * 60 * 2, // 2 hours
-      })
+    cookieStore.set(GUEST_SESSION_COOKIE, sessionId, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "strict",
+      path: "/",
+      maxAge: 60 * 60 * 2, // 2 hours
+    })
     } catch {
       // set() called during render; cookie applied on next response
     }
@@ -79,8 +83,8 @@ export async function getOrCreateGuestSessionId(): Promise<string> {
     try {
       cookieStore.set(GUEST_USER_ID_COOKIE, userId, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
+        secure: true,
+        sameSite: "strict",
         path: "/",
         maxAge: 60 * 60 * 2, // 2 hours
       })

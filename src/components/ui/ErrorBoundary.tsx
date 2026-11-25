@@ -4,6 +4,8 @@ import { Component, ReactNode } from "react"
 import { Button } from "@/components/ui/button"
 import { AlertTriangle, RefreshCw, Home } from "lucide-react"
 import Link from "next/link"
+import logger from "@/lib/logger"
+import * as Sentry from "@sentry/react"
 
 interface ErrorBoundaryProps {
   children: ReactNode
@@ -34,8 +36,18 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
       this.props.onError(error, errorInfo)
     }
 
-    // Log to structured logging service (Sentry, LogRocket, etc.)
-    console.error("ErrorBoundary caught:", error, errorInfo)
+    // Log to structured logging service (Winston) with request context
+    logger.error("ErrorBoundary caught client error", {
+      error: error.message,
+      stack: error.stack,
+      componentStack: errorInfo.componentStack,
+    })
+
+    // Send to Sentry for production alerting
+    Sentry.captureException(error, {
+      tags: { component: "ErrorBoundary" },
+      extra: { componentStack: errorInfo.componentStack },
+    })
   }
 
   handleRetry = (): void => {

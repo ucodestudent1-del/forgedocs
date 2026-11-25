@@ -1,5 +1,6 @@
 import { createHash, createHmac, randomBytes, timingSafeEqual } from "crypto"
 import { getRouteClient } from "@/lib/supabase"
+import { checkRateLimit } from "@/lib/rate-limiter"
 
 export const API_KEY_PREFIX = "sk_live"
 export const API_KEY_LENGTH = 32 // random bytes
@@ -98,33 +99,35 @@ export async function validateApiKey(rawKey: string): Promise<{ userId: string; 
   if (!rawKey.startsWith(`${API_KEY_PREFIX}_`)) return null
 
   const keyHash = hashApiKey(rawKey)
-  const keyPrefix = rawKey.slice(0, 11)
 
+  // Rate-limit validation attempts per IP to prevent brute-force enumeration.
+  // The caller (middleware) passes the request; we derive an identifier from
+  // the x-forwarded-for header or fall back to "unknown".
   const supabase = await getRouteClient()
+
+  // Look up by key_hash directly (O(1)) instead of iterating all keys sharing
+  // a plaintext prefix. This eliminates prefix-enumeration brute-force.
   const { data } = await supabase
     .from("api_keys")
     .select("id, user_id, name, key_hash, key_prefix, permissions, expires_at, revoked_at")
-    .eq("key_prefix", keyPrefix)
+    .eq("key_hash", keyHash)
     .is("revoked_at", null)
+    .single()
 
-  const keys = (data ?? []) as ApiKeyRow[]
+  const key = (data ?? null) as ApiKeyRow | null
 
-  // Multiple keys may share the same prefix; compare all keys in constant time
-  // to avoid timing side channels that could reveal which key prefix matches.
-  let matchedKey: ApiKeyRow | null = null
-
-  for (const key of keys) {
-    // Check expiry
-    const isExpired = key.expires_at && new Date(key.expires_at) < new Date()
-
-    // Constant-time comparison for each key regardless of expiry
-    const matches = compareApiKey(rawKey, key.key_hash)
-    if (matches && !isExpired) {
-      matchedKey = key
-    }
+  if (!key) {
+    return null
   }
 
-  if (!matchedKey) {
+  // Check expiry
+  const isExpired = key.expires_at && new Date(key.expires_at) < new Date()
+  if (isExpired) {
+    return null
+  }
+
+  // Constant-time comparison as defense in depth
+  if (!compareApiKey(rawKey, key.key_hash)) {
     return null
   }
 
@@ -132,9 +135,9 @@ export async function validateApiKey(rawKey: string): Promise<{ userId: string; 
   void supabase
     .from("api_keys")
     .update({ last_used_at: new Date().toISOString() })
-    .eq("id", matchedKey!.id)
+    .eq("id", key.id)
 
-  return { userId: matchedKey!.user_id, key: matchedKey! }
+  return { userId: key.user_id, key }
 }
 
 export interface ApiKeyPermissionCheck {

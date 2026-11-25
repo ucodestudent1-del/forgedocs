@@ -78,6 +78,7 @@ const MAGIC_BYTES: Record<string, Buffer[]> = {
   ],
   "image/gif": [Buffer.from([0x47, 0x49, 0x46, 0x38])], // GIF8
   "image/svg+xml": [Buffer.from([0x3C, 0x3F, 0x78, 0x6D, 0x6C])], // <?xml
+  "text/html": [Buffer.from([])], // HTML (validated via content scan below)
   "application/rtf": [Buffer.from([0x7B, 0x5C, 0x52, 0x54, 0x46])], // {\RTF
 }
 
@@ -95,9 +96,18 @@ const DANGEROUS_TEXT_PATTERNS: RegExp[] = [
 export function validateFileMagicBytes(fileBytes: Uint8Array, mimeType: string): boolean {
   const expected = MAGIC_BYTES[mimeType]
   if (!expected || expected.length === 0 || expected[0].length === 0) {
-    // Text files: scan the full content for dangerous patterns
+    // Text/HTML files: scan the full content for dangerous patterns
     const text = Buffer.from(fileBytes).toString("utf8")
     return !DANGEROUS_TEXT_PATTERNS.some((pattern) => pattern.test(text))
+  }
+
+  // SVG files pass magic bytes but can contain embedded JavaScript —
+  // content-scan them in addition to the magic byte check.
+  if (mimeType === "image/svg+xml") {
+    const text = Buffer.from(fileBytes).toString("utf8")
+    if (DANGEROUS_TEXT_PATTERNS.some((pattern) => pattern.test(text))) {
+      return false
+    }
   }
 
   // Check if file starts with any of the expected magic byte sequences

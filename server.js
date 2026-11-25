@@ -6,6 +6,29 @@ const dev = process.env.NODE_ENV !== "production"
 const app = next({ dev })
 const handle = app.getRequestHandler()
 
+// Fail fast if required environment variables are missing or invalid.
+// This prevents silent authentication failures and misconfigured deployments.
+const REQUIRED_ENV_VARS = [
+  "NEXT_PUBLIC_SUPABASE_URL",
+  "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+  "SUPABASE_SERVICE_ROLE_KEY",
+  "STRIPE_SECRET_KEY",
+  "STRIPE_WEBHOOK_SECRET",
+  "RESEND_API_KEY",
+  "REDIS_URL",
+  "MFA_SECRET_ENCRYPTION_KEY",
+  "MFA_BACKUP_CODE_PEPPER",
+]
+
+const missing = REQUIRED_ENV_VARS.filter((key) => !process.env[key] || process.env[key].includes("placeholder"))
+if (missing.length > 0) {
+  console.error(
+    `Fatal: Missing required environment variables: ${missing.join(", ")}. ` +
+      "Please set these before starting the application."
+  )
+  process.exit(1)
+}
+
 app.prepare().then(() => {
   createServer((req, res) => {
     // Trust Railway's edge proxy headers.

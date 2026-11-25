@@ -89,6 +89,24 @@ export async function apiFetch(
   return res
 }
 
+/**
+ * Invalidate cached entries matching a path prefix.
+ * Call this after mutating operations (POST/PUT/PATCH/DELETE) to prevent
+ * serving stale data from the client-side cache.
+ */
+export function invalidateCache(pathPrefix: string): void {
+  const now = Date.now()
+  for (const [key, entry] of cache.entries()) {
+    if (key.startsWith(pathPrefix)) {
+      cache.delete(key)
+    }
+    // Also evict expired entries during iteration
+    if (now - entry.timestamp >= CACHE_TTL) {
+      cache.delete(key)
+    }
+  }
+}
+
 export async function fetchJson(
   input: RequestInfo | URL,
   init?: RequestInit,
@@ -132,7 +150,11 @@ export async function fetchJson(
 
     return { ok: res.ok, status: res.status, data, error: res.ok ? undefined : `HTTP ${res.status}` }
   } catch (err) {
-    await handleUnauthorized()
+    // Only treat as unauthorized if the error indicates a 401/auth failure.
+    // Network errors, timeouts, and JSON parse errors should not log the user out.
+    if (err instanceof Error && (err.message.includes("401") || err.message.includes("unauthorized"))) {
+      await handleUnauthorized()
+    }
     return { ok: false, status: 0, data: null, error: err instanceof Error ? err.message : "Request failed" }
   }
 }

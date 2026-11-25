@@ -62,15 +62,29 @@ jobs:
       - run: npm ci
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
-      - name: Start dev server and run E2E tests
+      - name: Start built app container for E2E
         run: |
-          npm run dev &
-          sleep 10
-          npm run test:e2e
+          docker run -d -p 3000:3000 --name forgedocs-e2e \
+            -e NEXT_PUBLIC_SUPABASE_URL="${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" \
+            -e NEXT_PUBLIC_SUPABASE_ANON_KEY="${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" \
+            -e STRIPE_SECRET_KEY="${{ secrets.STRIPE_SECRET_KEY }}" \
+            -e STRIPE_WEBHOOK_SECRET="${{ secrets.STRIPE_WEBHOOK_SECRET }}" \
+            -e RESEND_API_KEY="${{ secrets.RESEND_API_KEY }}" \
+            -e REDIS_URL="${{ secrets.REDIS_URL }}" \
+            -e MFA_SECRET_ENCRYPTION_KEY="${{ secrets.MFA_SECRET_ENCRYPTION_KEY }}" \
+            -e MFA_BACKUP_CODE_PEPPER="${{ secrets.MFA_BACKUP_CODE_PEPPER }}" \
+            -e NODE_ENV=production \
+            ghcr.io/${{ env.IMAGE_NAME }}:sha-${{ github.sha }}
+      - name: Wait for app to be ready
+        run: |
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:3000/api/health > /dev/null; then break; fi
+            sleep 2
+          done
+      - name: Run E2E tests
+        run: npx playwright test
         env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+          BASE_URL: http://localhost:3000
 
   load-test:
     name: Load Test (k6)
@@ -147,7 +161,6 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          dockerfile: Dockerfile.worker
           push: true
           tags: ${{ steps.worker-meta.outputs.tags }}
           labels: ${{ steps.worker-meta.outputs.labels }}
@@ -192,8 +205,16 @@ jobs:
       - name: Deploy staging (Railway)
         run: |
           echo "Deploying to staging environment"
-          # Railway CLI deployment would go here
-          # railway up --environment staging
+          railway up --environment staging --detach
+      - name: Post-deployment health check
+        run: |
+          echo "Verifying staging health endpoint"
+          for i in $(seq 1 30); do
+            if curl -sf https://staging.api.forgedocs.com/api/health > /dev/null; then echo "Staging healthy"; exit 0; fi
+            sleep 10
+          done
+          echo "Staging health check failed" >&2
+          exit 1
 
   deploy-production:
     name: Deploy to Production
@@ -206,12 +227,16 @@ jobs:
       - name: Deploy to production (Railway)
         run: |
           echo "Deploying to production environment"
-          # Railway CLI deployment would go here
-          # railway up --environment production
+          railway up --environment production --detach
       - name: Post-deployment health check
         run: |
           echo "Verifying production health endpoint"
-          # curl -f https://api.forgedocs.com/api/health || exit 1
+          for i in $(seq 1 30); do
+            if curl -sf https://api.forgedocs.com/api/health > /dev/null; then echo "Production healthy"; exit 0; fi
+            sleep 10
+          done
+          echo "Production health check failed" >&2
+          exit 1
 
   rollback:
     name: Automated Rollback
@@ -224,5 +249,4 @@ jobs:
       - name: Rollback to previous stable image
         run: |
           echo "Rolling back production deployment"
-          # Railway rollback would go here
-          # railway rollback --environment production
+          railway rollback --environment production

@@ -15,6 +15,40 @@ export interface AuditEventInput {
   details?: Record<string, unknown>
 }
 
+// In-memory retry queue for audit events that fail to write to the DB.
+const auditRetryQueue: AuditEventInput[] = []
+const AUDIT_MAX_RETRY_QUEUE = 1000
+
+async function enqueueAuditRetry(input: AuditEventInput): Promise<void> {
+  if (auditRetryQueue.length >= AUDIT_MAX_RETRY_QUEUE) {
+    auditRetryQueue.shift() // drop oldest
+  }
+  auditRetryQueue.push(input)
+}
+
+export async function flushAuditRetryQueue(): Promise<void> {
+  const queue = auditRetryQueue.splice(0, auditRetryQueue.length)
+  for (const input of queue) {
+    try {
+      const supabase = await getRouteClient()
+      await supabase.from("audit_logs").insert({
+        user_id: input.userId,
+        action: input.action,
+        entity_type: input.entityType,
+        entity_id: input.entityId,
+        old_values: input.oldValues ?? {},
+        new_values: input.newValues ?? {},
+        ip_address: input.ipAddress,
+        user_agent: input.userAgent,
+        severity: input.severity ?? "low",
+      })
+    } catch {
+      // Re-enqueue for next flush attempt
+      await enqueueAuditRetry(input)
+    }
+  }
+}
+
 export async function logAuditEvent(input: AuditEventInput): Promise<void> {
   // Always log to Winston for observability
   logToWinston(
@@ -31,7 +65,8 @@ export async function logAuditEvent(input: AuditEventInput): Promise<void> {
     input.severity ?? "low"
   )
 
-  // Also write to database audit_logs table (non-blocking, fire and forget)
+  // Also write to database audit_logs table (non-blocking, fire and forget).
+  // Failures are logged and enqueued for retry — never silently dropped.
   try {
     const supabase = await getRouteClient()
     await supabase.from("audit_logs").insert({
@@ -45,8 +80,13 @@ export async function logAuditEvent(input: AuditEventInput): Promise<void> {
       user_agent: input.userAgent,
       severity: input.severity ?? "low",
     })
-  } catch {
-    // Audit DB write failure must not break the primary request
+  } catch (err) {
+    logger.error("Audit DB write failed — enqueued for retry", {
+      action: input.action,
+      userId: input.userId,
+      error: err instanceof Error ? err.message : String(err),
+    })
+    await enqueueAuditRetry(input)
   }
 }
 

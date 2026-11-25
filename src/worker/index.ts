@@ -1,19 +1,45 @@
 "use strict"
 
 import { Queue, Worker } from "bullmq"
-import { exec } from "child_process"
-import fs from "fs"
+import { execFile } from "child_process"
+import { promisify } from "util"
+import fs from "fs/promises"
 import path from "path"
 import { createClient } from "@supabase/supabase-js"
 import Redis from "ioredis"
 import { getDocument, GlobalWorkerOptions } from "pdfjs-dist"
-import logger from "@/lib/logger"
+import logger from "../lib/logger"
+import * as Sentry from "@sentry/node"
+
+// Initialize Sentry for the worker process (server-side only).
+if (process.env.NODE_ENV === "production" && process.env.SENTRY_DSN) {
+  Sentry.init({
+    dsn: process.env.SENTRY_DSN,
+    environment: process.env.NODE_ENV,
+    release: process.env.SENTRY_RELEASE || "1.0.0",
+    tracesSampleRate: 0.1,
+  })
+}
+
+// Dead-letter queue for failed conversion jobs after all retries are exhausted.
+const dlq = new Queue("document-conversion-dlq", {
+  connection: {
+    host: process.env.REDIS_HOST || "localhost",
+    port: parseInt(process.env.REDIS_PORT || "6379", 10),
+  },
+  defaultJobOptions: {
+    attempts: 1,
+    removeOnComplete: 1000,
+    removeOnFail: 1000,
+  },
+})
 
 // Configure pdfjs-dist worker for Node.js environment
 if (typeof window === "undefined") {
   GlobalWorkerOptions.workerSrc = require.resolve("pdfjs-dist/legacy/build/pdf.worker.entry")
 }
 
+const execFileAsync = promisify(execFile)
 const createRedisClient = (opts: any) => new Redis(opts)
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -123,13 +149,12 @@ function stopLeaderElection(): Promise<void> {
 
 async function convertWithLibreOffice(sourcePath: string, targetFormat: string, outputDir: string): Promise<string> {
   const safeFormat = validateLibreOfficeFormat(targetFormat)
-  return new Promise<string>((resolve, reject) => {
-    const cmd = `libreoffice --headless --convert-to ${safeFormat} --outdir "${outputDir}" "${sourcePath}"`
-    exec(cmd, { timeout: 300000 }, (error, stdout, stderr) => {
-      if (error) reject(error)
-      else resolve(path.join(outputDir, path.basename(sourcePath, path.extname(sourcePath)) + "." + safeFormat))
-    })
-  })
+  const { stdout, stderr } = await execFileAsync(
+    "libreoffice",
+    ["--headless", "--convert-to", safeFormat, "--outdir", outputDir, sourcePath],
+    { timeout: 300000 }
+  )
+  return path.join(outputDir, path.basename(sourcePath, path.extname(sourcePath)) + "." + safeFormat)
 }
 
 async function reconstructFromPDF(sourcePath: string, targetFormat: string): Promise<string> {
@@ -137,7 +162,7 @@ async function reconstructFromPDF(sourcePath: string, targetFormat: string): Pro
     throw new Error(`PDF to ${targetFormat} reconstruction not yet implemented`)
   }
 
-  const pdfBytes = fs.readFileSync(sourcePath)
+  const pdfBytes = await fs.readFile(sourcePath)
   const loadingTask = getDocument({ data: pdfBytes })
   const pdf = await loadingTask.promise
   const numPages = pdf.numPages
@@ -168,7 +193,7 @@ ${textContent.split("\n--- Page Break ---\n").map((block, i) => {
 
   const docxContent = Buffer.from(docxXml, "utf8")
   const outputPath = sourcePath.replace(/\.pdf$/i, ".docx")
-  fs.writeFileSync(outputPath, docxContent)
+  await fs.writeFile(outputPath, docxContent)
   return outputPath
 }
 
@@ -298,7 +323,7 @@ const worker = new Worker<ConversionJobData, { success: boolean; outputUrl?: str
           throw new Error(`Source file too large for conversion (max ${MAX_CONVERSION_FILE_SIZE / (1024 * 1024)}MB)`)
         }
 
-        fs.writeFileSync(sourcePath, new Uint8Array(buffer))
+        await fs.writeFile(sourcePath, new Uint8Array(buffer))
 
         const sourceExt = getExt(sourceUrl)
 
@@ -307,13 +332,13 @@ const worker = new Worker<ConversionJobData, { success: boolean; outputUrl?: str
         } else if (targetFormat === "docx" && sourceExt === "pdf") {
           resultPath = await reconstructFromPDF(sourcePath, targetFormat)
         } else if (["jpg", "jpeg", "png", "webp", "gif", "bmp", "tiff", "svg"].includes(sourceExt) && ["jpg", "jpeg", "png", "webp", "pdf"].includes(targetFormat)) {
-          fs.copyFileSync(sourcePath, outputPath)
+          await fs.copyFile(sourcePath, outputPath)
           resultPath = outputPath
         } else {
           resultPath = await convertWithLibreOffice(sourcePath, targetFormat, outputDir)
         }
 
-        const resultBuffer = fs.readFileSync(resultPath!)
+        const resultBuffer = await fs.readFile(resultPath!)
         const storagePath = `converted/${userId}/${jobId}.${targetFormat}`
         const { error: uploadError } = await supabase.storage.from("converted").upload(storagePath, resultBuffer, { upsert: true })
 
@@ -345,8 +370,8 @@ const worker = new Worker<ConversionJobData, { success: boolean; outputUrl?: str
           .eq("id", jobId)
         throw err
       } finally {
-        try { if (sourcePath) fs.unlinkSync(sourcePath) } catch {}
-        try { if (resultPath) fs.unlinkSync(resultPath) } catch {}
+        try { if (sourcePath) await fs.unlink(sourcePath).catch(() => {}) } catch {}
+        try { if (resultPath) await fs.unlink(resultPath).catch(() => {}) } catch {}
       }
     } catch (err) {
       await supabase
@@ -371,12 +396,12 @@ const worker = new Worker<ConversionJobData, { success: boolean; outputUrl?: str
 
 const MAX_TMP_DISK_USAGE_MB = 1024 // 1GB max /tmp usage
 
-function cleanupTempFiles(): void {
+async function cleanupTempFiles(): Promise<void> {
   try {
-    const entries = fs.readdirSync("/tmp", { withFileTypes: true })
+    const entries = await fs.readdir("/tmp", { withFileTypes: true })
     for (const entry of entries) {
       if (entry.isFile() && entry.name.startsWith("forge")) {
-        try { fs.unlinkSync(`/tmp/${entry.name}`) } catch {}
+        try { await fs.unlink(`/tmp/${entry.name}`).catch(() => {}) } catch {}
       }
     }
   } catch {}
@@ -384,13 +409,15 @@ function cleanupTempFiles(): void {
 
 async function checkTmpDiskUsage(): Promise<void> {
   try {
-    const entries = fs.readdirSync("/tmp", { withFileTypes: true })
+    const entries = await fs.readdir("/tmp", { withFileTypes: true })
     let totalBytes = 0
+    const fileEntries: Array<{ name: string; mtime: number }> = []
     for (const entry of entries) {
       if (entry.isFile()) {
         try {
-          const stat = fs.statSync(`/tmp/${entry.name}`)
+          const stat = await fs.stat(`/tmp/${entry.name}`)
           totalBytes += stat.size
+          fileEntries.push({ name: entry.name, mtime: stat.mtimeMs })
         } catch {}
       }
     }
@@ -398,12 +425,9 @@ async function checkTmpDiskUsage(): Promise<void> {
     if (totalMB > MAX_TMP_DISK_USAGE_MB) {
       logger.warn("/tmp disk usage high", { totalMB, maxMB: MAX_TMP_DISK_USAGE_MB })
       // Clean up oldest files first
-      const files = entries
-        .filter((e) => e.isFile())
-        .map((e) => ({ name: e.name, mtime: fs.statSync(`/tmp/${e.name}`).mtimeMs }))
-        .sort((a, b) => a.mtime - b.mtime)
-      for (const f of files.slice(0, Math.ceil(files.length / 2))) {
-        try { fs.unlinkSync(`/tmp/${f.name}`) } catch {}
+      fileEntries.sort((a, b) => a.mtime - b.mtime)
+      for (const f of fileEntries.slice(0, Math.ceil(fileEntries.length / 2))) {
+        try { await fs.unlink(`/tmp/${f.name}`).catch(() => {}) } catch {}
       }
     }
   } catch {}
@@ -445,11 +469,32 @@ worker.on("completed", (job) => {
   }
 })
 
-worker.on("failed", (job, err) => {
+worker.on("failed", async (job, err) => {
   if (job) {
     workerHealth.activeJobs = Math.max(0, workerHealth.activeJobs - 1)
     workerHealth.failedJobs++
     logger.error(`Job ${job.id} failed`, { error: err.message, jobId: job.id })
+
+    // Send to Sentry for alerting
+    Sentry.captureException(err, {
+      tags: { component: "worker", jobId: job.id, jobType: job.data.type },
+      extra: { jobData: job.data },
+    })
+
+    // Move to dead-letter queue after BullMQ exhausts retries (maxStartedAttempts: 3).
+    // This preserves failed jobs for manual inspection and retry.
+    try {
+      await dlq.add("failed-job", {
+        originalJobId: job.id,
+        jobType: job.data.type,
+        jobData: job.data,
+        error: err instanceof Error ? err.message : String(err),
+        failedAt: new Date().toISOString(),
+        attempts: job.attemptsMade,
+      })
+    } catch {
+      // DLQ failure is non-fatal; the error is already logged and sent to Sentry.
+    }
   }
 })
 
@@ -490,8 +535,8 @@ healthServer.on("listening", () => {
 
 // Initialize leader election
 startLeaderElection()
-cleanupTempFiles()
-setInterval(checkTmpDiskUsage, 60 * 60 * 1000) // Check disk usage every hour
+void cleanupTempFiles()
+setInterval(() => void checkTmpDiskUsage(), 60 * 60 * 1000) // Check disk usage every hour
 
 async function gracefulShutdown(signal: string): Promise<void> {
   console.log(`Received ${signal}, shutting down worker gracefully...`)

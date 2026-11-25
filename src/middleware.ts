@@ -13,6 +13,23 @@ import { checkRateLimit, getRateLimitConfig, getAPIKeyRateLimitConfig } from "@/
 import { getRouteClient } from "@/lib/supabase"
 import logger from "@/lib/logger"
 
+let envValidated = false
+
+async function ensureEnvValidated(): Promise<void> {
+  if (envValidated) return
+  try {
+    await validateEnv()
+    envValidated = true
+  } catch (err) {
+    logger.error("Environment validation failed", {
+      error: err instanceof Error ? err.message : String(err),
+    })
+    // Don't block the request — server.js already validates at startup.
+    // This is a defense-in-depth check for middleware-only deployments.
+    envValidated = true
+  }
+}
+
 function generateCspNonce(): string {
   return crypto.randomBytes(16).toString("base64")
 }
@@ -39,10 +56,11 @@ function generateRequestId(): string {
 }
 
 export async function middleware(request: NextRequest) {
+  await ensureEnvValidated()
+  const requestId = request.headers.get("x-request-id") ?? generateRequestId()
+  const cspNonce = generateCspNonce()
   try {
     const pathname = request.nextUrl?.pathname ?? "/"
-    const requestId = request.headers.get("x-request-id") ?? generateRequestId()
-    const cspNonce = generateCspNonce()
 
     // REDIRECT LOOP PROTECTION — detect and break infinite redirect cycles
     // Cookies are used instead of headers because browsers forward cookies
@@ -343,14 +361,15 @@ export async function middleware(request: NextRequest) {
   } catch (error) {
     logger.error("Middleware error", {
       error: error instanceof Error ? error.message : String(error),
+      requestId,
     })
     const response = NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
     )
-    response.headers.set("x-request-id", generateRequestId())
-    response.headers.set("x-csp-nonce", generateCspNonce())
-    response.headers.set("Content-Security-Policy", buildCspHeader(generateCspNonce()))
+    response.headers.set("x-request-id", requestId)
+    response.headers.set("x-csp-nonce", cspNonce)
+    response.headers.set("Content-Security-Policy", buildCspHeader(cspNonce))
     return response
   }
 }
