@@ -13,16 +13,18 @@ function getLockoutKey(identifier: string): string {
 
 export async function checkLoginAttempts(identifier: string): Promise<{ allowed: boolean; remainingMs?: number }> {
   const lockoutKey = `${getLockoutKey(identifier)}:lockout`
-  const entry = await cacheGet<{ lockoutUntil: number }>(lockoutKey)
+  const entry = await cacheGet<number>(lockoutKey)
   if (!entry) return { allowed: true }
 
   const now = Date.now()
-  if (now > entry.lockoutUntil) {
+  // `entry` is the lockout-until timestamp stored as a number (see cacheEval
+  // / recordFailedAttempt). An undefined/missing value means no lockout.
+  if (now > entry) {
     await cacheDel(lockoutKey)
     return { allowed: true }
   }
 
-  return { allowed: false, remainingMs: entry.lockoutUntil - now }
+  return { allowed: false, remainingMs: entry - now }
 }
 
 const INCREMENT_AND_LOCK_LUA = `

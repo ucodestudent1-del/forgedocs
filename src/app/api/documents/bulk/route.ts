@@ -141,19 +141,19 @@ export const POST = withErrorBoundary(async (req) => {
         }
 
         case "export": {
-          // Generate signed URLs for download
+          // Generate signed URL for download
           const { data: signedUrlData, error } = await supabase.storage
             .from("documents")
-            .createSignedUrls([doc.storage_path], 3600) // 1 hour
+            .createSignedUrl(doc.storage_path, 3600) // 1 hour
           
-          if (error || !signedUrlData?.[0]?.signedUrl) {
+          if (error || !signedUrlData?.signedUrl) {
             throw new Error("Failed to generate download URL")
           }
           
           result = { 
             id: doc.id, 
             success: true, 
-            downloadUrl: signedUrlData[0].signedUrl,
+            downloadUrl: signedUrlData.signedUrl,
             title: doc.title,
             mimeType: doc.mime_type,
           }

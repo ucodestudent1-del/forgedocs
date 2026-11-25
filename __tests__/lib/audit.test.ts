@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, jest } from "@jest/globals"
 
 jest.mock("@/lib/supabase", () => ({
-  getRouteClient: jest.fn(),
+  getPooledRouteClient: jest.fn(),
 }))
 
 jest.mock("@/lib/logger", () => ({
@@ -12,7 +12,7 @@ jest.mock("@/lib/logger", () => ({
 
 import { logAuditEvent, getClientIp, getClientUserAgent } from "@/lib/audit"
 
-const mockGetRouteClient = jest.requireMock("@/lib/supabase").getRouteClient
+const mockGetRouteClient = jest.requireMock("@/lib/supabase").getPooledRouteClient
 const mockLogAuditEvent = jest.requireMock("@/lib/logger").logAuditEvent
 
 describe("Audit Logging", () => {

@@ -39,11 +39,14 @@ const mockSupabase = {
 ;(createServiceRoleClient as jest.Mock).mockResolvedValue(mockSupabase)
 
 function singleResult(result: any) {
-  return {
+  const base = {
     select: jest.fn().mockReturnThis(),
     eq: jest.fn().mockReturnThis(),
     single: jest.fn().mockResolvedValue(result),
+    update: jest.fn().mockReturnThis(),
+    insert: jest.fn().mockReturnThis(),
   }
+  return base
 }
 
 function insertMockFn() {
@@ -73,7 +76,7 @@ describe('Billing webhook idempotency', () => {
     const handler = jest.fn().mockResolvedValue(undefined)
     ;(WEBHOOK_HANDLERS as any)['checkout.session.completed'] = handler
 
-    mockSupabase.from.mockReturnValue(singleResult({ data: { event_id: 'stripe_evt_123' }, error: null }))
+    mockSupabase.from.mockReturnValue(singleResult({ data: { event_id: 'stripe_evt_123', processed: true }, error: null }))
 
     const res = await POST(makeRequest('{}', 'sig'))
     const data = await res.json()
@@ -96,6 +99,7 @@ describe('Billing webhook idempotency', () => {
             eq: jest.fn().mockReturnThis(),
             single: jest.fn().mockResolvedValue({ data: null, error: { code: 'PGRST116' } }),
             insert: insertMock,
+            update: jest.fn().mockReturnThis(),
           }
         : singleResult(null)
     )
@@ -109,11 +113,12 @@ describe('Billing webhook idempotency', () => {
     expect(insertMock).toHaveBeenCalled()
   })
 
-  it('returns 500 and does not record the event when the handler fails', async () => {
+  it('returns 500 and does not mark the event processed when the handler fails', async () => {
     const handler = jest.fn().mockRejectedValue(new Error('boom'))
     ;(WEBHOOK_HANDLERS as any)['checkout.session.completed'] = handler
 
-    const insertMock = jest.fn()
+    const insertMock = insertMockFn()
+    const updateMock = jest.fn().mockReturnThis()
     mockSupabase.from.mockImplementation((table: string) =>
       table === 'webhook_events'
         ? {
@@ -121,6 +126,7 @@ describe('Billing webhook idempotency', () => {
             eq: jest.fn().mockReturnThis(),
             single: jest.fn().mockResolvedValue({ data: null, error: { code: 'PGRST116' } }),
             insert: insertMock,
+            update: updateMock,
           }
         : singleResult(null)
     )
@@ -128,6 +134,9 @@ describe('Billing webhook idempotency', () => {
     const res = await POST(makeRequest('{}', 'sig'))
 
     expect(res.status).toBe(500)
-    expect(insertMock).not.toHaveBeenCalled()
+    expect(handler).toHaveBeenCalled()
+    // Event must NOT be marked processed so Stripe retries and the handler
+    // re-runs (idempotently) instead of the billing event being silently lost.
+    expect(updateMock).not.toHaveBeenCalled()
   })
 })

@@ -27,7 +27,7 @@ jest.mock('next/server', () => ({
 
 // Mock the dependencies
 jest.mock('@/lib/supabase', () => ({
-  getRouteClient: jest.fn(() => ({
+  getPooledRouteClient: jest.fn(() => ({
     auth: {
       getUser: jest.fn().mockResolvedValue({ data: { user: { id: 'user-123' } }, error: null }),
     },
@@ -70,8 +70,8 @@ jest.mock('@/lib/tierLimits', () => ({
 describe('Documents API', () => {
   describe('GET', () => {
     it('should return 401 when not authenticated', async () => {
-      const { getRouteClient } = require('@/lib/supabase')
-      getRouteClient.mockReturnValue({
+      const { getPooledRouteClient } = require('@/lib/supabase')
+      getPooledRouteClient.mockReturnValue({
         auth: { getUser: jest.fn().mockResolvedValue({ data: { user: null }, error: null }) },
       })
 

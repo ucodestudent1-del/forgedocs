@@ -43,26 +43,20 @@ export async function POST(req: Request) {
 
   const eventId = `stripe_${event.id}`
 
-  // Idempotency: insert a processing record before dispatching the handler.
-  // If the handler fails, the record stays unprocessed so Stripe retries.
-  // If a concurrent retry already inserted, treat as already processed.
+  // Idempotency: skip events that have already been fully processed.
   const { data: existingEvent } = await (supabase as any)
     .from("webhook_events")
     .select("event_id, processed")
     .eq("event_id", eventId)
     .single()
 
-  if (existingEvent) {
-    if (existingEvent.processed) {
-      logger.info(`Duplicate webhook event already processed: ${eventId}`)
-      return NextResponse.json({ received: true })
-    }
-    // Event exists but not yet processed — a retry is in progress; wait briefly
-    // then re-check, or just proceed since handlers are idempotent.
-    logger.info(`Duplicate webhook event in progress: ${eventId}`)
+  if (existingEvent?.processed) {
+    logger.info(`Duplicate webhook event already processed: ${eventId}`)
     return NextResponse.json({ received: true })
   }
 
+  // Record the event for idempotency before dispatching.
+  // If a concurrent retry inserted first, treat as already processed.
   const { error: insertError } = await (supabase as any)
     .from("webhook_events")
     .insert({
@@ -75,19 +69,32 @@ export async function POST(req: Request) {
 
   if (insertError) {
     if (insertError.code === "23505") {
-      logger.info(`Duplicate webhook event inserted concurrently: ${eventId}`)
-      return NextResponse.json({ received: true })
+      // Concurrent insert — another retry is handling this event.
+      // If already processed, skip; otherwise fall through to re-run the
+      // idempotent handler below.
+      const { data: recheck } = await (supabase as any)
+        .from("webhook_events")
+        .select("processed")
+        .eq("event_id", eventId)
+        .single()
+      if (recheck?.processed) {
+        logger.info(`Duplicate webhook event already processed (concurrent): ${eventId}`)
+        return NextResponse.json({ received: true })
+      }
+    } else {
+      throw createAppError(insertError.message, 500, "DATABASE_ERROR")
     }
-    throw createAppError(insertError.message, 500, "DATABASE_ERROR")
   }
 
-  // Dispatch to the appropriate handler.
+  // Dispatch to the appropriate handler. Handlers must be idempotent: a retry
+  // of an unprocessed event re-runs the handler safely. If the handler fails,
+  // we return 500 WITHOUT marking processed so Stripe retries and the handler
+  // runs again — never silently dropping billing events.
   const handler = WEBHOOK_HANDLERS[event.type]
   if (handler) {
     try {
       await handler(event, supabase, stripe)
     } catch (err) {
-      // Do NOT mark as processed so Stripe retries. Handlers are idempotent.
       logger.error(`Webhook handler error for ${event.type}`, {
         error: err instanceof Error ? err.message : String(err),
         eventId,
@@ -106,7 +113,6 @@ export async function POST(req: Request) {
     logger.error(`Failed to mark webhook event as processed: ${eventId}`, {
       error: updateError.message,
     })
-    // Return 500 so Stripe retries; the event is unprocessed.
     return NextResponse.json({ error: "Failed to record processing" }, { status: 500 })
   }
 

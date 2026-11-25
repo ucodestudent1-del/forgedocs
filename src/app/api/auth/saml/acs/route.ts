@@ -54,15 +54,18 @@ export const POST = withErrorBoundary(async (req) => {
     if (existingAccount) {
       userId = existingAccount.user_id
     } else {
-      // Create/sign-in the user in Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signInWithOAuth({
-        provider: "saml",
+      // SAML sign-in is a redirect-based flow; signInWithOAuth does not apply
+      // to SAML providers and returns a URL, not a user object. The new-user
+      // SAML signup path is incomplete and not wired to session creation.
+      // userId is intentionally unset here; the caller redirects to /dashboard.
+      const { error: authError } = await supabase.auth.signInWithOAuth({
+        provider: "saml" as any,
         options: {
           redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard`,
         },
       })
       if (authError) throw createAppError(authError.message, 500, "AUTH_ERROR")
-      userId = authData.user?.id ?? ""
+      userId = ""
     }
 
     // Set session cookie

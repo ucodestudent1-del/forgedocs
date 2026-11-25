@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, jest } from "@jest/globals"
 
 jest.mock("@/lib/supabase", () => ({
-  getRouteClient: jest.fn(),
+  getPooledRouteClient: jest.fn(),
 }))
 
 jest.mock("@/lib/cache", () => ({
@@ -12,7 +12,7 @@ jest.mock("@/lib/cache", () => ({
 
 import { getTierLimits, checkTierLimit, trackUsage, hasFeatureForUser } from "@/lib/tierLimits"
 
-const mockGetRouteClient = jest.requireMock("@/lib/supabase").getRouteClient
+const mockGetRouteClient = jest.requireMock("@/lib/supabase").getPooledRouteClient
 
 describe("Tier Limits", () => {
   beforeEach(() => {

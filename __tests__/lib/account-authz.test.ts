@@ -1,14 +1,15 @@
-import { getRouteClient } from '@/lib/supabase'
+import { getPooledRouteClient } from '@/lib/supabase'
 
 jest.mock('@/lib/supabase', () => ({
   getRouteClient: jest.fn(),
+  getPooledRouteClient: jest.fn(),
 }))
 
 const mockSupabase = {
   from: jest.fn(),
 }
 
-;(getRouteClient as jest.Mock).mockResolvedValue(mockSupabase)
+;(getPooledRouteClient as jest.Mock).mockResolvedValue(mockSupabase)
 
 function chain(rows: any[] | null, error: any = null) {
   const base: any = {

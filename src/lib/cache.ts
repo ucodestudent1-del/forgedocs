@@ -214,6 +214,20 @@ export async function cacheEval(key: string, ttlSeconds: number, threshold: stri
     const current = entry ? parseInt(entry.value, 10) || 0 : 0
     const next = current + 1
     memoryStore.set(key, { value: String(next), expiresAt: Date.now() + ttlSeconds * 1000 })
+
+    // Mirror production Lua lockout behavior: when threshold is reached, set
+    // the lockout timestamp so subsequent checkLoginAttempts calls fail-closed.
+    const thresholdNum = parseInt(threshold, 10)
+    if (next >= thresholdNum) {
+      const lockoutKey = `${key}:lockout`
+      const existing = memoryStore.get(lockoutKey)
+      const existingLockout = existing ? parseInt(existing.value, 10) : 0
+      const lockoutUntil = parseInt(lockoutUntilMs, 10)
+      if (!existing || existingLockout < lockoutUntil) {
+        memoryStore.set(lockoutKey, { value: String(lockoutUntil), expiresAt: Date.now() + ttlSeconds * 1000 })
+      }
+    }
+
     return next
   }
 

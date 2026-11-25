@@ -90,6 +90,21 @@ Object.defineProperty(global, 'crypto', {
   },
 })
 
+// jsdom does not provide Node.js `setImmediate`/`clearImmediate`, which Winston
+// uses for asynchronous logging. Polyfill them so server-side error logging
+// works in the test environment.
+if (typeof global.setImmediate === 'undefined') {
+  // eslint-disable-next-line no-console
+  global.setImmediate = (callback: (...args: any[]) => void, ...args: any[]) => {
+    return setTimeout(() => callback(...args), 0)
+  }
+}
+if (typeof global.clearImmediate === 'undefined') {
+  global.clearImmediate = (timerId: number) => {
+    clearTimeout(timerId)
+  }
+}
+
 // Mock ResizeObserver
 global.ResizeObserver = jest.fn().mockImplementation(() => ({
   observe: jest.fn(),
