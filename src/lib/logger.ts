@@ -54,14 +54,33 @@ try {
 
 // Optional remote log transport (e.g., Datadog, Logtail, CloudWatch via HTTP)
 if (process.env.LOG_ENDPOINT) {
+  const url = new URL(process.env.LOG_ENDPOINT)
   transports.push(
     new (winston.transports.Http as any)({
-      host: new URL(process.env.LOG_ENDPOINT).host,
-      path: new URL(process.env.LOG_ENDPOINT).pathname,
-      protocol: new URL(process.env.LOG_ENDPOINT).protocol,
-      ssl: new URL(process.env.LOG_ENDPOINT).protocol === "https:",
+      host: url.host,
+      path: url.pathname,
+      protocol: url.protocol,
+      ssl: url.protocol === "https:",
       format: winston.format.json(),
       level: process.env.LOG_LEVEL || "info",
+    })
+  )
+}
+
+// Alert transport: POST critical errors to alert webhook (PagerDuty/Slack/Opsgenie)
+if (process.env.ALERT_WEBHOOK_URL) {
+  const url = new URL(process.env.ALERT_WEBHOOK_URL)
+  transports.push(
+    new (winston.transports.Http as any)({
+      host: url.host,
+      path: url.pathname,
+      protocol: url.protocol,
+      ssl: url.protocol === "https:",
+      format: winston.format.combine(
+        winston.format.json(),
+        winston.format.printf(({ level, ...rest }) => JSON.stringify({ level, ...rest }))
+      ),
+      level: "error",
     })
   )
 }

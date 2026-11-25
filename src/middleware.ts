@@ -48,6 +48,21 @@ function buildCspHeader(nonce: string): string {
   ].join("; ")
 }
 
+function buildCspReportOnlyHeader(): string {
+  return [
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https:",
+    "style-src 'self' 'unsafe-inline' https:",
+    "img-src 'self' data: https:",
+    "font-src 'self' https:",
+    "connect-src 'self' https: wss:",
+    "frame-ancestors 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "report-uri /api/csp-report",
+  ].join("; ")
+}
+
 function generateRequestId(): string {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
     return crypto.randomUUID()
@@ -188,6 +203,30 @@ export async function middleware(request: NextRequest) {
     if (pathname.startsWith("/api/")) {
       const versionInfo = parseApiVersion(request.headers)
 
+      // Enforce versioned API path: /api/v1/*
+      if (!pathname.startsWith("/api/v1/") && pathname !== "/api/v1" && pathname !== "/api/health" && !pathname.startsWith("/api/health/")) {
+        const versionResponse = NextResponse.json(
+          {
+            error: "API version prefix required. Use /api/v1/ path prefix.",
+            supported_versions: SUPPORTED_API_VERSIONS,
+            default_version: DEFAULT_API_VERSION,
+          },
+          { status: 426 }
+        )
+        Object.entries(apiVersionHeaders(versionInfo.version)).forEach(([key, value]) => {
+          versionResponse.headers.set(key, value)
+        })
+        versionResponse.headers.set("x-request-id", requestId)
+        versionResponse.headers.set("x-csp-nonce", cspNonce)
+        versionResponse.headers.set("Content-Security-Policy", buildCspHeader(cspNonce))
+        versionResponse.headers.set("Content-Security-Policy-Report-Only", buildCspReportOnlyHeader())
+        versionResponse.headers.set("X-Content-Type-Options", "nosniff")
+        versionResponse.headers.set("X-Frame-Options", "DENY")
+        versionResponse.headers.set("Referrer-Policy", "strict-origin-when-cross-origin")
+        versionResponse.headers.set("Permissions-Policy", "geolocation=(), microphone=(), camera=()")
+        return versionResponse
+      }
+
       // Warn clients when api-version header is missing (will be required in v2)
       const versionHeaderMissing = !request.headers.has("api-version")
 
@@ -206,6 +245,7 @@ export async function middleware(request: NextRequest) {
         versionResponse.headers.set("x-request-id", requestId)
         versionResponse.headers.set("x-csp-nonce", cspNonce)
         versionResponse.headers.set("Content-Security-Policy", buildCspHeader(cspNonce))
+        versionResponse.headers.set("Content-Security-Policy-Report-Only", buildCspReportOnlyHeader())
         versionResponse.headers.set("X-Content-Type-Options", "nosniff")
         versionResponse.headers.set("X-Frame-Options", "DENY")
         versionResponse.headers.set("Referrer-Policy", "strict-origin-when-cross-origin")
@@ -247,6 +287,7 @@ export async function middleware(request: NextRequest) {
           unauthorized.headers.set("x-request-id", requestId)
           unauthorized.headers.set("x-csp-nonce", cspNonce)
           unauthorized.headers.set("Content-Security-Policy", buildCspHeader(cspNonce))
+          unauthorized.headers.set("Content-Security-Policy-Report-Only", buildCspReportOnlyHeader())
           unauthorized.headers.set("X-Content-Type-Options", "nosniff")
           unauthorized.headers.set("X-Frame-Options", "DENY")
           unauthorized.headers.set("Referrer-Policy", "strict-origin-when-cross-origin")
@@ -273,6 +314,7 @@ export async function middleware(request: NextRequest) {
             forbidden.headers.set("x-request-id", requestId)
             forbidden.headers.set("x-csp-nonce", cspNonce)
             forbidden.headers.set("Content-Security-Policy", buildCspHeader(cspNonce))
+            forbidden.headers.set("Content-Security-Policy-Report-Only", buildCspReportOnlyHeader())
             forbidden.headers.set("X-Content-Type-Options", "nosniff")
             forbidden.headers.set("X-Frame-Options", "DENY")
             forbidden.headers.set("Referrer-Policy", "strict-origin-when-cross-origin")
@@ -299,6 +341,7 @@ export async function middleware(request: NextRequest) {
             rateLimited.headers.set("x-request-id", requestId)
             rateLimited.headers.set("x-csp-nonce", cspNonce)
             rateLimited.headers.set("Content-Security-Policy", buildCspHeader(cspNonce))
+            rateLimited.headers.set("Content-Security-Policy-Report-Only", buildCspReportOnlyHeader())
             rateLimited.headers.set("X-Content-Type-Options", "nosniff")
             rateLimited.headers.set("X-Frame-Options", "DENY")
             rateLimited.headers.set("Referrer-Policy", "strict-origin-when-cross-origin")
@@ -347,6 +390,7 @@ export async function middleware(request: NextRequest) {
     }
 
     response.headers.set("Content-Security-Policy", buildCspHeader(cspNonce))
+    response.headers.set("Content-Security-Policy-Report-Only", buildCspReportOnlyHeader())
 
     // Add security headers
     response.headers.set("X-Content-Type-Options", "nosniff")
@@ -370,6 +414,7 @@ export async function middleware(request: NextRequest) {
     response.headers.set("x-request-id", requestId)
     response.headers.set("x-csp-nonce", cspNonce)
     response.headers.set("Content-Security-Policy", buildCspHeader(cspNonce))
+    response.headers.set("Content-Security-Policy-Report-Only", buildCspReportOnlyHeader())
     return response
   }
 }

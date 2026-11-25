@@ -123,3 +123,47 @@ export async function createServiceRoleClient() {
     },
   })
 }
+
+/**
+ * Shared pooled Supabase server client.
+ * Reuses a single client instance across requests within the same serverless invocation
+ * to reduce connection churn. For multi-replica deployments, pair with PgBouncer
+ * (Supabase pooled connection string) via DATABASE_POOL_URL.
+ */
+let pooledServerClient: ReturnType<typeof createServerClient<Database>> | null = null
+
+export async function getPooledRouteClient() {
+  if (pooledServerClient) return pooledServerClient
+
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+  if (!url || !key || url.includes("placeholder") || key.includes("placeholder")) {
+    return createMockSupabaseClient()
+  }
+
+  pooledServerClient = createServerClient<Database>(url, key, {
+    cookies: {
+      async getAll() {
+        const cookieStore = await cookies()
+        return cookieStore.getAll()
+      },
+      async setAll(cookiesToSet: { name: string; value: string; options: any }[]) {
+        try {
+          const cookieStore = await cookies()
+          cookiesToSet.forEach(({ name, value, options }) =>
+            cookieStore.set(name, value, {
+              ...options,
+              secure: true,
+              sameSite: options.sameSite ?? "strict",
+            })
+          )
+        } catch {
+          // The `set` method was called from a Server Component.
+        }
+      },
+    },
+  })
+
+  return pooledServerClient
+}

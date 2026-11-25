@@ -29,8 +29,10 @@ if (missing.length > 0) {
   process.exit(1)
 }
 
+let server = null
+
 app.prepare().then(() => {
-  createServer((req, res) => {
+  server = createServer((req, res) => {
     // Trust Railway's edge proxy headers.
     // Railway terminates TLS at the edge, so the app sees HTTP internally.
     // Override with the forwarded protocol so Next.js knows it's HTTPS.
@@ -54,3 +56,24 @@ app.prepare().then(() => {
     console.log("> Ready on http://localhost:3000 (Railway HTTPS proxy)")
   })
 })
+
+// Graceful shutdown: stop accepting new connections, finish in-flight requests, then exit
+function gracefulShutdown(signal) {
+  console.log(`Received ${signal}, shutting down gracefully...`)
+  if (server) {
+    server.close(() => {
+      console.log("HTTP server closed")
+      process.exit(0)
+    })
+    // Force exit after 30 seconds if connections don't drain
+    setTimeout(() => {
+      console.error("Forced exit after graceful shutdown timeout")
+      process.exit(1)
+    }, 30000)
+  } else {
+    process.exit(0)
+  }
+}
+
+process.on("SIGTERM", () => gracefulShutdown("SIGTERM"))
+process.on("SIGINT", () => gracefulShutdown("SIGINT"))

@@ -634,16 +634,20 @@ export function RichEditor({
       {/* Top Toolbar */}
       <header className="border-b bg-background/50 backdrop-blur sticky top-0 z-20">
         <div className="flex items-center justify-between h-12 px-4 md:px-6">
-          <div className="flex items-center gap-3">
-            <Input
-              ref={titleRef}
-              id="editor-title-label"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Document title..."
-              className="w-64 bg-transparent border-none focus:ring-0 text-lg font-medium placeholder:text-muted-foreground"
-              readOnly={readOnly}
-            />
+            <div className="flex items-center gap-3">
+              <label htmlFor="editor-title-label" className="sr-only">
+                Document title
+              </label>
+              <Input
+                ref={titleRef}
+                id="editor-title-label"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Document title..."
+                className="w-64 bg-transparent border-none focus:ring-0 text-lg font-medium placeholder:text-muted-foreground"
+                readOnly={readOnly}
+                aria-label="Document title"
+              />
             {documentId && (
               <Badge variant="secondary" className="text-xs">
                 {documentId.slice(0, 8)}

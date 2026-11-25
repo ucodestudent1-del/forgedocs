@@ -40,8 +40,8 @@ ENV NEXT_PUBLIC_GUEST_MODE=false
 ENV NODE_OPTIONS="--max-old-space-size=1536"
 
 # Add non-root user for security
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nodejs
+RUN addgroup --system --gid 1001 nodejs \
+    && adduser --system --uid 1001 nodejs
 
 # Create logs directory with proper permissions for non-root user
 RUN mkdir -p /app/logs && chown -R nodejs:nodejs /app/logs

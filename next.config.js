@@ -25,6 +25,16 @@ const nextConfig = {
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
     minimumCacheTTL: 31536000,
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: process.env.NEXT_PUBLIC_ASSET_PREFIX
+          ? new URL(process.env.NEXT_PUBLIC_ASSET_PREFIX).hostname
+          : "forgedocs.com",
+        port: "",
+        pathname: "/**",
+      },
+    ],
   },
   async headers() {
     return [
@@ -48,7 +58,9 @@ const nextConfig = {
         headers: [
           { key: "X-Frame-Options", value: "DENY" },
           { key: "X-Content-Type-Options", value: "nosniff" },
-          { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains" },
+          { key: "X-XSS-Protection", value: "1; mode=block" },
+          { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains; preload" },
+          { key: "Expect-CT", value: "max-age=86400, enforce" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           {
             key: "Permissions-Policy",
@@ -63,9 +75,22 @@ const nextConfig = {
         ],
       },
       {
-        source: "/:path*\\.(js|css|woff|woff2|png|jpg|jpeg|gif|webp|avif|ico|svg)",
+        source: "/:path*\.(js|css|woff|woff2|png|jpg|jpeg|gif|webp|avif|ico|svg)",
         headers: [
           { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+        ],
+      },
+      {
+        source: "/:path*",
+        has: [
+          {
+            type: "header",
+            key: "sec-purpose",
+            value: "prefetch",
+          },
+        ],
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=0, must-revalidate, stale-while-revalidate=300" },
         ],
       },
       {

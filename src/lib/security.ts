@@ -1,24 +1,3 @@
-export function createRateLimiter(maxRequests: number, windowMs: number) {
-  const store = new Map<string, { count: number; resetTime: number }>()
-
-  return function rateLimit(identifier: string): { allowed: boolean; remaining: number; resetTime: number } {
-    const now = Date.now()
-    const record = store.get(identifier)
-
-    if (!record || now > record.resetTime) {
-      store.set(identifier, { count: 1, resetTime: now + windowMs })
-      return { allowed: true, remaining: maxRequests - 1, resetTime: now + windowMs }
-    }
-
-    if (record.count >= maxRequests) {
-      return { allowed: false, remaining: 0, resetTime: record.resetTime }
-    }
-
-    record.count++
-    return { allowed: true, remaining: maxRequests - record.count, resetTime: record.resetTime }
-  }
-}
-
 export function validateFileType(filename: string, allowedMimeTypes: string[]): boolean {
   const ext = filename.split(".").pop()?.toLowerCase()
   const mimeMap: Record<string, string> = {
