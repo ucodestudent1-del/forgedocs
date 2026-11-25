@@ -160,7 +160,7 @@ export async function checkTierLimit(
       limit = limits.conversions_per_month
       break
     case "storage_bytes":
-      limit = Number(BigInt(limits.storage_gb) * 1024n * 1024n * 1024n)
+      limit = Number(limits.storage_gb) * 1024 * 1024 * 1024
       break
     default:
       limit = -1
