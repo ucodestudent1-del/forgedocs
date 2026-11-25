@@ -2,6 +2,9 @@
 
 import { createRouteClient } from "@/lib/supabase"
 import { cookies } from "next/headers"
+import { z } from "zod"
+
+const emailSchema = z.string().email("Invalid email address")
 
 export async function updateProfileLanguage() {
   return { success: true }
@@ -27,7 +30,23 @@ export async function updateProfile(data: {
 
   const updateData: Record<string, unknown> = {}
   if (data.fullName !== undefined) updateData.full_name = data.fullName
-  if (data.email !== undefined) updateData.email = data.email
+  if (data.email !== undefined) {
+    const emailParse = emailSchema.safeParse(data.email)
+    if (!emailParse.success) {
+      return { error: "Invalid email address" }
+    }
+    // Prevent changing email to one already owned by another profile.
+    const { data: existing } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("email", emailParse.data)
+      .neq("id", user.id)
+      .single()
+    if (existing && existing.id) {
+      return { error: "Email address is already in use" }
+    }
+    updateData.email = emailParse.data
+  }
   if (data.bio !== undefined) updateData.bio = data.bio
   if (data.timezone !== undefined) updateData.timezone = data.timezone
 
