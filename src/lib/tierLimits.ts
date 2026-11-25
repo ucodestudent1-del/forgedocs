@@ -1,6 +1,7 @@
 import { getRouteClient } from "@/lib/supabase"
 import { NextResponse } from "next/server"
 import { cacheIncrement, cacheGet, cacheSet } from "@/lib/cache"
+import logger from "@/lib/logger"
 
 export interface TierLimits {
   documents_per_month: number

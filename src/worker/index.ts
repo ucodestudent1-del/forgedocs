@@ -371,6 +371,17 @@ const worker = new Worker<ConversionJobData, { success: boolean; outputUrl?: str
 
 const MAX_TMP_DISK_USAGE_MB = 1024 // 1GB max /tmp usage
 
+function cleanupTempFiles(): void {
+  try {
+    const entries = fs.readdirSync("/tmp", { withFileTypes: true })
+    for (const entry of entries) {
+      if (entry.isFile() && entry.name.startsWith("forge")) {
+        try { fs.unlinkSync(`/tmp/${entry.name}`) } catch {}
+      }
+    }
+  } catch {}
+}
+
 async function checkTmpDiskUsage(): Promise<void> {
   try {
     const entries = fs.readdirSync("/tmp", { withFileTypes: true })

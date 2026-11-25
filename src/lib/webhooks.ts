@@ -1,6 +1,6 @@
 import { createHmac, timingSafeEqual } from "crypto"
 import { getRouteClient } from "@/lib/supabase"
-import { Queue } from "bullmq"
+import { Queue, Worker } from "bullmq"
 
 export interface WebhookDeliveryResult {
   success: boolean
@@ -146,7 +146,7 @@ const webhookQueue = new Queue("webhook-delivery", {
 })
 
 // Process webhook deliveries with bounded concurrency (10 concurrent)
-webhookQueue.process("deliver", 10, async (job) => {
+new Worker("webhook-delivery", async (job) => {
   const { endpointId, url, secret, event, payload } = job.data as {
     endpointId: string
     url: string
@@ -155,6 +155,12 @@ webhookQueue.process("deliver", 10, async (job) => {
     payload: unknown
   }
   return deliverWebhook(endpointId, url, secret, event, payload)
+}, {
+  connection: {
+    host: process.env.REDIS_HOST || "localhost",
+    port: parseInt(process.env.REDIS_PORT || "6379", 10),
+  },
+  concurrency: 10,
 })
 
 /**
