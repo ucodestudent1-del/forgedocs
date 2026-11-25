@@ -1,4 +1,4 @@
-import { createHash, randomBytes, timingSafeEqual } from "crypto"
+import { createHash, createHmac, randomBytes, timingSafeEqual } from "crypto"
 import { getRouteClient } from "@/lib/supabase"
 
 export const API_KEY_PREFIX = "sk_live"
@@ -13,7 +13,11 @@ export function generateApiKey(): { rawKey: string; keyPrefix: string; keyHash: 
 }
 
 export function hashApiKey(rawKey: string): string {
-  return createHash("sha256").update(rawKey).digest("hex")
+  const pepper = process.env.API_KEY_PEPPER
+  if (!pepper) {
+    throw new Error("API_KEY_PEPPER is not configured")
+  }
+  return createHmac("sha256", pepper).update(rawKey).digest("hex")
 }
 
 export function compareApiKey(rawKey: string, hash: string): boolean {
@@ -107,23 +111,20 @@ export async function validateApiKey(rawKey: string): Promise<{ userId: string; 
 
   // Multiple keys may share the same prefix; compare all keys in constant time
   // to avoid timing side channels that could reveal which key prefix matches.
-  let matched = false
   let matchedKey: ApiKeyRow | null = null
 
   for (const key of keys) {
     // Check expiry
-    if (key.expires_at && new Date(key.expires_at) < new Date()) {
-      continue
-    }
+    const isExpired = key.expires_at && new Date(key.expires_at) < new Date()
 
-    // Constant-time comparison for each key
-    if (compareApiKey(rawKey, key.key_hash)) {
-      matched = true
+    // Constant-time comparison for each key regardless of expiry
+    const matches = compareApiKey(rawKey, key.key_hash)
+    if (matches && !isExpired) {
       matchedKey = key
     }
   }
 
-  if (!matched) {
+  if (!matchedKey) {
     return null
   }
 
@@ -162,9 +163,6 @@ export function checkApiKeyPermissions(
 
     // Wildcard resource:* grants all actions on that resource
     if (keyPermissions[`${resource}:*`] === true) continue
-
-    // Global wildcard *:* grants everything
-    if (keyPermissions["*:*"] === true) continue
 
     missing.push(perm)
   }

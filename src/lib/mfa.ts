@@ -159,7 +159,12 @@ export function hashBackupCode(code: string): string {
 }
 
 export function verifyBackupCode(hashedCode: string, providedCode: string): boolean {
+  const pepper = process.env.MFA_BACKUP_CODE_PEPPER
+  if (!pepper) {
+    throw new Error("MFA_BACKUP_CODE_PEPPER is not configured")
+  }
   const providedHash = hashBackupCode(providedCode)
-  if (providedHash.length !== hashedCode.length) return false
+  // Always run timingSafeEqual without early length return to avoid
+  // length-based timing side channels.
   return timingSafeEqual(Buffer.from(providedHash), Buffer.from(hashedCode))
 }

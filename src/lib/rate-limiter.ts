@@ -120,6 +120,7 @@ export async function checkRateLimit(identifier: string, config: RateLimitConfig
 
   const limited = count > config.maxRequests
   const remaining = Math.max(0, config.maxRequests - count)
+  // resetTime is when the current fixed window expires
   const resetTime = now + config.windowMs
 
   return { limited, remaining, resetTime, total: config.maxRequests }

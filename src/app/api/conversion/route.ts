@@ -121,7 +121,7 @@ export const POST = withErrorBoundary(async (req: Request): Promise<NextResponse
       throw createAppError("Value is required for unit conversion", 400, "MISSING_VALUE")
     }
     const numValue = parseFloat(value)
-    if (isNaN(numValue)) {
+    if (isNaN(numValue) || !isFinite(numValue)) {
       throw createAppError("Invalid numeric value", 400, "INVALID_NUMBER")
     }
     // Determine category from format IDs

@@ -27,6 +27,24 @@ async function handleUnauthorized() {
 const pendingRequests = new Map<string, Promise<Response>>()
 const cache = new Map<string, { data: any; timestamp: number }>()
 const CACHE_TTL = 30 * 1000 // 30 seconds
+const MAX_CACHE_SIZE = 500
+
+function evictExpired() {
+  const now = Date.now()
+  for (const [key, entry] of cache.entries()) {
+    if (now - entry.timestamp >= CACHE_TTL) {
+      cache.delete(key)
+    }
+  }
+  // Enforce max size by removing oldest entries
+  if (cache.size > MAX_CACHE_SIZE) {
+    const entries = Array.from(cache.entries()).sort((a, b) => a[1].timestamp - b[1].timestamp)
+    const toRemove = entries.slice(0, cache.size - MAX_CACHE_SIZE)
+    for (const [key] of toRemove) {
+      cache.delete(key)
+    }
+  }
+}
 
 function getCacheKey(input: RequestInfo | URL, init?: RequestInit): string {
   const method = init?.method || "GET"
@@ -35,6 +53,7 @@ function getCacheKey(input: RequestInfo | URL, init?: RequestInit): string {
 }
 
 function getCached(key: string): any | null {
+  evictExpired()
   const entry = cache.get(key)
   if (entry && Date.now() - entry.timestamp < CACHE_TTL) {
     return entry.data
@@ -44,6 +63,7 @@ function getCached(key: string): any | null {
 }
 
 function setCached(key: string, data: any): void {
+  evictExpired()
   cache.set(key, { data, timestamp: Date.now() })
 }
 

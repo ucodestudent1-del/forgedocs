@@ -1,12 +1,12 @@
-import { createServerClient } from "@supabase/ssr"
-import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
 import { randomUUID } from "crypto"
 import { validateCSRF } from "@/lib/csrf"
 import { documentRateLimit } from "@/lib/rate-limiter"
 import { sanitizeFilename } from "@/lib/security"
 import { scanFile } from "@/lib/malware-scan"
+import { sanitizeHtml } from "@/lib/sanitize"
 import { withErrorBoundary, createAppError } from "@/lib/api-error"
+import { getRouteClient } from "@/lib/supabase"
 
 export const maxDuration = 60
 
@@ -34,18 +34,7 @@ export const POST = withErrorBoundary(async (req) => {
 
   await validateCSRF(req)
 
-  const cookieStore = await cookies()
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll()
-        },
-      },
-    },
-  )
+  const supabase = await getRouteClient()
 
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -96,6 +85,33 @@ export const POST = withErrorBoundary(async (req) => {
   const magicBytesValid = validateFileMagicBytes(fileBytes, file.type)
   if (!magicBytesValid) {
     throw createAppError("File content does not match declared type", 400, "INVALID_FILE_CONTENT")
+  }
+
+  // Verify file extension matches content type
+  const ext = file.name.split(".").pop()?.toLowerCase()
+  const extToMime: Record<string, string> = {
+    pdf: "application/pdf",
+    doc: "application/msword",
+    docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    xls: "application/vnd.ms-excel",
+    xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    ppt: "application/vnd.ms-powerpoint",
+    pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    txt: "text/plain",
+    csv: "text/csv",
+  }
+  const expectedMime = extToMime[ext || ""]
+  if (!expectedMime || expectedMime !== file.type) {
+    throw createAppError("File extension does not match content type", 400, "EXTENSION_MISMATCH")
+  }
+
+  // Sanitize SVG files for XSS
+  if (file.type === "image/svg+xml") {
+    const svgText = Buffer.from(fileBytes).toString("utf8")
+    const sanitized = sanitizeHtml(svgText)
+    if (sanitized !== svgText) {
+      throw createAppError("SVG contains potentially unsafe content", 400, "UNSAFE_SVG")
+    }
   }
 
   // Malware scan (ClamAV when available; permissive by default)

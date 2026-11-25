@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useRef, useCallback } from "react"
 import * as Y from "yjs"
-import { WebrtcProvider } from "y-webrtc"
 
 interface YjsProviderProps {
   documentId: string
@@ -19,7 +18,6 @@ export function YjsProvider({
   onUpdate,
   value,
 }: YjsProviderProps) {
-  const [provider, setProvider] = useState<WebrtcProvider | null>(null)
   const [connected, setConnected] = useState(false)
   const docRef = useRef<Y.Doc | null>(null)
   const textRef = useRef<Y.Text | null>(null)
@@ -29,17 +27,7 @@ export function YjsProvider({
     const ytext = ydoc.getText("content")
     docRef.current = ydoc
     textRef.current = ytext
-
-    const wsProvider = new WebrtcProvider(`forgedocs:${documentId}`, ydoc, {
-      logging: false,
-      maxConcurrentBcasts: 10,
-    })
-    setProvider(wsProvider)
-    setConnected(wsProvider.connected)
-
-    wsProvider.on("status", (event: { status: string }) => {
-      setConnected(event.status === "connected")
-    })
+    setConnected(true)
 
     ytext.observe((event: Y.YTextEvent) => {
       const content = ytext.toString()
@@ -52,7 +40,6 @@ export function YjsProvider({
     }
 
     return () => {
-      wsProvider.destroy()
       ydoc.destroy()
     }
   }, [documentId, onUpdate, value])

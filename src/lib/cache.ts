@@ -165,9 +165,7 @@ export async function cacheExists(key: string): Promise<boolean> {
 
 const INCR_WITH_EXPIRE_LUA = `
   local count = redis.call('INCR', KEYS[1])
-  if count == 1 then
-    redis.call('EXPIRE', KEYS[1], ARGV[1])
-  end
+  redis.call('EXPIRE', KEYS[1], ARGV[1])
   return count
 `
 
@@ -187,9 +185,46 @@ export async function cacheIncrement(key: string, ttlSeconds: number): Promise<n
     if (client.status === "wait") {
       await client.connect()
     }
-    // Atomic INCR + EXPIRE via Lua so a crash between the two commands cannot
-    // leave a counter key without a TTL (which would distort rate limiting).
+    // Always refresh TTL on increment so keys never persist without expiry.
     const count = await client.eval(INCR_WITH_EXPIRE_LUA, 1, key, ttlSeconds)
+    return Number(count)
+  } catch {
+    return 0
+  }
+}
+
+const INCREMENT_AND_LOCK_LUA = `
+  local count = redis.call('INCR', KEYS[1])
+  if count == 1 then
+    redis.call('EXPIRE', KEYS[1], ARGV[1])
+  end
+  if count >= tonumber(ARGV[2]) then
+    local lockoutUntil = tonumber(ARGV[3])
+    local existingLockout = redis.call('GET', KEYS[1] .. ':lockout')
+    if not existingLockout or tonumber(existingLockout) < lockoutUntil then
+      redis.call('SET', KEYS[1] .. ':lockout', lockoutUntil, 'EX', ARGV[1])
+    end
+  end
+  return count
+`
+
+export async function cacheEval(key: string, ttlSeconds: number, threshold: string, lockoutUntilMs: string): Promise<number> {
+  if (isTestEnv) {
+    cleanExpired()
+    const entry = memoryStore.get(key)
+    const current = entry ? parseInt(entry.value, 10) || 0 : 0
+    const next = current + 1
+    memoryStore.set(key, { value: String(next), expiresAt: Date.now() + ttlSeconds * 1000 })
+    return next
+  }
+
+  try {
+    const client = getRedisClient()
+    if (!client) return 0
+    if (client.status === "wait") {
+      await client.connect()
+    }
+    const count = await client.eval(INCREMENT_AND_LOCK_LUA, 1, key, ttlSeconds, threshold, lockoutUntilMs)
     return Number(count)
   } catch {
     return 0

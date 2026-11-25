@@ -236,10 +236,13 @@ const worker = new Worker<ConversionJobData, { success: boolean; outputUrl?: str
       throw new Error("Worker is not the leader")
     }
 
+    // Fencing token: only the current leader can claim a job
+    const fenceToken = leaderLockValue ?? ""
+
     // Update job status to processing (only if still pending to avoid stale transitions)
     const { error: statusError } = await supabase
       .from("conversion_jobs")
-      .update({ status: "processing", started_at: new Date().toISOString() })
+      .update({ status: "processing", started_at: new Date().toISOString(), locked_by: fenceToken })
       .eq("id", jobId)
       .eq("status", "pending")
 

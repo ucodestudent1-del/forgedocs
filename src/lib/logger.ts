@@ -78,11 +78,34 @@ export function createRequestLogger(requestId: string, userId?: string) {
   return logger.child({ requestId, userId })
 }
 
+const SENSITIVE_FIELDS = new Set([
+  "password", "token", "secret", "key", "api_key", "authorization",
+  "cookie", "session", "email", "card", "ssn", "access_token",
+  "refresh_token", "private_key", "encryption_key",
+])
+
+function sanitizeValue(key: string, value: unknown): unknown {
+  const k = key.toLowerCase()
+  if (SENSITIVE_FIELDS.has(k)) return "[REDACTED]"
+  if (value && typeof value === "object") {
+    return sanitizeObject(value as Record<string, unknown>)
+  }
+  return value
+}
+
+export function sanitizeObject(obj: Record<string, unknown>): Record<string, unknown> {
+  const result: Record<string, unknown> = {}
+  for (const [key, value] of Object.entries(obj)) {
+    result[key] = sanitizeValue(key, value)
+  }
+  return result
+}
+
 export function logError(logger: winston.Logger, error: Error, context?: Record<string, unknown>) {
   logger.error(error.message, {
     stack: error.stack,
     name: error.name,
-    ...context,
+    ...(context ? sanitizeObject(context) : {}),
   })
 }
 

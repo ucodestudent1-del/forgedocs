@@ -328,7 +328,6 @@ export async function middleware(request: NextRequest) {
       }
     }
 
-    return response
     response.headers.set("Content-Security-Policy", buildCspHeader(cspNonce))
 
     // Add security headers

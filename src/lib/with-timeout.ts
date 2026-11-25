@@ -4,7 +4,11 @@
  *
  * The underlying operation is NOT cancelled (JavaScript cannot cancel
  * in-flight promises), but the caller stops waiting and can return an
- * appropriate error response to the client.
+ * appropriate error response to the client. The abandoned operation
+ * continues to consume resources until it completes.
+ *
+ * For fetch operations, use createFetchWithTimeout() instead which uses
+ * AbortController to actually cancel the underlying request.
  *
  * @param promise - The promise to wrap
  * @param ms - Timeout in milliseconds
@@ -12,9 +16,11 @@
  */
 export async function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   const timeoutPromise = new Promise<never>((_, reject) => {
-    setTimeout(() => {
+    const timer = setTimeout(() => {
       reject(new Error(`Operation timed out after ${ms}ms`))
     }, ms)
+    // Clear timer if promise resolves first to avoid orphaned timers
+    promise.then(() => clearTimeout(timer), () => clearTimeout(timer))
   })
   return Promise.race([promise, timeoutPromise])
 }

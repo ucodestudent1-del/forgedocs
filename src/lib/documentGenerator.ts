@@ -45,9 +45,21 @@ export class DocumentGenerator {
     Object.entries(this.data).forEach(([key, value]) => {
       const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       const pattern = new RegExp(`\\[${escapedKey}\\]`, 'g');
-      result = result.replace(pattern, String(value));
+      result = result.replace(pattern, this.escapeHtml(String(value)));
     });
     return result;
+  }
+
+  /**
+   * Escape HTML special characters to prevent XSS in generated documents
+   */
+  private escapeHtml(text: string): string {
+    return text
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
   }
 
   /**

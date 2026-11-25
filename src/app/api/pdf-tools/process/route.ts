@@ -161,30 +161,11 @@ async function rotatePdf(file: File): Promise<Uint8Array> {
 }
 
 async function protectPdf(file: File, password: string): Promise<Uint8Array> {
-  const arrayBuffer = await file.arrayBuffer()
-  const pdf = await PDFDocument.load(arrayBuffer)
-  const ownerPassword = randomBytes(32).toString("base64")
-  await pdf.lock({
-    ownerPassword,
-    userPassword: password,
-    permissions: {
-      printing: "lowResolution",
-      copying: false,
-      editing: false,
-      annotating: false,
-      formFilling: false,
-      contentAccessibility: false,
-      documentAssembly: false,
-    },
-  })
-  return pdf.save()
+  throw new Error("PDF encryption is not supported in this version of pdf-lib")
 }
 
 async function unprotectPdf(file: File, password: string): Promise<Uint8Array> {
-  const arrayBuffer = await file.arrayBuffer()
-  const pdf = await PDFDocument.load(arrayBuffer, { password })
-  // Re-save without encryption to remove password protection
-  return pdf.save()
+  throw new Error("PDF encryption is not supported in this version of pdf-lib")
 }
 
 async function watermarkPdf(file: File): Promise<Uint8Array> {

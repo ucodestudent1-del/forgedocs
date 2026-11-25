@@ -1,6 +1,6 @@
 import { createHmac, timingSafeEqual } from "crypto"
 import { getRouteClient } from "@/lib/supabase"
-import { cacheIncrement } from "@/lib/cache"
+import { Queue } from "bullmq"
 
 export interface WebhookDeliveryResult {
   success: boolean
@@ -132,9 +132,34 @@ export const SUPPORTED_WEBHOOK_EVENTS = [
 
 export type WebhookEvent = typeof SUPPORTED_WEBHOOK_EVENTS[number]
 
+const webhookQueue = new Queue("webhook-delivery", {
+  connection: {
+    host: process.env.REDIS_HOST || "localhost",
+    port: parseInt(process.env.REDIS_PORT || "6379", 10),
+  },
+  defaultJobOptions: {
+    attempts: 3,
+    backoff: { type: "exponential", delay: 1000 },
+    removeOnComplete: 100,
+    removeOnFail: 50,
+  },
+})
+
+// Process webhook deliveries with bounded concurrency (10 concurrent)
+webhookQueue.process("deliver", 10, async (job) => {
+  const { endpointId, url, secret, event, payload } = job.data as {
+    endpointId: string
+    url: string
+    secret: string
+    event: string
+    payload: unknown
+  }
+  return deliverWebhook(endpointId, url, secret, event, payload)
+})
+
 /**
  * Fire a webhook event to all matching active endpoints for a user.
- * Non-blocking — deliveries happen in background.
+ * Uses BullMQ for bounded concurrency delivery instead of fire-and-forget.
  */
 export async function fireWebhookEvent(
   userId: string,
@@ -156,9 +181,15 @@ export async function fireWebhookEvent(
       return !events || events.length === 0 || events.includes(event) || events.includes("*")
     })
 
-    // Fire deliveries in background (non-blocking)
+    // Queue deliveries with bounded concurrency via BullMQ
     for (const ep of matching) {
-      void deliverWebhook(ep.id, ep.url, ep.secret, event, payload)
+      await webhookQueue.add("deliver", {
+        endpointId: ep.id,
+        url: ep.url,
+        secret: ep.secret,
+        event,
+        payload,
+      })
     }
   } catch {
     // best-effort

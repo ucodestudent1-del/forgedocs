@@ -7,6 +7,10 @@ export interface CircuitBreakerOptions {
   resetTimeoutMs: number
   /** Maximum time in ms for a call before it's considered failed */
   timeoutMs?: number
+  /** Use Redis-backed state for cross-process consistency */
+  useRedis?: boolean
+  /** Redis key prefix for circuit state */
+  redisKeyPrefix?: string
 }
 
 /**
@@ -25,6 +29,7 @@ export interface CircuitBreakerState {
 
 export class CircuitBreaker {
   private state: CircuitBreakerState
+  private redisClient: any | null = null
 
   constructor(
     private name: string,
@@ -36,10 +41,55 @@ export class CircuitBreaker {
       lastFailureTime: null,
       nextAttemptTime: null,
     }
+
+    if (options.useRedis) {
+      try {
+        const Redis = require("ioredis")
+        this.redisClient = new Redis({
+          host: process.env.REDIS_HOST || "localhost",
+          port: parseInt(process.env.REDIS_PORT || "6379", 10),
+          lazyConnect: true,
+        })
+      } catch {
+        // Redis unavailable — fall back to in-memory state
+      }
+    }
   }
 
-  getState(): CircuitBreakerState {
+  private async getRedisStateKey(): Promise<string> {
+    return `${this.options.redisKeyPrefix ?? "circuit"}:${this.name}`
+  }
+
+  async getState(): Promise<CircuitBreakerState> {
+    if (this.redisClient) {
+      try {
+        const key = await this.getRedisStateKey()
+        const data = await this.redisClient.get(key)
+        if (data) {
+          const parsed = JSON.parse(data)
+          return {
+            state: parsed.state,
+            failures: parsed.failures ?? 0,
+            lastFailureTime: parsed.lastFailureTime ?? null,
+            nextAttemptTime: parsed.nextAttemptTime ?? null,
+          }
+        }
+      } catch {
+        // Fall back to in-memory state
+      }
+    }
     return { ...this.state }
+  }
+
+  private async persistState(): Promise<void> {
+    if (this.redisClient) {
+      try {
+        const key = await this.getRedisStateKey()
+        await this.redisClient.set(key, JSON.stringify(this.state), "EX", Math.ceil(this.options.resetTimeoutMs / 1000) * 2)
+      } catch {
+        // Best-effort persistence
+      }
+    }
   }
 
   isOpen(): boolean {
@@ -59,6 +109,7 @@ export class CircuitBreaker {
     this.state.failures = 0
     this.state.lastFailureTime = null
     this.state.nextAttemptTime = null
+    this.persistState()
   }
 
   recordFailure(): void {
@@ -73,6 +124,7 @@ export class CircuitBreaker {
       this.state.state = "open"
       this.state.nextAttemptTime = Date.now() + this.options.resetTimeoutMs
     }
+    this.persistState()
   }
 
   /**
@@ -111,34 +163,42 @@ export const stripeCircuitBreaker = new CircuitBreaker("stripe", {
   failureThreshold: 5,
   resetTimeoutMs: 30000, // 30 seconds
   timeoutMs: 10000, // 10 second timeout
+  useRedis: true,
+  redisKeyPrefix: "circuit",
 })
 
 export const resendCircuitBreaker = new CircuitBreaker("resend", {
   failureThreshold: 5,
   resetTimeoutMs: 30000,
   timeoutMs: 10000,
+  useRedis: true,
+  redisKeyPrefix: "circuit",
 })
 
 export const openaiCircuitBreaker = new CircuitBreaker("openai", {
   failureThreshold: 5,
   resetTimeoutMs: 30000,
   timeoutMs: 30000, // 30 seconds for AI calls
+  useRedis: true,
+  redisKeyPrefix: "circuit",
 })
 
 export const supabaseCircuitBreaker = new CircuitBreaker("supabase", {
   failureThreshold: 10,
   resetTimeoutMs: 15000,
   timeoutMs: 10000,
+  useRedis: true,
+  redisKeyPrefix: "circuit",
 })
 
 /**
  * Gets all circuit breaker states for monitoring/health checks.
  */
-export function getAllCircuitStates(): Record<string, CircuitBreakerState> {
+export async function getAllCircuitStates(): Promise<Record<string, CircuitBreakerState>> {
   return {
-    stripe: stripeCircuitBreaker.getState(),
-    resend: resendCircuitBreaker.getState(),
-    openai: openaiCircuitBreaker.getState(),
-    supabase: supabaseCircuitBreaker.getState(),
+    stripe: await stripeCircuitBreaker.getState(),
+    resend: await resendCircuitBreaker.getState(),
+    openai: await openaiCircuitBreaker.getState(),
+    supabase: await supabaseCircuitBreaker.getState(),
   }
 }

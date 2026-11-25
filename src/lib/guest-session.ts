@@ -1,8 +1,30 @@
 import { cookies } from "next/headers"
-import { randomUUID } from "crypto"
+import { randomUUID, createHmac, timingSafeEqual } from "crypto"
 
 const GUEST_SESSION_COOKIE = "guest_session_id"
 const GUEST_USER_ID_COOKIE = "guest_user_id"
+
+function getGuestSecret(): string | null {
+  return process.env.GUEST_SESSION_SECRET ?? null
+}
+
+function signGuestId(id: string): string {
+  const secret = getGuestSecret()
+  if (!secret) return id
+  const sig = createHmac("sha256", secret).update(id).digest("hex")
+  return `${id}.${sig}`
+}
+
+function verifyGuestSignedId(signedId: string): string | null {
+  const secret = getGuestSecret()
+  if (!secret) return null
+  const parts = signedId.split(".")
+  if (parts.length !== 2) return null
+  const [id, sig] = parts
+  const expected = createHmac("sha256", secret).update(id).digest("hex")
+  if (!timingSafeEqual(Buffer.from(sig), Buffer.from(expected))) return null
+  return id
+}
 
 export function isGuestMode(): boolean {
   return process.env.NEXT_PUBLIC_GUEST_MODE === "true"
@@ -12,10 +34,23 @@ export async function getGuestUserId(): Promise<string> {
   const cookieStore = await cookies()
   const existingId = cookieStore.get(GUEST_USER_ID_COOKIE)?.value
   if (existingId) {
-    return existingId
+    const verified = verifyGuestSignedId(existingId)
+    if (verified) return verified
   }
-  // Fallback: generate a new ID (won't be persisted if cookies can't be set)
-  return randomUUID()
+  const id = randomUUID()
+  const signed = signGuestId(id)
+  try {
+    cookieStore.set(GUEST_USER_ID_COOKIE, signed, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 60 * 2, // 2 hours
+    })
+  } catch {
+    // set() called during render; cookie applied on next response
+  }
+  return id
 }
 
 export async function getOrCreateGuestSessionId(): Promise<string> {

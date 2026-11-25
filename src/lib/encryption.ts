@@ -30,7 +30,11 @@ export function encryptDocument(plaintext: string): string {
  * Decrypt a value stored as `v<version>:iv:authTag:ciphertext` (hex).
  */
 export function decryptDocument(encrypted: string): string {
-  const [versionStr, ivHex, tagHex, dataHex] = encrypted.split(":")
+  const parts = encrypted.split(":")
+  if (parts.length !== 4) {
+    throw new Error("Invalid encrypted document format")
+  }
+  const [versionStr, ivHex, tagHex, dataHex] = parts
   if (!versionStr || !ivHex || !tagHex || !dataHex) {
     throw new Error("Invalid encrypted document format")
   }
@@ -38,10 +42,15 @@ export function decryptDocument(encrypted: string): string {
   if (isNaN(version)) {
     throw new Error("Invalid encrypted document format")
   }
+  // Only support the current key version; reject ciphertexts encrypted with
+  // a different version to prevent ciphertext confusion attacks.
+  if (version !== KEY_VERSION) {
+    throw new Error("Unsupported encryption key version")
+  }
   const key = getDocumentEncryptionKey()
   const decipher = createDecipheriv(ENCRYPTION_ALGORITHM, key, Buffer.from(ivHex, "hex"))
   decipher.setAuthTag(Buffer.from(tagHex, "hex"))
-  decipher.setAAD(Buffer.from(`forgedocs-doc-v${version}`, "utf8"))
+  decipher.setAAD(Buffer.from(`forgedocs-doc-v${KEY_VERSION}`, "utf8"))
   const decrypted = Buffer.concat([decipher.update(Buffer.from(dataHex, "hex")), decipher.final()])
   return decrypted.toString("utf8")
 }

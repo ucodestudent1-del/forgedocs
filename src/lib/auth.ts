@@ -25,21 +25,30 @@ export async function checkLoginAttempts(identifier: string): Promise<{ allowed:
   return { allowed: false, remainingMs: entry.lockoutUntil - now }
 }
 
+const INCREMENT_AND_LOCK_LUA = `
+  local count = redis.call('INCR', KEYS[1])
+  if count == 1 then
+    redis.call('EXPIRE', KEYS[1], ARGV[1])
+  end
+  if count >= tonumber(ARGV[2]) then
+    local lockoutUntil = tonumber(ARGV[3])
+    local existingLockout = redis.call('GET', KEYS[1] .. ':lockout')
+    if not existingLockout or tonumber(existingLockout) < lockoutUntil then
+      redis.call('SET', KEYS[1] .. ':lockout', lockoutUntil, 'EX', ARGV[1])
+    end
+  end
+  return count
+`
+
 export async function recordFailedAttempt(identifier: string): Promise<void> {
   const key = getLockoutKey(identifier)
   const now = Date.now()
+  const lockoutUntil = now + LOCKOUT_DURATION_MS
 
-  // Atomic increment via Redis INCR — single operation, no TOCTOU race.
-  // Use the cache layer's increment to atomically track the failure count.
-  const { cacheIncrement } = await import("@/lib/cache")
-  const count = await cacheIncrement(key, LOCKOUT_TTL_SECONDS)
-
-  if (count >= LOCKOUT_THRESHOLD) {
-    // Set lockout only after threshold is reached atomically.
-    const lockoutKey = `${key}:lockout`
-    const lockoutEntry = { lockoutUntil: now + LOCKOUT_DURATION_MS }
-    await cacheSet(lockoutKey, lockoutEntry, LOCKOUT_TTL_SECONDS)
-  }
+  // Atomic increment and lockout via Lua to prevent TOCTOU race between
+  // incrementing the failure count and setting the lockout.
+  const { cacheEval } = await import("@/lib/cache")
+  await cacheEval(key, LOCKOUT_TTL_SECONDS, String(LOCKOUT_THRESHOLD), String(lockoutUntil))
 }
 
 export async function clearFailedAttempts(identifier: string): Promise<void> {

@@ -69,12 +69,13 @@ export const POST = withErrorBoundary(async (req) => {
           price: priceId,
           quantity: 1,
         },
-        mode: "subscription",
-        success_url: `${process.env.NEXT_PUBLIC_APP_URL}/billing?success=true`,
-        cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/billing?canceled=true`,
-        metadata: {
-          userId: user.id,
-        },
+      ],
+      mode: "subscription",
+      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/billing?success=true`,
+      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/billing?canceled=true`,
+      metadata: {
+        userId: user.id,
+      },
       }
 
       // Add trial period if specified (max 30 days for Stripe)

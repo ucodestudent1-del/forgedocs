@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import logger from "@/lib/logger"
 import crypto from "crypto"
+import { sanitizeObject } from "@/lib/logger"
 
 export interface ApiErrorResponse {
   error: {
@@ -106,7 +107,7 @@ export function apiErrorResponse(error: unknown, requestId: string): NextRespons
     if ((error as any)?.cause) {
       errorMeta.cause = (error as any).cause instanceof Error ? (error as any).cause.message : String((error as any).cause)
     }
-    logger.error(`[${requestId}] Server error`, errorMeta)
+    logger.error(`[${requestId}] Server error`, sanitizeObject(errorMeta))
   }
 
   return NextResponse.json(response, { status: statusCode })
