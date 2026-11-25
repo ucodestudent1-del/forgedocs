@@ -22,12 +22,8 @@ export async function validateCSRF(req: Request): Promise<void> {
     throw new CSRFError("Invalid CSRF token")
   }
 
-  // Both buffers must be same length for timingSafeEqual; compare lengths first
-  // without leaking which one differs.
-  if (token.length !== cookieToken.length) {
-    throw new CSRFError("Invalid CSRF token")
-  }
-
+  // Use constant-time comparison. timingSafeEqual throws if buffer lengths
+  // differ; catch and reject without leaking length information.
   try {
     if (!timingSafeEqual(Buffer.from(token), Buffer.from(cookieToken))) {
       throw new CSRFError("Invalid CSRF token")

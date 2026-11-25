@@ -6,7 +6,8 @@ CREATE TABLE webhook_events (
   event_id TEXT UNIQUE NOT NULL,
   event_type TEXT NOT NULL,
   payload JSONB DEFAULT '{}',
-  processed_at TIMESTAMPTZ DEFAULT NOW(),
+  processed BOOLEAN NOT NULL DEFAULT FALSE,
+  processed_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 

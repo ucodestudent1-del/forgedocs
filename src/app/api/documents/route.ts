@@ -10,6 +10,7 @@ import { logAuditEvent, getClientIp, getClientUserAgent } from "@/lib/audit"
 import { checkTierLimit, trackUsage } from "@/lib/tierLimits"
 import { withErrorBoundary, createAppError } from "@/lib/api-error"
 import { withTimeout } from "@/lib/with-timeout"
+import { getApiUserId } from "@/lib/api-key"
 import { getGuestUserId, isGuestMode } from "@/lib/guest-session"
 import { encryptDocument, decryptDocument, isEncryptedDocument } from "@/lib/encryption"
 import { fireWebhookEvent, type WebhookEvent } from "@/lib/webhooks"
@@ -36,6 +37,13 @@ export const GET = withErrorBoundary(async (req) => {
   const { data: { user } } = await withTimeout<{ data: { user: any } }>(supabase.auth.getUser(), SUPABASE_TIMEOUT_MS)
 
   let effectiveUser = user
+  if (!effectiveUser) {
+    // Fall back to API key user identity (set by middleware for x-api-key auth)
+    const apiUserId = await getApiUserId(req)
+    if (apiUserId) {
+      effectiveUser = { id: apiUserId, email: null } as any
+    }
+  }
   if (!effectiveUser && isGuestMode()) {
     effectiveUser = { id: getGuestUserId(), email: null } as any
   }
@@ -120,6 +128,13 @@ export const POST = withErrorBoundary(async (req) => {
   const { data: { user } } = await withTimeout<{ data: { user: any } }>(supabase.auth.getUser(), SUPABASE_TIMEOUT_MS)
 
   let effectiveUser = user
+  if (!effectiveUser) {
+    // Fall back to API key user identity (set by middleware for x-api-key auth)
+    const apiUserId = await getApiUserId(req)
+    if (apiUserId) {
+      effectiveUser = { id: apiUserId, email: null } as any
+    }
+  }
   if (!effectiveUser && isGuestMode()) {
     effectiveUser = { id: getGuestUserId(), email: null } as any
   }

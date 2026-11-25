@@ -184,14 +184,21 @@ export async function checkTierLimit(
   try {
     current = await cacheIncrement(redisKey, ttlSeconds)
   } catch {
-    // Redis unavailable — allow unlimited-tier users through, block limited tiers
-    logger.warn("Redis unavailable for tier limit check, allowing request", { userId, metric })
-    return { allowed: true, limit, current: 0, remaining: limit }
+    // Redis unavailable — fail closed: block limited tiers, allow only unlimited tiers
+    logger.warn("Redis unavailable for tier limit check, failing closed", { userId, metric })
+    if (limit < 0) {
+      return { allowed: true, limit: -1, current: 0, remaining: -1 }
+    }
+    return { allowed: false, limit, current: 0, remaining: 0 }
   }
 
   if (current === 0) {
-    // Redis returned empty — treat as allowed for safety
-    return { allowed: true, limit, current: 0, remaining: limit }
+    // Redis returned empty — fail closed
+    logger.warn("Redis returned empty count for tier limit check, failing closed", { userId, metric })
+    if (limit < 0) {
+      return { allowed: true, limit: -1, current: 0, remaining: -1 }
+    }
+    return { allowed: false, limit, current: 0, remaining: 0 }
   }
 
   const remaining = Math.max(0, limit - current)
@@ -209,6 +216,8 @@ export async function trackUsage(
   metric: string,
   quantity: number = 1
 ): Promise<void> {
+  // DB insert is a durable usage log. Enforcement is handled by the atomic
+  // Redis INCR in checkTierLimit, which is the source of truth for limits.
   const supabase = await getRouteClient()
   await supabase.from("usage_records").insert({
     user_id: userId,

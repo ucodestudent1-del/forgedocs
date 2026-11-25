@@ -51,8 +51,8 @@ function buildCspHeader(nonce: string): string {
 function buildCspReportOnlyHeader(): string {
   return [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https:",
-    "style-src 'self' 'unsafe-inline' https:",
+    "script-src 'self' https:",
+    "style-src 'self' https:",
     "img-src 'self' data: https:",
     "font-src 'self' https:",
     "connect-src 'self' https: wss:",
