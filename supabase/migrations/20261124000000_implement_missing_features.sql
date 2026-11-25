@@ -230,22 +230,3 @@ CREATE TABLE IF NOT EXISTS document_collab_snapshots (
 CREATE INDEX IF NOT EXISTS idx_document_collab_snapshots_document_id ON document_collab_snapshots(document_id);
 CREATE INDEX IF NOT EXISTS idx_document_collab_snapshots_version ON document_collab_snapshots(document_id, version_number DESC);
 
--- ============================================================================
--- SSO / SAML: relay states for CSRF protection on ACS
--- ============================================================================
-CREATE TABLE IF NOT EXISTS saml_relay_states (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  relay_state TEXT NOT NULL UNIQUE,
-  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  provider_id UUID NOT NULL REFERENCES saml_providers(id) ON DELETE CASCADE,
-  expires_at TIMESTAMPTZ NOT NULL,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
-CREATE INDEX IF NOT EXISTS idx_saml_relay_states_relay_state ON saml_relay_states(relay_state);
-CREATE INDEX IF NOT EXISTS idx_saml_relay_states_expires_at ON saml_relay_states(expires_at);
-
-ALTER TABLE saml_relay_states ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users manage their own relay states" ON saml_relay_states
-  FOR ALL USING (auth.uid() = user_id);
-

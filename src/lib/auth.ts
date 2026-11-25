@@ -1,29 +1,24 @@
 import "server-only"
 import { getRouteClient } from "@/lib/supabase"
 import { cacheGet, cacheSet, cacheDel } from "@/lib/cache"
-import { passwordSchema, validatePassword } from "@/lib/password"
 import { getClientIdentifier } from "@/lib/client-identifier"
 
 const LOCKOUT_THRESHOLD = 5
 const LOCKOUT_DURATION_MS = 15 * 60 * 1000 // 15 minutes
 const LOCKOUT_TTL_SECONDS = Math.ceil(LOCKOUT_DURATION_MS / 1000)
 
-interface LockoutEntry {
-  count: number
-  lockoutUntil: number
-}
-
 function getLockoutKey(identifier: string): string {
   return `lockout:${identifier}`
 }
 
 export async function checkLoginAttempts(identifier: string): Promise<{ allowed: boolean; remainingMs?: number }> {
-  const entry = await cacheGet<LockoutEntry>(getLockoutKey(identifier))
+  const lockoutKey = `${getLockoutKey(identifier)}:lockout`
+  const entry = await cacheGet<{ lockoutUntil: number }>(lockoutKey)
   if (!entry) return { allowed: true }
 
   const now = Date.now()
   if (now > entry.lockoutUntil) {
-    await cacheDel(getLockoutKey(identifier))
+    await cacheDel(lockoutKey)
     return { allowed: true }
   }
 
@@ -32,20 +27,22 @@ export async function checkLoginAttempts(identifier: string): Promise<{ allowed:
 
 export async function recordFailedAttempt(identifier: string): Promise<void> {
   const key = getLockoutKey(identifier)
-  const entry = (await cacheGet<LockoutEntry>(key)) || { count: 0, lockoutUntil: 0 }
+  const now = Date.now()
 
-  entry.count++
-  if (entry.count >= LOCKOUT_THRESHOLD) {
-    entry.lockoutUntil = Date.now() + LOCKOUT_DURATION_MS
+  // Atomic increment via Redis INCR — single operation, no TOCTOU race.
+  // Use the cache layer's increment to atomically track the failure count.
+  const { cacheIncrement } = await import("@/lib/cache")
+  const count = await cacheIncrement(key, LOCKOUT_TTL_SECONDS)
+
+  if (count >= LOCKOUT_THRESHOLD) {
+    // Set lockout only after threshold is reached atomically.
+    const lockoutKey = `${key}:lockout`
+    const lockoutEntry = { lockoutUntil: now + LOCKOUT_DURATION_MS }
+    await cacheSet(lockoutKey, lockoutEntry, LOCKOUT_TTL_SECONDS)
   }
-
-  await cacheSet(key, entry, LOCKOUT_TTL_SECONDS)
 }
 
 export async function clearFailedAttempts(identifier: string): Promise<void> {
   await cacheDel(getLockoutKey(identifier))
-}
-
-function now(): number {
-  return Date.now()
+  await cacheDel(`${getLockoutKey(identifier)}:lockout`)
 }

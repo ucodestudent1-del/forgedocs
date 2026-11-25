@@ -99,35 +99,39 @@ export async function createMfaRecoveryToken(userId: string, email: string): Pro
 export async function consumeRecoveryToken(token: string): Promise<string | null> {
   const supabase = await getRouteClient()
 
+  const now = new Date().toISOString()
+
+  // Atomically claim an unused, unexpired token whose hash matches.
+  // We cannot compare hashes in SQL, so we fetch candidates and verify
+  // in constant time, then attempt a conditional update that fails if
+  // the token was already consumed (TOCTOU-safe).
   const { data: tokens, error } = await supabase
     .from("mfa_recovery_tokens")
     .select("id, user_id, token_hash, expires_at, used")
     .eq("used", false)
+    .gt("expires_at", now)
 
   if (error || !tokens) {
     logger.error("Failed to fetch MFA recovery tokens", { error: error?.message })
     return null
   }
 
-  const now = new Date()
   for (const record of tokens) {
     // Constant-time hash comparison
     if (!verifyRecoveryToken(token, record.token_hash)) continue
 
-    if (new Date(record.expires_at) < now) {
-      // Expired — mark used and reject
-      await supabase
-        .from("mfa_recovery_tokens")
-        .update({ used: true })
-        .eq("id", record.id)
-      return null
-    }
-
-    // Mark as used (single-use)
-    await supabase
+    // Conditional update: only mark used if still unused and unexpired.
+    const { error: updateError } = await supabase
       .from("mfa_recovery_tokens")
       .update({ used: true })
       .eq("id", record.id)
+      .eq("used", false)
+      .gt("expires_at", now)
+
+    if (updateError) {
+      // Another request consumed this token first; keep looking.
+      continue
+    }
 
     return record.user_id
   }

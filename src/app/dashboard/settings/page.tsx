@@ -50,25 +50,23 @@ export default function SettingsPage() {
   const [deleting, setDeleting] = useState(false)
   const [importing, setImporting] = useState(false)
   const [revoking, setRevoking] = useState(false)
+  const [profileLoading, setProfileLoading] = useState(true)
   const { toast } = useToast()
 
   // Profile state
   const [profile, setProfile] = useState({
-    fullName: "John Doe",
-    email: "john@example.com",
+    fullName: "",
+    email: "",
     avatarUrl: "",
-    bio: "Product manager at Acme Inc.",
+    bio: "",
     timezone: "America/Los_Angeles",
     language: "en",
   })
 
   // Security state
   const [mfaEnabled, setMfaEnabled] = useState(false)
-  const [sessions, setSessions] = useState([
-    { id: "1", device: "Chrome on macOS", location: "San Francisco, CA", current: true, lastActive: "Now" },
-    { id: "2", device: "Firefox on Windows", location: "New York, NY", current: false, lastActive: "2 hours ago" },
-    { id: "3", device: "Mobile App (iOS)", location: "San Francisco, CA", current: false, lastActive: "1 day ago" },
-  ])
+  const [sessions, setSessions] = useState<{ id: string; device: string; location: string; current: boolean; lastActive: string }[]>([])
+  const [sessionsLoading, setSessionsLoading] = useState(true)
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: "",
     newPassword: "",
@@ -105,6 +103,52 @@ export default function SettingsPage() {
   // Appearance state
   const [theme, setTheme] = useState<"light" | "dark" | "system">("system")
   const [density, setDensity] = useState<"comfortable" | "compact">("comfortable")
+
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      try {
+        const supabase = createBrowserSupabaseClient()
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return
+        const { data: profileData, error } = await supabase
+          .from("profiles")
+          .select("full_name, email, avatar_url, bio, timezone, language")
+          .eq("id", user.id)
+          .single()
+        if (!error && profileData && !cancelled) {
+          setProfile({
+            fullName: profileData.full_name ?? "",
+            email: profileData.email ?? user.email ?? "",
+            avatarUrl: profileData.avatar_url ?? "",
+            bio: profileData.bio ?? "",
+            timezone: profileData.timezone ?? "America/Los_Angeles",
+            language: profileData.language ?? "en",
+          })
+        }
+      } catch {
+        // Profile load failure is non-fatal; form starts empty.
+      } finally {
+        if (!cancelled) setProfileLoading(false)
+      }
+
+      // Load active sessions
+      try {
+        const res = await apiFetch("/api/auth/sessions")
+        if (res.ok) {
+          const data = await res.json()
+          if (data.sessions && !cancelled) {
+            setSessions(data.sessions)
+          }
+        }
+      } catch {
+        // Sessions load failure is non-fatal.
+      } finally {
+        if (!cancelled) setSessionsLoading(false)
+      }
+    })()
+    return () => { cancelled = true }
+  }, [])
 
   const handleSaveProfile = async () => {
     setSaving(true)
@@ -245,19 +289,26 @@ export default function SettingsPage() {
     }
     setDeleting(true)
     try {
-      const supabase = createBrowserSupabaseClient()
-      const result = await supabase.auth.deleteUser?.()
-      const error = result?.error
-      if (error) {
-        toast({ title: error.message || "Failed to delete account", variant: "destructive" })
+      const csrfRes = await apiFetch("/api/csrf")
+      const csrfData = await csrfRes.json()
+      const res = await apiFetch("/api/auth/account", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          ...(csrfData.csrf_token ? { "X-CSRF-Token": csrfData.csrf_token } : {}),
+        },
+        body: JSON.stringify({ confirm: true }),
+      })
+      if (!res.ok) {
+        const err = await res.json()
+        toast({ title: err.error || "Failed to delete account", variant: "destructive" })
         setDeleting(false)
         return
       }
-    toast({ title: "Account deleted successfully", variant: "success" })
-    setTimeout(() => {
-      window.location.href = "/auth/login"
-    }, 1500)
-    setDeleting(false)
+      toast({ title: "Account deleted successfully", variant: "success" })
+      setTimeout(() => {
+        window.location.href = "/auth/login"
+      }, 1500)
     } catch {
       toast({ title: "Failed to delete account", variant: "destructive" })
       setDeleting(false)

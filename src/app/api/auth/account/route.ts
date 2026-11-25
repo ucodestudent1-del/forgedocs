@@ -54,9 +54,20 @@ export const DELETE = withErrorBoundary(async (req) => {
     .update({ user_id: null })
     .eq("user_id", user.id)
 
-  // Delete remaining user-owned data after auth user removal
+  // Delete remaining user-owned data after auth user removal.
+  // Delete signers for documents owned by this user (not by signer email,
+  // which could accidentally delete other users' signer records sharing an email).
+  const { data: signerRequestIds } = await (serviceSupabase as any)
+    .from("signature_requests")
+    .select("id")
+    .eq("user_id", user.id)
+
+  const srIds: string[] = (signerRequestIds ?? []).map((r: any) => r.id)
+
   await Promise.all([
-    serviceSupabase.from("signature_request_signers").delete().eq("email", user.email ?? ""),
+    srIds.length > 0
+      ? serviceSupabase.from("signature_request_signers").delete().in("signature_request_id", srIds)
+      : Promise.resolve({ error: null }),
     serviceSupabase.from("signature_requests").delete().eq("user_id", user.id),
     serviceSupabase.from("document_versions").delete().eq("changed_by", user.id),
     serviceSupabase.from("documents").delete().eq("user_id", user.id),

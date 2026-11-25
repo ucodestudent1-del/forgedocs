@@ -178,8 +178,14 @@ export default function UsagePage() {
     )
   }
 
-  const currentTier = TIER_FEATURES[usage.tier as keyof typeof TIER_FEATURES] || TIER_FEATURES.pro
-  const nextTier = usage.tier === "pro" ? TIER_FEATURES.business : null
+  const currentTier = TIER_FEATURES[usage.tier as keyof typeof TIER_FEATURES] || {
+    name: "Free",
+    price: "$0/mo",
+    color: "bg-gray-100 text-gray-700",
+    features: ["Up to 500 documents/month", "Up to 100 conversions/month", "5 GB storage", "10 MB max file size", "30 API requests/min"],
+    limits: { documents: 500, conversions: 100, storage_gb: 5, file_size_mb: 10 },
+  }
+  const nextTier = usage.tier === "free" ? TIER_FEATURES.pro : usage.tier === "pro" ? TIER_FEATURES.business : null
 
   return (
     <ErrorBoundary>
