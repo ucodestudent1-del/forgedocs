@@ -8,6 +8,9 @@ import { headers } from "next/headers"
 export const metadata: Metadata = {
   title: "Pricing - Simple, Transparent Document Management",
   description: "Choose the ForgeDocs plan that fits your team. Professional ($29/mo) and Business ($89/mo). All plans include a 14-day free trial.",
+  alternates: {
+    canonical: "/pricing",
+  },
 }
 
 export const revalidate = 60

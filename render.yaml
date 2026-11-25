@@ -19,7 +19,7 @@ services:
   - type: worker
     name: forgedocs-worker
     runtime: docker
-    dockerfilePath: ./Dockerfile
+    dockerfilePath: ./Dockerfile.worker
     dockerContext: .
     envVars:
       - key: NODE_ENV

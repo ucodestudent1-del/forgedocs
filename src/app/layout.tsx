@@ -84,7 +84,7 @@ export const metadata: Metadata = {
   },
   manifest: "/manifest.json",
   verification: {
-    google: "google-site-verification-code",
+    google: process.env.NEXT_PUBLIC_GOOGLE_VERIFICATION_CODE || undefined,
   },
 }
 
@@ -92,37 +92,75 @@ async function JsonLdScript() {
   const headersList = await headers()
   const nonce = headersList.get("x-csp-nonce")
 
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "SoftwareApplication",
-    name: "ForgeDocs",
-    applicationCategory: "BusinessApplication",
-    operatingSystem: "Cloud",
-    offers: {
-      "@type": "Offer",
-      price: "0",
-      priceCurrency: "USD",
-      availability: "https://schema.org/InStock",
+  const jsonLd = [
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      name: "ForgeDocs",
+      applicationCategory: "BusinessApplication",
+      operatingSystem: "Cloud",
+      offers: {
+        "@type": "Offer",
+        price: "0",
+        priceCurrency: "USD",
+        availability: "https://schema.org/InStock",
+      },
+      description: "Professional document management platform for modern teams. Create, organize, generate, and convert documents in the cloud.",
+      featureList: [
+        "Document management and version control",
+        "Format conversion (50+ formats)",
+        "Electronic signatures",
+        "Template-based document generation",
+        "Team collaboration with roles and permissions",
+        "AI-powered document assistance",
+        "PDF tools (merge, split, compress, OCR)",
+        "End-to-end encryption and SOC 2 compliance",
+      ],
     },
-    description: "Professional document management platform for modern teams. Create, organize, generate, and convert documents in the cloud.",
-    featureList: [
-      "Document management and version control",
-      "Format conversion (50+ formats)",
-      "Electronic signatures",
-      "Template-based document generation",
-      "Team collaboration with roles and permissions",
-      "AI-powered document assistance",
-      "PDF tools (merge, split, compress, OCR)",
-      "End-to-end encryption and SOC 2 compliance",
-    ],
-  }
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      name: "ForgeDocs",
+      url: appUrl,
+      logo: `${appUrl}/favicon.svg`,
+      sameAs: [],
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      url: appUrl,
+      name: "ForgeDocs",
+      potentialAction: {
+        "@type": "SearchAction",
+        target: `${appUrl}/search?q={search_term_string}`,
+        "query-input": "required name=search_term_string",
+      },
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        {
+          "@type": "ListItem",
+          position: 1,
+          name: "Home",
+          item: appUrl,
+        },
+      ],
+    },
+  ]
 
   return (
-    <script
-      type="application/ld+json"
-      nonce={nonce || undefined}
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-    />
+    <>
+      {jsonLd.map((schema, i) => (
+        <script
+          key={i}
+          type="application/ld+json"
+          nonce={nonce || undefined}
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+        />
+      ))}
+    </>
   )
 }
 
@@ -137,6 +175,13 @@ export default function RootLayout({
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="color-scheme" content="light dark" />
         <link rel="preconnect" href="https://api.forgedocs.com" />
+        <link rel="alternate" href={appUrl} hrefLang="en" />
+        <link rel="alternate" href={`${appUrl}/es`} hrefLang="es" />
+        <link rel="alternate" href={`${appUrl}/fr`} hrefLang="fr" />
+        <link rel="alternate" href={`${appUrl}/de`} hrefLang="de" />
+        <link rel="alternate" href={`${appUrl}/zh`} hrefLang="zh" />
+        <link rel="alternate" href={`${appUrl}/ja`} hrefLang="ja" />
+        <link rel="alternate" href={appUrl} hrefLang="x-default" />
         <JsonLdScript />
       </head>
       <body className={`${inter.variable} font-sans antialiased dv-screen bg-background text-foreground`}>

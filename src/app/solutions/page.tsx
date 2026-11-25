@@ -9,6 +9,9 @@ import { Breadcrumb } from "@/components/ui/breadcrumb"
 export const metadata: Metadata = {
   title: "Solutions - Built for Your Industry",
   description: "ForgeDocs industry solutions for Legal, Finance, HR, Education, Real Estate, and Healthcare. Industry-tailored templates and features.",
+  alternates: {
+    canonical: "/solutions",
+  },
 }
 
 export const revalidate = 60

@@ -36,14 +36,7 @@ export default function AboutPage() {
               <div className="flex justify-center">
                 <div className="rounded-xl border border-input bg-card p-8 max-w-md w-full">
                   <div className="h-64 rounded-lg bg-gradient-to-br from-primary/10 to-primary/20 flex items-center justify-center">
-                    <img
-                      src="/placeholder-about-story.svg"
-                      alt="Document workflow platform showing document creation, editing, and management interface"
-                      className="max-w-full max-h-full object-contain"
-                      loading="lazy"
-                      width={600}
-                      height={400}
-                    />
+                    <div className="text-muted-foreground text-sm">Our story illustration</div>
                   </div>
                 </div>
               </div>
@@ -94,14 +87,7 @@ export default function AboutPage() {
               <div className="flex justify-center">
                 <div className="rounded-xl border border-input bg-card p-8 max-w-md w-full">
                   <div className="h-64 rounded-lg bg-gradient-to-br from-primary/10 to-primary/20 flex items-center justify-center">
-                    <img
-                      src="/placeholder-about-values.svg"
-                      alt="Our values in action: security, developer experience, team collaboration, and reliability"
-                      className="max-w-full max-h-full object-contain"
-                      loading="lazy"
-                      width={600}
-                      height={400}
-                    />
+                    <div className="text-muted-foreground text-sm">Our values illustration</div>
                   </div>
                 </div>
               </div>

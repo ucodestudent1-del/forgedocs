@@ -3,7 +3,7 @@ import Link from "next/link"
 import { Navbar } from "@/components/ui/navbar"
 import { Footer } from "@/components/marketing/footer"
 import { ClientContactForm } from "@/components/client/ContactForm"
-import { Mail, DollarSign, Shield, Clock } from "lucide-react"
+import { Mail, DollarSign, Shield, Clock, Phone } from "lucide-react"
 import { Breadcrumb } from "@/components/ui/breadcrumb"
 
 export const metadata: Metadata = {
@@ -36,6 +36,7 @@ export default function ContactPage() {
                 <ContactItem label="Sales" value="sales@forgedocs.com" href="mailto:sales@forgedocs.com" icon={<DollarSign className="h-5 w-5" />} />
                 <ContactItem label="Security" value="security@forgedocs.com" href="mailto:security@forgedocs.com" icon={<Shield className="h-5 w-5" />} />
                 <ContactItem label="Hours" value="Mon–Fri, 9am–6pm EST" icon={<Clock className="h-5 w-5" />} />
+                <ContactItem label="Phone" value="+1 (800) 555-0199" href="tel:+18005550199" icon={<Phone className="h-5 w-5" />} />
               </div>
             </div>
             <div>

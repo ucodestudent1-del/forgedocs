@@ -1,5 +1,6 @@
 import { Metadata } from "next"
 import { ClientFaqSection } from "@/components/client/FaqSection"
+import { headers } from "next/headers"
 
 export const metadata: Metadata = {
   title: "ForgeDocs - Professional Document Management for Modern Teams",
@@ -30,7 +31,7 @@ import {
 import { Navbar } from "@/components/ui/navbar"
 import { ScrollIndicator } from "@/components/ui/scroll-indicator"
 
-export default function LandingPage() {
+export default async function LandingPage() {
 
   return (
     <div className="flex flex-col [scroll-behavior:smooth]">
@@ -532,6 +533,48 @@ export default function LandingPage() {
           </div>
         </div>
       </footer>
+
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Product",
+            name: "ForgeDocs",
+            description: "Professional document management platform for modern teams. Create, organize, generate, and convert documents in the cloud.",
+            brand: {
+              "@type": "Brand",
+              name: "ForgeDocs",
+            },
+            offers: [
+              {
+                "@type": "Offer",
+                name: "Free Plan",
+                price: "0",
+                priceCurrency: "USD",
+                availability: "https://schema.org/InStock",
+                url: `${process.env.NEXT_PUBLIC_APP_URL || "https://forgedocs.com"}`,
+              },
+              {
+                "@type": "Offer",
+                name: "Professional Plan",
+                price: "29.00",
+                priceCurrency: "USD",
+                availability: "https://schema.org/InStock",
+                url: `${process.env.NEXT_PUBLIC_APP_URL || "https://forgedocs.com"}/pricing`,
+              },
+              {
+                "@type": "Offer",
+                name: "Business Plan",
+                price: "89.00",
+                priceCurrency: "USD",
+                availability: "https://schema.org/InStock",
+                url: `${process.env.NEXT_PUBLIC_APP_URL || "https://forgedocs.com"}/pricing`,
+              },
+            ],
+          }),
+        }}
+      />
     </div>
   )
 }
