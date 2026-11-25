@@ -42,8 +42,8 @@ export default async function LandingPage() {
 
       {/* Hero Section */}
       <section className="relative py-24 px-4 sm:px-6 lg:px-8 overflow-hidden">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-primary/10 rounded-full blur-[120px] pointer-events-none"></div>
-        <div className="absolute bottom-0 right-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-foreground/5 rounded-full blur-[120px] pointer-events-none"></div>
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-primary/10 rounded-full blur-[120px] pointer-events-none" aria-hidden="true"></div>
+        <div className="absolute bottom-0 right-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-foreground/5 rounded-full blur-[120px] pointer-events-none" aria-hidden="true"></div>
 
         <div className="max-w-7xl mx-auto relative z-10">
           <div className="text-center">
@@ -525,7 +525,7 @@ export default async function LandingPage() {
             </div>
           </div>
           <div className="border-t border-input pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-xs text-muted-foreground">© 2026 ForgeDocs Inc. All rights reserved.</p>
+            <p className="text-xs text-muted-foreground">© {new Date().getFullYear()} ForgeDocs Inc. All rights reserved.</p>
             <div className="flex items-center gap-4">
               <a href="/privacy" className="text-sm text-muted-foreground hover:text-primary transition-colors">Privacy</a>
               <a href="/terms" className="text-sm text-muted-foreground hover:text-primary transition-colors">Terms</a>

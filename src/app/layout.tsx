@@ -9,7 +9,11 @@ import { CookieConsentProvider } from "@/components/ui/cookie-consent"
 import { headers } from "next/headers"
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans", display: "swap" })
 
-const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://forgedocs.com"
+const appUrl = process.env.NEXT_PUBLIC_APP_URL
+
+if (!appUrl || appUrl.includes("placeholder") || appUrl.includes("yourdomain")) {
+  throw new Error("NEXT_PUBLIC_APP_URL must be set to your production domain (e.g., https://app.forgedocs.com)")
+}
 
 export const metadata: Metadata = {
   metadataBase: new URL(appUrl),

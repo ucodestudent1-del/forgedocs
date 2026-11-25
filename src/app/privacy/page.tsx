@@ -252,7 +252,7 @@ export default function PrivacyPage() {
                 <p>For questions about this Privacy Policy or your data:</p>
                 <ul className="list-disc list-inside space-y-1">
                   <li>Email: <a href="mailto:privacy@forgedocs.com" className="text-primary hover:underline">privacy@forgedocs.com</a></li>
-                  <li>Address: ForgeDocs Inc., 1000 Document Drive, San Francisco, CA 94102</li>
+                  <li>Address: ForgeDocs Inc., San Francisco, CA</li>
                   <li>Data Protection Officer: <a href="mailto:dpo@forgedocs.com" className="text-primary hover:underline">dpo@forgedocs.com</a></li>
                 </ul>
               </div>

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -10,19 +10,38 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useToast } from "@/components/ui/use-toast"
 import { createBrowserSupabaseClient } from "@/lib/supabase-browser"
 import { validatePassword } from "@/lib/validation"
-import { Mail, Lock, AlertTriangle, ArrowLeft, Eye, EyeOff } from "lucide-react"
+import { Lock, ArrowLeft, Eye, EyeOff } from "lucide-react"
 
 export default function ResetPasswordForm() {
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [tokenValid, setTokenValid] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
   const { toast } = useToast()
 
+  useEffect(() => {
+    const tokenHash = searchParams.get("token_hash")
+    const type = searchParams.get("type")
+    if (tokenHash && type === "recovery") {
+      // The Supabase client automatically handles recovery tokens via cookies
+      // when the user clicks the reset link from email. Mark token as present
+      // so the form is ready to accept a new password.
+      setTokenValid(true)
+    } else {
+      setTokenValid(false)
+      toast({ title: "Invalid or expired reset link", variant: "destructive" })
+    }
+  }, [searchParams, toast])
+
   const handleReset = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!tokenValid) {
+      toast({ title: "Invalid or expired reset link. Please request a new one.", variant: "destructive" })
+      return
+    }
     if (!password || !confirmPassword) {
       toast({ title: "Please fill in all fields", variant: "destructive" })
       return

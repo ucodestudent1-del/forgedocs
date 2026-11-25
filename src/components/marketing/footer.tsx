@@ -76,7 +76,7 @@ export function Footer() {
           </div>
         </div>
         <div className="border-t border-input pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-xs text-muted-foreground">© 2026 ForgeDocs Inc. All rights reserved.</p>
+          <p className="text-xs text-muted-foreground">© {new Date().getFullYear()} ForgeDocs Inc. All rights reserved.</p>
           <div className="flex items-center gap-4">
             <a href="/privacy" className="text-sm text-muted-foreground hover:text-primary transition-colors">
               Privacy

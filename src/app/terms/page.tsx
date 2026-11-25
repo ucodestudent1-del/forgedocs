@@ -242,7 +242,7 @@ export default function TermsPage() {
                 <p>For questions about these Terms, contact us at:</p>
                 <ul className="list-disc list-inside space-y-1">
                   <li>Email: <a href="mailto:legal@forgedocs.com" className="text-primary hover:underline">legal@forgedocs.com</a></li>
-                  <li>Address: ForgeDocs Inc., 1000 Document Drive, San Francisco, CA 94102</li>
+                  <li>Address: ForgeDocs Inc., San Francisco, CA</li>
                 </ul>
               </div>
             </section>

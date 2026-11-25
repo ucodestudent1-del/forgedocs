@@ -4,6 +4,7 @@ import { Navbar } from "@/components/ui/navbar"
 import { Footer } from "@/components/marketing/footer"
 import { PricingCard } from "@/components/ui/pricing-card"
 import { headers } from "next/headers"
+import { CheckoutPlans } from "@/components/client/CheckoutPlans"
 
 export const metadata: Metadata = {
   title: "Pricing - Simple, Transparent Document Management",
@@ -28,6 +29,7 @@ export default async function PricingPage() {
       features: ["5 documents per month", "10 format conversions", "1GB storage", "Basic templates", "Community support"],
       ctaText: "Get started",
       ctaHref: "/auth/signup",
+      priceId: null,
       isFeatured: false,
     },
     {
@@ -38,6 +40,8 @@ export default async function PricingPage() {
       features: ["Unlimited documents", "Unlimited templates", "All 50+ format conversions", "Priority email support", "Team collaboration (up to 5 seats)", "20GB storage", "Version history (30 days)", "Custom templates"],
       ctaText: "Start free trial",
       ctaHref: "/auth/signup",
+      priceId: "price_pro_monthly",
+      trialDays: 14,
       isFeatured: true,
     },
     {
@@ -48,6 +52,8 @@ export default async function PricingPage() {
       features: ["Everything in Professional", "Unlimited seats", "SSO / SAML authentication", "Advanced analytics & reporting", "Dedicated account manager", "Custom integrations", "100GB storage", "Unlimited version history", "SLA guarantee", "Audit logs"],
       ctaText: "Contact sales",
       ctaHref: "/contact",
+      priceId: "price_business_monthly",
+      trialDays: 14,
       isFeatured: false,
     },
   ]
@@ -78,11 +84,7 @@ export default async function PricingPage() {
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-10">
             Choose the plan that fits your team. All plans include a 14-day free trial.
           </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto mb-16">
-            {plans.map((plan) => (
-              <PricingCard key={plan.name} {...plan} />
-            ))}
-          </div>
+          <CheckoutPlans plans={plans} />
           <div className="text-center mb-16 text-xs text-muted-foreground">
             All paid plans include a 14-day free trial. Cancel anytime. Credit card required.
           </div>

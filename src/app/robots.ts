@@ -1,6 +1,7 @@
 import { MetadataRoute } from "next"
 
 const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://forgedocs.com"
+const isProduction = process.env.NODE_ENV === "production" || process.env.VERCEL_ENV === "production"
 
 export default function robots(): MetadataRoute.Robots {
   return {
@@ -19,7 +20,13 @@ export default function robots(): MetadataRoute.Robots {
         "/_next/image",
       ],
     },
-    sitemap: `${process.env.NEXT_PUBLIC_APP_URL || "https://forgedocs.com"}/sitemap.xml`,
-    host: "forgedocs.com",
+    sitemap: `${baseUrl}/sitemap.xml`,
+    host: baseUrl.replace(/^https?:\/\//, ""),
+    ...(!isProduction && {
+      rules: {
+        userAgent: "*",
+        disallow: ["/"],
+      },
+    }),
   }
 }

@@ -17,23 +17,55 @@ const breadcrumbRoutes: Record<string, { label: string; href: string }> = {
   "/terms": { label: "Terms of Service", href: "/terms" },
   "/privacy": { label: "Privacy Policy", href: "/privacy" },
   "/editor": { label: "Editor", href: "/editor" },
+  "/dashboard": { label: "Dashboard", href: "/dashboard" },
+  "/dashboard/documents": { label: "Documents", href: "/dashboard/documents" },
+  "/dashboard/templates": { label: "Templates", href: "/dashboard/templates" },
+  "/dashboard/tools": { label: "Tools", href: "/dashboard/tools" },
+  "/dashboard/settings": { label: "Settings", href: "/dashboard/settings" },
+  "/dashboard/billing": { label: "Billing", href: "/dashboard/billing" },
+  "/auth/login": { label: "Login", href: "/auth/login" },
+  "/auth/signup": { label: "Sign Up", href: "/auth/signup" },
 }
 
 export function Breadcrumb() {
   const pathname = usePathname()
   const route = breadcrumbRoutes[pathname]
 
-  if (!route) return null
+  if (route) {
+    return (
+      <nav className="flex items-center gap-1 text-xs text-muted-foreground mb-4" aria-label="Breadcrumb">
+        <Link href="/" className="flex items-center gap-1 hover:text-primary transition-colors">
+          Home
+          <ChevronRight className="h-3 w-3" />
+        </Link>
+        <span className="flex items-center gap-1 text-foreground font-medium">
+          {route.label}
+        </span>
+      </nav>
+    )
+  }
 
-  return (
-    <nav className="flex items-center gap-1 text-xs text-muted-foreground mb-4" aria-label="Breadcrumb">
-      <Link href="/" className="flex items-center gap-1 hover:text-primary transition-colors">
-        Home
+  // Fallback for dynamic or unknown routes
+  const segments = pathname.split("/").filter(Boolean)
+  if (segments.length > 0) {
+    const last = segments[segments.length - 1]
+    const label = last
+      .split("-")
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(" ")
+    return (
+      <nav className="flex items-center gap-1 text-xs text-muted-foreground mb-4" aria-label="Breadcrumb">
+        <Link href="/" className="flex items-center gap-1 hover:text-primary transition-colors">
+          Home
+          <ChevronRight className="h-3 w-3" />
+        </Link>
         <ChevronRight className="h-3 w-3" />
-      </Link>
-      <span className="flex items-center gap-1 text-foreground font-medium">
-        {route.label}
-      </span>
-    </nav>
-  )
+        <span className="flex items-center gap-1 text-foreground font-medium">
+          {label}
+        </span>
+      </nav>
+    )
+  }
+
+  return null
 }

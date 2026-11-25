@@ -8,14 +8,12 @@ import {
   Users,
   Shield,
   Settings,
-  HelpCircle,
   GraduationCap,
   Mail,
-  Clock,
-  ExternalLink,
   ChevronRight,
   Search,
 } from "lucide-react"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
 const helpCategories = [
   {
@@ -130,7 +128,7 @@ export default function HelpPage() {
                         <p className="text-sm text-muted-foreground">{article.desc}</p>
                         <div className="flex items-center justify-between mt-4 pt-4 border-t">
                           <span className="text-xs text-muted-foreground">{article.time}</span>
-                          <Link href="#" className="text-sm font-medium text-primary hover:underline flex items-center gap-1">
+                          <Link href={`/help/${article.title.toLowerCase().replace(/\s+/g, "-")}`} className="text-sm font-medium text-primary hover:underline flex items-center gap-1">
                             Read article
                             <ChevronRight className="h-3 w-3" />
                           </Link>
@@ -164,5 +162,3 @@ export default function HelpPage() {
     </div>
   )
 }
-
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"

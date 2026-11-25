@@ -23,13 +23,29 @@ const staticPages: StaticPage[] = [
   { url: "/editor", changeFrequency: "monthly", priority: 0.4 },
 ]
 
+const blogSlugs = [
+  "introducing-forgedocs",
+  "document-conversion-best-practices",
+  "team-collaboration-features",
+  "security-compliance-update",
+  "api-integration-guide",
+  "e-signatures-launch",
+]
+
 export default function sitemap(): MetadataRoute.Sitemap {
-  const urls: MetadataRoute.Sitemap = staticPages.map((page) => ({
+  const staticUrls: MetadataRoute.Sitemap = staticPages.map((page) => ({
     url: `${baseUrl}${page.url}`,
     lastModified: new Date(),
     changeFrequency: page.changeFrequency,
     priority: page.priority,
   }))
 
-  return urls
+  const blogUrls: MetadataRoute.Sitemap = blogSlugs.map((slug) => ({
+    url: `${baseUrl}/blog/${slug}`,
+    lastModified: new Date(),
+    changeFrequency: "weekly" as const,
+    priority: 0.6,
+  }))
+
+  return [...staticUrls, ...blogUrls]
 }

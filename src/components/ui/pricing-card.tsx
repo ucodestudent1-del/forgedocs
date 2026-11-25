@@ -13,6 +13,10 @@ interface PricingCardProps {
   ctaText: string
   ctaHref: string
   isFeatured?: boolean
+  priceId?: string | null
+  trialDays?: number
+  onCheckout?: (priceId: string, trialDays?: number) => void
+  checkoutLoading?: string | null
 }
 
 export function PricingCard({
@@ -24,6 +28,10 @@ export function PricingCard({
   ctaText,
   ctaHref,
   isFeatured = false,
+  priceId = null,
+  trialDays,
+  onCheckout,
+  checkoutLoading = null,
 }: PricingCardProps) {
   return (
     <div
@@ -55,18 +63,33 @@ export function PricingCard({
           </li>
         ))}
       </ul>
-      <Link href={ctaHref} className="block">
-        <a
+      {priceId && onCheckout ? (
+        <button
+          onClick={() => onCheckout(priceId, trialDays)}
+          disabled={checkoutLoading === name}
           className={cn(
-            "w-full py-4 rounded-lg font-medium transition-colors text-center block",
+            "w-full py-4 rounded-lg font-medium transition-colors text-center block disabled:opacity-60 disabled:cursor-not-allowed",
             isFeatured
               ? "bg-primary text-primary-foreground hover:bg-primary/90"
               : "border border-input bg-background text-foreground hover:bg-accent"
           )}
         >
-          {ctaText}
-        </a>
-      </Link>
+          {checkoutLoading === name ? "Creating checkout..." : ctaText}
+        </button>
+      ) : (
+        <Link href={ctaHref} className="block">
+          <a
+            className={cn(
+              "w-full py-4 rounded-lg font-medium transition-colors text-center block",
+              isFeatured
+                ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                : "border border-input bg-background text-foreground hover:bg-accent"
+            )}
+          >
+            {ctaText}
+          </a>
+        </Link>
+      )}
     </div>
   )
 }

@@ -203,30 +203,6 @@ export async function middleware(request: NextRequest) {
     if (pathname.startsWith("/api/")) {
       const versionInfo = parseApiVersion(request.headers)
 
-      // Enforce versioned API path: /api/v1/*
-      if (!pathname.startsWith("/api/v1/") && pathname !== "/api/v1" && pathname !== "/api/health" && !pathname.startsWith("/api/health/")) {
-        const versionResponse = NextResponse.json(
-          {
-            error: "API version prefix required. Use /api/v1/ path prefix.",
-            supported_versions: SUPPORTED_API_VERSIONS,
-            default_version: DEFAULT_API_VERSION,
-          },
-          { status: 426 }
-        )
-        Object.entries(apiVersionHeaders(versionInfo.version)).forEach(([key, value]) => {
-          versionResponse.headers.set(key, value)
-        })
-        versionResponse.headers.set("x-request-id", requestId)
-        versionResponse.headers.set("x-csp-nonce", cspNonce)
-        versionResponse.headers.set("Content-Security-Policy", buildCspHeader(cspNonce))
-        versionResponse.headers.set("Content-Security-Policy-Report-Only", buildCspReportOnlyHeader())
-        versionResponse.headers.set("X-Content-Type-Options", "nosniff")
-        versionResponse.headers.set("X-Frame-Options", "DENY")
-        versionResponse.headers.set("Referrer-Policy", "strict-origin-when-cross-origin")
-        versionResponse.headers.set("Permissions-Policy", "geolocation=(), microphone=(), camera=()")
-        return versionResponse
-      }
-
       // Warn clients when api-version header is missing (will be required in v2)
       const versionHeaderMissing = !request.headers.has("api-version")
 
