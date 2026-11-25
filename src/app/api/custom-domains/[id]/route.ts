@@ -1,4 +1,4 @@
-import { getRouteClient } from "@/lib/supabase"
+import { getPooledRouteClient } from "@/lib/supabase"
 import { NextResponse } from "next/server"
 import { validateCSRF } from "@/lib/csrf"
 import { z } from "zod"
@@ -9,7 +9,7 @@ const verifySchema = z.object({})
 
 // GET/PATCH/DELETE /api/custom-domains/[id]
 export const GET = withErrorBoundary(async (req, { params }: { params: Promise<{ id: string }> }) => {
-  const supabase = await getRouteClient()
+  const supabase = await getPooledRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
@@ -35,7 +35,7 @@ export const GET = withErrorBoundary(async (req, { params }: { params: Promise<{
 export const PATCH = withErrorBoundary(async (req, { params }: { params: Promise<{ id: string }> }) => {
   await validateCSRF(req)
 
-  const supabase = await getRouteClient()
+  const supabase = await getPooledRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
@@ -90,7 +90,7 @@ export const PATCH = withErrorBoundary(async (req, { params }: { params: Promise
 export const DELETE = withErrorBoundary(async (req, { params }: { params: Promise<{ id: string }> }) => {
   await validateCSRF(req)
 
-  const supabase = await getRouteClient()
+  const supabase = await getPooledRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {

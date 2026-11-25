@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input"
 import { Shield, Settings, TrendingUp, Users, CreditCard, FileText, AlertTriangle, Clock, Download, Search, Filter, Activity, Home } from "lucide-react"
 import Link from "next/link"
 import { format } from "date-fns"
-import { getRouteClient } from "@/lib/supabase"
+import { getPooledRouteClient } from "@/lib/supabase"
 import { redirect } from "next/navigation"
 import { headers } from "next/headers"
 
@@ -14,7 +14,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const referer = headersList.get("referer") || ""
   const redirectUrl = referer ? new URL(referer).pathname + new URL(referer).search : "/dashboard"
 
-  const supabase = await getRouteClient()
+  const supabase = await getPooledRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {

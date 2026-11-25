@@ -1,6 +1,6 @@
 import { createRouteClient } from "@/lib/supabase"
 import { NextResponse } from "next/server"
-import { validateCSRF } from "@/lib/csrf"
+import { validateCSRF, rotateCSRFToken } from "@/lib/csrf"
 import { authRateLimit } from "@/lib/rate-limiter"
 import { validatePassword } from "@/lib/password"
 import { sendEmail } from "@/lib/email"
@@ -44,6 +44,8 @@ export const POST = withErrorBoundary(async (req) => {
       html: getPasswordChangedHtml(user.user_metadata?.full_name || "User", `${process.env.NEXT_PUBLIC_APP_URL}/auth/login`),
     })
   }
+
+  await rotateCSRFToken()
 
   return NextResponse.json({ success: true })
 })

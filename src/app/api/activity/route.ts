@@ -1,4 +1,4 @@
-import { getRouteClient } from "@/lib/supabase"
+import { getPooledRouteClient } from "@/lib/supabase"
 import { NextResponse } from "next/server"
 import { documentRateLimit } from "@/lib/rate-limiter"
 import { MAX_PAGE_SIZE, DEFAULT_PAGE_SIZE, parsePagination } from "@/lib/pagination"
@@ -9,7 +9,7 @@ export const GET = withErrorBoundary(async (req: Request): Promise<NextResponse>
   const rateLimitError = await documentRateLimit(req)
   if (rateLimitError) return rateLimitError
 
-  const supabase = await getRouteClient()
+  const supabase = await getPooledRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   let effectiveUser = user

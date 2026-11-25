@@ -36,3 +36,15 @@ export async function validateCSRF(req: Request): Promise<void> {
 export function generateCSRFToken() {
   return randomUUID()
 }
+
+export async function rotateCSRFToken(): Promise<string> {
+  const newToken = generateCSRFToken()
+  const cookieStore = await cookies()
+  cookieStore.set("csrf_token", newToken, {
+    httpOnly: true,
+    secure: true,
+    sameSite: "strict",
+    path: "/",
+  })
+  return newToken
+}

@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Users, CreditCard, FileText, AlertTriangle, TrendingUp, Clock, Download, Search, Shield, Mail, MoreHorizontal, UserPlus } from "lucide-react"
 import Link from "next/link"
-import { getRouteClient } from "@/lib/supabase"
+import { getPooledRouteClient } from "@/lib/supabase"
 
 interface SystemHealth {
   status: "healthy" | "unhealthy" | "degraded"
@@ -18,7 +18,7 @@ interface SystemHealth {
 }
 
 async function fetchAdminStats(): Promise<SystemHealth> {
-  const supabase = await getRouteClient()
+  const supabase = await getPooledRouteClient()
 
   const [usersResult, docsResult, conversionsResult, subsResult] = await Promise.all([
     supabase.from("profiles").select("id, created_at", { count: "exact", head: true }),

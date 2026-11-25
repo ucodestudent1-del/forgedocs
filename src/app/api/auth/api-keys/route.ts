@@ -1,6 +1,6 @@
-import { getRouteClient } from "@/lib/supabase"
+import { getPooledRouteClient } from "@/lib/supabase"
 import { NextResponse } from "next/server"
-import { validateCSRF } from "@/lib/csrf"
+import { validateCSRF, rotateCSRFToken } from "@/lib/csrf"
 import { authRateLimit } from "@/lib/rate-limiter"
 import { z } from "zod"
 import { createApiKey, listApiKeys } from "@/lib/api-key"
@@ -18,7 +18,7 @@ export const GET = withErrorBoundary(async (req) => {
 
   await validateCSRF(req)
 
-  const supabase = await getRouteClient()
+  const supabase = await getPooledRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
@@ -35,7 +35,7 @@ export const POST = withErrorBoundary(async (req) => {
 
   await validateCSRF(req)
 
-  const supabase = await getRouteClient()
+  const supabase = await getPooledRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
@@ -57,6 +57,8 @@ export const POST = withErrorBoundary(async (req) => {
   if ("error" in result) {
     throw createAppError(result.error, 500, "API_KEY_CREATE_ERROR")
   }
+
+  await rotateCSRFToken()
 
   // Return raw key only once
   return NextResponse.json({ api_key: result.key, raw_key: result.rawKey }, { status: 201 })

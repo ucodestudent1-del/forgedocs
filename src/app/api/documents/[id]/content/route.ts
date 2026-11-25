@@ -1,4 +1,4 @@
-import { getRouteClient } from "@/lib/supabase"
+import { getPooledRouteClient } from "@/lib/supabase"
 import { NextResponse } from "next/server"
 import { validateCSRF } from "@/lib/csrf"
 import { documentRateLimit } from "@/lib/rate-limiter"
@@ -15,7 +15,7 @@ export const GET = withErrorBoundary(async (req, { params }: { params: Promise<{
   const rateLimitError = await documentRateLimit(req)
   if (rateLimitError) return rateLimitError
 
-  const supabase = await getRouteClient()
+  const supabase = await getPooledRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
@@ -66,7 +66,7 @@ export const PUT = withErrorBoundary(async (req, { params }: { params: Promise<{
 
   await validateCSRF(req)
 
-  const supabase = await getRouteClient()
+  const supabase = await getPooledRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {

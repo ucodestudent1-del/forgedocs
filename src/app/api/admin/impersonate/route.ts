@@ -17,7 +17,7 @@ export const POST = withErrorBoundary(async (req) => {
 
   await validateCSRF(req)
 
-  const supabase = await (await import("@/lib/supabase")).getRouteClient()
+  const supabase = await (await import("@/lib/supabase")).getPooledRouteClient()
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   if (authError || !user) {
     throw createAppError("Unauthorized", 401, "UNAUTHORIZED")

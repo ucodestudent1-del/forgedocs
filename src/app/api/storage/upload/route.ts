@@ -6,7 +6,7 @@ import { sanitizeFilename } from "@/lib/security"
 import { scanFile } from "@/lib/malware-scan"
 import { sanitizeHtml } from "@/lib/sanitize"
 import { withErrorBoundary, createAppError } from "@/lib/api-error"
-import { getRouteClient } from "@/lib/supabase"
+import { getPooledRouteClient } from "@/lib/supabase"
 
 export const maxDuration = 60
 
@@ -34,7 +34,7 @@ export const POST = withErrorBoundary(async (req) => {
 
   await validateCSRF(req)
 
-  const supabase = await getRouteClient()
+  const supabase = await getPooledRouteClient()
 
   const { data: { user } } = await supabase.auth.getUser()
 

@@ -1,6 +1,6 @@
-import { createRouteClient } from "@/lib/supabase"
+import { getPooledRouteClient } from "@/lib/supabase"
 import { NextResponse } from "next/server"
-import { validateCSRF, CSRFError } from "@/lib/csrf"
+import { validateCSRF, rotateCSRFToken } from "@/lib/csrf"
 import { authRateLimit } from "@/lib/rate-limiter"
 import { validatePassword } from "@/lib/password"
 import { withErrorBoundary, createAppError } from "@/lib/api-error"
@@ -19,7 +19,7 @@ export const POST = withErrorBoundary(async (req) => {
 
   await validateCSRF(req)
 
-  const supabase = await createRouteClient()
+  const supabase = await getPooledRouteClient()
   const body = await req.json()
   const parsed = signupSchema.safeParse(body)
   if (!parsed.success) {
@@ -56,6 +56,8 @@ export const POST = withErrorBoundary(async (req) => {
       logger.error("Failed to create profile:", { error: profileError })
     }
   }
+
+  await rotateCSRFToken()
 
   return NextResponse.json(
     { user: data.user, message: "Please check your email to verify your account" },

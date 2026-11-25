@@ -1,4 +1,4 @@
-import { getRouteClient } from "@/lib/supabase"
+import { getPooledRouteClient } from "@/lib/supabase"
 import { NextResponse } from "next/server"
 import { validateCSRF } from "@/lib/csrf"
 import { withErrorBoundary, createAppError } from "@/lib/api-error"
@@ -6,7 +6,7 @@ import { INTEGRATION_CATALOG, getIntegration } from "@/lib/integrations"
 
 // GET /api/integrations - list available integrations + user's connected ones
 export const GET = withErrorBoundary(async (req) => {
-  const supabase = await getRouteClient()
+  const supabase = await getPooledRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   const url = new URL(req.url)
@@ -37,7 +37,7 @@ export const GET = withErrorBoundary(async (req) => {
 export const POST = withErrorBoundary(async (req) => {
   await validateCSRF(req)
 
-  const supabase = await getRouteClient()
+  const supabase = await getPooledRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {

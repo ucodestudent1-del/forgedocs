@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { getRouteClient } from "@/lib/supabase"
+import { getPooledRouteClient } from "@/lib/supabase"
 import { validateCSRF } from "@/lib/csrf"
 import { withErrorBoundary, createAppError } from "@/lib/api-error"
 import { generateSamlAuthnRequest, generateRelayState } from "@/lib/saml"
@@ -36,7 +36,7 @@ const initiateSchema = z.object({
 export const POST = withErrorBoundary(async (req) => {
   await validateCSRF(req)
 
-  const supabase = await getRouteClient()
+  const supabase = await getPooledRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {

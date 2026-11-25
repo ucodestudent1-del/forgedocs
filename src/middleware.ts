@@ -10,7 +10,7 @@ import {
 } from "@/lib/api-version"
 import { validateApiKey, checkApiKeyPermissions, requiresApiKeyPermission } from "@/lib/api-key"
 import { checkRateLimit, getRateLimitConfig, getAPIKeyRateLimitConfig } from "@/lib/rate-limiter"
-import { getRouteClient } from "@/lib/supabase"
+import { getPooledRouteClient } from "@/lib/supabase"
 import logger from "@/lib/logger"
 
 let envValidated = false
@@ -127,7 +127,7 @@ export async function middleware(request: NextRequest) {
 
     // ---- Authentication check for page routes ----
     if (!pathname.startsWith("/api/") && !pathname.startsWith("/auth/")) {
-      const supabase = await getRouteClient()
+      const supabase = await getPooledRouteClient()
       const { data: { user }, error } = await supabase.auth.getUser()
 
       // Protected routes that require authentication
@@ -177,7 +177,7 @@ export async function middleware(request: NextRequest) {
     // Fully verified users go to the dashboard; unverified users stay on auth
     // pages so they can complete verification / request a new code.
     if (pathname.startsWith("/auth/") && !isLooping && !pathname.startsWith("/auth/callback")) {
-      const supabase = await getRouteClient()
+      const supabase = await getPooledRouteClient()
       const { data: { user }, error } = await supabase.auth.getUser()
       if (user && !error) {
         if (user.email_confirmed_at) {

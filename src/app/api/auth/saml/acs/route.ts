@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { getRouteClient } from "@/lib/supabase"
+import { getPooledRouteClient } from "@/lib/supabase"
 import { cookies } from "next/headers"
 import { generateCSRFToken } from "@/lib/csrf"
 import { withErrorBoundary, createAppError } from "@/lib/api-error"
@@ -21,7 +21,7 @@ export const POST = withErrorBoundary(async (req) => {
     throw createAppError("Missing SAMLResponse", 400, "MISSING_SAML_RESPONSE")
   }
 
-  const supabase = await getRouteClient()
+  const supabase = await getPooledRouteClient()
 
   // Verify relay state if present
   if (relayState) {

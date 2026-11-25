@@ -1,5 +1,5 @@
 import "server-only"
-import { getRouteClient } from "@/lib/supabase"
+import { getPooledRouteClient } from "@/lib/supabase"
 import { cacheGet, cacheSet, cacheDel } from "@/lib/cache"
 import { getClientIdentifier } from "@/lib/client-identifier"
 

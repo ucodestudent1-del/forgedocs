@@ -1,6 +1,6 @@
-import { getRouteClient } from "@/lib/supabase"
+import { getPooledRouteClient } from "@/lib/supabase"
 import { NextResponse } from "next/server"
-import { cacheIncrement, cacheGet, cacheSet } from "@/lib/cache"
+import { cacheGet, cacheSet, getRedisClient } from "@/lib/cache"
 import logger from "@/lib/logger"
 
 export interface TierLimits {
@@ -99,7 +99,7 @@ export async function getTierLimits(userId: string): Promise<TierLimits> {
   const cached = await cacheGet<TierLimits>(cacheKey)
   if (cached) return cached
 
-  const supabase = await getRouteClient()
+  const supabase = await getPooledRouteClient()
 
   // Single query to determine the user's active tier
   const { data: subscription } = await supabase
@@ -172,29 +172,28 @@ export async function checkTierLimit(
     return { allowed: true, limit: -1, current: 0, remaining: -1 }
   }
 
-  const now = new Date()
-  const monthKey = `${now.getFullYear()}-${now.getMonth()}`
-  const redisKey = `tierlimit:${userId}:${metric}:${monthKey}`
+  const now = Date.now()
+  const windowMs = 30 * 24 * 60 * 60 * 1000 // 30 days sliding window
+  const windowStart = now - windowMs
+  const redisKey = `tierlimit:sliding:${userId}:${metric}`
 
-  // Atomic INCR — single Redis operation, no TOCTOU race
-  const ttlSeconds = Math.ceil(
-    (new Date(now.getFullYear(), now.getMonth() + 1, 1).getTime() - now.getTime()) / 1000
-  )
   let current: number
   try {
-    current = await cacheIncrement(redisKey, ttlSeconds)
+    const client = getRedisClient()
+    if (!client) throw new Error("Redis not available")
+    
+    // Use ZSET for sliding window rate limiting
+    // Add current request with timestamp as score
+    await client.zadd(redisKey, now, `${now}:${Math.random()}`)
+    // Remove expired entries
+    await client.zremrangebyscore(redisKey, 0, windowStart)
+    // Count current entries in window
+    current = await client.zcard(redisKey)
+    // Set TTL on the key (slightly longer than window)
+    await client.expire(redisKey, Math.ceil(windowMs / 1000) + 60)
   } catch {
     // Redis unavailable — fail closed: block limited tiers, allow only unlimited tiers
     logger.warn("Redis unavailable for tier limit check, failing closed", { userId, metric })
-    if (limit < 0) {
-      return { allowed: true, limit: -1, current: 0, remaining: -1 }
-    }
-    return { allowed: false, limit, current: 0, remaining: 0 }
-  }
-
-  if (current === 0) {
-    // Redis returned empty — fail closed
-    logger.warn("Redis returned empty count for tier limit check, failing closed", { userId, metric })
     if (limit < 0) {
       return { allowed: true, limit: -1, current: 0, remaining: -1 }
     }
@@ -218,7 +217,7 @@ export async function trackUsage(
 ): Promise<void> {
   // DB insert is a durable usage log. Enforcement is handled by the atomic
   // Redis INCR in checkTierLimit, which is the source of truth for limits.
-  const supabase = await getRouteClient()
+  const supabase = await getPooledRouteClient()
   await supabase.from("usage_records").insert({
     user_id: userId,
     metric,
@@ -228,7 +227,7 @@ export async function trackUsage(
 
 export function createTierLimitMiddleware(metric: "documents_created" | "conversions" | "storage_bytes") {
   return async (_req: Request): Promise<NextResponse | null> => {
-    const supabase = await getRouteClient()
+    const supabase = await getPooledRouteClient()
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {

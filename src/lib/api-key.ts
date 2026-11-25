@@ -1,5 +1,5 @@
 import { createHash, createHmac, randomBytes, timingSafeEqual } from "crypto"
-import { getRouteClient } from "@/lib/supabase"
+import { getPooledRouteClient } from "@/lib/supabase"
 import { checkRateLimit } from "@/lib/rate-limiter"
 
 export const API_KEY_PREFIX = "sk_live"
@@ -41,7 +41,7 @@ export interface ApiKeyRow {
 }
 
 export async function listApiKeys(userId: string): Promise<ApiKeyRow[]> {
-  const supabase = await getRouteClient()
+  const supabase = await getPooledRouteClient()
   const { data } = await supabase
     .from("api_keys")
     .select("id, name, key_prefix, permissions, last_used_at, expires_at, revoked_at, created_at")
@@ -57,7 +57,7 @@ export async function createApiKey(
   permissions: Record<string, unknown> = {},
   expiresAt: string | null = null
 ): Promise<{ rawKey: string; key: ApiKeyRow } | { error: string }> {
-  const supabase = await getRouteClient()
+  const supabase = await getPooledRouteClient()
   const { rawKey, keyPrefix, keyHash } = generateApiKey()
 
   const { data, error } = await supabase
@@ -81,7 +81,7 @@ export async function createApiKey(
 }
 
 export async function revokeApiKey(userId: string, keyId: string): Promise<{ success: boolean; error?: string }> {
-  const supabase = await getRouteClient()
+  const supabase = await getPooledRouteClient()
   const { error } = await supabase
     .from("api_keys")
     .update({ revoked_at: new Date().toISOString() })
@@ -103,7 +103,7 @@ export async function validateApiKey(rawKey: string): Promise<{ userId: string; 
   // Rate-limit validation attempts per IP to prevent brute-force enumeration.
   // The caller (middleware) passes the request; we derive an identifier from
   // the x-forwarded-for header or fall back to "unknown".
-  const supabase = await getRouteClient()
+  const supabase = await getPooledRouteClient()
 
   // Look up by key_hash directly (O(1)) instead of iterating all keys sharing
   // a plaintext prefix. This eliminates prefix-enumeration brute-force.
@@ -282,8 +282,10 @@ export function requiresApiKeyPermission(pathname: string): string[] | null {
   }
 
   if (bestMatch === null) {
-    // No specific rule — deny access by default (fail closed for new endpoints)
-    return null
+    // No specific rule — deny access by default (fail closed for new endpoints).
+    // Returning a permission that no key can possess ensures new endpoints
+    // are inaccessible via API key until explicitly allowed.
+    return ["unknown:endpoint"]
   }
 
   return permissionMap[bestMatch]
@@ -298,7 +300,7 @@ export async function getApiUserId(req: Request): Promise<string | null> {
   }
 
   // Session auth: fall back to Supabase
-  const supabase = await getRouteClient()
+  const supabase = await getPooledRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
   return user?.id ?? null
 }

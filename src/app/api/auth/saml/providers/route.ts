@@ -1,4 +1,4 @@
-import { getRouteClient } from "@/lib/supabase"
+import { getPooledRouteClient } from "@/lib/supabase"
 import { NextResponse } from "next/server"
 import { validateCSRF } from "@/lib/csrf"
 import { z } from "zod"
@@ -15,7 +15,7 @@ const providerSchema = z.object({
 
 // GET /api/auth/saml/providers - list user's SAML providers
 export const GET = withErrorBoundary(async (req) => {
-  const supabase = await getRouteClient()
+  const supabase = await getPooledRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
@@ -39,7 +39,7 @@ export const GET = withErrorBoundary(async (req) => {
 export const POST = withErrorBoundary(async (req) => {
   await validateCSRF(req)
 
-  const supabase = await getRouteClient()
+  const supabase = await getPooledRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {

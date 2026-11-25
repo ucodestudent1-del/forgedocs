@@ -1,7 +1,7 @@
-import { getRouteClient } from "@/lib/supabase"
+import { getPooledRouteClient } from "@/lib/supabase"
 import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
-import { validateCSRF, generateCSRFToken } from "@/lib/csrf"
+import { validateCSRF, rotateCSRFToken } from "@/lib/csrf"
 import { authRateLimit } from "@/lib/rate-limiter"
 import { checkLoginAttempts, recordFailedAttempt, clearFailedAttempts } from "@/lib/auth"
 import { validatePassword } from "@/lib/password"
@@ -23,7 +23,7 @@ export const POST = withErrorBoundary(async (req) => {
     )
   }
 
-  const supabase = await getRouteClient()
+  const supabase = await getPooledRouteClient()
   const { email, password } = await req.json()
 
   // Validate password format
@@ -71,14 +71,7 @@ export const POST = withErrorBoundary(async (req) => {
   }
 
   // Rotate CSRF token after successful authentication to prevent session fixation
-  const newCsrfToken = generateCSRFToken()
-  const cookieStore = await cookies()
-  cookieStore.set("csrf_token", newCsrfToken, {
-    httpOnly: true,
-    secure: true,
-    sameSite: "strict",
-    path: "/",
-  })
+  await rotateCSRFToken()
 
   return NextResponse.json({ success: true })
 })
@@ -89,12 +82,14 @@ export const DELETE = withErrorBoundary(async (req) => {
 
   await validateCSRF(req)
 
-  const supabase = await getRouteClient()
+  const supabase = await getPooledRouteClient()
   const { error } = await supabase.auth.signOut()
 
   if (error) {
     throw createAppError(error.message, 400, "LOGOUT_ERROR")
   }
+
+  await rotateCSRFToken()
 
   return NextResponse.json({ success: true })
 })

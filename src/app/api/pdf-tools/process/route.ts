@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getRouteClient } from "@/lib/supabase"
+import { getPooledRouteClient } from "@/lib/supabase"
 import { PDFDocument, StandardFonts, rgb, degrees } from "pdf-lib"
 import { documentRateLimit } from "@/lib/rate-limiter"
 import { validateCSRF } from "@/lib/csrf"
@@ -12,7 +12,7 @@ export const POST = withErrorBoundary(async (request) => {
 
   await validateCSRF(request)
 
-  const supabase = await getRouteClient()
+  const supabase = await getPooledRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
   
   if (!user) {

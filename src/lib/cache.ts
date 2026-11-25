@@ -3,6 +3,7 @@ import Redis from "ioredis"
 import logger from "@/lib/logger"
 
 let redisClient: Redis | null = null
+let connectionPromise: Promise<void> | null = null
 const isTestEnv = process.env.NODE_ENV === 'test' || process.env.JEST_WORKER_ID !== undefined
 
 // In-memory fallback store for tests and when Redis is unavailable
@@ -34,8 +35,16 @@ export function getRedisClient(): Redis | null {
     redisClient.on("connect", () => {
       logger.info("Redis connected")
     })
+
+    connectionPromise = redisClient.connect()
   }
   return redisClient
+}
+
+async function ensureConnected(client: Redis): Promise<void> {
+  if (connectionPromise) {
+    await connectionPromise
+  }
 }
 
 function isExpired(entry: { expiresAt: number }): boolean {
@@ -69,9 +78,7 @@ export async function cacheGet<T>(key: string): Promise<T | null> {
   try {
     const client = getRedisClient()
     if (!client) return null
-    if (client.status === "wait") {
-      await client.connect()
-    }
+    await ensureConnected(client)
     const value = await client.get(key)
     if (!value) return null
     return JSON.parse(value) as T
@@ -92,9 +99,7 @@ export async function cacheSet(key: string, value: unknown, ttlSeconds: number):
   try {
     const client = getRedisClient()
     if (!client) return
-    if (client.status === "wait") {
-      await client.connect()
-    }
+    await ensureConnected(client)
     await client.setex(key, ttlSeconds, serialized)
   } catch {
     // Cache failure is non-fatal
@@ -119,9 +124,7 @@ export async function cacheDel(key: string): Promise<void> {
   try {
     const client = getRedisClient()
     if (!client) return
-    if (client.status === "wait") {
-      await client.connect()
-    }
+    await ensureConnected(client)
     // Handle wildcard keys using SCAN (non-blocking)
     if (key.includes("*")) {
       const pattern = key
@@ -153,9 +156,7 @@ export async function cacheExists(key: string): Promise<boolean> {
   try {
     const client = getRedisClient()
     if (!client) return false
-    if (client.status === "wait") {
-      await client.connect()
-    }
+    await ensureConnected(client)
     const result = await client.exists(key)
     return result === 1
   } catch {
@@ -182,9 +183,7 @@ export async function cacheIncrement(key: string, ttlSeconds: number): Promise<n
   try {
     const client = getRedisClient()
     if (!client) return 0
-    if (client.status === "wait") {
-      await client.connect()
-    }
+    await ensureConnected(client)
     // Always refresh TTL on increment so keys never persist without expiry.
     const count = await client.eval(INCR_WITH_EXPIRE_LUA, 1, key, ttlSeconds)
     return Number(count)
@@ -221,9 +220,7 @@ export async function cacheEval(key: string, ttlSeconds: number, threshold: stri
   try {
     const client = getRedisClient()
     if (!client) return 0
-    if (client.status === "wait") {
-      await client.connect()
-    }
+    await ensureConnected(client)
     const count = await client.eval(INCREMENT_AND_LOCK_LUA, 1, key, ttlSeconds, threshold, lockoutUntilMs)
     return Number(count)
   } catch {
@@ -235,6 +232,7 @@ export async function closeRedis(): Promise<void> {
   if (redisClient) {
     await redisClient.quit()
     redisClient = null
+    connectionPromise = null
   }
   memoryStore.clear()
 }
@@ -258,9 +256,7 @@ export async function getRedisPoolStatus(): Promise<{
     if (!client) {
       return { status: "unhealthy", connected: false }
     }
-    if (client.status === "wait") {
-      await client.connect()
-    }
+    await ensureConnected(client)
     const info = await client.info("memory")
     const clients = await client.info("clients")
     return {

@@ -1,5 +1,5 @@
 import { createHmac, timingSafeEqual } from "crypto"
-import { getRouteClient } from "@/lib/supabase"
+import { getPooledRouteClient } from "@/lib/supabase"
 import { Queue, Worker } from "bullmq"
 
 export interface WebhookDeliveryResult {
@@ -98,7 +98,7 @@ async function recordDelivery(
   body: string | null
 ): Promise<void> {
   try {
-    const supabase = await getRouteClient()
+    const supabase = await getPooledRouteClient()
     await supabase.from("webhook_deliveries").insert({
       endpoint_id: endpointId,
       event,
@@ -173,7 +173,7 @@ export async function fireWebhookEvent(
   payload: unknown
 ): Promise<void> {
   try {
-    const supabase = await getRouteClient()
+    const supabase = await getPooledRouteClient()
     const { data: endpoints } = await supabase
       .from("webhook_endpoints")
       .select("id, url, secret, events")

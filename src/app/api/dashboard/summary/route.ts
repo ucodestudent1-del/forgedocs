@@ -1,4 +1,4 @@
-import { getRouteClient } from "@/lib/supabase"
+import { getPooledRouteClient } from "@/lib/supabase"
 import { NextResponse } from "next/server"
 import { documentRateLimit } from "@/lib/rate-limiter"
 import { withErrorBoundary, createAppError, ERRORS } from "@/lib/api-error"
@@ -11,7 +11,7 @@ export const GET = withErrorBoundary(async (req) => {
   const rateLimitError = await documentRateLimit(req)
   if (rateLimitError) return rateLimitError
 
-  const supabase = await getRouteClient()
+  const supabase = await getPooledRouteClient()
 
   let user = null
   try {

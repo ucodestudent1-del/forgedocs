@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { getRouteClient } from "@/lib/supabase"
+import { getPooledRouteClient } from "@/lib/supabase"
 import { validateCSRF } from "@/lib/csrf"
 import { createAppError } from "@/lib/api-error"
 import logger from "@/lib/logger"
@@ -7,7 +7,7 @@ import { getGuestUserId, isGuestMode } from "@/lib/guest-session"
 
 export interface AuthContext {
   user: { id: string; email: string; [key: string]: unknown }
-  supabase: Awaited<ReturnType<typeof getRouteClient>>
+  supabase: Awaited<ReturnType<typeof getPooledRouteClient>>
 }
 
 type AuthHandler = (req: Request, ctx: AuthContext, ...extra: any[]) => Promise<NextResponse>
@@ -40,7 +40,7 @@ export function withAuth(
   const methodsRequiringCsrf = csrfMethods ?? new Set(["POST", "PUT", "PATCH", "DELETE"])
 
   return async (req: Request, ...args: any[]): Promise<NextResponse> => {
-    const supabase = await getRouteClient()
+    const supabase = await getPooledRouteClient()
 
     const { data: { user }, error } = await supabase.auth.getUser()
 

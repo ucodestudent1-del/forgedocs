@@ -1,11 +1,11 @@
-import { getRouteClient } from "@/lib/supabase"
+import { getPooledRouteClient } from "@/lib/supabase"
 import { NextResponse } from "next/server"
 import { withErrorBoundary, createAppError } from "@/lib/api-error"
 import { encryptToken } from "@/lib/integrations"
 
 // GET /api/integrations/callback - OAuth2 callback handler
 export const GET = withErrorBoundary(async (req) => {
-  const supabase = await getRouteClient()
+  const supabase = await getPooledRouteClient()
   const url = new URL(req.url)
 
   const code = url.searchParams.get("code")

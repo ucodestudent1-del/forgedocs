@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getRouteClient } from "@/lib/supabase"
+import { getPooledRouteClient } from "@/lib/supabase"
 import { v4 as uuidv4 } from "uuid"
 import { Resend } from "resend"
 import { escapeHtml } from "@/lib/email"
@@ -50,7 +50,7 @@ export const POST = withErrorBoundary(async (request) => {
   const rateLimitError = await documentRateLimit(request)
   if (rateLimitError) return rateLimitError
 
-  const supabase = await getRouteClient()
+  const supabase = await getPooledRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
   
   if (!user) {

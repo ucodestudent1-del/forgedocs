@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getRouteClient } from "@/lib/supabase"
+import { getPooledRouteClient } from "@/lib/supabase"
 import OpenAI from "openai"
 import { openaiCircuitBreaker } from "@/lib/circuit-breaker"
 import { validateCSRF } from "@/lib/csrf"
@@ -28,7 +28,7 @@ function getOpenAI() {
 }
 
 export const POST = withErrorBoundary(async (request) => {
-  const supabase = await getRouteClient()
+  const supabase = await getPooledRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
   
   if (!user) {

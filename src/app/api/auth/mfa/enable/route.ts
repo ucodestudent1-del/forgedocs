@@ -1,6 +1,6 @@
 import { createRouteClient } from "@/lib/supabase"
 import { NextResponse } from "next/server"
-import { validateCSRF } from "@/lib/csrf"
+import { validateCSRF, rotateCSRFToken } from "@/lib/csrf"
 import { authRateLimit } from "@/lib/rate-limiter"
 import { z } from "zod"
 import {
@@ -65,6 +65,8 @@ export const POST = withErrorBoundary(async (req) => {
     ipAddress: getClientIp(req),
     userAgent: getClientUserAgent(req),
   })
+
+  await rotateCSRFToken()
 
   return NextResponse.json({
     qr_code: qrCode,

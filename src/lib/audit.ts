@@ -1,4 +1,4 @@
-import { getRouteClient } from "@/lib/supabase"
+import { getPooledRouteClient } from "@/lib/supabase"
 import logger, { logAuditEvent as logToWinston } from "@/lib/logger"
 import { getClientIp } from "@/lib/client-identifier"
 
@@ -30,7 +30,7 @@ export async function flushAuditRetryQueue(): Promise<void> {
   const queue = auditRetryQueue.splice(0, auditRetryQueue.length)
   for (const input of queue) {
     try {
-      const supabase = await getRouteClient()
+      const supabase = await getPooledRouteClient()
       await supabase.from("audit_logs").insert({
         user_id: input.userId,
         action: input.action,
@@ -68,7 +68,7 @@ export async function logAuditEvent(input: AuditEventInput): Promise<void> {
   // Also write to database audit_logs table (non-blocking, fire and forget).
   // Failures are logged and enqueued for retry — never silently dropped.
   try {
-    const supabase = await getRouteClient()
+    const supabase = await getPooledRouteClient()
     await supabase.from("audit_logs").insert({
       user_id: input.userId,
       action: input.action,

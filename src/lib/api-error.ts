@@ -115,6 +115,24 @@ export function apiErrorResponse(error: unknown, requestId: string): NextRespons
 
 export type ApiHandler = (req: Request, ...extra: any[]) => Promise<NextResponse>
 
+const MAX_BODY_SIZE = 10 * 1024 * 1024 // 10MB
+
+function validateBodySize(req: Request): NextResponse | null {
+  if (req.method === "POST" || req.method === "PUT" || req.method === "PATCH") {
+    const contentLength = req.headers.get("content-length")
+    if (contentLength) {
+      const size = parseInt(contentLength, 10)
+      if (size > MAX_BODY_SIZE) {
+        return NextResponse.json(
+          { error: "Request body too large" },
+          { status: 413 }
+        )
+      }
+    }
+  }
+  return null
+}
+
 /**
  * Wraps an API route handler with standardized error handling.
  * Catches all unhandled exceptions, returns a consistent JSON error envelope,
@@ -129,6 +147,12 @@ export type ApiHandler = (req: Request, ...extra: any[]) => Promise<NextResponse
 export function withErrorBoundary(handler: ApiHandler): ApiHandler {
   return async (req: Request, ...args: any[]): Promise<NextResponse> => {
     const requestId = req.headers.get("x-request-id") || generateRequestId()
+
+    const bodySizeError = validateBodySize(req)
+    if (bodySizeError) {
+      bodySizeError.headers.set("x-request-id", requestId)
+      return bodySizeError
+    }
 
     try {
       const response = await handler(req, ...args)

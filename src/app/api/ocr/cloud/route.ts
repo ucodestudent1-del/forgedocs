@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getRouteClient } from "@/lib/supabase"
+import { getPooledRouteClient } from "@/lib/supabase"
 import { performCloudOCR } from "@/lib/ocr/cloud"
 import { documentRateLimit } from "@/lib/rate-limiter"
 import { validateCSRF } from "@/lib/csrf"
@@ -13,7 +13,7 @@ export const POST = withErrorBoundary(async (request) => {
 
   await validateCSRF(request)
 
-  const supabase = await getRouteClient()
+  const supabase = await getPooledRouteClient()
   const { data: { user } } = await supabase.auth.getUser()
   
   if (!user) {
