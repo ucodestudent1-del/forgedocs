@@ -113,6 +113,10 @@ const nextConfig = {
         if (request.startsWith("@valkey/valkey-glide")) {
           return callback(null, "empty-module-stub")
         }
+        // Node.js built-ins used by winston (logger) — not available in browser bundle
+        if (request === "fs" || request === "path" || request === "os") {
+          return callback(null, "empty-module-stub")
+        }
         callback()
       },
     ]
