@@ -3,7 +3,7 @@ import { cacheIncrement } from "@/lib/cache"
 import { getClientIdentifier } from "@/lib/client-identifier"
 import logger from "@/lib/logger"
 
-const FAIL_OPEN = process.env.RATE_LIMIT_FAIL_OPEN === "true"
+const FAIL_OPEN = false
 
 export interface RateLimitConfig {
   windowMs: number
@@ -28,28 +28,24 @@ const RATE_LIMIT_CONFIGS: Record<string, RateLimitConfig> = {
 }
 
 // Per-API-key rate limits (more generous than IP-based limits, but still bounded)
-export const API_KEY_RATE_LIMIT_CONFIGS: Record<string, RateLimitConfig> = {
-  "/api/contact": { windowMs: 15 * 60 * 1000, maxRequests: 100, keyPrefix: "apikey:contact" },
-  "/api/auth/login": { windowMs: 15 * 60 * 1000, maxRequests: 200, keyPrefix: "apikey:login" },
-  "/api/auth/signup": { windowMs: 60 * 60 * 1000, maxRequests: 50, keyPrefix: "apikey:signup" },
-  "/api/auth/forgot-password": { windowMs: 60 * 60 * 1000, maxRequests: 50, keyPrefix: "apikey:forgot" },
-  "/api/auth/reset-password": { windowMs: 15 * 60 * 1000, maxRequests: 100, keyPrefix: "apikey:reset" },
-  "/api/auth/mfa/verify": { windowMs: 5 * 60 * 1000, maxRequests: 200, keyPrefix: "apikey:mfa" },
-  "/api/conversion": { windowMs: 60 * 1000, maxRequests: 600, keyPrefix: "apikey:conversion" },
-  "/api/pdf-tools/process": { windowMs: 60 * 1000, maxRequests: 200, keyPrefix: "apikey:pdf" },
-  "/api/ai/assistant": { windowMs: 60 * 1000, maxRequests: 400, keyPrefix: "apikey:ai" },
-  "/api/ai/chat": { windowMs: 60 * 1000, maxRequests: 600, keyPrefix: "apikey:ai-chat" },
-  "/api/e-signatures/send": { windowMs: 60 * 1000, maxRequests: 100, keyPrefix: "apikey:esign" },
-  "/api/documents": { windowMs: 60 * 1000, maxRequests: 2000, keyPrefix: "apikey:docs" },
-  "/api/templates": { windowMs: 60 * 1000, maxRequests: 1000, keyPrefix: "apikey:templates" },
+// Derived from RATE_LIMIT_CONFIGS with a multiplier
+const API_KEY_LIMIT_MULTIPLIER = 20
+
+export function getAPIKeyRateLimitConfig(path: string): RateLimitConfig | null {
+  const base = getRateLimitConfig(path, false)
+  if (!base) return null
+  return {
+    windowMs: base.windowMs,
+    maxRequests: base.maxRequests * API_KEY_LIMIT_MULTIPLIER,
+    keyPrefix: `apikey:${base.keyPrefix}`,
+  }
 }
 
-export function getRateLimitConfig(path: string, isApiKey: boolean): RateLimitConfig | null {
-  const configs = isApiKey ? API_KEY_RATE_LIMIT_CONFIGS : RATE_LIMIT_CONFIGS
+export function getRateLimitConfig(path: string, _isApiKey?: boolean): RateLimitConfig | null {
   let matchedConfig: RateLimitConfig | null = null
   let matchedPathLen = 0
 
-  for (const [pathPattern, config] of Object.entries(configs)) {
+  for (const [pathPattern, config] of Object.entries(RATE_LIMIT_CONFIGS)) {
     if (path.startsWith(pathPattern)) {
       if (pathPattern.length > matchedPathLen) {
         matchedConfig = config
@@ -170,8 +166,8 @@ export function createRateLimiter(config: RateLimitConfig) {
  * Creates a rate limiter by path pattern (used by middleware).
  * Returns NextResponse (always a response, either next() or 429).
  */
-export function createRateLimiterByPath(path: string) {
-  const config = RATE_LIMIT_CONFIGS[path]
+export function createRateLimiterByPath(path: string, isApiKey: boolean = false) {
+  const config = isApiKey ? getAPIKeyRateLimitConfig(path) : RATE_LIMIT_CONFIGS[path]
   if (!config) {
     return async (_request: Request) => NextResponse.next()
   }

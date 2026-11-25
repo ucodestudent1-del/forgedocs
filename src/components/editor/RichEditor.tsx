@@ -658,7 +658,7 @@ export function RichEditor({
             )}
           </div>
 
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1" role="toolbar" aria-label="Document formatting toolbar">
             {TOOLBAR_GROUPS.map((group) => (
               <ToolbarGroup
                 key={group.name}
@@ -679,6 +679,7 @@ export function RichEditor({
               onClick={() => setShowLinkDialog(true)}
               disabled={readOnly}
               title="Insert Link (Ctrl+K)"
+              aria-label="Insert Link"
             >
               <Link className="h-4 w-4" />
             </Button>
@@ -686,7 +687,7 @@ export function RichEditor({
             {/* More Actions Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" title="More options">
+                <Button variant="ghost" size="icon" title="More options" aria-label="More options">
                   <MoreHorizontal className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>

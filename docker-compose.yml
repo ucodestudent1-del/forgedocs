@@ -53,13 +53,7 @@ services:
   worker:
     build:
       context: .
-      dockerfile: Dockerfile
-      target: builder
-      args:
-        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
-        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
-        NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY}
-        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL}
+      dockerfile: Dockerfile.worker
     env_file:
       - .env.production
     environment:
@@ -79,7 +73,6 @@ services:
       - app
       - redis
     restart: unless-stopped
-    command: ["npm", "run", "worker"]
 
 volumes:
   redis_data:

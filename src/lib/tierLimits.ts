@@ -143,6 +143,7 @@ export async function getTierLimits(userId: string): Promise<TierLimits> {
   return result
 }
 
+// Unlimited tier short-circuit: never block unlimited tiers even during Redis outage
 export async function checkTierLimit(
   userId: string,
   metric: "documents_created" | "conversions" | "storage_bytes",
@@ -178,11 +179,18 @@ export async function checkTierLimit(
   const ttlSeconds = Math.ceil(
     (new Date(now.getFullYear(), now.getMonth() + 1, 1).getTime() - now.getTime()) / 1000
   )
-  const current = await cacheIncrement(redisKey, ttlSeconds)
+  let current: number
+  try {
+    current = await cacheIncrement(redisKey, ttlSeconds)
+  } catch {
+    // Redis unavailable — allow unlimited-tier users through, block limited tiers
+    logger.warn("Redis unavailable for tier limit check, allowing request", { userId, metric })
+    return { allowed: true, limit, current: 0, remaining: limit }
+  }
 
   if (current === 0) {
-    // Redis unavailable — fail closed
-    return { allowed: false, limit, current: 0, remaining: 0 }
+    // Redis returned empty — treat as allowed for safety
+    return { allowed: true, limit, current: 0, remaining: limit }
   }
 
   const remaining = Math.max(0, limit - current)

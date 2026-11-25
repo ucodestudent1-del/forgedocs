@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Users, CreditCard, FileText, AlertTriangle, TrendingUp, Clock, Download, Search, Shield, Mail, MoreHorizontal, UserPlus } from "lucide-react"
 import Link from "next/link"
+import { getRouteClient } from "@/lib/supabase"
 
 interface SystemHealth {
   status: "healthy" | "unhealthy" | "degraded"
@@ -16,15 +17,40 @@ interface SystemHealth {
   active_subscriptions: number
 }
 
-export default function AdminDashboardPage() {
-  const stats = [
-    { label: "Total Users", value: 1247, icon: Users, color: "bg-primary/10 text-primary", change: "+12%" },
-    { label: "Active Subscriptions", value: 89, icon: CreditCard, color: "bg-primary/10 text-primary", change: "+8%" },
-    { label: "Total Documents", value: 12847, icon: FileText, color: "bg-primary/10 text-primary", change: "+23%" },
-    { label: "Pending Conversions", value: 3, icon: Clock, color: "bg-warning/10 text-warning", change: "-5%" },
-    { label: "Failed (24h)", value: 2, icon: AlertTriangle, color: "bg-destructive/10 text-destructive", change: "+2" },
-    { label: "System Health", value: "Healthy", icon: TrendingUp, color: "bg-success/10 text-success", change: "" },
-  ]
+async function fetchAdminStats(): Promise<SystemHealth> {
+  const supabase = await getRouteClient()
+
+  const [usersResult, docsResult, conversionsResult, subsResult] = await Promise.all([
+    supabase.from("profiles").select("id, created_at", { count: "exact", head: true }),
+    supabase.from("documents").select("id, created_at", { count: "exact", head: true }),
+    supabase.from("conversion_jobs").select("id, status, created_at", { count: "exact", head: true }),
+    supabase.from("subscriptions").select("id, status", { count: "exact", head: true }),
+  ])
+
+  const now = new Date()
+  const dayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString()
+
+  const [newUsersResult, newDocsResult, failedConvsResult] = await Promise.all([
+    supabase.from("profiles").select("id", { count: "exact", head: true }).gte("created_at", dayAgo),
+    supabase.from("documents").select("id", { count: "exact", head: true }).gte("created_at", dayAgo),
+    supabase.from("conversion_jobs").select("id", { count: "exact", head: true }).eq("status", "failed").gte("created_at", dayAgo),
+  ])
+
+  return {
+    status: "healthy",
+    total_users: usersResult.count ?? 0,
+    new_users_24h: newUsersResult.count ?? 0,
+    new_documents_24h: newDocsResult.count ?? 0,
+    active_sessions: 0,
+    pending_conversions: 0,
+    processing_conversions: 0,
+    failed_conversions_24h: failedConvsResult.count ?? 0,
+    active_subscriptions: subsResult.count ?? 0,
+  }
+}
+
+export default async function AdminDashboardPage() {
+  const stats = await fetchAdminStats()
 
   return (
     <div className="space-y-6">
@@ -45,7 +71,14 @@ export default function AdminDashboardPage() {
 
       {/* Stats Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-        {stats.map((stat) => (
+        {[
+          { label: "Total Users", value: stats.total_users, icon: Users, color: "bg-primary/10 text-primary", change: `+${stats.new_users_24h} (24h)` },
+          { label: "Active Subscriptions", value: stats.active_subscriptions, icon: CreditCard, color: "bg-primary/10 text-primary", change: "+8%" },
+          { label: "Total Documents", value: stats.new_documents_24h, icon: FileText, color: "bg-primary/10 text-primary", change: `+${stats.new_users_24h} (24h)` },
+          { label: "Pending Conversions", value: stats.pending_conversions, icon: Clock, color: "bg-warning/10 text-warning", change: "-5%" },
+          { label: "Failed (24h)", value: stats.failed_conversions_24h, icon: AlertTriangle, color: "bg-destructive/10 text-destructive", change: `+${stats.failed_conversions_24h}` },
+          { label: "System Health", value: 0, icon: TrendingUp, color: "bg-success/10 text-success", change: stats.status },
+        ].map((stat) => (
           <Card key={stat.label}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-foreground">{stat.label}</CardTitle>
@@ -71,7 +104,7 @@ export default function AdminDashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              <p className="text-muted-foreground text-center py-4">Demo data - no real users</p>
+              <p className="text-muted-foreground text-center py-4">No recent users</p>
             </div>
           </CardContent>
         </Card>
@@ -86,7 +119,7 @@ export default function AdminDashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              <p className="text-muted-foreground text-center py-4">Demo data - no real subscriptions</p>
+              <p className="text-muted-foreground text-center py-4">No recent subscriptions</p>
             </div>
           </CardContent>
         </Card>
@@ -98,14 +131,14 @@ export default function AdminDashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="grid gap-4 md:grid-cols-4">
-              <HealthMetric label="Total Users" value={1247} />
-              <HealthMetric label="New Users (24h)" value={12} />
-              <HealthMetric label="New Documents (24h)" value={89} />
-              <HealthMetric label="Active Sessions" value={47} />
-              <HealthMetric label="Pending Conversions" value={3} />
-              <HealthMetric label="Processing Conversions" value={1} />
-              <HealthMetric label="Failed (24h)" value={2} color="destructive" />
-              <HealthMetric label="Active Subscriptions" value={89} />
+              <HealthMetric label="Total Users" value={stats.total_users} />
+              <HealthMetric label="New Users (24h)" value={stats.new_users_24h} />
+              <HealthMetric label="New Documents (24h)" value={stats.new_documents_24h} />
+              <HealthMetric label="Active Sessions" value={stats.active_sessions} />
+              <HealthMetric label="Pending Conversions" value={stats.pending_conversions} />
+              <HealthMetric label="Processing Conversions" value={stats.processing_conversions} />
+              <HealthMetric label="Failed (24h)" value={stats.failed_conversions_24h} color="destructive" />
+              <HealthMetric label="Active Subscriptions" value={stats.active_subscriptions} />
             </div>
           </CardContent>
         </Card>

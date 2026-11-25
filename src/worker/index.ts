@@ -366,26 +366,33 @@ const worker = new Worker<ConversionJobData, { success: boolean; outputUrl?: str
   }
 )
 
-function cleanupTempFiles(): void {
+const MAX_TMP_DISK_USAGE_MB = 1024 // 1GB max /tmp usage
+
+async function checkTmpDiskUsage(): Promise<void> {
   try {
     const entries = fs.readdirSync("/tmp", { withFileTypes: true })
+    let totalBytes = 0
     for (const entry of entries) {
-      const name = entry.name
-      // Clean up orphaned conversion source/output files from previous crashes
-      if (
-        (name.endsWith("_source") || name.match(/^.*_output\.(pdf|docx|doc|xlsx|xls|pptx|ppt|odt|ods|odp|rtf|txt|html|md|epub|jpg|jpeg|png|webp|gif|bmp|tiff|svg)$/)) &&
-        entry.isFile()
-      ) {
+      if (entry.isFile()) {
         try {
-          fs.unlinkSync(`/tmp/${name}`)
-        } catch {
-          // Ignore errors on individual file cleanup
-        }
+          const stat = fs.statSync(`/tmp/${entry.name}`)
+          totalBytes += stat.size
+        } catch {}
       }
     }
-  } catch {
-    // /tmp may not be readable in all environments
-  }
+    const totalMB = totalBytes / (1024 * 1024)
+    if (totalMB > MAX_TMP_DISK_USAGE_MB) {
+      logger.warn("/tmp disk usage high", { totalMB, maxMB: MAX_TMP_DISK_USAGE_MB })
+      // Clean up oldest files first
+      const files = entries
+        .filter((e) => e.isFile())
+        .map((e) => ({ name: e.name, mtime: fs.statSync(`/tmp/${e.name}`).mtimeMs }))
+        .sort((a, b) => a.mtime - b.mtime)
+      for (const f of files.slice(0, Math.ceil(files.length / 2))) {
+        try { fs.unlinkSync(`/tmp/${f.name}`) } catch {}
+      }
+    }
+  } catch {}
 }
 
 // Worker health tracking
@@ -470,6 +477,7 @@ healthServer.on("listening", () => {
 // Initialize leader election
 startLeaderElection()
 cleanupTempFiles()
+setInterval(checkTmpDiskUsage, 60 * 60 * 1000) // Check disk usage every hour
 
 async function gracefulShutdown(signal: string): Promise<void> {
   console.log(`Received ${signal}, shutting down worker gracefully...`)

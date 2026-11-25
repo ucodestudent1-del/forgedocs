@@ -1,4 +1,4 @@
-export const SUPPORTED_API_VERSIONS = ["1"]
+export const SUPPORTED_API_VERSIONS = ["1", "2"]
 export const DEFAULT_API_VERSION = "1"
 export const DEPRECATED_API_VERSIONS: string[] = []
 export const SUNSET_API_VERSIONS: string[] = []
@@ -28,5 +28,15 @@ export function apiVersionHeaders(version: string): Record<string, string> {
     headers["Deprecation"] = "true"
     headers["Sunset"] = `Wed, 01 Jan 2025 00:00:00 GMT`
   }
+  if (version !== DEFAULT_API_VERSION) {
+    headers["API-Version-Default"] = DEFAULT_API_VERSION
+  }
   return headers
+}
+
+/**
+ * Returns the URL path prefix for a given API version, e.g. "/api/v1" or "/api/v2".
+ */
+export function getApiVersionPath(version: string): string {
+  return `/api/v${version}`
 }

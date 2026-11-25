@@ -1,0 +1,28 @@
+# ForgeDocs Document Conversion Worker
+FROM node:24-alpine
+
+# Install LibreOffice and dependencies for document conversion
+RUN apk add --no-cache libreoffice fontconfig \
+    && apk add --no-cache --virtual .build-deps python3 make g++ \
+    && rm -rf /var/cache/apk/*
+
+WORKDIR /app
+
+# Copy package files and install dependencies
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev
+
+# Copy worker source and shared lib
+COPY src/worker ./src/worker
+COPY src/lib ./src/lib
+COPY src/types ./src/types
+
+# Set environment defaults
+ENV WORKER_CONCURRENCY=5
+ENV WORKER_HEALTH_PORT=3001
+ENV REDIS_HOST=localhost
+ENV REDIS_PORT=6379
+
+EXPOSE 3001
+
+CMD ["node", "src/worker/index.ts"]

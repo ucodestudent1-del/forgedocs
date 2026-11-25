@@ -9,7 +9,7 @@ import {
   DEFAULT_API_VERSION,
 } from "@/lib/api-version"
 import { validateApiKey, checkApiKeyPermissions, requiresApiKeyPermission } from "@/lib/api-key"
-import { checkRateLimit, API_KEY_RATE_LIMIT_CONFIGS, type RateLimitConfig } from "@/lib/rate-limiter"
+import { checkRateLimit, getRateLimitConfig, getAPIKeyRateLimitConfig } from "@/lib/rate-limiter"
 import { getRouteClient } from "@/lib/supabase"
 import logger from "@/lib/logger"
 
@@ -170,6 +170,9 @@ export async function middleware(request: NextRequest) {
     if (pathname.startsWith("/api/")) {
       const versionInfo = parseApiVersion(request.headers)
 
+      // Warn clients when api-version header is missing (will be required in v2)
+      const versionHeaderMissing = !request.headers.has("api-version")
+
       if (!SUPPORTED_API_VERSIONS.includes(versionInfo.version)) {
         const versionResponse = NextResponse.json(
           {
@@ -196,6 +199,11 @@ export async function middleware(request: NextRequest) {
       Object.entries(apiVersionHeaders(versionInfo.version)).forEach(([key, value]) => {
         response.headers.set(key, value)
       })
+
+      if (versionHeaderMissing) {
+        response.headers.set("API-Version-Warning", "api-version header is required and will be enforced in API v2")
+      }
+
       if (versionInfo.version !== DEFAULT_API_VERSION) {
         response.headers.set("API-Version-Default", DEFAULT_API_VERSION)
       }
@@ -256,14 +264,7 @@ export async function middleware(request: NextRequest) {
         }
 
         // Per-key rate limiting — uses shared config from rate-limiter.ts
-        let matchedConfig: RateLimitConfig | null = null
-        let matchedPathLen = 0
-        for (const [pathPattern, config] of Object.entries(API_KEY_RATE_LIMIT_CONFIGS)) {
-          if (pathname.startsWith(pathPattern) && pathPattern.length > matchedPathLen) {
-            matchedConfig = config
-            matchedPathLen = pathPattern.length
-          }
-        }
+        const matchedConfig = getAPIKeyRateLimitConfig(pathname)
 
         if (matchedConfig) {
           const identifier = `apikey:${keyResult.key.id}`
@@ -295,7 +296,39 @@ export async function middleware(request: NextRequest) {
       return response
     }
 
-    // Set CSP header with nonce for page responses
+    // Session-based rate limiting for API requests without API keys
+    if (!request.headers.get("x-api-key")) {
+      const matchedConfig = getRateLimitConfig(pathname)
+      if (matchedConfig) {
+        // Use a stable session identifier (cookie-based or IP-based) for rate limiting
+        const sessionCookie = request.cookies.get("sb-session")?.value ?? requestId
+        const identifier = `session:${sessionCookie}`
+        const limitInfo = await checkRateLimit(identifier, matchedConfig)
+        if (limitInfo.limited) {
+          const rateLimited = NextResponse.json(
+            { error: "Rate limit exceeded", message: "Too many requests. Please try again later." },
+            { status: 429 }
+          )
+          rateLimited.headers.set("X-RateLimit-Limit", limitInfo.total.toString())
+          rateLimited.headers.set("X-RateLimit-Remaining", "0")
+          rateLimited.headers.set("X-RateLimit-Reset", Math.ceil(limitInfo.resetTime / 1000).toString())
+          rateLimited.headers.set("Retry-After", Math.ceil((limitInfo.resetTime - Date.now()) / 1000).toString())
+          rateLimited.headers.set("x-request-id", requestId)
+          rateLimited.headers.set("x-csp-nonce", cspNonce)
+          rateLimited.headers.set("Content-Security-Policy", buildCspHeader(cspNonce))
+          rateLimited.headers.set("X-Content-Type-Options", "nosniff")
+          rateLimited.headers.set("X-Frame-Options", "DENY")
+          rateLimited.headers.set("Referrer-Policy", "strict-origin-when-cross-origin")
+          rateLimited.headers.set("Permissions-Policy", "geolocation=(), microphone=(), camera=()")
+          return rateLimited
+        }
+        response.headers.set("X-RateLimit-Limit", limitInfo.total.toString())
+        response.headers.set("X-RateLimit-Remaining", limitInfo.remaining.toString())
+        response.headers.set("X-RateLimit-Reset", Math.ceil(limitInfo.resetTime / 1000).toString())
+      }
+    }
+
+    return response
     response.headers.set("Content-Security-Policy", buildCspHeader(cspNonce))
 
     // Add security headers

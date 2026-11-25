@@ -281,8 +281,8 @@ export function requiresApiKeyPermission(pathname: string): string[] | null {
   }
 
   if (bestMatch === null) {
-    // No specific rule — default to no permissions required (fail open for new endpoints)
-    return []
+    // No specific rule — deny access by default (fail closed for new endpoints)
+    return null
   }
 
   return permissionMap[bestMatch]

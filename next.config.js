@@ -15,10 +15,10 @@ const nextConfig = {
   output: 'standalone',
   outputFileTracingRoot: __dirname,
   eslint: {
-    ignoreDuringBuilds: true,
+    ignoreDuringBuilds: false,
   },
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
   images: {
     formats: ["image/avif", "image/webp"],

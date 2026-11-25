@@ -42,6 +42,13 @@ export const POST = withErrorBoundary(async (req) => {
     throw createAppError("Unauthorized", 401, "UNAUTHORIZED")
   }
 
+  // Check if customer already exists in Stripe
+  const { data: subscription } = await supabase
+    .from("subscriptions")
+    .select("stripe_customer_id")
+    .eq("user_id", user.id)
+    .single()
+
   const body = await req.json()
   const { priceId, trialDays } = body
 
@@ -62,24 +69,28 @@ export const POST = withErrorBoundary(async (req) => {
           price: priceId,
           quantity: 1,
         },
-      ],
-      mode: "subscription",
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/billing?success=true`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/billing?canceled=true`,
-      metadata: {
-        userId: user.id,
-      },
-    }
-
-    // Add trial period if specified (max 30 days for Stripe)
-    if (trialDays && trialDays > 0 && trialDays <= 30) {
-      sessionParams.subscription_data = {
-        trial_period_days: trialDays,
+        mode: "subscription",
+        success_url: `${process.env.NEXT_PUBLIC_APP_URL}/billing?success=true`,
+        cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/billing?canceled=true`,
+        metadata: {
+          userId: user.id,
+        },
       }
-    }
 
-    return stripe.checkout.sessions.create(sessionParams)
-  })
+      // Add trial period if specified (max 30 days for Stripe)
+      if (trialDays && trialDays > 0 && trialDays <= 30) {
+        sessionParams.subscription_data = {
+          trial_period_days: trialDays,
+        }
+      }
+
+      // Reuse existing customer if available
+      if (subscription?.stripe_customer_id) {
+        sessionParams.customer = subscription.stripe_customer_id
+      }
+
+      return stripe.checkout.sessions.create(sessionParams)
+    })
 
   return NextResponse.json({ checkoutUrl: session.url })
 })

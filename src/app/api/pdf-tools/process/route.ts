@@ -4,6 +4,7 @@ import { PDFDocument, StandardFonts, rgb, degrees } from "pdf-lib"
 import { documentRateLimit } from "@/lib/rate-limiter"
 import { validateCSRF } from "@/lib/csrf"
 import { withErrorBoundary, createAppError } from "@/lib/api-error"
+import { randomBytes } from "crypto"
 
 export const POST = withErrorBoundary(async (request) => {
   const rateLimitError = await documentRateLimit(request)
@@ -70,10 +71,18 @@ export const POST = withErrorBoundary(async (request) => {
       processedPdf = await rotatePdf(files[0])
       break
     case "protect":
-      processedPdf = await protectPdf(files[0])
+      const protectPassword = formData.get("password") as string
+      if (!protectPassword) {
+        throw createAppError("Password is required for PDF protection", 400, "MISSING_PASSWORD")
+      }
+      processedPdf = await protectPdf(files[0], protectPassword)
       break
     case "unprotect":
-      processedPdf = await unprotectPdf(files[0])
+      const unprotectPassword = formData.get("password") as string
+      if (!unprotectPassword) {
+        throw createAppError("Password is required to unprotect PDF", 400, "MISSING_PASSWORD")
+      }
+      processedPdf = await unprotectPdf(files[0], unprotectPassword)
       break
     case "watermark":
       processedPdf = await watermarkPdf(files[0])
@@ -151,15 +160,30 @@ async function rotatePdf(file: File): Promise<Uint8Array> {
   return pdf.save()
 }
 
-async function protectPdf(file: File): Promise<Uint8Array> {
+async function protectPdf(file: File, password: string): Promise<Uint8Array> {
   const arrayBuffer = await file.arrayBuffer()
   const pdf = await PDFDocument.load(arrayBuffer)
+  const ownerPassword = randomBytes(32).toString("base64")
+  await pdf.lock({
+    ownerPassword,
+    userPassword: password,
+    permissions: {
+      printing: "lowResolution",
+      copying: false,
+      editing: false,
+      annotating: false,
+      formFilling: false,
+      contentAccessibility: false,
+      documentAssembly: false,
+    },
+  })
   return pdf.save()
 }
 
-async function unprotectPdf(file: File): Promise<Uint8Array> {
+async function unprotectPdf(file: File, password: string): Promise<Uint8Array> {
   const arrayBuffer = await file.arrayBuffer()
-  const pdf = await PDFDocument.load(arrayBuffer)
+  const pdf = await PDFDocument.load(arrayBuffer, { password })
+  // Re-save without encryption to remove password protection
   return pdf.save()
 }
 
