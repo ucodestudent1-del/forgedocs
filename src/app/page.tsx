@@ -58,8 +58,8 @@ export default function LandingPage() {
       <a id="main-content" tabIndex={-1} className="sr-only"></a>
       {/* Hero Section */}
       <section className="relative py-24 px-4 sm:px-6 lg:px-8 overflow-hidden">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-primary/10 rounded-full blur-[120px] pointer-events-none" aria-hidden="true"></div>
-        <div className="absolute bottom-0 right-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-foreground/5 rounded-full blur-[120px] pointer-events-none" aria-hidden="true"></div>
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-primary/5 rounded-full blur-[120px] pointer-events-none hidden md:block" aria-hidden="true"></div>
+        <div className="absolute bottom-0 right-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-foreground/5 rounded-full blur-[120px] pointer-events-none hidden md:block" aria-hidden="true"></div>
 
         <div className="max-w-7xl mx-auto relative z-10">
           <div className="text-center">
@@ -67,7 +67,7 @@ export default function LandingPage() {
               DOCUMENT MANAGEMENT, SIMPLIFIED
             </div>
 
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight text-foreground mb-6 leading-[1.1]">
+            <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-foreground mb-6 leading-[1.1] text-balance max-w-[65ch] mx-auto">
               Professional <span className="text-primary">document management</span> for modern teams
             </h1>
 
@@ -78,6 +78,9 @@ export default function LandingPage() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
               <a href="/auth/signup" className="px-8 py-4 bg-primary text-primary-foreground font-medium rounded-lg hover:bg-primary/90 transition-colors shadow-lg shadow-primary/30 text-lg" aria-label="Start building with ForgeDocs - create a free account">
                 Start building
+              </a>
+              <a href="/features" className="px-8 py-4 bg-background border border-input text-foreground font-medium rounded-lg hover:bg-accent transition-colors text-lg">
+                Learn more
               </a>
             </div>
 
@@ -690,8 +693,13 @@ function PricingCard({
   ctaHref: string
 }) {
   return (
-    <div className={`rounded-xl p-6 flex flex-col ${isFeatured ? "border border-primary bg-primary/5 ring-1 ring-primary shadow-lg" : "border border-input bg-background"}`}>
-      <div className="mb-6">
+    <div className={`rounded-xl flex flex-col transition-all duration-300 hover:scale-[1.02] ${isFeatured ? "border border-primary bg-primary/5 ring-1 ring-primary shadow-lg scale-105" : "border border-input bg-background hover:border-primary/50"}`}>
+      <div className={`mb-6 ${isFeatured ? "relative" : ""}`}>
+        {isFeatured && (
+          <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-xs font-bold px-2 py-0.5 rounded-full uppercase tracking-tighter">
+            Most Popular
+          </span>
+        )}
         <h3 className="text-lg font-bold text-foreground mb-1">{name}</h3>
         <p className="text-sm text-muted-foreground">{description}</p>
         <div className="mt-2 flex items-baseline">

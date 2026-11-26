@@ -20,7 +20,7 @@
     --secondary-foreground: 222.2 47.4% 11.2%;
 
     --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted-foreground: 215 20% 35%;
 
     --accent: 210 40% 96.1%;
     --accent-foreground: 222.2 47.4% 11.2%;
@@ -41,6 +41,32 @@
     /* Layout structural tokens */
     --layout-header-height: 64px;
     --layout-sidebar-width: 256px;
+
+    /* Typography scale */
+    --text-xs: 0.75rem;
+    --text-sm: 0.875rem;
+    --text-base: 1rem;
+    --text-lg: 1.125rem;
+    --text-xl: 1.25rem;
+    --text-2xl: 1.5rem;
+    --text-3xl: 1.875rem;
+    --text-4xl: 2.25rem;
+    --text-5xl: 3rem;
+    --text-6xl: 3.75rem;
+    --text-7xl: 4.5rem;
+
+    /* Line heights */
+    --leading-tight: 1.25;
+    --leading-normal: 1.5;
+    --leading-relaxed: 1.75;
+
+    /* Spacing scale */
+    --space-xs: 0.25rem;
+    --space-sm: 0.5rem;
+    --space-md: 1rem;
+    --space-lg: 1.5rem;
+    --space-xl: 2rem;
+    --space-2xl: 3rem;
   }
 
   .dark {
@@ -61,9 +87,15 @@
 
     --muted: 217.2 32.6% 17.5%;
     --muted-foreground: 215 20.2% 65.1%;
-
     --accent: 217.2 32.6% 17.5%;
     --accent-foreground: 210 40% 98%;
+
+    /* Dark mode primary — slightly desaturated for reduced vibration on dark surfaces */
+    --primary: 221.2 78% 58%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
 
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
@@ -260,6 +292,20 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+  .animate-pulse,
+  .animate-spin,
+  .animate-slide-down,
+  .animate-slide-up,
+  .animate-fade-in,
+  .animate-scale-in {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  [data-state="open"] {
+    animation: none !important;
+    transition: none !important;
+  }
 }
 
 /* Scrollbar styling */
@@ -291,4 +337,110 @@
 ::selection {
   background: hsl(var(--primary) / 0.2);
   color: hsl(var(--primary-foreground));
+}
+
+/* Typography utility classes */
+.text-balance {
+  text-wrap: balance;
+}
+
+.text-xs {
+  font-size: var(--text-xs);
+}
+
+.text-sm {
+  font-size: var(--text-sm);
+}
+
+.text-base {
+  font-size: var(--text-base);
+}
+
+.text-lg {
+  font-size: var(--text-lg);
+}
+
+.text-xl {
+  font-size: var(--text-xl);
+}
+
+.text-2xl {
+  font-size: var(--text-2xl);
+}
+
+.text-3xl {
+  font-size: var(--text-3xl);
+}
+
+.text-4xl {
+  font-size: var(--text-4xl);
+}
+
+.text-5xl {
+  font-size: var(--text-5xl);
+}
+
+.text-6xl {
+  font-size: var(--text-6xl);
+}
+
+.text-7xl {
+  font-size: var(--text-7xl);
+}
+
+.leading-tight {
+  line-height: var(--leading-tight);
+}
+
+.leading-normal {
+  line-height: var(--leading-normal);
+}
+
+.leading-relaxed {
+  line-height: var(--leading-relaxed);
+}
+
+.font-light {
+  font-weight: var(--font-light, 300);
+}
+
+.font-normal {
+  font-weight: var(--font-normal, 400);
+}
+
+.font-medium {
+  font-weight: var(--font-medium, 500);
+}
+
+.font-semibold {
+  font-weight: var(--font-semibold, 600);
+}
+
+.font-bold {
+  font-weight: var(--font-bold, 700);
+}
+
+.tracking-tight {
+  letter-spacing: var(--tracking-tight, -0.025em);
+}
+
+.tracking-normal {
+  letter-spacing: var(--tracking-normal, 0em);
+}
+
+.tracking-wide {
+  letter-spacing: var(--tracking-wide, 0.05em);
+}
+
+/* Measure constraints for optimal line length (45-75 chars) */
+.max-w-measure-narrow {
+  max-width: var(--measure-narrow, 40ch);
+}
+
+.max-w-measure-standard {
+  max-width: var(--measure-standard, 65ch);
+}
+
+.max-w-measure-wide {
+  max-width: var(--measure-wide, 75ch);
 }

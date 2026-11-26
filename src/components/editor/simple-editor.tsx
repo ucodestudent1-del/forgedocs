@@ -26,6 +26,7 @@ export function SimpleEditor({
   const [lastSaved, setLastSaved] = useState<string | null>(null)
   const [dirty, setDirty] = useState(false)
   const [csrfToken, setCsrfToken] = useState<string | null>(null)
+  const [formatting, setFormatting] = useState({ bold: false, italic: false, underline: false })
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const autosaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -99,6 +100,19 @@ export function SimpleEditor({
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setEditorContent(e.target.value)
     onChange?.(e.target.value)
+    detectFormatting(e.target.value)
+  }
+
+  const detectFormatting = (text: string) => {
+    const textarea = textareaRef.current
+    if (!textarea) return
+    const start = textarea.selectionStart
+    const textBefore = text.slice(0, start)
+    setFormatting({
+      bold: (textBefore.match(/\*\*/g) || []).length % 2 === 1,
+      italic: (textBefore.match(/\*/g) || []).length % 2 === 1,
+      underline: (textBefore.match(/__/g) || []).length % 2 === 1,
+    })
   }
 
   const insertAtCursor = (text: string) => {
@@ -136,25 +150,28 @@ export function SimpleEditor({
       >
         <button
           onClick={() => wrapSelection("**", "**")}
-          className="p-1.5 rounded hover:bg-muted transition-colors"
+          className={`p-1.5 rounded transition-colors ${formatting.bold ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
           aria-label="Bold"
           title="Bold"
+          aria-pressed={formatting.bold}
         >
           <Bold className="h-4 w-4" aria-hidden="true" />
         </button>
         <button
           onClick={() => wrapSelection("*")}
-          className="p-1.5 rounded hover:bg-muted transition-colors"
+          className={`p-1.5 rounded transition-colors ${formatting.italic ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
           aria-label="Italic"
           title="Italic"
+          aria-pressed={formatting.italic}
         >
           <Italic className="h-4 w-4" aria-hidden="true" />
         </button>
         <button
           onClick={() => wrapSelection("__", "__")}
-          className="p-1.5 rounded hover:bg-muted transition-colors"
+          className={`p-1.5 rounded transition-colors ${formatting.underline ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
           aria-label="Underline"
           title="Underline"
+          aria-pressed={formatting.underline}
         >
           <Underline className="h-4 w-4" aria-hidden="true" />
         </button>

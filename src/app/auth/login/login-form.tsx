@@ -16,6 +16,8 @@ export default function LoginForm() {
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [emailError, setEmailError] = useState<string | null>(null)
+  const [passwordError, setPasswordError] = useState<string | null>(null)
   const router = useRouter()
   const searchParams = useSearchParams()
   const { toast } = useToast()
@@ -23,7 +25,12 @@ export default function LoginForm() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
+    setEmailError(null)
+    setPasswordError(null)
+
     if (!email || !password) {
+      if (!email) setEmailError("Email is required")
+      if (!password) setPasswordError("Password is required")
       toast({ title: "Please fill in all fields", variant: "destructive" })
       return
     }
@@ -32,6 +39,10 @@ export default function LoginForm() {
       const supabase = createBrowserSupabaseClient()
       const { error } = await supabase.auth.signInWithPassword({ email, password })
       if (error) {
+        if (error.message.includes("Invalid login")) {
+          setEmailError("Invalid email or password")
+          setPasswordError("Invalid email or password")
+        }
         toast({ title: error.message, variant: "destructive" })
         return
       }
@@ -69,7 +80,14 @@ export default function LoginForm() {
                 required
                 className="w-full"
                 autoComplete="email"
+                aria-invalid={emailError ? true : false}
+                aria-describedby={emailError ? "email-error" : undefined}
               />
+              {emailError && (
+                <p id="email-error" className="text-xs text-destructive" role="alert">
+                  {emailError}
+                </p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
@@ -83,6 +101,8 @@ export default function LoginForm() {
                   required
                   className="w-full pr-10"
                   autoComplete="current-password"
+                  aria-invalid={passwordError ? true : false}
+                  aria-describedby={passwordError ? "password-error" : undefined}
                 />
                 <button
                   type="button"
@@ -93,6 +113,11 @@ export default function LoginForm() {
                   {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
               </div>
+              {passwordError && (
+                <p id="password-error" className="text-xs text-destructive" role="alert">
+                  {passwordError}
+                </p>
+              )}
             </div>
             <Button type="submit" disabled={loading} className="w-full">
               {loading ? <Mail className="h-4 w-4 animate-spin mr-2" /> : <Mail className="h-4 w-4 mr-2" />}

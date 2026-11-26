@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useEffect, useRef, useState } from "react"
 import { X, Menu } from "lucide-react"
 import { useRouter, usePathname } from "next/navigation"
 
@@ -10,7 +10,7 @@ export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false)
 
   const navLinks = [
-    { href: "/", label: "Dashboard" },
+    { href: "/", label: "Home" },
     { href: "/features", label: "Documents" },
     { href: "/solutions", label: "Solutions" },
     { href: "/pricing", label: "Pricing" },
@@ -18,14 +18,53 @@ export function Navbar() {
     { href: "/faq", label: "FAQ" },
   ]
 
+  const mobileMenuRef = useRef<HTMLDivElement>(null)
+  const closeButtonRef = useRef<HTMLButtonElement>(null)
+
   useEffect(() => {
     if (mobileOpen) {
       document.body.style.overflow = "hidden"
+      const menu = mobileMenuRef.current
+      const focusableElements = menu?.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      )
+      const firstElement = focusableElements?.[0]
+      const lastElement = focusableElements?.[focusableElements.length - 1]
+
+      firstElement?.focus()
+
+      const handleTab = (e: KeyboardEvent) => {
+        if (e.key !== "Tab") return
+        if (e.shiftKey) {
+          if (document.activeElement === firstElement) {
+            e.preventDefault()
+            lastElement?.focus()
+          }
+        } else {
+          if (document.activeElement === lastElement) {
+            e.preventDefault()
+            firstElement?.focus()
+          }
+        }
+      }
+
+      const handleEscape = (e: KeyboardEvent) => {
+        if (e.key === "Escape") setMobileOpen(false)
+      }
+
+      document.addEventListener("keydown", handleTab)
+      document.addEventListener("keydown", handleEscape)
+
+      return () => {
+        document.removeEventListener("keydown", handleTab)
+        document.removeEventListener("keydown", handleEscape)
+        document.body.style.overflow = ""
+      }
     } else {
       document.body.style.overflow = ""
+      return
     }
-    return () => { document.body.style.overflow = "" }
-  }, [mobileOpen])
+  }, [mobileOpen, mobileMenuRef])
 
   return (
     <>
@@ -73,6 +112,7 @@ export function Navbar() {
 
       {mobileOpen && (
         <div
+          ref={mobileMenuRef}
           id="mobile-menu"
           role="dialog"
           aria-modal="true"
@@ -82,6 +122,7 @@ export function Navbar() {
         >
           <div className="absolute top-0 right-0 p-4">
             <button
+              ref={closeButtonRef}
               onClick={() => setMobileOpen(false)}
               className="p-2 rounded-md text-muted-foreground hover:bg-accent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               aria-label="Close navigation menu"

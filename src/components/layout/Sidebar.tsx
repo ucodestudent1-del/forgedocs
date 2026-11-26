@@ -35,6 +35,7 @@ import {
 } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 import { cn } from "@/lib/utils"
+import { Input } from "@/components/ui/input"
 
 interface NavItem {
   href: string
@@ -65,6 +66,7 @@ export function Sidebar({
   const router = useRouter()
   const [expandedSections, setExpandedSections] = useState<string[]>([])
   const [isClient, setIsClient] = useState(false)
+  const [navSearch, setNavSearch] = useState("")
   const { toast } = useToast()
 
   const NAV_SECTIONS: NavSection[] = [
@@ -170,8 +172,20 @@ export function Sidebar({
         </div>
 
         <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-6" aria-label="Main navigation">
+          <div className="mb-4">
+            <Input
+              placeholder="Search navigation..."
+              value={navSearch}
+              onChange={(e) => setNavSearch(e.target.value)}
+              className="text-xs h-8 px-2"
+            />
+          </div>
           {NAV_SECTIONS.map((section) => {
-            const isExpanded = expandedSections.includes(section.title)
+            const filteredItems = section.items.filter((item) =>
+              item.label.toLowerCase().includes(navSearch.toLowerCase())
+            )
+            if (navSearch && filteredItems.length === 0) return null
+            const isExpanded = expandedSections.includes(section.title) || !navSearch
             return (
               <div key={section.title} className="space-y-1">
                 <button
@@ -199,7 +213,7 @@ export function Sidebar({
                     isExpanded ? "max-h-[500px]" : "max-h-0"
                   )}
                 >
-                  {section.items.map((item) => (
+                  {filteredItems.map((item) => (
                     <Link
                       key={item.href}
                       href={item.href}
@@ -208,7 +222,7 @@ export function Sidebar({
                       }}
                       className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                         isActive(item.href)
-                          ? "bg-primary/10 text-primary"
+                          ? "bg-primary/10 text-primary border-l-2 border-primary pl-2.5"
                           : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                       }`}
                       aria-current={isActive(item.href) ? "page" : undefined}

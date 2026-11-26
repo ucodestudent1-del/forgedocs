@@ -76,6 +76,8 @@ export function Toast({ toast, onDismiss, className }: { toast: ToastProps; onDi
 
   return (
     <div
+      role={variant === "destructive" ? "alert" : "status"}
+      aria-live={variant === "destructive" ? "assertive" : "polite"}
       className={cn(
         "flex items-start p-4 rounded-lg shadow-lg border animate-in slide-in-from-right-2 duration-300",
         VariantColors[variant],
