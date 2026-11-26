@@ -34,9 +34,16 @@ export async function GET(request: Request) {
       }
     )
 
-    const { error } = await supabase.auth.exchangeCodeForSession(code)
-    if (!error) {
-      return NextResponse.redirect(next)
+    const { error, data } = await supabase.auth.exchangeCodeForSession(code)
+    if (!error && data?.session) {
+      // Confirm the user is fully verified before sending them to the app.
+      // Unverified users are routed to the verify page so they can complete
+      // email confirmation instead of landing on a broken dashboard.
+      const { data: userData } = await supabase.auth.getUser()
+      if (userData?.user?.email_confirmed_at) {
+        return NextResponse.redirect(next)
+      }
+      return NextResponse.redirect("/auth/verify")
     }
   }
 
