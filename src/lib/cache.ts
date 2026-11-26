@@ -51,8 +51,15 @@ function isExpired(entry: { expiresAt: number }): boolean {
   return Date.now() > entry.expiresAt
 }
 
-function cleanExpired() {
+// Lazy expiration tracking: last cleanup timestamp to avoid full-store scans
+// on every access. Cleanup runs at most once per cleanupIntervalMs.
+let lastCleanup = 0
+const CLEANUP_INTERVAL_MS = 60 * 1000 // 1 minute
+
+function cleanExpired(): void {
   const now = Date.now()
+  if (now - lastCleanup < CLEANUP_INTERVAL_MS) return
+  lastCleanup = now
   for (const [key, entry] of memoryStore.entries()) {
     if (now > entry.expiresAt) {
       memoryStore.delete(key)

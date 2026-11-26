@@ -21,6 +21,7 @@ export class DocumentGenerator {
   private template: any;
   private data: TemplateData;
   private options: RenderOptions;
+  private compiledPatterns: Array<{ regex: RegExp; key: string; value: string }> = [];
 
   constructor(templateId: string, data: TemplateData, options: RenderOptions = {}) {
     this.template = getTemplateById(templateId);
@@ -35,6 +36,22 @@ export class DocumentGenerator {
       orientation: 'portrait',
       ...options
     };
+    this.compilePatterns();
+  }
+
+  /**
+   * Pre-compile placeholder regex patterns once so replacePlaceholders
+   * avoids constructing a new RegExp per key on every render.
+   */
+  private compilePatterns(): void {
+    this.compiledPatterns = Object.entries(this.data).map(([key, value]) => {
+      const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      return {
+        regex: new RegExp(`\\[${escapedKey}\\]`, 'g'),
+        key,
+        value: this.escapeHtml(String(value)),
+      };
+    });
   }
 
   /**
@@ -42,11 +59,9 @@ export class DocumentGenerator {
    */
   private replacePlaceholders(text: string): string {
     let result = text;
-    Object.entries(this.data).forEach(([key, value]) => {
-      const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      const pattern = new RegExp(`\\[${escapedKey}\\]`, 'g');
-      result = result.replace(pattern, this.escapeHtml(String(value)));
-    });
+    for (const { regex, value } of this.compiledPatterns) {
+      result = result.replace(regex, value);
+    }
     return result;
   }
 

@@ -94,6 +94,21 @@ const TIER_LIMITS: Record<string, TierLimits> = {
 
 const TIER_LIMITS_CACHE_TTL = 60 * 1000 // 1 minute cache for tier limits
 
+// Lua script: atomically add current timestamp to sliding window ZSET,
+// prune expired entries, count remaining, and set TTL. Single Redis round-trip
+// instead of 4 separate commands (zadd + zremrangebyscore + zcard + expire).
+const SLIDING_WINDOW_LUA = `
+  local now = tonumber(ARGV[1])
+  local windowStart = tonumber(ARGV[2])
+  local member = ARGV[3]
+  local ttl = tonumber(ARGV[4])
+  redis.call('ZADD', KEYS[1], now, member)
+  redis.call('ZREMRANGEBYSCORE', KEYS[1], 0, windowStart)
+  local count = redis.call('ZCARD', KEYS[1])
+  redis.call('EXPIRE', KEYS[1], ttl)
+  return count
+`
+
 export async function getTierLimits(userId: string): Promise<TierLimits> {
   const cacheKey = `tierlimits:${userId}`
   const cached = await cacheGet<TierLimits>(cacheKey)
@@ -182,15 +197,11 @@ export async function checkTierLimit(
     const client = getRedisClient()
     if (!client) throw new Error("Redis not available")
     
-    // Use ZSET for sliding window rate limiting
-    // Add current request with timestamp as score
-    await client.zadd(redisKey, now, `${now}:${Math.random()}`)
-    // Remove expired entries
-    await client.zremrangebyscore(redisKey, 0, windowStart)
-    // Count current entries in window
-    current = await client.zcard(redisKey)
-    // Set TTL on the key (slightly longer than window)
-    await client.expire(redisKey, Math.ceil(windowMs / 1000) + 60)
+    // Single atomic Lua call replaces 4 separate Redis round-trips:
+    // ZADD + ZREMRANGEBYSCORE + ZCARD + EXPIRE
+    const member = `${now}:${Math.random()}`
+    const ttlSeconds = Math.ceil(windowMs / 1000) + 60
+    current = Number(await client.eval(SLIDING_WINDOW_LUA, 1, redisKey, now, windowStart, member, ttlSeconds))
   } catch {
     // Redis unavailable — fail closed: block limited tiers, allow only unlimited tiers
     logger.warn("Redis unavailable for tier limit check, failing closed", { userId, metric })

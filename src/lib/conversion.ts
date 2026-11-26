@@ -97,6 +97,13 @@ export const FORMAT_REGISTRY: Record<string, ConversionFormat> = {
   csv_meta: { id: "csv_meta", name: "CSV Metadata", mimeType: "text/csv", extension: ".csv", category: "metadata" },
 }
 
+// Reverse index: mimeType -> format id for O(1) source format detection.
+// Built once at module load instead of O(n) Object.values().find() per conversion.
+const MIME_TYPE_TO_FORMAT: Map<string, string> = new Map()
+for (const [id, format] of Object.entries(FORMAT_REGISTRY)) {
+  MIME_TYPE_TO_FORMAT.set(format.mimeType, id)
+}
+
 /* ============================================================================
    Supported Conversion Pairs Matrix
    ============================================================================ */
@@ -596,8 +603,8 @@ export async function convertDocumentServer(
     throw new Error(`Unsupported target format: ${targetFormat}`)
   }
 
-  // Detect source format from mime type
-  const sourceFormat = Object.values(FORMAT_REGISTRY).find((f) => f.mimeType === sourceMimeType)?.id || "txt"
+  // Detect source format from mime type (O(1) reverse lookup)
+  const sourceFormat = MIME_TYPE_TO_FORMAT.get(sourceMimeType) || "txt"
 
   // Validate pair
   if (!isPairSupported(sourceFormat, targetFormat) && targetFormat !== sourceFormat) {

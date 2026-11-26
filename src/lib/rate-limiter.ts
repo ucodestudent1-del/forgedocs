@@ -31,6 +31,13 @@ const RATE_LIMIT_CONFIGS: Record<string, RateLimitConfig> = {
 // Derived from RATE_LIMIT_CONFIGS with a multiplier
 const API_KEY_LIMIT_MULTIPLIER = 20
 
+// Pre-sorted rate limit patterns (longest first) for longest-prefix matching.
+// Built once at module load so lookup avoids re-sorting on every request.
+// Lookup remains O(n) worst case but with no per-call sort overhead and early exit.
+const SORTED_RATE_LIMIT_PATTERNS: Array<[string, RateLimitConfig]> = Object.entries(
+  RATE_LIMIT_CONFIGS,
+).sort((a, b) => b[0].length - a[0].length)
+
 export function getAPIKeyRateLimitConfig(path: string): RateLimitConfig | null {
   const base = getRateLimitConfig(path, false)
   if (!base) return null
@@ -42,19 +49,13 @@ export function getAPIKeyRateLimitConfig(path: string): RateLimitConfig | null {
 }
 
 export function getRateLimitConfig(path: string, _isApiKey?: boolean): RateLimitConfig | null {
-  let matchedConfig: RateLimitConfig | null = null
-  let matchedPathLen = 0
-
-  for (const [pathPattern, config] of Object.entries(RATE_LIMIT_CONFIGS)) {
+  // Longest-prefix match: patterns are pre-sorted longest first, so the first match wins.
+  for (const [pathPattern, config] of SORTED_RATE_LIMIT_PATTERNS) {
     if (path.startsWith(pathPattern)) {
-      if (pathPattern.length > matchedPathLen) {
-        matchedConfig = config
-        matchedPathLen = pathPattern.length
-      }
+      return config
     }
   }
-
-  return matchedConfig
+  return null
 }
 
 export interface RateLimitInfo {
@@ -183,18 +184,7 @@ export function createRateLimiterByPath(path: string, isApiKey: boolean = false)
 export async function rateLimitMiddleware(request: NextRequest) {
   const path = request.nextUrl.pathname
 
-  let matchedConfig: RateLimitConfig | null = null
-  let matchedPath = ""
-
-  for (const [pathPattern, config] of Object.entries(RATE_LIMIT_CONFIGS)) {
-    if (path.startsWith(pathPattern)) {
-      if (pathPattern.length > matchedPath.length) {
-        matchedConfig = config
-        matchedPath = pathPattern
-      }
-    }
-  }
-
+  const matchedConfig = getRateLimitConfig(path)
   if (!matchedConfig) {
     return NextResponse.next()
   }

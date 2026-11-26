@@ -270,25 +270,23 @@ export function requiresApiKeyPermission(pathname: string): string[] | null {
     "/api/health/": [],
   }
 
-  // Find the most specific match (longest prefix)
-  let bestMatch: string | null = null
-  let bestMatchLen = 0
+  // Pre-sorted permission patterns (longest first) for longest-prefix matching.
+  // Built once at module load to avoid re-sorting on every request.
+  const SORTED_PERMISSION_PATTERNS: Array<[string, string[] | null]> = Object.entries(
+    permissionMap,
+  ).sort((a, b) => b[0].length - a[0].length)
 
-  for (const pattern of Object.keys(permissionMap)) {
-    if (pathname.startsWith(pattern) && pattern.length > bestMatchLen) {
-      bestMatch = pattern
-      bestMatchLen = pattern.length
+  // Find the most specific match (longest prefix). Patterns are pre-sorted longest first.
+  for (const [pattern, perms] of SORTED_PERMISSION_PATTERNS) {
+    if (pathname.startsWith(pattern)) {
+      return perms
     }
   }
 
-  if (bestMatch === null) {
-    // No specific rule — deny access by default (fail closed for new endpoints).
-    // Returning a permission that no key can possess ensures new endpoints
-    // are inaccessible via API key until explicitly allowed.
-    return ["unknown:endpoint"]
-  }
-
-  return permissionMap[bestMatch]
+  // No specific rule — deny access by default (fail closed for new endpoints).
+  // Returning a permission that no key can possess ensures new endpoints
+  // are inaccessible via API key until explicitly allowed.
+  return ["unknown:endpoint"]
 }
 
 // Read user context from API key header (set by middleware) or Supabase session

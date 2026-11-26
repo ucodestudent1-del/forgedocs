@@ -30,6 +30,7 @@ export interface CircuitBreakerState {
 export class CircuitBreaker {
   private state: CircuitBreakerState
   private redisClient: any | null = null
+  private stateDirty = false // true when in-memory state differs from persisted Redis state
 
   constructor(
     private name: string,
@@ -61,18 +62,25 @@ export class CircuitBreaker {
   }
 
   async getState(): Promise<CircuitBreakerState> {
+    if (this.redisClient && !this.stateDirty) {
+      // Serve from in-memory state when we know it's in sync with Redis.
+      // Avoids a Redis round-trip on every health check / read.
+      return { ...this.state }
+    }
     if (this.redisClient) {
       try {
         const key = await this.getRedisStateKey()
         const data = await this.redisClient.get(key)
         if (data) {
           const parsed = JSON.parse(data)
-          return {
+          this.state = {
             state: parsed.state,
             failures: parsed.failures ?? 0,
             lastFailureTime: parsed.lastFailureTime ?? null,
             nextAttemptTime: parsed.nextAttemptTime ?? null,
           }
+          this.stateDirty = false
+          return { ...this.state }
         }
       } catch {
         // Fall back to in-memory state
@@ -86,6 +94,7 @@ export class CircuitBreaker {
       try {
         const key = await this.getRedisStateKey()
         await this.redisClient.set(key, JSON.stringify(this.state), "EX", Math.ceil(this.options.resetTimeoutMs / 1000) * 2)
+        this.stateDirty = false
       } catch {
         // Best-effort persistence
       }
@@ -97,6 +106,7 @@ export class CircuitBreaker {
       // Check if reset timeout has elapsed — move to half-open
       if (this.state.nextAttemptTime && Date.now() >= this.state.nextAttemptTime) {
         this.state.state = "half-open"
+        this.stateDirty = true
         return false
       }
       return true
@@ -109,6 +119,7 @@ export class CircuitBreaker {
     this.state.failures = 0
     this.state.lastFailureTime = null
     this.state.nextAttemptTime = null
+    this.stateDirty = true
     this.persistState()
   }
 
@@ -124,6 +135,7 @@ export class CircuitBreaker {
       this.state.state = "open"
       this.state.nextAttemptTime = Date.now() + this.options.resetTimeoutMs
     }
+    this.stateDirty = true
     this.persistState()
   }
 

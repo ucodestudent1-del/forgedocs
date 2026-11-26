@@ -209,10 +209,17 @@ function convertTemperature(value: number, from: string, to: string): number {
 export function getUnitsForCategory(category: string): { value: string; label: string }[] {
   const units = UNIT_DEFINITIONS[category]
   if (!units) return []
-  return Object.entries(units).map(([value]) => ({
+  // Cache the mapped array so repeated calls for the same category avoid
+  // rebuilding Object.entries + map on every invocation.
+  const cached = (getUnitsForCategory as any)._cache ??= new Map<string, { value: string; label: string }[]>()
+  const existing = cached.get(category)
+  if (existing) return existing
+  const result = Object.entries(units).map(([value]) => ({
     value,
     label: UNIT_LABELS[value] || value
   }))
+  cached.set(category, result)
+  return result
 }
 
 export function getCategories(): { id: string; name: string; icon: string }[] {

@@ -1,6 +1,6 @@
 import "server-only"
 import { getPooledRouteClient } from "@/lib/supabase"
-import { cacheGet, cacheSet, cacheDel } from "@/lib/cache"
+import { cacheGet, cacheDel, cacheEval } from "@/lib/cache"
 import { getClientIdentifier } from "@/lib/client-identifier"
 
 const LOCKOUT_THRESHOLD = 5
@@ -17,10 +17,10 @@ export async function checkLoginAttempts(identifier: string): Promise<{ allowed:
   if (!entry) return { allowed: true }
 
   const now = Date.now()
-  // `entry` is the lockout-until timestamp stored as a number (see cacheEval
-  // / recordFailedAttempt). An undefined/missing value means no lockout.
+  // `entry` is the lockout-until timestamp stored as a number. An undefined/missing
+  // value means no lockout. Delete expired entries lazily on access.
   if (now > entry) {
-    await cacheDel(lockoutKey)
+    void cacheDel(lockoutKey)
     return { allowed: true }
   }
 
@@ -49,7 +49,6 @@ export async function recordFailedAttempt(identifier: string): Promise<void> {
 
   // Atomic increment and lockout via Lua to prevent TOCTOU race between
   // incrementing the failure count and setting the lockout.
-  const { cacheEval } = await import("@/lib/cache")
   await cacheEval(key, LOCKOUT_TTL_SECONDS, String(LOCKOUT_THRESHOLD), String(lockoutUntil))
 }
 
