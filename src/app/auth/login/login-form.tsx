@@ -46,7 +46,7 @@ export default function LoginForm() {
         toast({ title: error.message, variant: "destructive" })
         return
       }
-      router.push(redirectTo)
+      await router.push(redirectTo)
       router.refresh()
     } catch {
       toast({ title: "Login failed. Please try again.", variant: "destructive" })
