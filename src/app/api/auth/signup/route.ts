@@ -37,7 +37,10 @@ export const POST = withErrorBoundary(async (req) => {
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
-    options: { data: { full_name } },
+    options: {
+      data: { full_name },
+      emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/auth/verify?callbackUrl=${encodeURIComponent("/dashboard")}`,
+    },
   })
 
   if (error) {

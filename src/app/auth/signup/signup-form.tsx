@@ -8,7 +8,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { useToast } from "@/components/ui/use-toast"
-import { createBrowserSupabaseClient } from "@/lib/supabase-browser"
 import { validatePassword } from "@/lib/validation"
 import { Mail, Lock, AlertTriangle, Eye, EyeOff } from "lucide-react"
 
@@ -40,16 +39,22 @@ export default function SignupForm() {
     }
     setLoading(true)
     try {
-      const supabase = createBrowserSupabaseClient()
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: { data: { full_name: email.split("@")[0] } },
+      const res = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          password,
+          full_name: email.split("@")[0],
+        }),
       })
-      if (error) {
-        toast({ title: error.message, variant: "destructive" })
+
+      if (!res.ok) {
+        const err = await res.json()
+        toast({ title: err?.error || "Signup failed. Please try again.", variant: "destructive" })
         return
       }
+
       toast({ title: "Account created successfully! Please check your email to verify your account, then sign in.", variant: "success" })
       await router.push(`/auth/login?redirect=${encodeURIComponent(redirectTo)}`)
       router.refresh()

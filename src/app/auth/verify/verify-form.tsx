@@ -16,6 +16,7 @@ export default function VerifyEmailForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { toast } = useToast()
+  const callbackUrl = searchParams.get("callbackUrl") || "/dashboard"
 
   useEffect(() => {
     const token_hash = searchParams.get("token_hash")
@@ -40,7 +41,7 @@ export default function VerifyEmailForm() {
       setVerified(true)
       setLoading(false)
       toast({ title: "Email verified successfully", variant: "success" })
-      await router.push("/dashboard")
+      await router.push(callbackUrl)
       router.refresh()
     } catch {
       setError("Verification failed. Please try again.")
