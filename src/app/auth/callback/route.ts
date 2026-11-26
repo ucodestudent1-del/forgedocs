@@ -2,8 +2,6 @@ import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://forgedocs-production-ef4f.up.railway.app"
-
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const code = searchParams.get("code")
@@ -38,9 +36,9 @@ export async function GET(request: Request) {
 
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error) {
-      return NextResponse.redirect(`${APP_URL}${next}`)
+      return NextResponse.redirect(next)
     }
   }
 
-  return NextResponse.redirect(`${APP_URL}/auth/login?error=Could not authenticate user`)
+  return NextResponse.redirect("/auth/login?error=Could not authenticate user")
 }

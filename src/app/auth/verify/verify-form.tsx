@@ -40,6 +40,8 @@ export default function VerifyEmailForm() {
       setVerified(true)
       setLoading(false)
       toast({ title: "Email verified successfully", variant: "success" })
+      await router.push("/dashboard")
+      router.refresh()
     } catch {
       setError("Verification failed. Please try again.")
       setLoading(false)
