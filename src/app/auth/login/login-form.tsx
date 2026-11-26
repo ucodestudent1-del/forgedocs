@@ -46,6 +46,11 @@ export default function LoginForm() {
         toast({ title: error.message, variant: "destructive" })
         return
       }
+      const { data: sessionData } = await supabase.auth.getSession()
+      toast({
+        title: `Sign-in ${sessionData.session ? "OK (session set)" : "NO SESSION"} → ${redirectTo}`,
+        variant: sessionData.session ? "default" : "destructive",
+      })
       await router.push(redirectTo)
       router.refresh()
     } catch (err) {
