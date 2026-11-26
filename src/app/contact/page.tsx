@@ -12,6 +12,13 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "/contact",
   },
+  openGraph: {
+    title: "Contact ForgeDocs - Get in Touch",
+    description: "Contact ForgeDocs for sales, support, security, or enterprise inquiries.",
+    type: "website",
+    url: `${process.env.NEXT_PUBLIC_APP_URL || "https://forgedocs.com"}/contact`,
+    siteName: "ForgeDocs",
+  },
 }
 
 export const revalidate = 3600

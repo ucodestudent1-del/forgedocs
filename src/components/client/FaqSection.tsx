@@ -12,13 +12,17 @@ interface FaqItemProps {
 }
 
 export function FaqItem({ index, question, answer, isOpen, onToggle }: FaqItemProps) {
+  const buttonId = `faq-button-${index}`
+  const panelId = `faq-panel-${index}`
+
   return (
     <div className="rounded-xl border border-input bg-background">
       <button
         onClick={onToggle}
-        className="w-full p-6 border-b border-input flex justify-between items-center text-left cursor-pointer group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+        id={buttonId}
         aria-expanded={isOpen}
-        aria-controls={`faq-answer-${index}`}
+        aria-controls={panelId}
+        className="w-full p-6 border-b border-input flex justify-between items-center text-left cursor-pointer group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
       >
         <h3 className="text-lg font-medium text-foreground pr-4">{question}</h3>
         <ChevronDown
@@ -27,7 +31,7 @@ export function FaqItem({ index, question, answer, isOpen, onToggle }: FaqItemPr
         />
       </button>
       <div
-        id={`faq-answer-${index}`}
+        id={panelId}
         className={`${isOpen ? "block" : "hidden"} p-6 text-sm text-muted-foreground animate-in slide-in-from-top-2 duration-200`}
       >
         {answer}
@@ -44,7 +48,7 @@ export function ClientFaqSection({ faqs }: ClientFaqSectionProps) {
   const [openFaq, setOpenFaq] = useState<number | null>(null)
 
   return (
-    <div className="max-w-2xl mx-auto space-y-4">
+    <div className="max-w-2xl mx-auto space-y-4" aria-label="Frequently asked questions">
       {faqs.map((faq) => (
         <FaqItem
           key={faq.index}

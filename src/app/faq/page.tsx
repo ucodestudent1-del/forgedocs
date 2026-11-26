@@ -11,6 +11,13 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "/faq",
   },
+  openGraph: {
+    title: "FAQ - Frequently Asked Questions",
+    description: "Find answers to common questions about ForgeDocs pricing, security, features, and more.",
+    type: "website",
+    url: `${process.env.NEXT_PUBLIC_APP_URL || "https://forgedocs.com"}/faq`,
+    siteName: "ForgeDocs",
+  },
 }
 
 export const revalidate = 3600

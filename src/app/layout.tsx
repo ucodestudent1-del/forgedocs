@@ -7,7 +7,7 @@ import { ThemeInitializer } from "@/components/theme/ThemeInitializer"
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary"
 import { CookieConsentProvider } from "@/components/ui/cookie-consent"
 import { headers } from "next/headers"
-const inter = Inter({ subsets: ["latin"], variable: "--font-sans", display: "swap" })
+const inter = Inter({ subsets: ["latin"], variable: "--font-sans", display: "swap", weight: ["400", "500", "600", "700"] })
 
 const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
 
@@ -29,8 +29,10 @@ export const metadata: Metadata = {
     "PDF tools",
     "document generation",
     "cloud storage",
+    "document workflow",
+    "document conversion tools",
   ],
-  authors: [{ name: "ForgeDocs" }],
+  authors: [{ name: "ForgeDocs", url: appUrl }],
   creator: "ForgeDocs",
   publisher: "ForgeDocs",
   alternates: {
@@ -81,6 +83,8 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: "/favicon.svg",
+    shortcut: "/favicon.svg",
+    apple: "/favicon.svg",
   },
   manifest: "/manifest.json",
   verification: {
@@ -174,7 +178,10 @@ export default function RootLayout({
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="color-scheme" content="light dark" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         <link rel="preconnect" href="https://api.forgedocs.com" />
+        <link rel="preload" as="font" onLoad={(e) => { (e.target as HTMLLinkElement).remove() }} href={`${inter.style.fontFamily}`} type="font/woff2" crossOrigin="anonymous" />
         <link rel="alternate" href={appUrl} hrefLang="en" />
         <link rel="alternate" href={`${appUrl}/es`} hrefLang="es" />
         <link rel="alternate" href={`${appUrl}/fr`} hrefLang="fr" />
@@ -184,13 +191,16 @@ export default function RootLayout({
         <link rel="alternate" href={appUrl} hrefLang="x-default" />
         <JsonLdScript />
       </head>
-      <body className={`${inter.variable} font-sans antialiased dv-screen bg-background text-foreground`}>
+      <body className={`${inter.variable} font-sans antialiased bg-background text-foreground`}>
+        <a href="#main-content" className="sr-only focus:not-sr-only focus-visible:absolute focus-visible:top-4 focus-visible:left-4 focus-visible:z-50 focus-visible:px-4 focus-visible:py-2 focus-visible:bg-primary focus-visible:text-primary-foreground focus-visible:rounded-md focus-visible:outline-none">
+          Skip to main content
+        </a>
         <ErrorBoundary>
           <ThemeInitializer />
           <ThemeProvider>
             <ToastProvider>
               <CookieConsentProvider>
-                <main className="dv-screen">{children}</main>
+                <main id="main-content" className="dv-screen">{children}</main>
               </CookieConsentProvider>
             </ToastProvider>
           </ThemeProvider>

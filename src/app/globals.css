@@ -86,11 +86,38 @@
   * {
     @apply border-border;
   }
+  html {
+    touch-action: manipulation;
+    scroll-behavior: smooth;
+  }
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
     scroll-padding-top: var(--layout-header-height);
     overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Prevent horizontal scrolling on all elements */
+  * {
+    max-width: 100%;
+  }
+
+  /* Ensure touch targets are at least 44x44px for accessibility */
+  button,
+  [role="button"],
+  a[href],
+  input,
+  select,
+  textarea {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Prevent text size inflation on mobile orientation change */
+  html {
+    -webkit-text-size-adjust: 100%;
   }
 }
 

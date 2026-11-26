@@ -11,6 +11,13 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "/privacy",
   },
+  openGraph: {
+    title: "Privacy Policy - ForgeDocs",
+    description: "How ForgeDocs collects, uses, and protects your personal data and documents.",
+    type: "website",
+    url: `${process.env.NEXT_PUBLIC_APP_URL || "https://forgedocs.com"}/privacy`,
+    siteName: "ForgeDocs",
+  },
 }
 
 export const revalidate = 3600

@@ -1,13 +1,32 @@
 import { Metadata } from "next"
 import { ClientFaqSection } from "@/components/client/FaqSection"
 import { headers } from "next/headers"
+import dynamic from "next/dynamic"
+
+const ScrollIndicator = dynamic(() => import("@/components/ui/scroll-indicator").then((mod) => mod.ScrollIndicator), { loading: () => null })
+const Navbar = dynamic(() => import("@/components/ui/navbar").then((mod) => mod.Navbar), { loading: () => null })
 
 export const metadata: Metadata = {
   title: "ForgeDocs - Professional Document Management for Modern Teams",
   description: "Create, organize, generate, and convert documents in the cloud. One platform for every document workflow. SOC 2 ready, encrypted at rest & in transit, GDPR ready.",
-  keywords: ["document management", "document conversion", "e-signatures", "team collaboration", "SOC 2", "GDPR"],
+  keywords: ["document management", "document conversion", "e-signatures", "team collaboration", "SOC 2", "GDPR", "document automation", "PDF tools", "document generation"],
   alternates: {
     canonical: "/",
+  },
+  openGraph: {
+    title: "ForgeDocs - Professional Document Management for Modern Teams",
+    description: "Create, organize, generate, and convert documents in the cloud. One platform for every document workflow.",
+    type: "website",
+    url: process.env.NEXT_PUBLIC_APP_URL || "https://forgedocs.com",
+    siteName: "ForgeDocs",
+    images: [
+      {
+        url: "/og-image.svg",
+        width: 1200,
+        height: 630,
+        alt: "ForgeDocs - Professional Document Management",
+      },
+    ],
   },
 }
 
@@ -28,10 +47,8 @@ import {
   Plus,
   Rocket,
 } from "lucide-react"
-import { Navbar } from "@/components/ui/navbar"
-import { ScrollIndicator } from "@/components/ui/scroll-indicator"
 
-export default async function LandingPage() {
+export default function LandingPage() {
 
   return (
     <div className="flex flex-col [scroll-behavior:smooth]">
@@ -39,7 +56,6 @@ export default async function LandingPage() {
       <Navbar />
 
       <a id="main-content" tabIndex={-1} className="sr-only"></a>
-
       {/* Hero Section */}
       <section className="relative py-24 px-4 sm:px-6 lg:px-8 overflow-hidden">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-primary/10 rounded-full blur-[120px] pointer-events-none" aria-hidden="true"></div>
@@ -60,7 +76,7 @@ export default async function LandingPage() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-              <a href="/auth/signup" className="px-8 py-4 bg-primary text-primary-foreground font-medium rounded-lg hover:bg-primary/90 transition-colors shadow-lg shadow-primary/30 text-lg">
+              <a href="/auth/signup" className="px-8 py-4 bg-primary text-primary-foreground font-medium rounded-lg hover:bg-primary/90 transition-colors shadow-lg shadow-primary/30 text-lg" aria-label="Start building with ForgeDocs - create a free account">
                 Start building
               </a>
             </div>

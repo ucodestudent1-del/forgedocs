@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { X, Menu } from "lucide-react"
 import { useRouter, usePathname } from "next/navigation"
 
@@ -18,17 +18,26 @@ export function Navbar() {
     { href: "/faq", label: "FAQ" },
   ]
 
+  useEffect(() => {
+    if (mobileOpen) {
+      document.body.style.overflow = "hidden"
+    } else {
+      document.body.style.overflow = ""
+    }
+    return () => { document.body.style.overflow = "" }
+  }, [mobileOpen])
+
   return (
     <>
-      <a href="#main-content" className="sr-only focus:not-sr-only">
+      <a href="#main-content" className="sr-only focus:not-sr-only focus-visible:absolute focus-visible:top-4 focus-visible:left-4 focus-visible:z-50 focus-visible:px-4 focus-visible:py-2 focus-visible:bg-primary focus-visible:text-primary-foreground focus-visible:rounded-md focus-visible:outline-none">
         Skip to content
       </a>
 
-      <nav className="fixed top-0 w-full z-50 border-b border-input bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <nav aria-label="Main navigation" className="fixed top-0 w-full z-50 border-b border-input bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
             <div className="flex items-center gap-2">
-              <a href="/" className="flex items-center gap-2">
+              <a href="/" aria-label="ForgeDocs home" className="flex items-center gap-2">
                 <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center text-white font-bold text-sm">
                   F
                 </div>
@@ -40,28 +49,38 @@ export function Navbar() {
                 <a
                   key={link.href}
                   href={link.href}
-                  className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
+                  className={`text-sm font-medium transition-colors ${pathname === link.href ? "text-primary" : "text-muted-foreground hover:text-primary"}`}
+                  aria-current={pathname === link.href ? "page" : undefined}
                 >
                   {link.label}
                 </a>
               ))}
             </div>
             <div className="hidden sm:flex items-center gap-4">
-              <button
-                onClick={() => setMobileOpen((prev) => !prev)}
-                className="lg:hidden p-2 rounded-md text-muted-foreground hover:bg-accent transition-colors"
-                aria-label="Toggle navigation menu"
-                aria-expanded={mobileOpen}
-              >
-                {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-              </button>
+              <a href="/auth/signup" className="px-4 py-2 text-sm font-medium text-primary-foreground bg-primary rounded-lg hover:bg-primary/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                Start building
+              </a>
             </div>
+            <button
+              onClick={() => setMobileOpen((prev) => !prev)}
+              className="lg:hidden p-2 rounded-md text-muted-foreground hover:bg-accent transition-colors"
+              aria-label="Toggle navigation menu"
+              aria-expanded={mobileOpen}
+              aria-controls="mobile-menu"
+              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring
+            >
+              {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            </button>
           </div>
         </div>
       </nav>
 
       {mobileOpen && (
         <div
+          id="mobile-menu"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Mobile navigation menu"
           className="fixed inset-0 z-40 bg-background/95 backdrop-blur-lg"
           onClick={() => setMobileOpen(false)}
         >
@@ -70,6 +89,7 @@ export function Navbar() {
               onClick={() => setMobileOpen(false)}
               className="p-2 rounded-md text-muted-foreground hover:bg-accent transition-colors"
               aria-label="Close navigation menu"
+              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring
             >
               <X className="h-6 w-6" />
             </button>
@@ -80,11 +100,19 @@ export function Navbar() {
                 key={link.href}
                 href={link.href}
                 onClick={() => setMobileOpen(false)}
-                className="block text-lg font-medium text-foreground hover:text-primary transition-colors"
+                className={`block text-lg font-medium transition-colors ${pathname === link.href ? "text-primary" : "text-foreground hover:text-primary"}`}
+                aria-current={pathname === link.href ? "page" : undefined}
               >
                 {link.label}
               </a>
             ))}
+            <a
+              href="/auth/signup"
+              onClick={() => setMobileOpen(false)}
+              className="mt-4 block px-6 py-3 text-lg font-medium text-primary-foreground bg-primary rounded-lg hover:bg-primary/90 transition-colors"
+            >
+              Start building
+            </a>
           </nav>
         </div>
       )}

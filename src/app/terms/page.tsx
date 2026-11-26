@@ -11,6 +11,13 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "/terms",
   },
+  openGraph: {
+    title: "Terms of Service - ForgeDocs",
+    description: "Terms and conditions for using ForgeDocs document management platform.",
+    type: "website",
+    url: `${process.env.NEXT_PUBLIC_APP_URL || "https://forgedocs.com"}/terms`,
+    siteName: "ForgeDocs",
+  },
 }
 
 export const revalidate = 3600

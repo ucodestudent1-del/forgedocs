@@ -79,6 +79,8 @@ const helpCategories = [
   },
 ]
 
+export const revalidate = 3600
+
 export default function HelpPage() {
   return (
     <div className="min-h-screen flex flex-col">

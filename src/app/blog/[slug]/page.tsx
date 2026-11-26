@@ -79,12 +79,44 @@ const blogPosts: Record<string, {
   },
 }
 
-export const metadata: Metadata = {
-  title: "Blog - ForgeDocs",
-  description: "Latest updates, tips, and insights from the ForgeDocs team on document management, productivity, and digital workflows.",
-  alternates: {
-    canonical: "/blog",
-  },
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const post = blogPosts[(await params).slug]
+  if (!post) {
+    return { title: "Blog Post - ForgeDocs" }
+  }
+
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://forgedocs.com"
+  return {
+    title: `${post.title} - ForgeDocs Blog`,
+    description: post.excerpt,
+    alternates: {
+      canonical: `/blog/${post.slug}`,
+    },
+    openGraph: {
+      title: `${post.title} - ForgeDocs Blog`,
+      description: post.excerpt,
+      type: "article",
+      url: `${baseUrl}/blog/${post.slug}`,
+      siteName: "ForgeDocs",
+      publishedTime: post.date,
+      authors: [post.author],
+      tags: [post.category, "document management", "productivity"],
+      images: [
+        {
+          url: "/og-image.svg",
+          width: 1200,
+          height: 630,
+          alt: post.title,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${post.title} - ForgeDocs Blog`,
+      description: post.excerpt,
+      images: ["/og-image.svg"],
+    },
+  }
 }
 
 export async function generateStaticParams() {
@@ -124,9 +156,9 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
       </section>
       <section className="py-24 px-4 sm:px-6 lg:px-8">
         <div className="max-w-3xl mx-auto">
-          <div className="prose prose-lg max-w-none space-y-8 text-foreground">
+          <article className="prose prose-lg max-w-none space-y-8 text-foreground" aria-label="Blog post content">
             <div dangerouslySetInnerHTML={{ __html: post.content }} />
-          </div>
+          </article>
           <div className="mt-12 pt-8 border-t border-input flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
