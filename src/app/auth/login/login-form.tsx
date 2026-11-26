@@ -48,8 +48,9 @@ export default function LoginForm() {
       }
       await router.push(redirectTo)
       router.refresh()
-    } catch {
-      toast({ title: "Login failed. Please try again.", variant: "destructive" })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Login failed. Please try again."
+      toast({ title: message, variant: "destructive" })
     } finally {
       setLoading(false)
     }

@@ -53,8 +53,9 @@ export default function SignupForm() {
       toast({ title: "Account created successfully! Please check your email to verify your account, then sign in.", variant: "success" })
       await router.push(`/auth/login?redirect=${encodeURIComponent(redirectTo)}`)
       router.refresh()
-    } catch {
-      toast({ title: "Signup failed. Please try again.", variant: "destructive" })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Signup failed. Please try again."
+      toast({ title: message, variant: "destructive" })
     } finally {
       setLoading(false)
     }
