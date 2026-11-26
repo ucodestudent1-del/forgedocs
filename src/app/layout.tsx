@@ -1,5 +1,4 @@
 import type { Metadata } from "next"
-import { Inter } from "next/font/google"
 import "./globals.css"
 import { ToastProvider } from "@/components/ui/toast"
 import { ThemeProvider } from "@/components/theme/ThemeProvider"
@@ -7,8 +6,6 @@ import { ThemeInitializer } from "@/components/theme/ThemeInitializer"
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary"
 import { CookieConsentProvider } from "@/components/ui/cookie-consent"
 import { headers } from "next/headers"
-const inter = Inter({ subsets: ["latin"], variable: "--font-sans", display: "swap", weight: ["400", "500", "600", "700"] })
-
 const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
 
 export const metadata: Metadata = {
@@ -189,7 +186,7 @@ export default async function RootLayout({
         <link rel="alternate" href={appUrl} hrefLang="x-default" />
         <JsonLdScript nonce={nonce || undefined} />
       </head>
-      <body className={`${inter.variable} font-sans antialiased bg-background text-foreground`}>
+      <body className="font-sans antialiased bg-background text-foreground">
         <a href="#main-content" className="sr-only focus:not-sr-only focus-visible:absolute focus-visible:top-4 focus-visible:left-4 focus-visible:z-50 focus-visible:px-4 focus-visible:py-2 focus-visible:bg-primary focus-visible:text-primary-foreground focus-visible:rounded-md focus-visible:outline-none">
           Skip to main content
         </a>
