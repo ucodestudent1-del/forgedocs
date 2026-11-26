@@ -34,16 +34,30 @@ export default function LoginForm() {
       toast({ title: "Please fill in all fields", variant: "destructive" })
       return
     }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) {
+      setEmailError("Enter a valid email address")
+      toast({ title: "Invalid email format", variant: "destructive" })
+      return
+    }
     setLoading(true)
     try {
       const supabase = createBrowserSupabaseClient()
-      const { error } = await supabase.auth.signInWithPassword({ email, password })
+      const { error, data } = await supabase.auth.signInWithPassword({ email, password })
+      console.log("[SUPABASE SIGNIN DEBUG]", { error, data: data?.session ? "session-present" : "no-session", email })
       if (error) {
-        if (error.message.includes("Invalid login")) {
+        const msg = error.message || error.msg || String(error)
+        if (msg.toLowerCase().includes("email not confirmed") || msg.toLowerCase().includes("confirm")) {
+          toast({ title: "Please verify your email before signing in. Check your inbox.", variant: "destructive" })
+          return
+        }
+        if (msg.toLowerCase().includes("invalid login") || msg.toLowerCase().includes("credentials")) {
           setEmailError("Invalid email or password")
           setPasswordError("Invalid email or password")
+          toast({ title: "Invalid email or password", variant: "destructive" })
+          return
         }
-        toast({ title: error.message, variant: "destructive" })
+        toast({ title: msg, variant: "destructive" })
         return
       }
       const { data: sessionData } = await supabase.auth.getSession()
