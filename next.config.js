@@ -137,6 +137,10 @@ const nextConfig = {
         "node:diagnostics_channel": "empty-module-stub",
         "@aws-sdk/client-secrets-manager": "empty-module-stub",
         "@valkey/valkey-glide": "empty-module-stub",
+        "@valkey/valkey-glide-linux-x64-musl": "empty-module-stub",
+        "@valkey/valkey-glide-linux-x64-gnu": "empty-module-stub",
+        "@valkey/valkey-glide-darwin-x64": "empty-module-stub",
+        "@valkey/valkey-glide-win32-x64-msvc": "empty-module-stub",
         fs: "empty-module-stub",
         path: "empty-module-stub",
         os: "empty-module-stub",
@@ -145,6 +149,9 @@ const nextConfig = {
     config.externals = [
       ...(Array.isArray(config.externals) ? config.externals : [config.externals].filter(Boolean)),
       (_context, request, callback) => {
+        if (request.startsWith("@valkey/valkey-glide")) {
+          return callback(null, `commonjs ${request}`)
+        }
         callback()
       },
     ]
