@@ -6,6 +6,40 @@ const withBundleAnalyzer = require("@next/bundle-analyzer")({
   enabled: process.env.ANALYZE === "true",
 })
 
+// Fail the build early if auth-critical NEXT_PUBLIC_* variables are still
+// placeholders. These values are baked into the client bundle at build time,
+// so placeholder credentials would make sign-in silently fail in production.
+function validateBuildEnv() {
+  const required = [
+    "NEXT_PUBLIC_SUPABASE_URL",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+    "NEXT_PUBLIC_APP_URL",
+  ]
+  const placeholderPatterns = [
+    "placeholder",
+    "REQUIRED_REAL",
+    "your_",
+    "example.com",
+    "yourdomain.com",
+  ]
+  const missingOrPlaceholder = required.filter((key) => {
+    const value = process.env[key] || ""
+    return (
+      !value ||
+      placeholderPatterns.some((p) => value.toLowerCase().includes(p.toLowerCase()))
+    )
+  })
+  if (missingOrPlaceholder.length > 0) {
+    throw new Error(
+      `Build failed: auth-critical environment variables must be real values, not placeholders: ${missingOrPlaceholder.join(
+        ", "
+      )}. Set them in .env.build or pass as Docker build args before building.`
+    )
+  }
+}
+
+validateBuildEnv()
+
 function generateNonce() {
   return crypto.randomUUID().replace(/-/g, "")
 }
