@@ -37,10 +37,11 @@ const nextConfig = {
     ],
   },
   async headers() {
+    const nonce = crypto.randomBytes(16).toString("base64")
     const cspHeader = [
       "default-src 'self'",
-      "script-src 'self'",
-      "style-src 'self'",
+      `script-src 'self' 'nonce-${nonce}'`,
+      `style-src 'self' 'nonce-${nonce}'`,
       "img-src 'self' data: https:",
       "font-src 'self'",
       "connect-src 'self' https: wss:",
@@ -63,6 +64,7 @@ const nextConfig = {
           { key: "X-Frame-Options", value: "DENY" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           { key: "Content-Security-Policy", value: cspHeader },
+          { key: "X-CSP-Nonce", value: nonce },
           { key: "Cache-Control", value: "private, no-store" },
         ],
       },
@@ -75,6 +77,7 @@ const nextConfig = {
           { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains; preload" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           { key: "Content-Security-Policy", value: cspHeader },
+          { key: "X-CSP-Nonce", value: nonce },
           {
             key: "Permissions-Policy",
             value: "camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()",

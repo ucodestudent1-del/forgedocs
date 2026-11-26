@@ -92,10 +92,7 @@ export const metadata: Metadata = {
   },
 }
 
-async function JsonLdScript() {
-  const headersList = await headers()
-  const nonce = headersList.get("x-csp-nonce")
-
+async function JsonLdScript({ nonce }: { nonce?: string }) {
   const jsonLd = [
     {
       "@context": "https://schema.org",
@@ -157,22 +154,24 @@ async function JsonLdScript() {
   return (
     <>
       {jsonLd.map((schema, i) => (
-        <script
-          key={i}
-          type="application/ld+json"
-          nonce={nonce || undefined}
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
-        />
+          <script
+            key={i}
+            type="application/ld+json"
+            nonce={nonce}
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+          />
       ))}
     </>
   )
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const headersList = await headers()
+  const nonce = headersList.get("x-csp-nonce")
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -188,7 +187,7 @@ export default function RootLayout({
         <link rel="alternate" href={`${appUrl}/zh`} hrefLang="zh" />
         <link rel="alternate" href={`${appUrl}/ja`} hrefLang="ja" />
         <link rel="alternate" href={appUrl} hrefLang="x-default" />
-        <JsonLdScript />
+        <JsonLdScript nonce={nonce || undefined} />
       </head>
       <body className={`${inter.variable} font-sans antialiased bg-background text-foreground`}>
         <a href="#main-content" className="sr-only focus:not-sr-only focus-visible:absolute focus-visible:top-4 focus-visible:left-4 focus-visible:z-50 focus-visible:px-4 focus-visible:py-2 focus-visible:bg-primary focus-visible:text-primary-foreground focus-visible:rounded-md focus-visible:outline-none">
