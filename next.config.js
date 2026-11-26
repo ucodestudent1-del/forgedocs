@@ -39,8 +39,8 @@ const nextConfig = {
   async headers() {
     const cspHeader = [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline'",
-      "style-src 'self' 'unsafe-inline'",
+      "script-src 'self'",
+      "style-src 'self'",
       "img-src 'self' data: https:",
       "font-src 'self'",
       "connect-src 'self' https: wss:",
@@ -128,33 +128,23 @@ const nextConfig = {
     }
 
     // Handle node: protocol modules (ioredis uses node:diagnostics_channel)
-    // Bundle ioredis but intercept its node:diagnostics_channel import via
-    // externals, redirecting it to an empty stub module. The Edge Runtime has
-    // no node: built-ins, so we must not emit a runtime require("node:...")
-    // — it would resolve to undefined and break property access.
-    config.resolve.alias = {
-      ...config.resolve.alias,
-      "empty-module-stub": path.resolve(__dirname, "src/lib/empty-module.ts"),
+    // Redirect node: built-ins and optional native modules to an empty stub
+    // for the client bundle only, so they are never required at runtime.
+    if (!isServer) {
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        "empty-module-stub": path.resolve(__dirname, "src/lib/empty-module.ts"),
+        "node:diagnostics_channel": "empty-module-stub",
+        "@aws-sdk/client-secrets-manager": "empty-module-stub",
+        "@valkey/valkey-glide": "empty-module-stub",
+        fs: "empty-module-stub",
+        path: "empty-module-stub",
+        os: "empty-module-stub",
+      }
     }
     config.externals = [
       ...(Array.isArray(config.externals) ? config.externals : [config.externals].filter(Boolean)),
       (_context, request, callback) => {
-        if (request === "node:diagnostics_channel") {
-          return callback(null, "empty-module-stub")
-        }
-        // AWS SDK is an optional dependency only used when SECRETS_MANAGER_PROVIDER=aws
-        if (request === "@aws-sdk/client-secrets-manager") {
-          return callback(null, "empty-module-stub")
-        }
-        // Valkey-glide native binary (used by bullmq) cannot be bundled by webpack.
-        // BullMQ is only used by the worker (Dockerfile.worker), not the Next.js app.
-        if (request.startsWith("@valkey/valkey-glide")) {
-          return callback(null, "empty-module-stub")
-        }
-        // Node.js built-ins used by winston (logger) — not available in browser bundle
-        if (request === "fs" || request === "path" || request === "os") {
-          return callback(null, "empty-module-stub")
-        }
         callback()
       },
     ]

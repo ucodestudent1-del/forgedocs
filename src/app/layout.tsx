@@ -181,7 +181,6 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         <link rel="preconnect" href="https://api.forgedocs.com" />
-        <link rel="preload" as="font" href={`${inter.style.fontFamily}`} type="font/woff2" crossOrigin="anonymous" />
         <link rel="alternate" href={appUrl} hrefLang="en" />
         <link rel="alternate" href={`${appUrl}/es`} hrefLang="es" />
         <link rel="alternate" href={`${appUrl}/fr`} hrefLang="fr" />

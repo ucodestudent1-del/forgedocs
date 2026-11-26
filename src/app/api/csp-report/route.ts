@@ -15,8 +15,8 @@ export async function POST(req: Request) {
       "status-code": cspReport["status-code"],
       "sample": cspReport["sample"],
     })
-    return NextResponse.json({ received: true }, { status: 204 })
+    return new NextResponse(null, { status: 204 })
   } catch {
-    return NextResponse.json({ error: "Invalid report" }, { status: 400 })
+    return new NextResponse("Invalid report", { status: 400 })
   }
 }
