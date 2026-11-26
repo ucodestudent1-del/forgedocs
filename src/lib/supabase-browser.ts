@@ -31,18 +31,16 @@ export function createBrowserSupabaseClient(): BrowserSupabaseClient {
     return createMockSupabaseClient() as unknown as BrowserSupabaseClient
   }
 
+  // Resolve Supabase config at runtime from Railway env vars so auth works
+  // without rebuilding when credentials change. NEXT_PUBLIC_* values are
+  // normally baked into the client bundle at build time; reading them here at
+  // runtime lets Railway runtime env vars take effect on redeploy.
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-  // Missing or placeholder credentials mean auth cannot work at runtime.
-  // Throw a clear, actionable error instead of silently returning a mock
-  // that would make sign-in appear to succeed while never establishing a
-  // real session (causing redirects back to the login page).
   if (!url || !key || url.includes("placeholder") || key.includes("placeholder")) {
     throw new Error(
-      "Supabase client not configured: NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY " +
-        "must be set to real values (not placeholders) for authentication to work. " +
-        "Copy .env.example to .env.local and fill in your Supabase project credentials."
+      "Supabase client not configured: set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY as Railway runtime environment variables, then redeploy."
     )
   }
 
