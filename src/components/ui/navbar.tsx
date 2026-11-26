@@ -83,12 +83,12 @@ export function Navbar() {
                 <span className="text-xl font-bold tracking-tight text-foreground">ForgeDocs</span>
               </a>
             </div>
-            <div className="hidden sm:flex items-center gap-6">
+            <div className="hidden sm:flex items-center gap-8">
               {navLinks.map((link) => (
                 <a
                   key={link.href}
                   href={link.href}
-                  className={`text-sm font-medium transition-colors ${pathname === link.href ? "text-primary" : "text-muted-foreground hover:text-primary"}`}
+                  className={`text-sm font-medium transition-all ${pathname === link.href ? "text-primary" : "text-muted-foreground hover:text-primary"}`}
                   aria-current={pathname === link.href ? "page" : undefined}
                 >
                   {link.label}
@@ -96,7 +96,7 @@ export function Navbar() {
               ))}
             </div>
             <div className="hidden sm:flex items-center gap-4">
-              <a href="/auth/signup" className="px-4 py-2 text-sm font-medium text-primary-foreground bg-primary rounded-lg hover:bg-primary/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+              <a href="/auth/signup" className="px-4 py-2 text-sm font-medium text-primary-foreground bg-primary rounded-lg hover:bg-primary/90 transition-all shadow-lg shadow-primary/20 hover:shadow-primary/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
                 Start building
               </a>
             </div>
@@ -136,7 +136,7 @@ export function Navbar() {
                 key={link.href}
                 href={link.href}
                 onClick={() => setMobileOpen(false)}
-                className={`block text-lg font-medium transition-colors ${pathname === link.href ? "text-primary" : "text-foreground hover:text-primary"}`}
+                className={`block text-lg font-medium transition-all ${pathname === link.href ? "text-primary" : "text-foreground hover:text-primary"}`}
                 aria-current={pathname === link.href ? "page" : undefined}
               >
                 {link.label}
@@ -145,7 +145,7 @@ export function Navbar() {
             <a
               href="/auth/signup"
               onClick={() => setMobileOpen(false)}
-              className="mt-4 block px-6 py-3 text-lg font-medium text-primary-foreground bg-primary rounded-lg hover:bg-primary/90 transition-colors"
+              className="mt-4 block px-6 py-3 text-lg font-medium text-primary-foreground bg-primary rounded-lg hover:bg-primary/90 transition-all shadow-lg shadow-primary/20 hover:shadow-primary/30"
             >
               Start building
             </a>

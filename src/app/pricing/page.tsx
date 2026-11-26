@@ -77,18 +77,19 @@ export default async function PricingPage() {
       <div className="min-h-screen flex flex-col">
       <Navbar />
       <section className="pt-32 pb-24 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto text-center">
-          <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-foreground mb-6">
-            Simple, transparent pricing
+        <div className="relative max-w-[1100px] mx-auto text-center">
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[400px] bg-primary/10 rounded-full blur-[120px] pointer-events-none" aria-hidden="true"></div>
+          <h1 className="relative text-4xl md:text-5xl font-bold tracking-tight text-foreground mb-4">
+            Simple pricing. Powerful document management.
           </h1>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-10">
-            Choose the plan that fits your team. All plans include a 14-day free trial.
+          <p className="relative text-lg text-muted-foreground max-w-2xl mx-auto mb-12">
+            Find the right plan for your workflow. Start with a 14-day free trial and upgrade whenever you're ready.
           </p>
           <CheckoutPlans plans={plans} />
-          <div className="text-center mb-16 text-xs text-muted-foreground">
+          <div className="relative text-center mb-16 text-xs text-muted-foreground">
             All paid plans include a 14-day free trial. Cancel anytime. Credit card required.
           </div>
-          <div className="overflow-x-auto border border-input rounded-xl">
+          <div className="overflow-x-auto border border-input rounded-[14px]">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-input">
@@ -179,11 +180,11 @@ function CTASectionWithStyledLink({ title, description, ctaText, ctaHref }: { ti
   return (
     <section className="py-24 px-4 sm:px-6 lg:px-8">
       <div className="max-w-3xl mx-auto">
-        <div className="rounded-2xl bg-primary p-8 sm:p-12 text-primary-foreground text-center">
-          <h2 className="text-3xl font-bold mb-4">{title}</h2>
-          <p className="text-primary-foreground/90 mb-8">{description}</p>
+        <div className="rounded-[14px] bg-primary p-8 sm:p-12 text-primary-foreground text-center">
+          <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">{title}</h2>
+          <p className="text-primary-foreground/90 mb-8 max-w-lg mx-auto">{description}</p>
           <Link href={ctaHref} className="inline-block">
-            <a className="px-8 py-4 bg-background text-primary font-semibold rounded-lg hover:bg-primary/90 transition-colors shadow-lg shadow-primary/30">
+            <a className="px-8 py-4 rounded-[10px] bg-background text-primary font-semibold shadow-lg shadow-primary/30 hover:bg-primary/10 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
               {ctaText}
             </a>
           </Link>
