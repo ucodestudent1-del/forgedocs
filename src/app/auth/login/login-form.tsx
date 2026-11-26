@@ -47,11 +47,20 @@ export default function LoginForm() {
       console.log("[SUPABASE SIGNIN DEBUG]", { error, data: data?.session ? "session-present" : "no-session", email })
       if (error) {
         const msg = error.message || error.msg || String(error)
-        if (msg.toLowerCase().includes("email not confirmed") || msg.toLowerCase().includes("confirm")) {
+        const code = (error as any)?.code || (error as any)?.error_code
+        const isUnconfirmed =
+          msg.toLowerCase().includes("email not confirmed") ||
+          msg.toLowerCase().includes("confirm") ||
+          code === "email_not_confirmed"
+        if (isUnconfirmed) {
           toast({ title: "Please verify your email before signing in. Check your inbox.", variant: "destructive" })
           return
         }
-        if (msg.toLowerCase().includes("invalid login") || msg.toLowerCase().includes("credentials")) {
+        const isInvalid =
+          msg.toLowerCase().includes("invalid login") ||
+          msg.toLowerCase().includes("credentials") ||
+          code === "INVALID_LOGIN"
+        if (isInvalid) {
           setEmailError("Invalid email or password")
           setPasswordError("Invalid email or password")
           toast({ title: "Invalid email or password", variant: "destructive" })

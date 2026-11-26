@@ -39,7 +39,15 @@ export const POST = withErrorBoundary(async (req) => {
 
   if (error) {
     await recordFailedAttempt(identifier)
-    throw createAppError("Invalid email or password", 400, "INVALID_CREDENTIALS")
+    const code = (error as any)?.code || (error as any)?.error_code
+    const isUnconfirmed =
+      String((error as any)?.message || (error as any)?.msg || error).toLowerCase().includes("confirm") ||
+      code === "email_not_confirmed"
+    throw createAppError(
+      isUnconfirmed ? "Please verify your email before signing in. Check your inbox." : "Invalid email or password",
+      400,
+      isUnconfirmed ? "EMAIL_NOT_CONFIRMED" : "INVALID_CREDENTIALS"
+    )
   }
 
   await clearFailedAttempts(identifier)
