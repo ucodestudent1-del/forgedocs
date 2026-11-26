@@ -63,11 +63,7 @@ export function Navbar() {
             </div>
             <button
               onClick={() => setMobileOpen((prev) => !prev)}
-              className="lg:hidden p-2 rounded-md text-muted-foreground hover:bg-accent transition-colors"
-              aria-label="Toggle navigation menu"
-              aria-expanded={mobileOpen}
-              aria-controls="mobile-menu"
-              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring
+              className="lg:hidden p-2 rounded-md text-muted-foreground hover:bg-accent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
@@ -87,9 +83,8 @@ export function Navbar() {
           <div className="absolute top-0 right-0 p-4">
             <button
               onClick={() => setMobileOpen(false)}
-              className="p-2 rounded-md text-muted-foreground hover:bg-accent transition-colors"
+              className="p-2 rounded-md text-muted-foreground hover:bg-accent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               aria-label="Close navigation menu"
-              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring
             >
               <X className="h-6 w-6" />
             </button>
