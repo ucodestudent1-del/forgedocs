@@ -10,6 +10,10 @@ export interface ToastProps {
   description?: string
   variant?: "default" | "destructive" | "success" | "info"
   duration?: number
+  action?: {
+    label: string
+    onClick: () => void
+  }
 }
 
 interface ToastState {
@@ -23,11 +27,17 @@ export function useToast() {
   const [state, setState] = React.useState<ToastState>({ toasts: [] })
 
   const toast = React.useCallback(
-    ({ title, description, variant = "default", duration = TOAST_REMOVE_DELAY }: ToastProps) => {
+    ({
+      title,
+      description,
+      variant = "default",
+      duration = TOAST_REMOVE_DELAY,
+      action,
+    }: ToastProps) => {
       const id = Math.random().toString(36).substring(2, 9)
 
       setState((prev) => {
-        const newToasts = [...prev.toasts, { id, title, description, variant }]
+        const newToasts = [...prev.toasts, { id, title, description, variant, action }]
         if (newToasts.length > TOAST_LIMIT) {
           newToasts.shift()
         }
@@ -71,7 +81,7 @@ const VariantColors: Record<NonNullable<ToastProps["variant"]>, string> = {
 }
 
 export function Toast({ toast, onDismiss, className }: { toast: ToastProps; onDismiss?: () => void; className?: string }) {
-  const { title, description, variant = "default" } = toast
+  const { title, description, variant = "default", action } = toast
   const Icon = VariantIcons[variant] || VariantIcons.default
 
   return (
@@ -91,6 +101,17 @@ export function Toast({ toast, onDismiss, className }: { toast: ToastProps; onDi
         <h4 className="font-medium">{title}</h4>
         {description && <p className="text-sm opacity-90">{description}</p>}
       </div>
+      {action && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation()
+            action.onClick()
+          }}
+          className="ml-auto flex items-center rounded-md px-3 py-1.5 text-sm font-medium text-current hover:bg-current/10 transition-colors"
+        >
+          {action.label}
+        </button>
+      )}
       <button
         onClick={onDismiss}
         className="ml-auto flex items-center rounded-md p-1.5 text-current hover:bg-current/10 transition-colors"

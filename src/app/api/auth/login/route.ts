@@ -7,6 +7,7 @@ import { checkLoginAttempts, recordFailedAttempt, clearFailedAttempts } from "@/
 import { validatePassword } from "@/lib/password"
 import { withErrorBoundary, createAppError } from "@/lib/api-error"
 import { getClientIdentifier } from "@/lib/client-identifier"
+import logger from "@/lib/logger"
 
 export const POST = withErrorBoundary(async (req) => {
   const rateLimitError = await authRateLimit(req)
@@ -40,9 +41,16 @@ export const POST = withErrorBoundary(async (req) => {
   if (error) {
     await recordFailedAttempt(identifier)
     const code = (error as any)?.code || (error as any)?.error_code
+    const message = String((error as any)?.message || (error as any)?.msg || error)
     const isUnconfirmed =
-      String((error as any)?.message || (error as any)?.msg || error).toLowerCase().includes("confirm") ||
+      message.toLowerCase().includes("confirm") ||
       code === "email_not_confirmed"
+    logger.error("Supabase signInWithPassword failed", {
+      email,
+      code,
+      message,
+      status: (error as any)?.status,
+    })
     throw createAppError(
       isUnconfirmed ? "Please verify your email before signing in. Check your inbox." : "Invalid email or password",
       400,

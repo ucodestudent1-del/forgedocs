@@ -199,6 +199,20 @@ export async function middleware(request: NextRequest) {
       }
     }
 
+    // Redirect authenticated users on the landing page to the dashboard.
+    if (pathname === "/" && !isLooping) {
+      const supabase = await getPooledRouteClient()
+      const { data: { user }, error } = await supabase.auth.getUser()
+      if (user && !error && user.email_confirmed_at) {
+        const redirectResponse = NextResponse.redirect(new URL("/dashboard", request.nextUrl))
+        redirectResponse.cookies.set("redirect_count", String(redirectCount + 1), {
+          path: "/",
+          maxAge: 60,
+        })
+        return redirectResponse
+      }
+    }
+
     // ---- API key authentication & permission enforcement ----
     if (pathname.startsWith("/api/")) {
       const versionInfo = parseApiVersion(request.headers)

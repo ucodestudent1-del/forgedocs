@@ -48,12 +48,42 @@ export default function LoginForm() {
       if (error) {
         const msg = error.message || error.msg || String(error)
         const code = (error as any)?.code || (error as any)?.error_code
+        const status = (error as any)?.status
         const isUnconfirmed =
           msg.toLowerCase().includes("email not confirmed") ||
           msg.toLowerCase().includes("confirm") ||
           code === "email_not_confirmed"
         if (isUnconfirmed) {
-          toast({ title: "Please verify your email before signing in. Check your inbox.", variant: "destructive" })
+          toast({
+            title: "Please verify your email before signing in.",
+            description:
+              "Check your inbox, or request a new verification code.",
+            variant: "destructive",
+            action: {
+              label: "Resend verification",
+              onClick: async () => {
+                try {
+                  const res = await fetch("/api/auth/resend-verification", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ email }),
+                  })
+                  if (!res.ok) {
+                    const err = await res.json()
+                    toast({ title: err?.error || "Failed to resend verification", variant: "destructive" })
+                    return
+                  }
+                  toast({
+                    title: "Verification email sent",
+                    description: "Check your inbox to confirm your account, then sign in.",
+                    variant: "default",
+                  })
+                } catch {
+                  toast({ title: "Failed to resend verification. Please try again.", variant: "destructive" })
+                }
+              },
+            },
+          })
           return
         }
         const isInvalid =
@@ -66,7 +96,8 @@ export default function LoginForm() {
           toast({ title: "Invalid email or password", variant: "destructive" })
           return
         }
-        toast({ title: msg, variant: "destructive" })
+        console.error("[SUPABASE SIGNIN ERROR]", { status, code, message: msg, email })
+        toast({ title: msg || "Sign-in failed. Please try again.", variant: "destructive" })
         return
       }
       const { data: sessionData } = await supabase.auth.getSession()
