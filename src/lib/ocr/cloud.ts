@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js'
+import { createServiceRoleClient } from "@/lib/supabase"
 import logger from "@/lib/logger"
 
 export interface CloudOCRResult {
@@ -8,19 +8,12 @@ export interface CloudOCRResult {
   provider: string
 }
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-
-function getServerClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { persistSession: false } }
-  )
+async function getServerClient() {
+  return createServiceRoleClient()
 }
 
 async function uploadToTempStorage(file: File): Promise<{ path: string; signedUrl: string } | null> {
-  const supabase = getServerClient()
+  const supabase = await getServerClient()
   const fileName = `${crypto.randomUUID()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`
   const path = `ocr-temp/${crypto.randomUUID()}/${fileName}`
   
@@ -41,7 +34,7 @@ async function uploadToTempStorage(file: File): Promise<{ path: string; signedUr
 }
 
 async function cleanupTempFile(path: string): Promise<void> {
-  const supabase = getServerClient()
+  const supabase = await getServerClient()
   await supabase.storage.from('ocr-temp').remove([path])
 }
 

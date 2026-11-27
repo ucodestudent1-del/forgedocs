@@ -1,6 +1,6 @@
 "use client"
 
-import { createClient } from "@supabase/supabase-js"
+import { createBrowserSupabaseClient } from "@/lib/supabase-browser"
 import { useEffect, useState, useRef, useCallback } from "react"
 import { UserCircle } from "lucide-react"
 
@@ -24,10 +24,7 @@ export function CollaborativePresence({
   userAvatarUrl,
 }: CollaborativePresenceProps) {
   const [users, setUsers] = useState<PresenceUser[]>([])
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
+  const supabase = createBrowserSupabaseClient()
   const channelRef = useRef<any>(null)
   const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
@@ -56,7 +53,7 @@ export function CollaborativePresence({
 
     // Track this user's presence
     channel
-      .subscribe(async (status) => {
+      .subscribe(async (status: string) => {
         if (status === "SUBSCRIBED") {
           await (channel.presence as any).track({
             user_id: userName,

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { FileText, Plus, Loader2 } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 import { ScrollIndicator } from "@/components/ui/scroll-indicator"
-import { createClient } from "@supabase/supabase-js"
+import { createBrowserSupabaseClient } from "@/lib/supabase-browser"
 
 const RichEditor = dynamic(() => import("@/components/editor/RichEditor").then((mod) => mod.RichEditor), {
   loading: () => (
@@ -25,10 +25,7 @@ export default function EditorPage() {
   const [userName, setUserName] = useState<string | null>(null)
   const [userAvatarUrl, setUserAvatarUrl] = useState<string | null>(null)
   const { toast } = useToast()
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
+  const supabase = createBrowserSupabaseClient()
 
   useEffect(() => {
     const params = new URLSearchParams(typeof window !== "undefined" ? window.location.search : "")

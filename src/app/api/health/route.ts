@@ -1,4 +1,4 @@
-import { createServerClient } from "@supabase/ssr"
+import { getPooledRouteClient } from "@/lib/supabase"
 import { NextResponse } from "next/server"
 import { getRedisClient } from "@/lib/cache"
 import Stripe from "stripe"
@@ -10,17 +10,7 @@ export async function GET() {
   // ---- Database (Supabase) check ----
   const dbStart = Date.now()
   try {
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return []
-          },
-        },
-      },
-    )
+    const supabase = await getPooledRouteClient()
     const { error } = await supabase.from("documents").select("id").limit(1)
     const dbLatency = Date.now() - dbStart
     checks.database = error
