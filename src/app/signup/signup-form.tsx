@@ -22,11 +22,13 @@ import {
 import { validatePassword } from "@/lib/password"
 
 export default function SignupForm() {
+  const [fullName, setFullName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [fullNameError, setFullNameError] = useState<string | null>(null)
   const [emailError, setEmailError] = useState<string | null>(null)
   const [passwordError, setPasswordError] = useState<string | null>(null)
   const [confirmError, setConfirmError] = useState<string | null>(null)
@@ -50,11 +52,13 @@ export default function SignupForm() {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault()
+    setFullNameError(null)
     setEmailError(null)
     setPasswordError(null)
     setConfirmError(null)
 
-    if (!email || !password || !confirmPassword) {
+    if (!fullName || !email || !password || !confirmPassword) {
+      if (!fullName) setFullNameError("Full name is required")
       if (!email) setEmailError("Email is required")
       if (!password) setPasswordError("Password is required")
       if (!confirmPassword) setConfirmError("Confirm your password")
@@ -81,11 +85,11 @@ export default function SignupForm() {
     setLoading(true)
     try {
       const supabase = createBrowserSupabaseClient()
-      const { error } = await supabase.auth.signUp({
+      const { error, data } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          data: { full_name: email.split("@")[0] },
+          data: { full_name: fullName.trim() },
           emailRedirectTo: `${typeof window !== "undefined" ? window.location.origin : process.env.NEXT_PUBLIC_APP_URL}/verify-email`,
         },
       })
@@ -98,6 +102,17 @@ export default function SignupForm() {
         } else {
           toast({ title: msg || "Signup failed. Please try again.", variant: "destructive" })
         }
+        return
+      }
+
+      if (data?.session) {
+        toast({
+          title: "Account created!",
+          description: "You are now signed in.",
+          variant: "success",
+        })
+        await router.push(redirectTo)
+        router.refresh()
         return
       }
 
@@ -126,6 +141,17 @@ export default function SignupForm() {
         <form onSubmit={handleSignup} className="space-y-4">
           <AuthGoogleButton onClick={handleGoogle} loading={loading} />
           <AuthDivider label="OR" />
+          <AuthInput
+            id="fullName"
+            label="Full name"
+            type="text"
+            placeholder="Jane Doe"
+            value={fullName}
+            onChange={(e) => setFullName(e.target.value)}
+            error={fullNameError}
+            required
+            autoComplete="name"
+          />
           <AuthInput
             id="email"
             label="Email address"

@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { AuthProvider } from "@/lib/auth-context"
 import { Inter } from "next/font/google"
 import "./globals.css"
 import { ToastProvider } from "@/components/ui/toast"
@@ -197,7 +198,9 @@ export default async function RootLayout({
           <ThemeProvider>
             <ToastProvider>
               <CookieConsentProvider>
-                <main id="main-content" className="dv-screen">{children}</main>
+                <AuthProvider>
+                  <main id="main-content" className="dv-screen">{children}</main>
+                </AuthProvider>
               </CookieConsentProvider>
             </ToastProvider>
           </ThemeProvider>

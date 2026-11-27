@@ -18,6 +18,9 @@ export type BrowserSupabaseClient = {
     verifyOtp: (..._args: any[]) => Promise<any>
     resend: (..._args: any[]) => Promise<any>
     signOut: (..._args: any[]) => Promise<any>
+    onAuthStateChange: (
+      callback: (event: string, session: any) => void,
+    ) => { subscription: { unsubscribe: () => void } }
   }
   storage: {
     from: (bucket: string) => any
