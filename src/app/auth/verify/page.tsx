@@ -2,6 +2,7 @@ import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
 import { redirect } from "next/navigation"
+import logger from "@/lib/logger"
 
 export default async function VerifyEmailPage({
   searchParams,
@@ -10,7 +11,7 @@ export default async function VerifyEmailPage({
 }) {
   const params = await searchParams
   const code = params["code"]
-  const next = (params["next"] ?? "/dashboard") as string
+  const next = (params["next"] ?? params["callbackUrl"] ?? "/dashboard") as string
   const tokenHash = params["token_hash"]
   const type = params["type"]
 
@@ -48,15 +49,19 @@ export default async function VerifyEmailPage({
     const { error, data } = await supabase.auth.exchangeCodeForSession(code)
     if (!error && data?.session) {
       const { data: userData } = await supabase.auth.getUser()
+      logger.info("[AUTH VERIFY PAGE] code exchanged", { userId: userData?.user?.id, emailConfirmed: Boolean(userData?.user?.email_confirmed_at) })
       if (userData?.user?.email_confirmed_at) {
         redirect(next)
       }
       redirect(`/verify-email?callbackUrl=${encodeURIComponent(next)}`)
     }
+    logger.error("[AUTH VERIFY PAGE] exchangeCodeForSession failed", { error: error?.message })
     redirect("/auth/login?error=Could not authenticate user")
   }
 
   if (tokenHash && type) {
+    // Delegate token-hash verification to the client page which calls verifyOtp
+    // and establishes the browser session.
     redirect(`/verify-email?token_hash=${tokenHash}&type=${type}&callbackUrl=${encodeURIComponent(next)}`)
   }
 

@@ -66,6 +66,7 @@ export default function LoginForm() {
     try {
       const supabase = createBrowserSupabaseClient()
       const { error, data } = await supabase.auth.signInWithPassword({ email, password })
+      console.log("[AUTH LOGIN CLIENT] signInWithPassword result", { error: error?.message, hasSession: Boolean(data?.session), email })
 
       if (error) {
         const msg = error.message || error.msg || String(error)

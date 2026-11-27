@@ -1,4 +1,4 @@
-import { getPooledRouteClient } from "@/lib/supabase"
+import { getPooledRouteClient, createServiceRoleClient } from "@/lib/supabase"
 import { NextResponse } from "next/server"
 import { validateCSRF, rotateCSRFToken } from "@/lib/csrf"
 import { authRateLimit } from "@/lib/rate-limiter"
@@ -28,6 +28,8 @@ export const POST = withErrorBoundary(async (req) => {
 
   const { email, password, full_name } = parsed.data
 
+  logger.info("[AUTH SIGNUP] initiated", { email })
+
   // Validate password using shared schema
   const pwValidation = validatePassword(password)
   if (!pwValidation.valid) {
@@ -44,12 +46,18 @@ export const POST = withErrorBoundary(async (req) => {
   })
 
   if (error) {
+    logger.error("[AUTH SIGNUP] signUp failed", { email, error: error.message, code: (error as any)?.code })
     throw createAppError(error.message, 400, "SIGNUP_ERROR")
   }
 
-  // Create user profile if signup successful
+  logger.info("[AUTH SIGNUP] signUp succeeded", { email, userId: data?.user?.id, emailConfirmed: Boolean(data?.user?.email_confirmed_at) })
+
+  // Create user profile if signup successful.
+  // Use the service role client so profile creation is not blocked by RLS
+  // (no authenticated session exists yet during signup).
   if (data.user) {
-    const { error: profileError } = await supabase.from("profiles").insert({
+    const serviceSupabase = await createServiceRoleClient()
+    const { error: profileError } = await (serviceSupabase.from("profiles") as any).insert({
       id: data.user.id,
       email: data.user.email,
       full_name: data.user.user_metadata?.full_name || null,

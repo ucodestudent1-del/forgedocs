@@ -50,10 +50,13 @@ export default function VerifyEmailForm() {
       const supabase = createBrowserSupabaseClient()
       const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type })
       if (error) {
+        console.error("[AUTH VERIFY] verifyOtp failed", { error: error.message })
         setError(error.message)
         setLoading(false)
         return
       }
+      const { data: sessionData } = await supabase.auth.getSession()
+      console.log("[AUTH VERIFY] verifyOtp succeeded", { hasSession: Boolean(sessionData?.session) })
       setVerified(true)
       setLoading(false)
       toast({ title: "Email verified successfully", variant: "success" })

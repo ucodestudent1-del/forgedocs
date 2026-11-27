@@ -27,6 +27,8 @@ export const POST = withErrorBoundary(async (req) => {
   const supabase = await getPooledRouteClient()
   const { email, password } = await req.json()
 
+  logger.info("[AUTH LOGIN] initiated", { email })
+
   // Validate password format
   const pwValidation = validatePassword(password)
   if (!pwValidation.valid) {
@@ -45,7 +47,7 @@ export const POST = withErrorBoundary(async (req) => {
     const isUnconfirmed =
       message.toLowerCase().includes("confirm") ||
       code === "email_not_confirmed"
-    logger.error("Supabase signInWithPassword failed", {
+    logger.error("[AUTH LOGIN] signInWithPassword failed", {
       email,
       code,
       message,
@@ -57,6 +59,8 @@ export const POST = withErrorBoundary(async (req) => {
       isUnconfirmed ? "EMAIL_NOT_CONFIRMED" : "INVALID_CREDENTIALS"
     )
   }
+
+  logger.info("[AUTH LOGIN] signInWithPassword succeeded", { email })
 
   await clearFailedAttempts(identifier)
 
