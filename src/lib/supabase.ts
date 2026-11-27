@@ -81,7 +81,7 @@ export async function createRouteClient() {
             cookiesToSet.forEach(({ name, value, options }) =>
               cookieStore.set(name, value, {
                 ...options,
-                secure: true,
+                secure: process.env.NEXT_PUBLIC_APP_URL?.startsWith("https://") ?? false,
                 sameSite: options.sameSite ?? "strict",
               })
             )
@@ -148,13 +148,13 @@ export async function getPooledRouteClient() {
         const cookieStore = await cookies()
         return cookieStore.getAll()
       },
-      async setAll(cookiesToSet: { name: string; value: string; options: any }[]) {
+        async setAll(cookiesToSet: { name: string; value: string; options: any }[]) {
         try {
           const cookieStore = await cookies()
           cookiesToSet.forEach(({ name, value, options }) =>
             cookieStore.set(name, value, {
               ...options,
-              secure: true,
+              secure: process.env.NEXT_PUBLIC_APP_URL?.startsWith("https://") ?? false,
               sameSite: options.sameSite ?? "strict",
             })
           )

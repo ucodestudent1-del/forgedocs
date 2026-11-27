@@ -24,7 +24,7 @@ export async function GET(request: Request) {
             cookiesToSet.forEach(({ name, value, options }) =>
               cookieStore.set(name, value, {
                 ...options,
-                secure: true,
+                secure: process.env.NEXT_PUBLIC_APP_URL?.startsWith("https://") ?? false,
                 sameSite: options.sameSite ?? "lax",
               })
             )

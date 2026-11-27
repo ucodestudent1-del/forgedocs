@@ -34,7 +34,7 @@ export default async function VerifyEmailPage({
               cookiesToSet.forEach(({ name, value, options }) => {
                 cookieStore.set(name, value, {
                   ...options,
-                  secure: true,
+                  secure: process.env.NEXT_PUBLIC_APP_URL?.startsWith("https://") ?? false,
                   sameSite: (options?.sameSite ?? "lax") as "lax" | "strict" | "none" | undefined,
                 })
               })
