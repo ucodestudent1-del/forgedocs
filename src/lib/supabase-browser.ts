@@ -36,9 +36,14 @@ export function createBrowserSupabaseClient(): BrowserSupabaseClient {
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
   if (!url || !key || url.includes("placeholder") || key.includes("placeholder")) {
-    // Fail safe: return mock client rather than throwing an uncaught error
-    // that breaks the login/verify flows when credentials are unavailable.
-    return createMockSupabaseClient() as unknown as BrowserSupabaseClient
+    const missing = !url || !key
+      ? "NEXT_PUBLIC_SUPABASE_URL and/or NEXT_PUBLIC_SUPABASE_ANON_KEY"
+      : "placeholder values"
+    throw new Error(
+      `[supabase-browser] Missing or invalid Supabase credentials: ${missing}. ` +
+      "Set real NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY environment variables. " +
+      "Without them, signInWithPassword sends no apikey and Supabase returns 400 'No API key found in request'."
+    )
   }
 
   return createBrowserClient<Database>(url, key) as unknown as BrowserSupabaseClient
