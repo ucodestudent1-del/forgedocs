@@ -32,7 +32,7 @@ export async function generateSignedUrl(bucket: string, path: string, expiresIn:
   return data.signedUrl
 }
 
-const MAGIC_BYTES: Record<string, Buffer[]> = {
+export const MAGIC_BYTES: Record<string, Buffer[]> = {
   "application/pdf": [Buffer.from([0x25, 0x50, 0x44, 0x46])], // %PDF
   "application/msword": [Buffer.from([0xD0, 0xCF, 0x11, 0xE0])], // DOC
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document": [
@@ -61,7 +61,7 @@ const MAGIC_BYTES: Record<string, Buffer[]> = {
   "application/rtf": [Buffer.from([0x7B, 0x5C, 0x52, 0x54, 0x46])], // {\RTF
 }
 
-const DANGEROUS_TEXT_PATTERNS: RegExp[] = [
+export const DANGEROUS_TEXT_PATTERNS: RegExp[] = [
   /<script[\s\S]*?>[\s\S]*?<\/script>/gi,
   /<iframe[\s\S]*?>[\s\S]*?<\/iframe>/gi,
   /<embed[\s\S]*?>/gi,

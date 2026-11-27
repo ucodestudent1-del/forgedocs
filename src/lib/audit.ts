@@ -1,6 +1,5 @@
 import { getPooledRouteClient } from "@/lib/supabase"
 import logger, { logAuditEvent as logToWinston } from "@/lib/logger"
-import { getClientIp } from "@/lib/client-identifier"
 
 export interface AuditEventInput {
   userId: string
@@ -16,18 +15,40 @@ export interface AuditEventInput {
 }
 
 // In-memory retry queue for audit events that fail to write to the DB.
+// Protected by a mutex to prevent race conditions in concurrent invocations.
 const auditRetryQueue: AuditEventInput[] = []
+let queueLock = Promise.resolve()
 const AUDIT_MAX_RETRY_QUEUE = 1000
 
-async function enqueueAuditRetry(input: AuditEventInput): Promise<void> {
-  if (auditRetryQueue.length >= AUDIT_MAX_RETRY_QUEUE) {
-    auditRetryQueue.shift() // drop oldest
+async function withQueueLock<T>(fn: () => Promise<T>): Promise<T> {
+  const release = queueLock
+  let resolveNext: () => void = () => {}
+  queueLock = new Promise<void>((resolve) => {
+    resolveNext = resolve
+  })
+  await release
+  try {
+    return await fn()
+  } finally {
+    resolveNext()
   }
-  auditRetryQueue.push(input)
+}
+
+async function enqueueAuditRetry(input: AuditEventInput): Promise<void> {
+  await withQueueLock(() => {
+    if (auditRetryQueue.length >= AUDIT_MAX_RETRY_QUEUE) {
+      auditRetryQueue.shift() // drop oldest
+    }
+    auditRetryQueue.push(input)
+    return Promise.resolve()
+  })
 }
 
 export async function flushAuditRetryQueue(): Promise<void> {
-  const queue = auditRetryQueue.splice(0, auditRetryQueue.length)
+  let queue: AuditEventInput[] = []
+  await withQueueLock(async () => {
+    queue = auditRetryQueue.splice(0, auditRetryQueue.length)
+  })
   for (const input of queue) {
     try {
       const supabase = await getPooledRouteClient()
@@ -43,7 +64,6 @@ export async function flushAuditRetryQueue(): Promise<void> {
         severity: input.severity ?? "low",
       })
     } catch {
-      // Re-enqueue for next flush attempt
       await enqueueAuditRetry(input)
     }
   }

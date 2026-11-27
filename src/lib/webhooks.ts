@@ -1,6 +1,7 @@
 import { createHmac, timingSafeEqual } from "crypto"
 import { getPooledRouteClient } from "@/lib/supabase"
 import { Queue, Worker } from "bullmq"
+import logger from "@/lib/logger"
 
 export interface WebhookDeliveryResult {
   success: boolean
@@ -27,6 +28,7 @@ export function verifyWebhookSignature(payload: string, signature: string, secre
 /**
  * Deliver a webhook to an endpoint with retry logic.
  * Uses BullMQ if available, otherwise direct fetch.
+ * Overall deadline prevents stuck deliveries from hanging indefinitely.
  */
 export async function deliverWebhook(
   endpointId: string,
@@ -34,11 +36,18 @@ export async function deliverWebhook(
   secret: string,
   event: string,
   payload: unknown,
-  attempt: number = 1
+  attempt: number = 1,
+  deadlineMs: number = 30000,
+  startTime: number = Date.now()
 ): Promise<WebhookDeliveryResult> {
   const body = JSON.stringify(payload)
   const signature = signWebhookPayload(body, secret)
   const idempotencyKey = `wh:${endpointId}:${event}:${Date.now()}`
+
+  // Enforce overall deadline across all retry attempts
+  if (Date.now() - startTime > deadlineMs) {
+    return { success: false, status: null, body: "Overall delivery deadline exceeded" }
+  }
 
   let status: number | null = null
   let responseBody: string | null = null
@@ -70,7 +79,7 @@ export async function deliverWebhook(
     if (attempt < 3) {
       const backoffMs = Math.pow(2, attempt) * 1000
       await new Promise((r) => setTimeout(r, backoffMs))
-      return deliverWebhook(endpointId, url, secret, event, payload, attempt + 1)
+      return deliverWebhook(endpointId, url, secret, event, payload, attempt + 1, deadlineMs, startTime)
     }
 
     return { success: false, status, body: responseBody }
@@ -80,7 +89,7 @@ export async function deliverWebhook(
     if (attempt < 3) {
       const backoffMs = Math.pow(2, attempt) * 1000
       await new Promise((r) => setTimeout(r, backoffMs))
-      return deliverWebhook(endpointId, url, secret, event, payload, attempt + 1)
+      return deliverWebhook(endpointId, url, secret, event, payload, attempt + 1, deadlineMs, startTime)
     }
 
     return { success: false, status: null, body: err instanceof Error ? err.message : String(err) }
@@ -195,6 +204,13 @@ export async function fireWebhookEvent(
         secret: ep.secret,
         event,
         payload,
+      }).catch((err) => {
+        logger.error("fireWebhookEvent: failed to queue delivery", {
+          userId,
+          event,
+          endpointId: ep.id,
+          error: err instanceof Error ? err.message : String(err),
+        })
       })
     }
   } catch {

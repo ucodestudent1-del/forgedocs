@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { FileText, Save, Download, Plus } from "lucide-react"
 import { TEMPLATE_LIBRARY, getTemplateById } from "@/lib/templateLibrary"
-import { DocumentGenerator } from "@/lib/documentGenerator"
+import { DocumentGenerator } from "@/lib/document-generator"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useToast } from "@/components/ui/use-toast"
 import { apiFetch } from "@/lib/api-client"

@@ -10,7 +10,7 @@ import {
 } from "@/lib/api-version"
 import { validateApiKey, checkApiKeyPermissions, requiresApiKeyPermission } from "@/lib/api-key"
 import { checkRateLimit, getRateLimitConfig, getAPIKeyRateLimitConfig } from "@/lib/rate-limiter"
-import { getPooledRouteClient } from "@/lib/supabase"
+import { createRouteAuthClient } from "@/lib/supabase"
 import logger from "@/lib/logger"
 
 let envValidated = false
@@ -127,7 +127,7 @@ export async function middleware(request: NextRequest) {
 
     // ---- Authentication check for page routes ----
     if (!pathname.startsWith("/api/") && !pathname.startsWith("/auth/")) {
-      const supabase = await getPooledRouteClient()
+      const supabase = await createRouteAuthClient()
       const { data: { user }, error } = await supabase.auth.getUser()
 
       // Protected routes that require authentication
@@ -209,7 +209,7 @@ export async function middleware(request: NextRequest) {
       !pathname.startsWith("/auth/callback") &&
       pathname !== "/callback"
     ) {
-      const supabase = await getPooledRouteClient()
+      const supabase = await createRouteAuthClient()
       const { data: { user }, error } = await supabase.auth.getUser()
       if (user && !error) {
         if (user.email_confirmed_at) {
@@ -245,7 +245,7 @@ export async function middleware(request: NextRequest) {
 
     // Redirect authenticated users on the landing page to the dashboard.
     if (pathname === "/" && !isLooping) {
-      const supabase = await getPooledRouteClient()
+      const supabase = await createRouteAuthClient()
       const { data: { user }, error } = await supabase.auth.getUser()
       if (user && !error && user.email_confirmed_at) {
         const redirectResponse = NextResponse.redirect(new URL("/dashboard", request.nextUrl))
@@ -395,8 +395,11 @@ export async function middleware(request: NextRequest) {
       const matchedConfig = getRateLimitConfig(pathname)
       if (matchedConfig) {
         // Use a stable session identifier (cookie-based or IP-based) for rate limiting
-        const sessionCookie = request.cookies.get("sb-session")?.value ?? requestId
-        const identifier = `session:${sessionCookie}`
+        const sessionCookie = request.cookies.get("sb-session")?.value
+        const forwardedFor = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
+        const realIp = request.headers.get("x-real-ip")
+        const ipIdentifier = forwardedFor ?? realIp ?? "unknown"
+        const identifier = `session:${sessionCookie ?? ipIdentifier}`
         const limitInfo = await checkRateLimit(identifier, matchedConfig)
         if (limitInfo.limited) {
           const rateLimited = NextResponse.json(

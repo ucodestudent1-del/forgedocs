@@ -2,31 +2,13 @@ import { NextResponse } from "next/server"
 import { randomUUID } from "crypto"
 import { validateCSRF } from "@/lib/csrf"
 import { documentRateLimit } from "@/lib/rate-limiter"
-import { sanitizeFilename } from "@/lib/security"
+import { sanitizeFilename, validateFileMagicBytes } from "@/lib/security"
 import { scanFile } from "@/lib/malware-scan"
 import { sanitizeHtml } from "@/lib/sanitize"
 import { withErrorBoundary, createAppError } from "@/lib/api-error"
 import { getPooledRouteClient } from "@/lib/supabase"
 
 export const maxDuration = 60
-
-const MAGIC_BYTES: Record<string, Buffer[]> = {
-  "application/pdf": [Buffer.from([0x25, 0x50, 0x44, 0x46])], // %PDF
-  "application/msword": [Buffer.from([0xD0, 0xCF, 0x11, 0xE0])], // DOC
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document": [
-    Buffer.from([0x50, 0x4B, 0x03, 0x04]), // ZIP-based (DOCX)
-  ],
-  "application/vnd.ms-excel": [Buffer.from([0xD0, 0xCF, 0x11, 0xE0])], // XLS
-  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [
-    Buffer.from([0x50, 0x4B, 0x03, 0x04]), // ZIP-based (XLSX)
-  ],
-  "application/vnd.ms-powerpoint": [Buffer.from([0xD0, 0xCF, 0x11, 0xE0])], // PPT
-  "application/vnd.openxmlformats-officedocument.presentationml.presentation": [
-    Buffer.from([0x50, 0x4B, 0x03, 0x04]), // ZIP-based (PPTX)
-  ],
-  "text/plain": [Buffer.from([])], // Any text (can't validate magic bytes)
-  "text/csv": [Buffer.from([])], // Any text (can't validate magic bytes)
-}
 
 export const POST = withErrorBoundary(async (req) => {
   const rateLimitError = await documentRateLimit(req)
@@ -150,37 +132,4 @@ export const POST = withErrorBoundary(async (req) => {
   })
 })
 
-const DANGEROUS_TEXT_PATTERNS = [
-  /<script[\s\S]*?>[\s\S]*?<\/script>/gi,
-  /<iframe[\s\S]*?>[\s\S]*?<\/iframe>/gi,
-  /<embed[\s\S]*?>/gi,
-  /<object[\s\S]*?>[\s\S]*?<\/object>/gi,
-  /<\?php/gi,
-  /<\?=/gi,
-  /javascript:/gi,
-  /on\w+\s*=/gi,
-]
 
-function validateFileMagicBytes(fileBytes: Uint8Array, mimeType: string): boolean {
-  const expected = MAGIC_BYTES[mimeType]
-  if (!expected || expected.length === 0 || expected[0].length === 0) {
-    // Text files: scan the full content for dangerous patterns
-    const text = Buffer.from(fileBytes).toString("utf8")
-    return !DANGEROUS_TEXT_PATTERNS.some((pattern) => pattern.test(text))
-  }
-
-  // Check if file starts with any of the expected magic byte sequences
-  for (const magic of expected) {
-    if (fileBytes.length >= magic.length) {
-      let match = true
-      for (let i = 0; i < magic.length; i++) {
-        if (fileBytes[i] !== magic[i]) {
-          match = false
-          break
-        }
-      }
-      if (match) return true
-    }
-  }
-  return false
-}
