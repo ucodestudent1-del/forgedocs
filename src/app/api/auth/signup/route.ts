@@ -39,7 +39,7 @@ export const POST = withErrorBoundary(async (req) => {
     password,
     options: {
       data: { full_name },
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/auth/verify?callbackUrl=${encodeURIComponent("/dashboard")}`,
+      emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/auth/callback?callbackUrl=${encodeURIComponent("/dashboard")}`,
     },
   })
 
