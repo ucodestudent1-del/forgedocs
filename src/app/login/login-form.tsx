@@ -81,6 +81,30 @@ export default function LoginForm() {
             title: "Please verify your email before signing in.",
             description: "Check your inbox, or request a new verification code.",
             variant: "destructive",
+            action: {
+              label: "Resend verification",
+              onClick: async () => {
+                try {
+                  const res = await fetch("/api/auth/resend-verification", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ email }),
+                  })
+                  if (!res.ok) {
+                    const err = await res.json()
+                    toast({ title: err?.error || "Failed to resend verification", variant: "destructive" })
+                    return
+                  }
+                  toast({
+                    title: "Verification email sent",
+                    description: "Check your inbox to confirm your account, then sign in.",
+                    variant: "default",
+                  })
+                } catch {
+                  toast({ title: "Failed to resend verification. Please try again.", variant: "destructive" })
+                }
+              },
+            },
           })
           return
         }
