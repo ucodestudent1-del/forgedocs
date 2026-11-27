@@ -3,6 +3,7 @@ import { cookies } from "next/headers"
 import type { Database } from "@/types/database"
 import { getGuestUserId } from "@/lib/guest-session"
 import { createMockSupabaseClient } from "@/lib/supabase-mock"
+import logger from "@/lib/logger"
 
 function injectGuestUser(client: any): any {
   const realGetUser = client.auth.getUser.bind(client.auth)
