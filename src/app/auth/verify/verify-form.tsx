@@ -74,7 +74,7 @@ export default function VerifyEmailForm() {
             </CardHeader>
             <CardFooter>
               <Button asChild className="w-full">
-                <Link href="/auth/login">
+                <Link href="/login">
                   <ArrowLeft className="h-4 w-4 mr-2" />
                   Sign in
                 </Link>
@@ -90,7 +90,7 @@ export default function VerifyEmailForm() {
             </CardHeader>
             <CardFooter>
               <Button variant="outline" asChild className="w-full">
-                <Link href="/auth/login">
+                <Link href="/login">
                   <Mail className="h-4 w-4 mr-2" />
                   Request new verification
                 </Link>

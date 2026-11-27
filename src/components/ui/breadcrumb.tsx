@@ -23,8 +23,8 @@ const breadcrumbRoutes: Record<string, { label: string; href: string }> = {
   "/dashboard/tools": { label: "Tools", href: "/dashboard/tools" },
   "/dashboard/settings": { label: "Settings", href: "/dashboard/settings" },
   "/dashboard/billing": { label: "Billing", href: "/dashboard/billing" },
-  "/auth/login": { label: "Login", href: "/auth/login" },
-  "/auth/signup": { label: "Sign Up", href: "/auth/signup" },
+  "/login": { label: "Login", href: "/login" },
+  "/signup": { label: "Sign Up", href: "/signup" },
 }
 
 export function Breadcrumb() {

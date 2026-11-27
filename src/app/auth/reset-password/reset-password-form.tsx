@@ -64,7 +64,7 @@ export default function ResetPasswordForm() {
         return
       }
       toast({ title: "Password reset successfully", variant: "success" })
-      router.push("/auth/login")
+      router.push("/login")
       router.refresh()
     } catch {
       toast({ title: "Password reset failed. Please try again.", variant: "destructive" })
@@ -134,7 +134,7 @@ export default function ResetPasswordForm() {
         </CardContent>
         <CardFooter>
           <Button variant="outline" asChild className="w-full">
-            <Link href="/auth/login">
+            <Link href="/login">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to sign in
             </Link>

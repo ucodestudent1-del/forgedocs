@@ -4,7 +4,7 @@ import { useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { useToast } from "@/components/ui/use-toast"
-import { createBrowserSupabaseClient } from "@/lib/supabase-browser"
+import { useAuth } from "@/lib/auth-context"
 import { Lock, Eye, EyeOff } from "lucide-react"
 import {
   AuthContainer,
@@ -27,7 +27,6 @@ export default function SignupForm() {
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
-  const [loading, setLoading] = useState(false)
   const [fullNameError, setFullNameError] = useState<string | null>(null)
   const [emailError, setEmailError] = useState<string | null>(null)
   const [passwordError, setPasswordError] = useState<string | null>(null)
@@ -35,19 +34,14 @@ export default function SignupForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { toast } = useToast()
+  const { signUp, loading: authLoading } = useAuth()
   const redirectTo = searchParams.get("redirect") || "/dashboard"
+  const loading = authLoading
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
   const handleGoogle = async () => {
-    setLoading(true)
-    try {
-      window.location.href = "/api/auth/google"
-    } catch {
-      toast({ title: "Google sign-in failed. Please try again.", variant: "destructive" })
-    } finally {
-      setLoading(false)
-    }
+    window.location.href = "/api/auth/google"
   }
 
   const handleSignup = async (e: React.FormEvent) => {
@@ -82,30 +76,13 @@ export default function SignupForm() {
       return
     }
 
-    setLoading(true)
     try {
-      const supabase = createBrowserSupabaseClient()
-      const { error, data } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: { full_name: fullName.trim() },
-          emailRedirectTo: `${typeof window !== "undefined" ? window.location.origin : process.env.NEXT_PUBLIC_APP_URL}/verify-email`,
-        },
-      })
+      const callbackUrl = `${typeof window !== "undefined" ? window.location.origin : process.env.NEXT_PUBLIC_APP_URL}/verify-email?callbackUrl=${encodeURIComponent(redirectTo)}`
+      await signUp(email, password, fullName.trim(), callbackUrl)
 
-      if (error) {
-        const msg = error.message || String(error)
-        if (msg.toLowerCase().includes("already registered") || msg.toLowerCase().includes("user already exists")) {
-          setEmailError("An account with this email already exists")
-          toast({ title: "Account already exists", variant: "destructive" })
-        } else {
-          toast({ title: msg || "Signup failed. Please try again.", variant: "destructive" })
-        }
-        return
-      }
+      const { data: sessionData } = await (await import("@/lib/supabase-browser")).createBrowserSupabaseClient().auth.getSession()
 
-      if (data?.session) {
+      if (sessionData?.session) {
         toast({
           title: "Account created!",
           description: "You are now signed in.",
@@ -125,9 +102,12 @@ export default function SignupForm() {
       router.refresh()
     } catch (err) {
       const message = err instanceof Error ? err.message : "Signup failed. Please try again."
-      toast({ title: message, variant: "destructive" })
-    } finally {
-      setLoading(false)
+      if (message.toLowerCase().includes("already registered") || message.toLowerCase().includes("user already exists")) {
+        setEmailError("An account with this email already exists")
+        toast({ title: "Account already exists", variant: "destructive" })
+      } else {
+        toast({ title: message, variant: "destructive" })
+      }
     }
   }
 

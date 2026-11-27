@@ -13,7 +13,7 @@ const QUICK_LINKS = [
   { label: "Documents", href: "/dashboard/documents", icon: FileText },
   { label: "Templates", href: "/dashboard/templates", icon: Zap },
   { label: "Tools", href: "/dashboard/tools", icon: Users },
-  { label: "Login", href: "/auth/login", icon: Search },
+  { label: "Login", href: "/login", icon: Search },
 ]
 
 export default function NotFound() {

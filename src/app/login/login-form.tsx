@@ -4,8 +4,8 @@ import { useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { useToast } from "@/components/ui/use-toast"
-import { createBrowserSupabaseClient } from "@/lib/supabase-browser"
-import { Mail, Lock, AlertTriangle, Eye, EyeOff } from "lucide-react"
+import { useAuth } from "@/lib/auth-context"
+import { Mail, Lock, AlertTriangle, Eye, EyeOff, Shield } from "lucide-react"
 import {
   AuthContainer,
   AuthCard,
@@ -24,25 +24,22 @@ export default function LoginForm() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
-  const [loading, setLoading] = useState(false)
   const [emailError, setEmailError] = useState<string | null>(null)
   const [passwordError, setPasswordError] = useState<string | null>(null)
+  const [mfaRequired, setMfaRequired] = useState(false)
+  const [mfaCode, setMfaCode] = useState("")
+  const [mfaLoading, setMfaLoading] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
   const { toast } = useToast()
+  const { refreshProfile } = useAuth()
   const redirectTo = searchParams.get("redirect") || "/dashboard"
+  const loading = mfaLoading
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
   const handleGoogle = async () => {
-    setLoading(true)
-    try {
-      window.location.href = "/api/auth/google"
-    } catch {
-      toast({ title: "Google sign-in failed. Please try again.", variant: "destructive" })
-    } finally {
-      setLoading(false)
-    }
+    window.location.href = "/api/auth/google"
   }
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -62,19 +59,23 @@ export default function LoginForm() {
       return
     }
 
-    setLoading(true)
     try {
-      const supabase = createBrowserSupabaseClient()
-      const { error, data } = await supabase.auth.signInWithPassword({ email, password })
-      console.log("[AUTH LOGIN CLIENT] signInWithPassword result", { error: error?.message, hasSession: Boolean(data?.session), email })
+      setMfaLoading(true)
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      })
 
-      if (error) {
-        const msg = error.message || error.msg || String(error)
-        const code = (error as any)?.code || (error as any)?.error_code
+      const data = await res.json()
+
+      if (!res.ok) {
+        const message = data?.error || "Login failed. Please try again."
+        const code = data?.code
         const isUnconfirmed =
-          msg.toLowerCase().includes("email not confirmed") ||
-          msg.toLowerCase().includes("confirm") ||
-          code === "email_not_confirmed"
+          message.toLowerCase().includes("email not confirmed") ||
+          message.toLowerCase().includes("confirm") ||
+          code === "EMAIL_NOT_CONFIRMED"
         if (isUnconfirmed) {
           setEmailError("Please verify your email before signing in.")
           setPasswordError("Please verify your email before signing in.")
@@ -86,14 +87,14 @@ export default function LoginForm() {
               label: "Resend verification",
               onClick: async () => {
                 try {
-                  const res = await fetch("/api/auth/resend-verification", {
+                  const resendRes = await fetch("/api/auth/resend-verification", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ email }),
                   })
-                  if (!res.ok) {
-                    const err = await res.json()
-                    toast({ title: err?.error || "Failed to resend verification", variant: "destructive" })
+                  if (!resendRes.ok) {
+                    const resErr = await resendRes.json()
+                    toast({ title: resErr?.error || "Failed to resend verification", variant: "destructive" })
                     return
                   }
                   toast({
@@ -109,23 +110,58 @@ export default function LoginForm() {
           })
           return
         }
+        if (data?.mfa_required) {
+          setMfaRequired(true)
+          setMfaLoading(false)
+          toast({ title: "MFA verification required", description: "Enter the code from your authenticator app.", variant: "default" })
+          return
+        }
         setEmailError("Invalid email or password")
         setPasswordError("Invalid email or password")
-        toast({ title: "Invalid email or password", variant: "destructive" })
+        toast({ title: message, variant: "destructive" })
         return
       }
 
-      const { data: sessionData } = await supabase.auth.getSession()
+      await refreshProfile()
       await router.push(redirectTo)
       router.refresh()
-      if (!sessionData?.session) {
-        toast({ title: "Sign in succeeded but no session was established. Please try again.", variant: "destructive" })
-      }
     } catch (err) {
       const message = err instanceof Error ? err.message : "Login failed. Please try again."
       toast({ title: message, variant: "destructive" })
     } finally {
-      setLoading(false)
+      setMfaLoading(false)
+    }
+  }
+
+  const handleMfaVerify = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!mfaCode || mfaCode.length !== 6) {
+      toast({ title: "Enter a valid 6-digit code", variant: "destructive" })
+      return
+    }
+
+    setMfaLoading(true)
+    try {
+      const res = await fetch("/api/auth/mfa/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: mfaCode }),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        toast({ title: data?.error || "Invalid MFA code", variant: "destructive" })
+        return
+      }
+
+      await refreshProfile()
+      await router.push(redirectTo)
+      router.refresh()
+    } catch {
+      toast({ title: "MFA verification failed. Please try again.", variant: "destructive" })
+    } finally {
+      setMfaLoading(false)
     }
   }
 
@@ -136,36 +172,71 @@ export default function LoginForm() {
           title="Welcome back"
           description="Sign in to continue to your account."
         />
-        <form onSubmit={handleLogin} className="space-y-4">
-          <AuthGoogleButton onClick={handleGoogle} loading={loading} />
-          <AuthDivider label="OR" />
-          <AuthInput
-            id="email"
-            label="Email address"
-            type="email"
-            placeholder="you@company.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            error={emailError}
-            required
-            autoComplete="email"
-          />
-          <AuthPasswordInput
-            id="password"
-            label="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            showPassword={showPassword}
-            toggleShowPassword={() => setShowPassword(!showPassword)}
-            error={passwordError}
-            required
-            autoComplete="current-password"
-          />
-          <AuthButton type="submit" loading={loading} disabled={loading}>
-            <Mail className="h-4 w-4 mr-2" />
-            Sign in
-          </AuthButton>
-        </form>
+        {mfaRequired ? (
+          <form onSubmit={handleMfaVerify} className="space-y-4">
+            <div className="text-center mb-4">
+              <Shield className="h-12 w-12 text-primary mx-auto mb-4" />
+              <h3 className="text-lg font-medium">Enter MFA Code</h3>
+              <p className="text-sm text-muted-foreground">Enter the 6-digit code from your authenticator app</p>
+            </div>
+            <AuthInput
+              id="mfaCode"
+              label="Authentication Code"
+              type="text"
+              placeholder="123456"
+              value={mfaCode}
+              onChange={(e) => setMfaCode(e.target.value)}
+              required
+              autoComplete="one-time-code"
+              maxLength={6}
+              inputMode="numeric"
+            />
+            <AuthButton type="submit" loading={mfaLoading} disabled={mfaLoading} className="w-full">
+              <Shield className="h-4 w-4 mr-2" />
+              Verify
+            </AuthButton>
+            <p className="text-center text-sm text-muted-foreground">
+              <button
+                type="button"
+                onClick={() => setMfaRequired(false)}
+                className="text-primary hover:text-primary/90 transition-colors underline-offset-4 hover:underline"
+              >
+                Back to sign in
+              </button>
+            </p>
+          </form>
+        ) : (
+          <form onSubmit={handleLogin} className="space-y-4">
+            <AuthGoogleButton onClick={handleGoogle} loading={mfaLoading} />
+            <AuthDivider label="OR" />
+            <AuthInput
+              id="email"
+              label="Email address"
+              type="email"
+              placeholder="you@company.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              error={emailError}
+              required
+              autoComplete="email"
+            />
+            <AuthPasswordInput
+              id="password"
+              label="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              showPassword={showPassword}
+              toggleShowPassword={() => setShowPassword(!showPassword)}
+              error={passwordError}
+              required
+              autoComplete="current-password"
+            />
+            <AuthButton type="submit" loading={mfaLoading} disabled={mfaLoading}>
+              <Mail className="h-4 w-4 mr-2" />
+              Sign in
+            </AuthButton>
+          </form>
+        )}
         <AuthFooter>
           <p className="text-sm text-muted-foreground">
             <AuthLink href="/forgot-password">Forgot password?</AuthLink>

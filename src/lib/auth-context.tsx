@@ -23,6 +23,7 @@ export interface AuthContextType {
     email: string,
     password: string,
     fullName: string,
+    emailRedirectTo?: string,
   ) => Promise<void>
   signOut: () => Promise<void>
   resetPassword: (email: string) => Promise<void>
@@ -153,7 +154,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   )
 
   const signUp = useCallback(
-    async (email: string, password: string, fullName: string) => {
+    async (email: string, password: string, fullName: string, emailRedirectTo?: string) => {
       setLoading(true)
       const supabase = getSupabase()
       const { error, data } = await supabase.auth.signUp({
@@ -162,6 +163,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         options: {
           data: { full_name: fullName },
           emailRedirectTo:
+            emailRedirectTo ||
             typeof window !== "undefined"
               ? `${window.location.origin}/verify-email`
               : `${process.env.NEXT_PUBLIC_APP_URL}/verify-email`,

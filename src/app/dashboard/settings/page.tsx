@@ -307,7 +307,7 @@ export default function SettingsPage() {
       }
       toast({ title: "Account deleted successfully", variant: "success" })
       setTimeout(() => {
-        window.location.href = "/auth/login"
+        window.location.href = "/login"
       }, 1500)
     } catch {
       toast({ title: "Failed to delete account", variant: "destructive" })

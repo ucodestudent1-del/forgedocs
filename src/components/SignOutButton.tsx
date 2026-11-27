@@ -21,7 +21,7 @@ export function SignOutButton() {
     } catch {
       // Ignore unexpected errors — still clear local state and redirect
     }
-    router.push("/auth/login")
+    router.push("/login")
     router.refresh()
   }
 

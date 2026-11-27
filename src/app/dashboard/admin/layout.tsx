@@ -18,7 +18,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
-    redirect(`/auth/login?redirect=${encodeURIComponent(redirectUrl)}`)
+    redirect(`/login?redirect=${encodeURIComponent(redirectUrl)}`)
   }
 
   const { data: profile } = await supabase

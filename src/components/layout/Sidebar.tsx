@@ -268,7 +268,7 @@ export function Sidebar({
                 } catch {
                   // ignore
                 }
-                router.push("/auth/login")
+                router.push("/login")
               }}
               className={`p-2 rounded-md text-muted-foreground hover:bg-accent hover:text-foreground transition-colors`}
               aria-label="Sign out"

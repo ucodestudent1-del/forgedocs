@@ -83,7 +83,7 @@ export default function FeaturesPage() {
         title="Ready to streamline your documents?"
         description="Join thousands of teams using ForgeDocs to move faster."
         ctaText="Start for free"
-        ctaHref="/auth/signup"
+        ctaHref="/signup"
       />
       <Footer />
     </div>

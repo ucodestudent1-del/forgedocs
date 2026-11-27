@@ -17,9 +17,9 @@ export default async function VerifyEmailPage({
 
   logger.info("[AUTH VERIFY PAGE] received", { hasCode: Boolean(code), hasTokenHash: Boolean(tokenHash), type, next })
 
-  if (Array.isArray(code)) return redirect("/auth/login?error=Could not authenticate user")
-  if (Array.isArray(tokenHash)) return redirect("/auth/login?error=Could not authenticate user")
-  if (Array.isArray(type)) return redirect("/auth/login?error=Could not authenticate user")
+  if (Array.isArray(code)) return redirect("/login?error=Could not authenticate user")
+  if (Array.isArray(tokenHash)) return redirect("/login?error=Could not authenticate user")
+  if (Array.isArray(type)) return redirect("/login?error=Could not authenticate user")
 
   if (code) {
     const cookieStore = await cookies()
@@ -58,7 +58,7 @@ export default async function VerifyEmailPage({
       redirect(`/verify-email?callbackUrl=${encodeURIComponent(next)}`)
     }
     logger.error("[AUTH VERIFY PAGE] exchangeCodeForSession failed", { error: error?.message })
-    redirect("/auth/login?error=Could not authenticate user")
+    redirect("/login?error=Could not authenticate user")
   }
 
   if (tokenHash && type) {

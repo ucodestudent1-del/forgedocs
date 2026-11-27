@@ -92,7 +92,7 @@ export function MobileSidebar({ isOpen, onClose }: { isOpen: boolean; onClose: (
         </nav>
         <div className="p-4 border-t">
           <Link
-            href="/auth/login"
+            href="/login"
             onClick={onClose}
             className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-foreground hover:bg-accent rounded-lg block"
           >

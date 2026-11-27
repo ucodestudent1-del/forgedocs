@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 const QUICK_LINKS = [
   { label: "Home", href: "/", icon: Home },
   { label: "Dashboard", href: "/dashboard", icon: Home },
-  { label: "Login", href: "/auth/login", icon: Search },
+  { label: "Login", href: "/login", icon: Search },
 ]
 
 export default function LocaleNotFound() {

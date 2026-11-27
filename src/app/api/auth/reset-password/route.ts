@@ -41,7 +41,7 @@ export const POST = withErrorBoundary(async (req) => {
     await sendEmail({
       to: user.email,
       subject: "Your ForgeDocs password was changed",
-      html: getPasswordChangedHtml(user.user_metadata?.full_name || "User", `${process.env.NEXT_PUBLIC_APP_URL}/auth/login`),
+      html: getPasswordChangedHtml(user.user_metadata?.full_name || "User", `${process.env.NEXT_PUBLIC_APP_URL}/login`),
     })
   }
 

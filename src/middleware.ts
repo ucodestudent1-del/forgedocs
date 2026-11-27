@@ -222,8 +222,8 @@ export async function middleware(request: NextRequest) {
         }
         if (
           !pathname.startsWith("/auth/verify") &&
-          !pathname.startsWith("/auth/login") &&
-          !pathname.startsWith("/auth/signup") &&
+          !pathname.startsWith("/login") &&
+          !pathname.startsWith("/signup") &&
           !pathname.startsWith("/auth/resend-verification") &&
           !pathname.startsWith("/auth/forgot-password") &&
           !pathname.startsWith("/auth/reset-password") &&

@@ -99,7 +99,7 @@ export default function AboutPage() {
         title="Ready to get started?"
         description="Join thousands of teams using ForgeDocs to streamline their document workflow."
         ctaText="Start for free"
-        ctaHref="/auth/signup"
+        ctaHref="/signup"
       />
       <Footer />
     </div>

@@ -3,7 +3,7 @@
 import { useEffect } from "react"
 import { useRouter, usePathname } from "next/navigation"
 
-const AUTH_ROUTES = ["/auth/login", "/auth/signup", "/auth/forgot-password", "/auth/reset-password", "/auth/verify"]
+const AUTH_ROUTES = ["/login", "/signup", "/forgot-password", "/reset-password", "/verify-email", "/auth/forgot-password", "/auth/reset-password", "/auth/verify"]
 
 export function AuthHandler() {
   const router = useRouter()
@@ -15,7 +15,7 @@ export function AuthHandler() {
       if (AUTH_ROUTES.some((route) => pathname.startsWith(route))) {
         return
       }
-      router.replace(`/auth/login?redirect=${encodeURIComponent(pathname)}`)
+      router.replace(`/login?redirect=${encodeURIComponent(pathname)}`)
     }
 
     window.addEventListener("forge:unauthorized", handleUnauthorized)

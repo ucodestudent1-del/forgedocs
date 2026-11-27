@@ -43,13 +43,13 @@ export async function GET(request: Request) {
     const { error, data } = await supabase.auth.exchangeCodeForSession(code)
     if (error || !data?.session) {
       logger.error("[AUTH CALLBACK] exchangeCodeForSession failed", { error: error?.message, code: (error as any)?.code, status: (error as any)?.status, url: request.url })
-      return NextResponse.redirect(`/auth/login?error=Could not authenticate user&callbackUrl=${encodeURIComponent(next)}`)
+      return NextResponse.redirect(`/login?error=Could not authenticate user&callbackUrl=${encodeURIComponent(next)}`)
     }
 
     const { data: userData, error: userError } = await supabase.auth.getUser()
     if (userError || !userData?.user) {
       logger.error("[AUTH CALLBACK] getUser failed after exchange", { error: userError?.message, url: request.url })
-      return NextResponse.redirect(`/auth/login?error=Could not authenticate user&callbackUrl=${encodeURIComponent(next)}`)
+      return NextResponse.redirect(`/login?error=Could not authenticate user&callbackUrl=${encodeURIComponent(next)}`)
     }
 
     logger.info("[AUTH CALLBACK] session established", { userId: userData.user.id, emailConfirmed: Boolean(userData.user.email_confirmed_at), url: request.url })
@@ -58,7 +58,7 @@ export async function GET(request: Request) {
       return NextResponse.redirect(next)
     }
     // Email not yet confirmed — send to verify page so the user can complete confirmation.
-    return NextResponse.redirect(`/auth/verify?callbackUrl=${encodeURIComponent(next)}`)
+    return NextResponse.redirect(`/verify-email?callbackUrl=${encodeURIComponent(next)}`)
   }
 
   // --- Token-hash verification flow (verifyOtp) ---
@@ -66,13 +66,13 @@ export async function GET(request: Request) {
     const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type })
     if (error) {
       logger.error("[AUTH CALLBACK] verifyOtp failed", { error: error.message, code: (error as any)?.code, status: (error as any)?.status })
-      return NextResponse.redirect(`/auth/login?error=Could not authenticate user&callbackUrl=${encodeURIComponent(next)}`)
+      return NextResponse.redirect(`/login?error=Could not authenticate user&callbackUrl=${encodeURIComponent(next)}`)
     }
 
     const { data: sessionData } = await supabase.auth.getSession()
     if (!sessionData?.session) {
       logger.error("[AUTH CALLBACK] no session after verifyOtp", { url: request.url })
-      return NextResponse.redirect(`/auth/login?error=Could not authenticate user&callbackUrl=${encodeURIComponent(next)}`)
+      return NextResponse.redirect(`/login?error=Could not authenticate user&callbackUrl=${encodeURIComponent(next)}`)
     }
 
     const { data: userData } = await supabase.auth.getUser()
@@ -81,8 +81,8 @@ export async function GET(request: Request) {
     if (userData?.user?.email_confirmed_at) {
       return NextResponse.redirect(next)
     }
-    return NextResponse.redirect(`/auth/verify?callbackUrl=${encodeURIComponent(next)}`)
+    return NextResponse.redirect(`/verify-email?callbackUrl=${encodeURIComponent(next)}`)
   }
 
-  return NextResponse.redirect(`/auth/login?error=Could not authenticate user&callbackUrl=${encodeURIComponent(next)}`)
+  return NextResponse.redirect(`/login?error=Could not authenticate user&callbackUrl=${encodeURIComponent(next)}`)
 }
