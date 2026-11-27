@@ -15,6 +15,8 @@ export default async function VerifyEmailPage({
   const tokenHash = params["token_hash"]
   const type = params["type"]
 
+  logger.info("[AUTH VERIFY PAGE] received", { hasCode: Boolean(code), hasTokenHash: Boolean(tokenHash), type, next })
+
   if (Array.isArray(code)) return redirect("/auth/login?error=Could not authenticate user")
   if (Array.isArray(tokenHash)) return redirect("/auth/login?error=Could not authenticate user")
   if (Array.isArray(type)) return redirect("/auth/login?error=Could not authenticate user")
@@ -38,8 +40,8 @@ export default async function VerifyEmailPage({
                   sameSite: (options?.sameSite ?? "lax") as "lax" | "strict" | "none" | undefined,
                 })
               })
-            } catch {
-              // The `set` method was called from a Server Component.
+            } catch (err) {
+              logger.error("[AUTH VERIFY PAGE] setAll cookie failed", { error: err instanceof Error ? err.message : String(err) })
             }
           },
         },

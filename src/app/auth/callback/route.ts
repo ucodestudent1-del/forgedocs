@@ -28,31 +28,31 @@ export async function GET(request: Request) {
                 sameSite: options.sameSite ?? "lax",
               })
             )
-          } catch {
-            // The `set` method was called from a Server Component.
+          } catch (err) {
+            logger.error("[AUTH CALLBACK] setAll cookie failed", { error: err instanceof Error ? err.message : String(err) })
           }
         },
       },
     }
   )
 
-  logger.info("[AUTH CALLBACK] received", { hasCode: Boolean(code), hasTokenHash: Boolean(tokenHash), type, next })
+  logger.info("[AUTH CALLBACK] received", { hasCode: Boolean(code), hasTokenHash: Boolean(tokenHash), type, next, url: request.url })
 
   // --- PKCE authorization code flow (email confirm / sign-in via link) ---
   if (code) {
     const { error, data } = await supabase.auth.exchangeCodeForSession(code)
     if (error || !data?.session) {
-      logger.error("[AUTH CALLBACK] exchangeCodeForSession failed", { error: error?.message, code: (error as any)?.code, status: (error as any)?.status })
+      logger.error("[AUTH CALLBACK] exchangeCodeForSession failed", { error: error?.message, code: (error as any)?.code, status: (error as any)?.status, url: request.url })
       return NextResponse.redirect(`/auth/login?error=Could not authenticate user&callbackUrl=${encodeURIComponent(next)}`)
     }
 
     const { data: userData, error: userError } = await supabase.auth.getUser()
     if (userError || !userData?.user) {
-      logger.error("[AUTH CALLBACK] getUser failed after exchange", { error: userError?.message })
+      logger.error("[AUTH CALLBACK] getUser failed after exchange", { error: userError?.message, url: request.url })
       return NextResponse.redirect(`/auth/login?error=Could not authenticate user&callbackUrl=${encodeURIComponent(next)}`)
     }
 
-    logger.info("[AUTH CALLBACK] session established", { userId: userData.user.id, emailConfirmed: Boolean(userData.user.email_confirmed_at) })
+    logger.info("[AUTH CALLBACK] session established", { userId: userData.user.id, emailConfirmed: Boolean(userData.user.email_confirmed_at), url: request.url })
 
     if (userData.user.email_confirmed_at) {
       return NextResponse.redirect(next)
@@ -71,12 +71,12 @@ export async function GET(request: Request) {
 
     const { data: sessionData } = await supabase.auth.getSession()
     if (!sessionData?.session) {
-      logger.error("[AUTH CALLBACK] no session after verifyOtp")
+      logger.error("[AUTH CALLBACK] no session after verifyOtp", { url: request.url })
       return NextResponse.redirect(`/auth/login?error=Could not authenticate user&callbackUrl=${encodeURIComponent(next)}`)
     }
 
     const { data: userData } = await supabase.auth.getUser()
-    logger.info("[AUTH CALLBACK] token_hash verification succeeded", { userId: userData?.user?.id, emailConfirmed: Boolean(userData?.user?.email_confirmed_at) })
+    logger.info("[AUTH CALLBACK] token_hash verification succeeded", { userId: userData?.user?.id, emailConfirmed: Boolean(userData?.user?.email_confirmed_at), url: request.url })
 
     if (userData?.user?.email_confirmed_at) {
       return NextResponse.redirect(next)

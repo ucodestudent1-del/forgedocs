@@ -85,8 +85,8 @@ export async function createRouteClient() {
                 sameSite: options.sameSite ?? "strict",
               })
             )
-          } catch {
-            // The `set` method was called from a Server Component.
+          } catch (err) {
+            logger.error("[SUPABASE SERVER] setAll cookie failed", { error: err instanceof Error ? err.message : String(err) })
           }
         },
       },
@@ -158,8 +158,8 @@ export async function getPooledRouteClient() {
               sameSite: options.sameSite ?? "strict",
             })
           )
-        } catch {
-          // The `set` method was called from a Server Component.
+        } catch (err) {
+          logger.error("[SUPABASE POOLED] setAll cookie failed", { error: err instanceof Error ? err.message : String(err) })
         }
       },
     },
