@@ -1,4 +1,4 @@
-import { getPooledRouteClient, createServiceRoleClient } from "@/lib/supabase"
+import { createRouteAuthClient, createServiceRoleClient } from "@/lib/supabase"
 import { NextResponse } from "next/server"
 import { validateCSRF, rotateCSRFToken } from "@/lib/csrf"
 import { authRateLimit } from "@/lib/rate-limiter"
@@ -19,7 +19,7 @@ export const POST = withErrorBoundary(async (req) => {
 
   await validateCSRF(req)
 
-  const supabase = await getPooledRouteClient()
+  const supabase = await createRouteAuthClient()
   const body = await req.json()
   const parsed = signupSchema.safeParse(body)
   if (!parsed.success) {

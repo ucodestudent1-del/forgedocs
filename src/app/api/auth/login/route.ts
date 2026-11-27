@@ -1,4 +1,4 @@
-import { getPooledRouteClient } from "@/lib/supabase"
+import { createRouteAuthClient } from "@/lib/supabase"
 import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { validateCSRF, rotateCSRFToken } from "@/lib/csrf"
@@ -24,7 +24,7 @@ export const POST = withErrorBoundary(async (req) => {
     )
   }
 
-  const supabase = await getPooledRouteClient()
+  const supabase = await createRouteAuthClient()
   const { email, password } = await req.json()
 
   logger.info("[AUTH LOGIN] initiated", { email })
@@ -102,7 +102,7 @@ export const DELETE = withErrorBoundary(async (req) => {
 
   await validateCSRF(req)
 
-  const supabase = await getPooledRouteClient()
+  const supabase = await createRouteAuthClient()
   const { error } = await supabase.auth.signOut()
 
   if (error) {
