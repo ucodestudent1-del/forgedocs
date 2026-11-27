@@ -76,7 +76,7 @@ export default function LandingPage() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-              <a href="/auth/signup" className="px-8 py-4 bg-primary text-primary-foreground font-medium rounded-lg hover:bg-primary/90 transition-colors shadow-lg shadow-primary/30 text-lg" aria-label="Start building with ForgeDocs - create a free account">
+              <a href="/signup" className="px-8 py-4 bg-primary text-primary-foreground font-medium rounded-lg hover:bg-primary/90 transition-colors shadow-lg shadow-primary/30 text-lg" aria-label="Start building with ForgeDocs - create a free account">
                 Start building
               </a>
               <a href="/features" className="px-8 py-4 bg-background border border-input text-foreground font-medium rounded-lg hover:bg-accent transition-colors text-lg">
@@ -128,7 +128,7 @@ export default function LandingPage() {
                   <div className="h-8 w-8 rounded-full bg-muted/50 flex items-center justify-center text-[10px] font-medium text-muted-foreground">
                     JD
                   </div>
-                  <a href="/auth/login" className="h-8 px-3 text-sm font-medium text-foreground hover:bg-muted rounded-md transition-colors">
+                  <a href="/login" className="h-8 px-3 text-sm font-medium text-foreground hover:bg-muted rounded-md transition-colors">
                     Sign in
                   </a>
                 </div>
@@ -146,7 +146,7 @@ export default function LandingPage() {
                         <p className="text-xs text-muted-foreground">124 documents</p>
                       </div>
                     </div>
-                    <a href="/auth/signup" className="flex items-center gap-3 p-3 rounded-lg bg-background border border-input hover:bg-muted w-full cursor-pointer transition-colors justify-start">
+                    <a href="/signup" className="flex items-center gap-3 p-3 rounded-lg bg-background border border-input hover:bg-muted w-full cursor-pointer transition-colors justify-start">
                         <div className="h-8 w-8 rounded-md bg-primary/10 flex items-center justify-center text-primary">
                           <FileText className="h-4 w-4" />
                         </div>
@@ -418,7 +418,7 @@ export default function LandingPage() {
               ]}
               isFeatured={false}
               ctaText="Get started"
-              ctaHref="/auth/signup"
+              ctaHref="/signup"
             />
             <PricingCard
               name="Professional"
@@ -436,7 +436,7 @@ export default function LandingPage() {
               ]}
               isFeatured={true}
               ctaText="Start free trial"
-              ctaHref="/auth/signup"
+              ctaHref="/signup"
             />
             <PricingCard
               name="Business"
@@ -502,9 +502,9 @@ export default function LandingPage() {
           <div className="rounded-2xl bg-primary p-8 sm:p-12 text-primary-foreground text-center">
             <h2 className="text-3xl font-bold mb-4">Ready to organize your documents?</h2>
             <p className="text-primary-foreground/90 mb-8 max-w-[65ch] mx-auto">Join thousands of teams using ForgeDocs to streamline their document workflow.</p>
-            <a href="/auth/signup" className="inline-block px-8 py-4 bg-background text-primary font-semibold rounded-lg hover:bg-primary/90 transition-colors shadow-lg shadow-primary/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-foreground focus-visible:ring-offset-2 text-lg">
-              Start for free
-            </a>
+                    <a href="/signup" className="inline-block px-8 py-4 bg-background text-primary font-semibold rounded-lg hover:bg-primary/90 transition-colors shadow-lg shadow-primary/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-foreground focus-visible:ring-offset-2 text-lg">
+                      Start for free
+                    </a>
           </div>
         </div>
       </section>

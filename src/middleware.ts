@@ -103,7 +103,7 @@ export async function middleware(request: NextRequest) {
     response.headers.set("x-csp-nonce", cspNonce)
 
     // Skip auth callback route — handled by route handler directly
-    if (pathname === "/auth/callback") {
+    if (pathname === "/auth/callback" || pathname === "/callback") {
       return response
     }
 
@@ -143,7 +143,7 @@ export async function middleware(request: NextRequest) {
       )
 
       if (isProtectedRoute && (!user || error) && !isLooping) {
-        const loginUrl = new URL("/auth/login", request.nextUrl)
+        const loginUrl = new URL("/login", request.nextUrl)
         loginUrl.searchParams.set("callbackUrl", pathname)
         const redirectResponse = NextResponse.redirect(loginUrl)
         redirectResponse.cookies.set("redirect_count", String(redirectCount + 1), {
@@ -162,7 +162,7 @@ export async function middleware(request: NextRequest) {
         !user.email_confirmed_at &&
         !isLooping
       ) {
-        const verifyUrl = new URL("/auth/verify", request.nextUrl)
+        const verifyUrl = new URL("/verify-email", request.nextUrl)
         verifyUrl.searchParams.set("callbackUrl", pathname)
         const redirectResponse = NextResponse.redirect(verifyUrl)
         redirectResponse.cookies.set("redirect_count", String(redirectCount + 1), {
@@ -171,12 +171,44 @@ export async function middleware(request: NextRequest) {
         })
         return redirectResponse
       }
+
+      // Enforce onboarding completion on protected routes.
+      // Users with verified email but incomplete onboarding go to onboarding.
+      if (
+        isProtectedRoute &&
+        user &&
+        !error &&
+        user.email_confirmed_at &&
+        !pathname.startsWith("/dashboard/onboarding") &&
+        !isLooping
+      ) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("onboarding_completed")
+          .eq("id", user.id)
+          .single()
+        if (!(profile?.onboarding_completed)) {
+          const onboardingUrl = new URL("/dashboard/onboarding", request.nextUrl)
+          onboardingUrl.searchParams.set("callbackUrl", pathname)
+          const redirectResponse = NextResponse.redirect(onboardingUrl)
+          redirectResponse.cookies.set("redirect_count", String(redirectCount + 1), {
+            path: "/",
+            maxAge: 60,
+          })
+          return redirectResponse
+        }
+      }
     }
 
     // Redirect authenticated users away from auth pages.
     // Fully verified users go to the dashboard; unverified users stay on auth
     // pages so they can complete verification / request a new code.
-    if (pathname.startsWith("/auth/") && !isLooping && !pathname.startsWith("/auth/callback")) {
+    if (
+      (pathname.startsWith("/auth/") || pathname === "/login" || pathname === "/signup" || pathname === "/forgot-password" || pathname === "/reset-password" || pathname === "/verify-email") &&
+      !isLooping &&
+      !pathname.startsWith("/auth/callback") &&
+      pathname !== "/callback"
+    ) {
       const supabase = await getPooledRouteClient()
       const { data: { user }, error } = await supabase.auth.getUser()
       if (user && !error) {
@@ -188,8 +220,20 @@ export async function middleware(request: NextRequest) {
           })
           return redirectResponse
         }
-        if (!pathname.startsWith("/auth/verify") && !pathname.startsWith("/auth/login") && !pathname.startsWith("/auth/resend-verification")) {
-          const redirectResponse = NextResponse.redirect(new URL("/auth/verify", request.nextUrl))
+        if (
+          !pathname.startsWith("/auth/verify") &&
+          !pathname.startsWith("/auth/login") &&
+          !pathname.startsWith("/auth/signup") &&
+          !pathname.startsWith("/auth/resend-verification") &&
+          !pathname.startsWith("/auth/forgot-password") &&
+          !pathname.startsWith("/auth/reset-password") &&
+          pathname !== "/verify-email" &&
+          pathname !== "/login" &&
+          pathname !== "/signup" &&
+          pathname !== "/forgot-password" &&
+          pathname !== "/reset-password"
+        ) {
+          const redirectResponse = NextResponse.redirect(new URL("/verify-email", request.nextUrl))
           redirectResponse.cookies.set("redirect_count", String(redirectCount + 1), {
             path: "/",
             maxAge: 60,
@@ -212,7 +256,6 @@ export async function middleware(request: NextRequest) {
         return redirectResponse
       }
     }
-
     // ---- API key authentication & permission enforcement ----
     if (pathname.startsWith("/api/")) {
       const versionInfo = parseApiVersion(request.headers)

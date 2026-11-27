@@ -40,12 +40,12 @@ export default async function DashboardLayout({
         email: null,
       } as any
     } else {
-      redirect(`/auth/login?redirect=${encodeURIComponent(redirectUrl)}`)
+      redirect(`/login?redirect=${encodeURIComponent(redirectUrl)}`)
     }
   }
 
   if (!effectiveUser) {
-    redirect(`/auth/login?redirect=${encodeURIComponent(redirectUrl)}`)
+    redirect(`/login?redirect=${encodeURIComponent(redirectUrl)}`)
   }
 
   let tier = "free"

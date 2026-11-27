@@ -6,7 +6,8 @@ import { z } from "zod"
 import { withErrorBoundary, createAppError } from "@/lib/api-error"
 
 const stepSchema = z.object({
-  step: z.number().min(1).max(5),
+  step: z.number().min(1).max(3),
+  responses: z.record(z.string(), z.any()).optional().default({}),
 })
 
 export const POST = withErrorBoundary(async (req) => {
@@ -23,29 +24,35 @@ export const POST = withErrorBoundary(async (req) => {
   }
 
   const body = await req.json()
-  const { step } = stepSchema.parse(body)
+  const { step, responses } = stepSchema.parse(body)
 
   // Enforce sequential onboarding: a user may only advance to the next step
   // (or revisit an earlier one), never skip ahead.
   const { data: profile } = await supabase
     .from("profiles")
-    .select("onboarding_step")
+    .select("onboarding_step, onboarding_responses")
     .eq("id", user.id)
     .single()
 
-  const currentStep = profile?.onboarding_step ?? 0
+  const currentStep = profile?.onboarding_step ?? 1
   if (step > currentStep + 1) {
     return NextResponse.json({ error: "Cannot skip onboarding steps" }, { status: 400 })
   }
 
-  const { error } = await supabase
-    .from("profiles")
-    .update({ onboarding_step: step })
-    .eq("id", user.id)
+  // Merge new responses with existing ones
+  const existingResponses = (profile?.onboarding_responses as Record<string, any> | null) ?? {}
+  const mergedResponses = { ...existingResponses, ...responses }
+
+  const updateData: Record<string, any> = {
+    onboarding_step: step,
+    onboarding_responses: mergedResponses,
+  }
+
+  const { error } = await supabase.from("profiles").update(updateData).eq("id", user.id)
 
   if (error) {
     throw createAppError(error.message, 500, "DATABASE_ERROR")
   }
 
-  return NextResponse.json({ success: true, step })
+  return NextResponse.json({ success: true, step, responses: mergedResponses })
 })
