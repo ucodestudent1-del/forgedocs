@@ -1,122 +1,125 @@
 import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
 import type { Database } from "@/types/database"
-import { getGuestUserId } from "@/lib/guest-session"
 import { createMockSupabaseClient } from "@/lib/supabase-mock"
 import logger from "@/lib/logger"
 
-function injectGuestUser(client: any): any {
-  const realGetUser = client.auth.getUser.bind(client.auth)
-  ;(client.auth as any).getUser = async () => {
-    const provideGuest = async () => ({
-      data: { user: { id: await getGuestUserId(), email: null } },
-      error: null,
-    })
-    try {
-      const { data, error } = await realGetUser()
-      if ((!data || !data.user) && !error) {
+function isPlaceholder(value: string | undefined): boolean {
+  return !value || value.includes("placeholder")
+}
+
+function buildCookieOptions() {
+  return {
+    secure: process.env.NEXT_PUBLIC_APP_URL?.startsWith("https://") ?? false,
+    sameSite: "strict" as const,
+  }
+}
+
+async function getCookieStore() {
+  const cookieStore = await cookies()
+  return cookieStore
+}
+
+function createClientWithCookies(
+  url: string,
+  key: string,
+  opts: { isBuild?: boolean; guestMode?: boolean } = {},
+) {  const { isBuild = false, guestMode = false } = opts
+
+  const client = createServerClient<Database>(url, key, {
+    cookies: {
+      async getAll() {
+        if (isBuild) return []
+        const cookieStore = await getCookieStore()
+        return cookieStore.getAll()
+      },
+      async setAll(cookiesToSet: { name: string; value: string; options: any }[]) {
+        if (isBuild) return
+        try {
+          const cookieStore = await getCookieStore()
+          cookiesToSet.forEach(({ name, value, options }) =>
+            cookieStore.set(name, value, {
+              ...buildCookieOptions(),
+              ...options,
+              sameSite: options.sameSite ?? "strict",
+            })
+          )
+        } catch (err) {
+          logger.error("[SUPABASE SERVER] setAll cookie failed", {
+            error: err instanceof Error ? err.message : String(err),
+          })
+        }
+      },
+    },
+  })
+
+  if (guestMode) {
+    const realGetUser = client.auth.getUser.bind(client.auth)
+    ;(client.auth as any).getUser = async () => {
+      const provideGuest = async () => ({
+        data: { user: { id: process.env.GUEST_USER_ID, email: null } },
+        error: null,
+      })
+      try {
+        const { data, error } = await realGetUser()
+        if ((!data || !data.user) && !error) {
+          return provideGuest()
+        }
+        return { data, error }
+      } catch {
         return provideGuest()
       }
-      return { data, error }
-    } catch {
-      return provideGuest()
     }
   }
+
   return client
 }
 
 export async function createRouteClient() {
-  const isBuild = typeof window === "undefined" && process.env.NEXT_PHASE === "phase-production-build"
-
-  if (isBuild) {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-    const useMock =
-      process.env.NEXT_PUBLIC_BUILD_MOCK === "true" ||
-      !url ||
-      !key ||
-      url.includes("placeholder") ||
-      key.includes("placeholder")
-
-    if (useMock) {
-      return createMockSupabaseClient()
-    }
-
-    return createServerClient<Database>(
-      url,
-      key,
-      {
-        cookies: {
-          async getAll() {
-            return []
-          },
-          async setAll() {
-            // No-op during build
-          },
-        },
-      },
-    )
-  }
+  const isBuild =
+    typeof window === "undefined" && process.env.NEXT_PHASE === "phase-production-build"
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-  if (!url || !key || url.includes("placeholder") || key.includes("placeholder")) {
-    // Fail safe: return mock client rather than a real client with empty
-    // credentials that could allow unauthenticated access or silent failures.
+  if (isBuild || !url || !key || url.includes("placeholder") || key.includes("placeholder")) {
     return createMockSupabaseClient()
   }
 
-  const client = createServerClient<Database>(
-    url,
-    key,
-    {
-      cookies: {
-        async getAll() {
-          const cookieStore = await cookies()
-          return cookieStore.getAll()
-        },
-        async setAll(cookiesToSet: { name: string; value: string; options: any }[]) {
-          try {
-            const cookieStore = await cookies()
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, {
-                ...options,
-                secure: process.env.NEXT_PUBLIC_APP_URL?.startsWith("https://") ?? false,
-                sameSite: options.sameSite ?? "strict",
-              })
-            )
-          } catch (err) {
-            logger.error("[SUPABASE SERVER] setAll cookie failed", { error: err instanceof Error ? err.message : String(err) })
-          }
-        },
-      },
-    },
-  )
-
-  // Only inject guest user when explicitly enabled via env var
-  if (process.env.NEXT_PUBLIC_GUEST_MODE === "true") {
-    return injectGuestUser(client)
-  }
-
-  return client
+  return createClientWithCookies(url, key, {
+    isBuild,
+    guestMode: process.env.NEXT_PUBLIC_GUEST_MODE === "true",
+  })
 }
 
 export async function getRouteClient() {
   return createRouteClient()
 }
 
+/**
+ * Per-request authenticated client. Each call returns a fresh client bound to the
+ * current request's cookies. Use this for any route that reads/writes user data
+ * or relies on auth.getUser(). Do NOT cache across requests.
+ */
+export async function createRouteAuthClient() {
+  return createRouteClient()
+}
+
+/**
+ * Service role client. Bypasses RLS. Use only in admin/webhook/export paths that
+ * run server-side and never expose the key to the browser.
+ */
 export async function createServiceRoleClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
-  if (!url || !serviceKey || url.includes("placeholder") || serviceKey.includes("placeholder")) {
+  if (isPlaceholder(url) || isPlaceholder(serviceKey)) {
     throw new Error(
-      "Missing or invalid Supabase service role environment variables. Set SUPABASE_SERVICE_ROLE_KEY."
+      "Missing or invalid Supabase service role environment variables. Set SUPABASE_SERVICE_ROLE_KEY.",
     )
   }
 
-  return createServerClient<Database>(url, serviceKey, {
+  return createServerClient<Database>(url!, serviceKey!, {
     cookies: {
       getAll() {
         return []
@@ -126,12 +129,14 @@ export async function createServiceRoleClient() {
 }
 
 /**
- * Shared pooled Supabase server client.
- * Reuses a single client instance across requests within the same serverless invocation
- * to reduce connection churn. For multi-replica deployments, pair with PgBouncer
- * (Supabase pooled connection string) via DATABASE_POOL_URL.
+ * Shared read-only pooled client. Reuses a single instance within the same
+ * serverless invocation to reduce connection churn. Safe for read-only middleware
+ * and public data that does not depend on per-request auth cookies. NOT safe for
+ * per-user authenticated operations because the cookie jar is shared.
  */
-let pooledServerClient: ReturnType<typeof createServerClient<Database>> | null = null
+let pooledServerClient:
+  | ReturnType<typeof createServerClient<Database>>
+  | null = null
 
 export async function getPooledRouteClient() {
   if (pooledServerClient) return pooledServerClient
@@ -146,21 +151,23 @@ export async function getPooledRouteClient() {
   pooledServerClient = createServerClient<Database>(url, key, {
     cookies: {
       async getAll() {
-        const cookieStore = await cookies()
+        const cookieStore = await getCookieStore()
         return cookieStore.getAll()
       },
-        async setAll(cookiesToSet: { name: string; value: string; options: any }[]) {
+      async setAll(cookiesToSet: { name: string; value: string; options: any }[]) {
         try {
-          const cookieStore = await cookies()
+          const cookieStore = await getCookieStore()
           cookiesToSet.forEach(({ name, value, options }) =>
             cookieStore.set(name, value, {
+              ...buildCookieOptions(),
               ...options,
-              secure: process.env.NEXT_PUBLIC_APP_URL?.startsWith("https://") ?? false,
               sameSite: options.sameSite ?? "strict",
             })
           )
         } catch (err) {
-          logger.error("[SUPABASE POOLED] setAll cookie failed", { error: err instanceof Error ? err.message : String(err) })
+          logger.error("[SUPABASE POOLED] setAll cookie failed", {
+            error: err instanceof Error ? err.message : String(err),
+          })
         }
       },
     },

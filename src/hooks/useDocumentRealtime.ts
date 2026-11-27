@@ -2,16 +2,11 @@
 
 import { useEffect, useState } from "react"
 import { useRealtime } from "./useRealtime"
-import { createClient } from "@supabase/supabase-js"
 
 /**
  * Hook for subscribing to real-time document changes
  */
 export function useDocumentRealtime(documentId: string, userId: string) {
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
   const [lastChange, setLastChange] = useState<{ type: string; timestamp: number } | null>(null)
 
   useRealtime(
@@ -37,10 +32,6 @@ export function useDocumentRealtime(documentId: string, userId: string) {
  * Hook for subscribing to real-time signature request changes
  */
 export function useSignatureRealtime(signatureRequestId: string) {
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
   const [lastChange, setLastChange] = useState<{ type: string; timestamp: number } | null>(null)
 
   useRealtime(
@@ -66,10 +57,6 @@ export function useSignatureRealtime(signatureRequestId: string) {
  * Hook for subscribing to real-time notification changes
  */
 export function useNotificationsRealtime(userId: string) {
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
   const [notifications, setNotifications] = useState<any[]>([])
 
   useRealtime(

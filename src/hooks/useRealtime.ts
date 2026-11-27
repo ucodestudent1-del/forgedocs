@@ -1,8 +1,8 @@
 "use client"
 
-import { createClient } from "@supabase/supabase-js"
 import { useEffect, useState, useRef, useCallback } from "react"
 import { RealtimeChannel, RealtimePostgresChangesPayload } from "@supabase/supabase-js"
+import { createBrowserSupabaseClient } from "@/lib/supabase-browser"
 
 interface RealtimeOptions {
   filter?: string
@@ -21,10 +21,7 @@ export function useRealtime<T = any>(
 ) {
   const { onInsert, onUpdate, onDelete } = options
   const [channel, setChannel] = useState<RealtimeChannel | null>(null)
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
+  const supabase = createBrowserSupabaseClient()
 
   useEffect(() => {
     const channelName = `realtime:${table}${filter ? `:${filter}` : ''}`
@@ -42,7 +39,7 @@ export function useRealtime<T = any>(
       channel.on('postgres_changes', { event: 'DELETE', schema: 'public', table, filter }, onDelete)
     }
 
-    channel.subscribe((status) => {
+    channel.subscribe((status: string) => {
       if (status === 'SUBSCRIBED') {
         console.log(`Realtime subscribed to ${table}`)
       }
@@ -66,10 +63,7 @@ export function usePresence(
   user: { id: string; email?: string; avatar_url?: string }
 ) {
   const [users, setUsers] = useState<any[]>([])
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
+  const supabase = createBrowserSupabaseClient()
 
   useEffect(() => {
     const channel = supabase.channel(channelName, {
@@ -82,13 +76,13 @@ export function usePresence(
         const allUsers = Object.values(state).flat() as unknown as Array<{ user_id: string }>
         setUsers(allUsers.filter((u) => u.user_id !== user.id))
       })
-      .on('presence', { event: 'join' }, ({ key, newPresences }) => {
+      .on('presence', { event: 'join' }, ({ key, newPresences }: { key: string; newPresences: any[] }) => {
         setUsers((prev) => [...prev, ...newPresences])
       })
-      .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
-        setUsers((prev) => prev.filter((u) => !leftPresences.some((lp) => lp.user_id === u.user_id)))
+      .on('presence', { event: 'leave' }, ({ key, leftPresences }: { key: string; leftPresences: any[] }) => {
+        setUsers((prev) => prev.filter((u) => !leftPresences.some((lp: { user_id: string }) => lp.user_id === u.user_id)))
       })
-      .subscribe(async (status) => {
+      .subscribe(async (status: string) => {
         if (status === 'SUBSCRIBED') {
           await channel.track({
             id: user.id,
@@ -112,10 +106,7 @@ export function usePresence(
  * Hook for broadcasting cursor position to collaborators
  */
 export function useCursorBroadcast(channelName: string) {
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
+  const supabase = createBrowserSupabaseClient()
   const channel = supabase.channel(channelName)
 
   const broadcastCursor = useCallback((position: { x: number; y: number }) => {

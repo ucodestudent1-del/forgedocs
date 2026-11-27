@@ -23,6 +23,8 @@ export type BrowserSupabaseClient = {
     from: (bucket: string) => any
   }
   rpc: (..._args: any[]) => Promise<any>
+  channel: (name: string, options?: any) => any
+  removeChannel: (channel: any) => void
 }
 
 export function createBrowserSupabaseClient(): BrowserSupabaseClient {

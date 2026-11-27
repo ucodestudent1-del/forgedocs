@@ -1,4 +1,4 @@
-import { getPooledRouteClient } from "@/lib/supabase"
+import { createRouteAuthClient } from "@/lib/supabase"
 import { createAppError } from "@/lib/api-error"
 
 export type AccountRole = "owner" | "admin" | "member" | "viewer"
@@ -43,7 +43,7 @@ export function hasRole(actual: AccountRole | undefined | null, required: Accoun
 
 /** Every account the user is a member of, with their role in each. */
 export async function getUserAccounts(userId: string): Promise<Account[]> {
-  const supabase = await getPooledRouteClient()
+  const supabase = await createRouteAuthClient()
   const { data, error } = await (supabase as any)
     .from("account_members")
     .select("role, accounts ( id, name, slug, plan, status, owner_id )")
@@ -64,7 +64,7 @@ export async function getAccountMembership(
   userId: string,
   accountId: string,
 ): Promise<AccountMembership | null> {
-  const supabase = await getPooledRouteClient()
+  const supabase = await createRouteAuthClient()
   const { data, error } = await (supabase as any)
     .from("account_members")
     .select("role, accounts ( id, name, slug, plan, status, owner_id )")
