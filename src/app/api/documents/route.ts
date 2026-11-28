@@ -5,7 +5,7 @@ import { documentRateLimit } from "@/lib/rate-limiter"
 import { z } from "zod"
 import { randomUUID } from "crypto"
 import { MAX_PAGE_SIZE, DEFAULT_PAGE_SIZE, parsePagination } from "@/lib/pagination"
-import { cacheGet, cacheSet, cacheDel } from "@/lib/cache"
+import { cacheGet, cacheSet, cacheDel, cacheIncrement } from "@/lib/cache"
 import { logAuditEvent, getClientIp, getClientUserAgent } from "@/lib/audit"
 import { checkTierLimit, trackUsage } from "@/lib/tierLimits"
 import { withErrorBoundary, createAppError } from "@/lib/api-error"
@@ -63,7 +63,8 @@ export const GET = withErrorBoundary(async (req) => {
     await requireAccountMembership(effectiveUser.id, accountId, "member")
   }
 
-  const cacheKey = `documents:user:${effectiveUser.id}:account:${accountId ?? "personal"}:page:${page}:limit:${limit}:archived:${archived}:pinned:${pinned}:search:${encodeURIComponent(search || "")}`
+  const docCacheVersion = await cacheIncrement(`documents:version:${effectiveUser.id}`, 86400)
+  const cacheKey = `documents:user:${effectiveUser.id}:account:${accountId ?? "personal"}:page:${page}:limit:${limit}:archived:${archived}:pinned:${pinned}:search:${Buffer.from(search || "").toString("base64url")}:v${docCacheVersion}`
   const cached = await cacheGet<{ documents: any[]; count: number; page: number; limit: number }>(cacheKey)
   if (cached) {
     return NextResponse.json(cached)
@@ -164,12 +165,13 @@ export const POST = withErrorBoundary(async (req) => {
   let encryptionKeyWrapped: string | null = null
   let encryptionIv: string | null = null
 
-  // If template_id provided, fetch template and use its content as starting point
+  // If template_id provided, fetch template and use its content as starting point.
+  // Validate template ownership at insert time via foreign key constraint to avoid TOCTOU.
   if (template_id) {
     const { data: template, error: templateError } = await withTimeout<{ data: any; error: any }>(
       supabase
         .from("templates")
-        .select("*")
+        .select("content, mime_type")
         .eq("id", template_id)
         .eq("user_id", effectiveUser.id)
         .single(),
@@ -229,8 +231,8 @@ export const POST = withErrorBoundary(async (req) => {
     // Usage tracking failure must not break the primary request
   }
 
-  // Invalidate document list cache
-  await cacheDel(`documents:${effectiveUser.id}:*`)
+  // Invalidate document list cache by bumping version
+  await cacheIncrement(`documents:version:${effectiveUser.id}`, 86400)
 
   // Audit log document creation
   await logAuditEvent({

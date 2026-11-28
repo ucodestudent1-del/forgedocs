@@ -24,8 +24,8 @@ export interface WithAuthOptions {
 }
 
 // Known GET endpoints that mutate state and require CSRF protection
+// OAuth callback is NOT here - it uses Supabase's PKCE/state parameter for CSRF protection
 const MUTATING_GET_PATHS = new Set([
-  "/api/auth/callback",
   "/api/webhooks/verify",
   "/api/stripe/webhook",
 ])

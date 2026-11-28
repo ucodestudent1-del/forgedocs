@@ -1,4 +1,4 @@
-import { createHmac, timingSafeEqual } from "crypto"
+import { createHmac, timingSafeEqual, randomUUID } from "crypto"
 import { createRouteAuthClient } from "@/lib/supabase"
 import { Queue, Worker } from "bullmq"
 import logger from "@/lib/logger"
@@ -61,7 +61,22 @@ export async function deliverWebhook(
   if (parsedUrl.protocol !== "https:") {
     throw new Error("Webhook URLs must use HTTPS")
   }
-  
+
+  // Hostname allowlist check - reject private/internal IP ranges to prevent SSRF
+  const hostname = parsedUrl.hostname
+  if (
+    hostname === "localhost" ||
+    hostname === "127.0.0.1" ||
+    hostname === "::1" ||
+    hostname.startsWith("192.168.") ||
+    hostname.startsWith("10.") ||
+    hostname.startsWith("172.") ||
+    hostname.endsWith(".local") ||
+    hostname.endsWith(".internal")
+  ) {
+    throw new Error("Webhook URLs must not point to private or internal addresses")
+  }
+
   const body = JSON.stringify(payload)
   const signature = signWebhookPayload(body, secret)
   const effectiveIdempotencyKey = idempotencyKey ?? `wh:${endpointId}:${event}:${startTime}:${attempt}`
@@ -274,6 +289,8 @@ export async function fireWebhookEvent(
       } catch {
         // Not encrypted — use as-is
       }
+      // Unique idempotency key per delivery attempt to prevent duplicate processing
+      const idempotencyKey = `wh:${ep.id}:${event}:${startTime}:${randomUUID()}`
       return ({
         name: "deliver",
         data: {
@@ -282,7 +299,7 @@ export async function fireWebhookEvent(
           secret,
           event,
           payload,
-          idempotencyKey: `wh:${ep.id}:${event}:${startTime}`,
+          idempotencyKey,
         },
         opts: { removeOnComplete: 50, removeOnFail: 20 },
       })

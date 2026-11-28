@@ -4,7 +4,7 @@ import { validateCSRF } from "@/lib/csrf"
 import { documentRateLimit } from "@/lib/rate-limiter"
 import { z } from "zod"
 import { sanitizeHtml } from "@/lib/sanitize"
-import { cacheDel } from "@/lib/cache"
+import { cacheDel, cacheIncrement } from "@/lib/cache"
 import { logAuditEvent, getClientIp, getClientUserAgent } from "@/lib/audit"
 import { withErrorBoundary, createAppError } from "@/lib/api-error"
 import { fireWebhookEvent, type WebhookEvent } from "@/lib/webhooks"
@@ -153,8 +153,8 @@ export const PUT = withErrorBoundary(async (req, { params }: { params: Promise<{
 
   const data = updatedDoc[0]
 
-  // Invalidate document list cache so clients see updated content
-  await cacheDel(`documents:${user.id}:*`)
+  // Invalidate document list cache by bumping version
+  await cacheIncrement(`documents:version:${user.id}`, 86400)
 
   // Audit log document update
   await logAuditEvent({

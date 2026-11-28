@@ -1,5 +1,5 @@
 import { createHash, createHmac, randomBytes, timingSafeEqual } from "crypto"
-import { createRouteAuthClient } from "@/lib/supabase"
+import { createReadOnlyClient } from "@/lib/supabase"
 import { checkRateLimit } from "@/lib/rate-limiter"
 
 export const API_KEY_PREFIX = "sk_live"
@@ -100,7 +100,7 @@ export async function validateApiKey(rawKey: string): Promise<{ userId: string; 
   // to prevent timing-based key format enumeration attacks.
   const keyHash = hashApiKey(rawKey)
 
-  const supabase = await createRouteAuthClient()
+  const supabase = await createReadOnlyClient()
 
   // Look up by key_hash directly (O(1)) instead of iterating all keys sharing
   // a plaintext prefix. This eliminates prefix-enumeration brute-force.

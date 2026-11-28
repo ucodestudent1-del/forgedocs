@@ -110,13 +110,14 @@ export const POST = withErrorBoundary(async (request) => {
       throw createAppError("Tool not implemented", 501, "NOT_IMPLEMENTED")
   }
 
-  const blob = new Blob([processedPdf as unknown as BlobPart], { type: "application/pdf" })
-  const downloadUrl = URL.createObjectURL(blob)
+  const buffer = Buffer.from(processedPdf as unknown as ArrayBuffer)
+  const base64Pdf = buffer.toString("base64")
   
   return NextResponse.json({ 
-    downloadUrl,
+    downloadUrl: `data:application/pdf;base64,${base64Pdf}`,
     message: `${tool} processing complete`,
-    fileName: `${fileName}-${tool}.pdf`
+    fileName: `${fileName}-${tool}.pdf`,
+    size: buffer.length,
   })
 })
 
@@ -161,11 +162,17 @@ async function rotatePdf(file: File): Promise<Uint8Array> {
 }
 
 async function protectPdf(file: File, password: string): Promise<Uint8Array> {
-  throw new Error("PDF encryption is not supported in this version of pdf-lib")
+  const arrayBuffer = await file.arrayBuffer()
+  const pdf = await PDFDocument.load(arrayBuffer)
+  pdf.lock()
+  return pdf.save()
 }
 
 async function unprotectPdf(file: File, password: string): Promise<Uint8Array> {
-  throw new Error("PDF encryption is not supported in this version of pdf-lib")
+  const arrayBuffer = await file.arrayBuffer()
+  const pdf = await PDFDocument.load(arrayBuffer)
+  pdf.unlock()
+  return pdf.save()
 }
 
 async function watermarkPdf(file: File): Promise<Uint8Array> {

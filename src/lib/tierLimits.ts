@@ -211,14 +211,18 @@ export async function checkTierLimit(
     
   } catch {
     // Redis down - use local cache with TTL
-    const cached = localTierCache.get(`${userId}:${metric}`)
+    const cacheKey = `${userId}:${metric}`
+    const cached = localTierCache.get(cacheKey)
     if (cached && now - cached.windowStart < windowMs) {
+      // Atomic local increment under the existing queue lock pattern
       current = cached.count + quantity
+      localTierCache.set(cacheKey, { count: current, windowStart: cached.windowStart })
       logger.warn("Using local tier cache due to Redis outage", { userId, metric, current })
     } else {
-      // No local data - allow but log (fail-open for availability)
-      logger.warn("Tier limit check: Redis down, no local cache - allowing request", { userId, metric })
-      return { allowed: true, limit, current: 0, remaining: limit }
+      // No local data - initialize with quantity (atomic first-write)
+      localTierCache.set(cacheKey, { count: quantity, windowStart: now })
+      current = quantity
+      logger.warn("Tier limit check: Redis down, no local cache - initializing local counter", { userId, metric })
     }
   }
 

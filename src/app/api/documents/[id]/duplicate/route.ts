@@ -4,7 +4,7 @@ import { validateCSRF } from "@/lib/csrf"
 import { documentRateLimit } from "@/lib/rate-limiter"
 import { z } from "zod"
 import { randomUUID } from "crypto"
-import { cacheDel } from "@/lib/cache"
+import { cacheDel, cacheIncrement } from "@/lib/cache"
 import { logAuditEvent, getClientIp, getClientUserAgent } from "@/lib/audit"
 import { withErrorBoundary, createAppError } from "@/lib/api-error"
 import { checkTierLimit, trackUsage } from "@/lib/tierLimits"
@@ -88,8 +88,8 @@ export const POST = withErrorBoundary(async (req, { params }: { params: Promise<
     // Non-blocking
   }
 
-  // Invalidate document list cache
-  await cacheDel(`documents:${user.id}:*`)
+  // Invalidate document list cache by bumping version
+  await cacheIncrement(`documents:version:${user.id}`, 86400)
 
   // Audit log
   await logAuditEvent({

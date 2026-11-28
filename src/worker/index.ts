@@ -142,10 +142,12 @@ async function acquireLeaderLock(): Promise<boolean> {
     leaderLockValue = value
     isLeader = true
     logger.info("Worker became leader")
+    worker.resume()
     return true
   }
   isLeader = false
   leaderLockValue = result as string
+  worker.pause()
   return false
 }
 
@@ -158,6 +160,7 @@ async function renewLeaderLock(): Promise<void> {
     isLeader = false
     leaderLockValue = null
     logger.warn("Worker lost leadership (atomic check failed)")
+    worker.pause()
     startLeaderElection()
   }
 }
@@ -328,8 +331,8 @@ const worker = new Worker<ConversionJobData, { success: boolean; outputUrl?: str
       throw new Error("Worker is not the leader")
     }
 
-    // Fencing token: only the current leader can claim a job
-    const fenceToken = leaderLockValue ?? ""
+    // Fencing token: unique per job claim, combines leader identity + job ID + timestamp
+    const fenceToken = `${leaderLockValue ?? ""}:${jobId}:${Date.now()}`
 
     // Atomic claim with fencing - prevents stale leader from processing
     const claimed = await claimJobWithFence(jobId, fenceToken)
@@ -468,10 +471,13 @@ const worker = new Worker<ConversionJobData, { success: boolean; outputUrl?: str
   },
   {
     connection: redisConnection,
-    concurrency: parseInt(process.env.WORKER_CONCURRENCY || "5", 10),
+    // Only the leader processes jobs; non-leader workers pause to avoid wasted attempts
+    concurrency: 1,
     maxStartedAttempts: 3,
     removeOnComplete: 100 as any,
     removeOnFail: 50 as any,
+    // Auto-pause when not leader, resume when leader
+    autorun: false,
   }
 )
 
@@ -651,6 +657,7 @@ async function gracefulShutdown(signal: string): Promise<void> {
     logger.info(`Received ${signal}, shutting down worker gracefully...`)
   try {
     await stopLeaderElection()
+    await cleanupTempFiles()
     await worker.close()
     healthServer.close()
     await redisClient.quit()
@@ -661,6 +668,13 @@ async function gracefulShutdown(signal: string): Promise<void> {
     process.exit(1)
   }
 }
+
+// Also clean temp files on uncaught exceptions to prevent /tmp exhaustion
+process.on("uncaughtException", async (err) => {
+  logger.error("Uncaught exception", { error: err instanceof Error ? err.message : String(err) })
+  await cleanupTempFiles().catch(() => {})
+  process.exit(1)
+})
 
 process.on("SIGTERM", () => gracefulShutdown("SIGTERM"))
 process.on("SIGINT", () => gracefulShutdown("SIGINT"))

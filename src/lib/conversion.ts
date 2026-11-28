@@ -1,5 +1,6 @@
 import { z } from "zod"
 import { FormatRegistry, formatRegistry } from './conversion/format-registry'
+import Decimal from "decimal.js"
 
 /* ============================================================================
    Conversion Types
@@ -309,20 +310,44 @@ const UNIT_CONVERSIONS: Record<string, Record<string, number>> = {
 }
 
 function convertTemperature(value: number, fromUnit: string, toUnit: string): number {
+  // Validate input is a finite number
+  if (!isFinite(value) || isNaN(value)) {
+    throw new Error(`Invalid temperature value: ${value}`)
+  }
+
+  // Absolute zero bounds
+  const ABSOLUTE_ZERO_C = -273.15
+  const ABSOLUTE_ZERO_F = -459.67
+  const ABSOLUTE_ZERO_K = 0
+
   // Convert to Celsius first
   let celsius: number
   switch (fromUnit) {
     case "celsius":
       celsius = value
+      if (celsius < ABSOLUTE_ZERO_C) {
+        throw new Error(`Temperature below absolute zero: ${value}°C`)
+      }
       break
     case "fahrenheit":
+      if (value < ABSOLUTE_ZERO_F) {
+        throw new Error(`Temperature below absolute zero: ${value}°F`)
+      }
       celsius = (value - 32) * (5 / 9)
       break
     case "kelvin":
+      if (value < ABSOLUTE_ZERO_K) {
+        throw new Error(`Temperature below absolute zero: ${value}K`)
+      }
       celsius = value - 273.15
       break
     default:
       throw new Error(`Unknown temperature unit: ${fromUnit}`)
+  }
+
+  // Validate result is not below absolute zero
+  if (celsius < ABSOLUTE_ZERO_C) {
+    throw new Error("Computed temperature below absolute zero")
   }
 
   // Convert from Celsius to target
@@ -356,17 +381,17 @@ export function convertUnit(value: number, category: string, fromUnit: string, t
     throw new Error(`Unknown unit: ${fromUnit} or ${toUnit} in category ${category}`)
   }
 
-  // Convert to base unit, then to target unit
-  const baseValue = value * fromFactor
-  return baseValue / toFactor
+  // Convert to base unit, then to target unit using Decimal for precision
+  const baseValue = new Decimal(value).times(fromFactor)
+  return baseValue.dividedBy(toFactor).toNumber()
 }
 
-export function transformMetadata(input: {
+export async function transformMetadata(input: {
   sourceFormat: string
   targetFormat: string
   data: Record<string, unknown>
   options?: Record<string, unknown>
-}): string {
+}): Promise<string> {
   const { sourceFormat, targetFormat, data, options = {} } = input
 
   // If same format, return as-is
@@ -381,13 +406,16 @@ export function transformMetadata(input: {
     if (sourceFormat === "json") {
       obj = data
     } else if (sourceFormat === "yaml") {
-      // Simple YAML parse (would need js-yaml in production)
-      throw new Error("YAML parsing not implemented - use js-yaml package")
+      const jsYaml = require("js-yaml")
+      obj = jsYaml.load(JSON.stringify(data)) as Record<string, unknown>
     } else if (sourceFormat === "xml") {
-      // Simple XML parse (would need xml2js in production)
-      throw new Error("XML parsing not implemented - use xml2js package")
+      const xml2js = require("xml2js")
+      const result = await xml2js.parseStringPromise(JSON.stringify(data))
+      obj = result as Record<string, unknown>
     } else if (sourceFormat === "csv_meta") {
-      throw new Error("CSV parsing not implemented")
+      const csvParse = require("csv-parse/sync")
+      const records = csvParse(JSON.stringify(data), { columns: true })
+      obj = { records }
     } else {
       throw new Error(`Unsupported source format: ${sourceFormat}`)
     }
@@ -401,11 +429,16 @@ export function transformMetadata(input: {
       const indent = typeof options.indent === "number" ? options.indent : 2
       return JSON.stringify(obj, null, indent)
     } else if (targetFormat === "yaml") {
-      throw new Error("YAML stringify not implemented - use js-yaml package")
+      const jsYaml = require("js-yaml")
+      return jsYaml.dump(obj)
     } else if (targetFormat === "xml") {
-      throw new Error("XML stringify not implemented - use xml2js package")
+      const xml2js = require("xml2js")
+      const builder = new xml2js.Builder()
+      return builder.buildObject(obj)
     } else if (targetFormat === "csv_meta") {
-      throw new Error("CSV stringify not implemented")
+      const csvStringify = require("csv-stringify/sync")
+      const records = Array.isArray(obj.records) ? obj.records : [obj]
+      return csvStringify(records, { header: true })
     } else {
       throw new Error(`Unsupported target format: ${targetFormat}`)
     }
@@ -424,9 +457,26 @@ export function getUnitCategories(): string[] {
 }
 
 export function getUnitPairs(category: string): Array<{ from: string; to: string; factor: number }> {
-  return formatRegistryInstance.getAllPairs()
-    .filter(p => formatRegistryInstance.getFormat(p.source)?.category === "unit")
-    .map(p => ({ from: p.source, to: p.target, factor: 1 }))
+  const conversions = UNIT_CONVERSIONS[category]
+  if (!conversions) return []
+
+  const units = Object.keys(conversions)
+  const pairs: Array<{ from: string; to: string; factor: number }> = []
+
+  for (const fromUnit of units) {
+    const fromFactor = conversions[fromUnit]
+    for (const toUnit of units) {
+      if (fromUnit === toUnit) continue
+      const toFactor = conversions[toUnit]
+      pairs.push({
+        from: fromUnit,
+        to: toUnit,
+        factor: fromFactor / toFactor,
+      })
+    }
+  }
+
+  return pairs
 }
 
 // Zod schema for conversion job input validation

@@ -5,6 +5,7 @@ import { z } from "zod"
 import { withErrorBoundary, createAppError } from "@/lib/api-error"
 import { logAuditEvent, getClientIp, getClientUserAgent } from "@/lib/audit"
 import { SUPPORTED_WEBHOOK_EVENTS } from "@/lib/webhooks"
+import { encryptDocument } from "@/lib/encryption"
 
 const endpointSchema = z.object({
   url: z.string().url(),
@@ -51,15 +52,16 @@ export const POST = withErrorBoundary(async (req) => {
   const body = await req.json()
   const { url, events, is_active } = endpointSchema.parse(body)
 
-  // Generate a signing secret
-  const secret = require("crypto").randomBytes(32).toString("hex")
+  // Generate a signing secret and encrypt at rest
+  const rawSecret = require("crypto").randomBytes(32).toString("hex")
+  const encryptedSecret = encryptDocument(rawSecret)
 
   const { data, error } = await supabase
     .from("webhook_endpoints")
     .insert({
       user_id: user.id,
       url,
-      secret,
+      secret: encryptedSecret,
       events: events ?? [],
       is_active: is_active ?? true,
     })
@@ -81,5 +83,5 @@ export const POST = withErrorBoundary(async (req) => {
     userAgent: getClientUserAgent(req),
   })
 
-  return NextResponse.json({ endpoint: data, secret }, { status: 201 })
+  return NextResponse.json({ endpoint: data, secret: rawSecret }, { status: 201 })
 })

@@ -12,6 +12,12 @@ function getGuestSecret(): string | null {
   return secret ?? null
 }
 
+function deriveGuestUserId(sessionId: string): string {
+  const secret = getGuestSecret()
+  if (!secret) return sessionId
+  return createHmac("sha256", secret).update(`guest-user:${sessionId}`).digest("hex")
+}
+
 function signGuestId(id: string): string {
   const secret = getGuestSecret()
   if (!secret) return id
@@ -41,19 +47,34 @@ export async function getGuestUserId(): Promise<string> {
     const verified = verifyGuestSignedId(existingId)
     if (verified) return verified
   }
+
+  // Derive from session cookie if available, otherwise create new
+  const sessionId = cookieStore.get(GUEST_SESSION_COOKIE)?.value
+  if (sessionId) {
+    const verifiedSession = verifyGuestSignedId(sessionId)
+    if (verifiedSession) {
+      const userId = deriveGuestUserId(verifiedSession)
+      const signed = signGuestId(userId)
+      cookieStore.set(GUEST_USER_ID_COOKIE, signed, {
+        httpOnly: true,
+        secure: true,
+        sameSite: "strict",
+        path: "/",
+        maxAge: 60 * 60 * 2,
+      })
+      return userId
+    }
+  }
+
   const id = randomUUID()
   const signed = signGuestId(id)
-  try {
-    cookieStore.set(GUEST_USER_ID_COOKIE, signed, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "strict",
-      path: "/",
-      maxAge: 60 * 60 * 2, // 2 hours
-    })
-  } catch {
-    // set() called during render; cookie applied on next response
-  }
+  cookieStore.set(GUEST_USER_ID_COOKIE, signed, {
+    httpOnly: true,
+    secure: true,
+    sameSite: "strict",
+    path: "/",
+    maxAge: 60 * 60 * 2,
+  })
   return id
 }
 
@@ -63,37 +84,31 @@ export async function getOrCreateGuestSessionId(): Promise<string> {
 
   if (!sessionId) {
     sessionId = randomUUID()
-    try {
     cookieStore.set(GUEST_SESSION_COOKIE, sessionId, {
       httpOnly: true,
       secure: true,
       sameSite: "strict",
       path: "/",
-      maxAge: 60 * 60 * 2, // 2 hours
+      maxAge: 60 * 60 * 2,
     })
-    } catch {
-      // set() called during render; cookie applied on next response
-    }
   }
 
-  // Ensure a unique guest user ID exists for this session
+  // Cryptographically bind guest user ID to session ID
+  const verifiedSession = verifyGuestSignedId(sessionId ?? "")
+  const effectiveSessionId = verifiedSession ?? sessionId
   let userId = cookieStore.get(GUEST_USER_ID_COOKIE)?.value
   if (!userId) {
-    userId = randomUUID()
-    try {
-      cookieStore.set(GUEST_USER_ID_COOKIE, userId, {
-        httpOnly: true,
-        secure: true,
-        sameSite: "strict",
-        path: "/",
-        maxAge: 60 * 60 * 2, // 2 hours
-      })
-    } catch {
-      // set() called during render; cookie applied on next response
-    }
+    userId = deriveGuestUserId(effectiveSessionId)
+    cookieStore.set(GUEST_USER_ID_COOKIE, signGuestId(userId), {
+      httpOnly: true,
+      secure: true,
+      sameSite: "strict",
+      path: "/",
+      maxAge: 60 * 60 * 2,
+    })
   }
 
-  return sessionId
+  return effectiveSessionId
 }
 
 export function getGuestSessionCookieName(): string {

@@ -6,13 +6,6 @@ import logger from "@/lib/logger"
 const FAIL_OPEN = false
 
 const FAIL_OPEN_ENDPOINTS = new Set([
-  "/api/conversion",
-  "/api/conversion/",
-  "/api/pdf-tools/process",
-  "/api/ai/assistant",
-  "/api/ai/chat",
-  "/api/documents",
-  "/api/templates",
   "/api/health",
 ])
 
@@ -104,6 +97,32 @@ const SLIDING_WINDOW_LUA = `
 
 // In-memory fallback for sliding window (test env)
 const slidingWindowMemoryStore = new Map<string, Array<{ timestamp: number; member: string }>>()
+
+// Maximum entries in memory store to prevent unbounded growth
+const MAX_MEMORY_ENTRIES = 10000
+
+// Periodic cleanup of expired entries in test environment
+if (typeof setInterval !== "undefined") {
+  setInterval(() => {
+    const now = Date.now()
+    for (const [key, entries] of slidingWindowMemoryStore.entries()) {
+      const valid = entries.filter((e) => e.timestamp > now - 3600 * 1000)
+      if (valid.length === 0) {
+        slidingWindowMemoryStore.delete(key)
+      } else {
+        slidingWindowMemoryStore.set(key, valid)
+      }
+    }
+    // LRU eviction if still over limit
+    if (slidingWindowMemoryStore.size > MAX_MEMORY_ENTRIES) {
+      const sorted = Array.from(slidingWindowMemoryStore.entries()).sort(
+        (a, b) => b[1][b[1].length - 1]?.timestamp ?? 0 - (a[1][a[1].length - 1]?.timestamp ?? 0)
+      )
+      const toDelete = sorted.slice(0, slidingWindowMemoryStore.size - MAX_MEMORY_ENTRIES)
+      toDelete.forEach(([key]) => slidingWindowMemoryStore.delete(key))
+    }
+  }, 60 * 1000)
+}
 
 function cleanSlidingWindowMemory(key: string, windowStart: number): void {
   const entries = slidingWindowMemoryStore.get(key)

@@ -94,12 +94,21 @@ export class ConversionService {
 
     // SSRF protection: validate source_url is a safe storage path
     if (input.source_url) {
+      // Reject any URL scheme, absolute paths, traversal, or UNC paths
       if (
         input.source_url.includes("://") ||
         input.source_url.startsWith("/") ||
         input.source_url.includes("..") ||
-        input.source_url.startsWith("\\\\")
+        input.source_url.startsWith("\\\\") ||
+        input.source_url.startsWith("data:") ||
+        input.source_url.startsWith("//")
       ) {
+        throw createAppError("Invalid source_url path", 400, "INVALID_SOURCE_URL")
+      }
+
+      // Reject URL-encoded traversal attempts
+      const decoded = decodeURIComponent(input.source_url)
+      if (decoded.includes("..") || decoded.includes("://") || decoded.startsWith("/")) {
         throw createAppError("Invalid source_url path", 400, "INVALID_SOURCE_URL")
       }
 
@@ -110,6 +119,13 @@ export class ConversionService {
 
       if (!input.source_url.startsWith(`${userId}/`)) {
         throw createAppError("Source file does not belong to the authenticated user", 403, "FORBIDDEN")
+      }
+
+      // Reject any segment that could be a traversal or hidden path component
+      for (const part of pathParts) {
+        if (part === ".." || part === "." || part === "") {
+          throw createAppError("Invalid source_url path segment", 400, "INVALID_SOURCE_URL")
+        }
       }
     }
 
@@ -174,7 +190,7 @@ export class ConversionService {
       throw createAppError("Invalid metadata format", 400, "INVALID_FORMAT")
     }
 
-    const output = transformMetadata({
+    const output = await transformMetadata({
       sourceFormat,
       targetFormat,
       data,

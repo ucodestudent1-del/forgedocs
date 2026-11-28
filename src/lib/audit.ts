@@ -22,6 +22,7 @@ let queueHead = 0
 let queueLock = Promise.resolve()
 const AUDIT_MAX_RETRY_QUEUE = 1000
 const QUEUE_COMPACT_THRESHOLD = 100
+let queueDroppedCount = 0
 
 async function withQueueLock<T>(fn: () => Promise<T> | T): Promise<T> {
   const currentLock = queueLock
@@ -46,11 +47,21 @@ function compactQueue(): void {
   }
 }
 
+export function getAuditRetryQueueStats(): { length: number; dropped: number; head: number } {
+  return {
+    length: auditRetryQueue.length - queueHead,
+    dropped: queueDroppedCount,
+    head: queueHead,
+  }
+}
+
 async function enqueueAuditRetry(input: AuditEventInput): Promise<void> {
   await withQueueLock(() => {
     const queueLength = auditRetryQueue.length - queueHead
     if (queueLength >= AUDIT_MAX_RETRY_QUEUE) {
-      queueHead++ // Drop oldest (O(1))
+      // Drop oldest and track the drop for alerting
+      queueHead++
+      queueDroppedCount++
       compactQueue()
     }
     auditRetryQueue.push(input)

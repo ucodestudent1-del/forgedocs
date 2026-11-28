@@ -3,7 +3,7 @@ import { NextResponse } from "next/server"
 import { z } from "zod"
 import { validateCSRF } from "@/lib/csrf"
 import { documentRateLimit } from "@/lib/rate-limiter"
-import { cacheDel } from "@/lib/cache"
+import { cacheDel, cacheIncrement } from "@/lib/cache"
 import { withErrorBoundary, createAppError } from "@/lib/api-error"
 import { fireWebhookEvent, type WebhookEvent } from "@/lib/webhooks"
 import { requireAccountMembership } from "@/lib/account-authz"
@@ -92,8 +92,8 @@ export const PATCH = withErrorBoundary(async (req, { params }: { params: Promise
     throw createAppError(error.message, 500, "DATABASE_ERROR")
   }
 
-  // Invalidate document list cache
-  await cacheDel(`documents:${user.id}:*`)
+  // Invalidate document list cache by bumping version
+  await cacheIncrement(`documents:version:${user.id}`, 86400)
 
   return NextResponse.json({ document: data })
 })
@@ -138,8 +138,8 @@ export const DELETE = withErrorBoundary(async (req, { params }: { params: Promis
     throw createAppError(error.message, 500, "DATABASE_ERROR")
   }
 
-  // Invalidate document list cache
-  await cacheDel(`documents:${user.id}:*`)
+  // Invalidate document list cache by bumping version
+  await cacheIncrement(`documents:version:${user.id}`, 86400)
 
   // Fire webhook (non-blocking)
   void fireWebhookEvent(user.id, "document.deleted" as WebhookEvent, {
