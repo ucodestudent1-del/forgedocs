@@ -55,35 +55,20 @@ export async function POST(req: Request) {
     return NextResponse.json({ received: true })
   }
 
-  // Record the event for idempotency before dispatching.
-  // If a concurrent retry inserted first, treat as already processed.
+  // Atomic upsert: insert with processed=false, or conflict on event_id.
+  // If a concurrent retry already inserted, fall through to handler — it is idempotent.
   const { error: insertError } = await (supabase as any)
     .from("webhook_events")
-    .insert({
+    .upsert({
       event_id: eventId,
       event_type: event.type,
       processed: false,
       payload: typeof body === "string" ? JSON.parse(body || "{}") : body,
-    })
+    }, { onConflict: "event_id" })
     .select("id")
 
   if (insertError) {
-    if (insertError.code === "23505") {
-      // Concurrent insert — another retry is handling this event.
-      // If already processed, skip; otherwise fall through to re-run the
-      // idempotent handler below.
-      const { data: recheck } = await (supabase as any)
-        .from("webhook_events")
-        .select("processed")
-        .eq("event_id", eventId)
-        .single()
-      if (recheck?.processed) {
-        logger.info(`Duplicate webhook event already processed (concurrent): ${eventId}`)
-        return NextResponse.json({ received: true })
-      }
-    } else {
-      throw createAppError(insertError.message, 500, "DATABASE_ERROR")
-    }
+    throw createAppError(insertError.message, 500, "DATABASE_ERROR")
   }
 
   // Dispatch to the appropriate handler. Handlers must be idempotent: a retry
@@ -113,6 +98,8 @@ export async function POST(req: Request) {
     logger.error(`Failed to mark webhook event as processed: ${eventId}`, {
       error: updateError.message,
     })
+    // Handler succeeded but we can't record processing — return 500 so Stripe
+    // retries. The idempotent handler will safely re-run.
     return NextResponse.json({ error: "Failed to record processing" }, { status: 500 })
   }
 

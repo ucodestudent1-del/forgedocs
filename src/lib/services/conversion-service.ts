@@ -117,6 +117,17 @@ export class ConversionService {
         throw createAppError("source_url must be a relative storage path", 400, "INVALID_SOURCE_URL")
       }
 
+      // SSRF allowlist: source_url must be under the authenticated user's documents/ prefix
+      const allowedPrefixes = [
+        `documents/${userId}/`,
+        `converted/${userId}/`,
+        `uploads/${userId}/`,
+      ]
+      const isAllowedPrefix = allowedPrefixes.some((prefix) => input.source_url.startsWith(prefix))
+      if (!isAllowedPrefix) {
+        throw createAppError("Source file path not in allowed user storage prefix", 403, "FORBIDDEN")
+      }
+
       if (!input.source_url.startsWith(`${userId}/`)) {
         throw createAppError("Source file does not belong to the authenticated user", 403, "FORBIDDEN")
       }

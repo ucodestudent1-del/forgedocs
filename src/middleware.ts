@@ -121,6 +121,9 @@ async function withPageAuthRedirects(request: NextRequest, response: NextRespons
       loginUrl.searchParams.set("redirect", pathname)
       return NextResponse.redirect(loginUrl)
     }
+    
+    // Set user ID header for rate limiting (session-based auth)
+    response.headers.set("x-api-user-id", user.id)
   }
 }
 
@@ -149,6 +152,7 @@ async function withApiKeyAuth(request: NextRequest, response: NextResponse): Pro
   }
 
   response.headers.set("x-api-user-id", validation.userId)
+  response.headers.set("x-api-key-id", validation.key.id)
 }
 
 async function withPermissionEnforcement(request: NextRequest, response: NextResponse): Promise<NextResponse | void> {
@@ -177,15 +181,15 @@ async function withPermissionEnforcement(request: NextRequest, response: NextRes
 async function withRateLimiting(request: NextRequest, response: NextResponse): Promise<NextResponse | void> {
   const pathname = request.nextUrl.pathname
   const isApiKey = request.headers.has("x-api-key")
-  
-  const config = isApiKey 
+
+  const config = isApiKey
     ? getAPIKeyRateLimitConfig(pathname)
     : getRateLimitConfig(pathname)
-  
+
   if (!config) return
 
-  const identifier = isApiKey 
-    ? `apikey:${request.headers.get("x-api-key")?.slice(0, 8)}`
+  const identifier = isApiKey
+    ? `apikey:${request.headers.get("x-api-key-id") || request.headers.get("x-api-key")?.slice(0, 8)}`
     : request.headers.get("x-forwarded-for") || request.ip || "anonymous"
 
   const rateLimitInfo = await checkRateLimit(identifier, config, pathname)

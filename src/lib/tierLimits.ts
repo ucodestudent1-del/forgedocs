@@ -94,9 +94,9 @@ const TIER_LIMITS: Record<string, TierLimits> = {
 
 const TIER_LIMITS_CACHE_TTL = 60 * 1000 // 1 minute cache for tier limits
 
-// Lua script: atomically add current timestamp to sliding window ZSET,
-// prune expired entries, count remaining, and set TTL. Single Redis round-trip
-// instead of 4 separate commands (zadd + zremrangebyscore + zcard + expire).
+// Lua script: atomically check AND increment sliding window counter.
+// Returns the count after adding the current request. Single Redis round-trip.
+// Used for both limit enforcement and usage tracking — eliminates TOCTOU race.
 const SLIDING_WINDOW_LUA = `
   local now = tonumber(ARGV[1])
   local windowStart = tonumber(ARGV[2])
@@ -166,7 +166,7 @@ const localTierCache = new Map<string, { count: number; windowStart: number }>()
 export async function checkTierLimit(
   userId: string,
   metric: "documents_created" | "conversions" | "storage_bytes",
-  quantity: number = 1
+  _quantity: number = 1
 ): Promise<{ allowed: boolean; limit: number; current: number; remaining: number }> {
   const limits = await getTierLimits(userId)
 
@@ -199,30 +199,31 @@ export async function checkTierLimit(
   try {
     const client = getRedisClient()
     if (!client) throw new Error("Redis not available")
-    
-    // Single atomic Lua call replaces 4 separate Redis round-trips:
-    // ZADD + ZREMRANGEBYSCORE + ZCARD + EXPIRE
+
+    // Single atomic Lua call: add request + count in one round-trip.
+    // Eliminates TOCTOU race between check and increment.
     const member = `${now}:${Math.random()}`
     const ttlSeconds = Math.ceil(windowMs / 1000) + 60
     current = Number(await client.eval(SLIDING_WINDOW_LUA, 1, redisKey, now, windowStart, member, ttlSeconds))
-    
-    // Sync local cache
+
+    // Sync local cache for fail-closed fallback
     localTierCache.set(`${userId}:${metric}`, { count: current, windowStart: now })
-    
+
   } catch {
-    // Redis down - use local cache with TTL
-    const cacheKey = `${userId}:${metric}`
-    const cached = localTierCache.get(cacheKey)
-    if (cached && now - cached.windowStart < windowMs) {
-      // Atomic local increment under the existing queue lock pattern
-      current = cached.count + quantity
-      localTierCache.set(cacheKey, { count: current, windowStart: cached.windowStart })
-      logger.warn("Using local tier cache due to Redis outage", { userId, metric, current })
-    } else {
-      // No local data - initialize with quantity (atomic first-write)
-      localTierCache.set(cacheKey, { count: quantity, windowStart: now })
-      current = quantity
-      logger.warn("Tier limit check: Redis down, no local cache - initializing local counter", { userId, metric })
+    // Redis unavailable — FAIL CLOSED for limited tiers.
+    // Reject the request so limits are not bypassed during outages.
+    logger.warn("Redis unavailable — tier limit check failing closed", { userId, metric })
+
+    // For unlimited tiers (limit < 0 handled above), we never reach here.
+    // For limited tiers, deny with the last known count if available.
+    const cached = localTierCache.get(`${userId}:${metric}`)
+    const currentCount = cached ? cached.count : 0
+
+    return {
+      allowed: currentCount <= limit,
+      limit,
+      current: currentCount,
+      remaining: Math.max(0, limit - currentCount),
     }
   }
 

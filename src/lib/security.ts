@@ -20,6 +20,21 @@ export function validateFileExtension(filename: string): boolean {
   return ALLOWED_FILE_EXTENSIONS.has(ext)
 }
 
+export const DANGEROUS_TEXT_PATTERNS = [
+  /<script\b/i,
+  /<iframe\b/i,
+  /<object\b/i,
+  /<embed\b/i,
+  /<applet\b/i,
+  /javascript:/i,
+  /vbscript:/i,
+  /on\w+\s*=/i,
+  /data:text\/html/i,
+  /data:application\/xhtml/i,
+  /<\?xml/i,
+  /<!DOCTYPE[^>]*html/i,
+]
+
 export function validateFileMagicBytes(fileBytes: Uint8Array | Buffer, mimeType: string): boolean {
   const bytes = Buffer.from(fileBytes)
   if (bytes.length < 4) return false
@@ -42,14 +57,14 @@ export function validateFileMagicBytes(fileBytes: Uint8Array | Buffer, mimeType:
       [0x50, 0x4b, 0x05, 0x06],
       [0x50, 0x4b, 0x07, 0x08],
     ],
-    "text/plain": [], // No magic bytes for plain text
-    "text/csv": [], // No magic bytes for CSV
-    "text/markdown": [], // No magic bytes for markdown
+    "text/plain": [],
+    "text/csv": [],
+    "text/markdown": [],
     "application/rtf": [[0x7b, 0x5c, 0x72, 0x74]], // {\rt
     "image/jpeg": [[0xff, 0xd8, 0xff]],
     "image/png": [[0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]],
     "image/webp": [[0x52, 0x49, 0x46, 0x46]], // RIFF
-    "image/svg+xml": [], // XML-based, check content
+    "image/svg+xml": [], // XML-based, check content below
     "image/tiff": [[0x49, 0x49, 0x2a, 0x00], [0x4d, 0x4d, 0x00, 0x2a]], // II or MM
     "image/gif": [[0x47, 0x49, 0x46, 0x38]], // GIF8
     "application/vnd.oasis.opendocument.text": [[0x50, 0x4b, 0x03, 0x04]],
@@ -59,7 +74,11 @@ export function validateFileMagicBytes(fileBytes: Uint8Array | Buffer, mimeType:
 
   const expectedSignatures = signatures[mimeType]
   if (!expectedSignatures || expectedSignatures.length === 0) {
-    // For types without magic bytes (text, svg), accept if we can't verify
+    // For types without magic bytes (text, svg), validate content for dangerous patterns
+    const content = bytes.toString("utf8")
+    if (DANGEROUS_TEXT_PATTERNS.some((pattern) => pattern.test(content))) {
+      return false
+    }
     return true
   }
 

@@ -410,9 +410,10 @@ export default function LandingPage() {
               price="$0"
               description="For personal use"
               features={[
-                "5 documents per month",
-                "10 conversions",
-                "1 GB storage",
+                "500 documents per month",
+                "100 conversions",
+                "5 GB storage",
+                "10 MB max file size",
                 "Basic templates",
                 "Community support",
               ]}
@@ -425,9 +426,9 @@ export default function LandingPage() {
               price="$29"
               description="For individuals and small teams"
               features={[
-                "Unlimited documents",
-                "Unlimited conversions",
-                "20 GB storage",
+                "5,000 documents per month",
+                "1,000 conversions",
+                "50 GB storage",
                 "50 MB max file size",
                 "Team collaboration (up to 5 seats)",
                 "Priority email support",
@@ -443,10 +444,11 @@ export default function LandingPage() {
               price="$89"
               description="For established organizations"
               features={[
-                "Everything in Professional",
-                "Unlimited seats",
+                "Unlimited documents",
+                "Unlimited conversions",
                 "100 GB storage",
                 "100 MB max file size",
+                "Unlimited seats",
                 "SSO / SAML authentication",
                 "Advanced analytics & reporting",
                 "Dedicated account manager",

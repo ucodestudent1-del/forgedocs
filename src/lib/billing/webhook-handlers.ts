@@ -303,5 +303,5 @@ export const WEBHOOK_HANDLERS: Record<string, WebhookEventHandler> = {
   "customer.subscription.trial_will_end": handleTrialWillEnd,
   "checkout.session.expired": handleCheckoutSessionExpired,
   "customer.subscription.deleted": handleSubscriptionDeleted,
-  "customer.subscription.updated": handleSubscriptionUpdated,
+  "customer.subscription.updated": handleSubscriptionUpdated
 }
