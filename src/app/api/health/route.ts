@@ -102,12 +102,14 @@ export async function GET() {
     breakers: circuitBreakers,
   }
 
+  const CRITICAL_DEPS = ["database", "redis"]
+  const criticalHealthy = CRITICAL_DEPS.every((dep) => checks[dep]?.status === "healthy")
   const allHealthy = Object.values(checks).every((c) => c.status === "healthy")
-  const status = allHealthy ? "healthy" : "degraded"
-  const httpStatus = allHealthy ? 200 : 503
+  const status = criticalHealthy ? (allHealthy ? "healthy" : "degraded") : "unhealthy"
+  const httpStatus = criticalHealthy ? 200 : 503
 
   return NextResponse.json(
-    { status, checks, timestamp: new Date().toISOString() },
+    { status, checks, criticalDepsHealthy: criticalHealthy, timestamp: new Date().toISOString() },
     { status: httpStatus }
   )
 }

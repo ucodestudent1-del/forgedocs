@@ -63,8 +63,7 @@ export const GET = withErrorBoundary(async (req) => {
     await requireAccountMembership(effectiveUser.id, accountId, "member")
   }
 
-  const docCacheVersion = await cacheIncrement(`documents:version:${effectiveUser.id}`, 86400)
-  const cacheKey = `documents:user:${effectiveUser.id}:account:${accountId ?? "personal"}:page:${page}:limit:${limit}:archived:${archived}:pinned:${pinned}:search:${Buffer.from(search || "").toString("base64url")}:v${docCacheVersion}`
+  const cacheKey = `documents:list:${effectiveUser.id}:${accountId ?? "personal"}:p${page}:l${limit}:a${Number(archived)}:pi${Number(pinned)}:s${Buffer.from(search || "").toString("base64url")}`
   const cached = await cacheGet<{ documents: any[]; count: number; page: number; limit: number }>(cacheKey)
   if (cached) {
     return NextResponse.json(cached)
@@ -230,9 +229,6 @@ export const POST = withErrorBoundary(async (req) => {
   } catch {
     // Usage tracking failure must not break the primary request
   }
-
-  // Invalidate document list cache by bumping version
-  await cacheIncrement(`documents:version:${effectiveUser.id}`, 86400)
 
   // Audit log document creation
   await logAuditEvent({

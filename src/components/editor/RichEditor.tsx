@@ -241,7 +241,11 @@ export function RichEditor({
     }
 
     document.addEventListener("selectionchange", updateActiveFormats)
-    return () => document.removeEventListener("selectionchange", updateActiveFormats)
+    document.addEventListener("keydown", handleDialogEscape)
+    return () => {
+      document.removeEventListener("selectionchange", updateActiveFormats)
+      document.removeEventListener("keydown", handleDialogEscape)
+    }
   }, [])
 
   const handleAutoSave = async () => {
@@ -603,6 +607,13 @@ export function RichEditor({
     updateContent()
   }
 
+  const handleDialogEscape = (e: KeyboardEvent) => {
+    if (e.key === "Escape") {
+      if (showLinkDialog) setShowLinkDialog(false)
+      if (showImageDialog) setShowImageDialog(false)
+    }
+  }
+
   const handleExport = async (format: "pdf" | "docx" | "html" | "md") => {
     if (onExport) {
       await onExport(format)
@@ -803,12 +814,16 @@ export function RichEditor({
               <div className="bg-card rounded-lg p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
                 <h3 className="text-lg font-semibold mb-4">Insert Link</h3>
                 <div className="space-y-3">
+                  <label htmlFor="link-text-input" className="block text-sm font-medium">Link text</label>
                   <Input
+                    id="link-text-input"
                     value={linkText}
                     onChange={(e) => setLinkText(e.target.value)}
                     placeholder="Link text (optional)"
                   />
+                  <label htmlFor="link-url-input" className="block text-sm font-medium">URL</label>
                   <Input
+                    id="link-url-input"
                     value={linkUrl}
                     onChange={(e) => setLinkUrl(e.target.value)}
                     placeholder="https://example.com"
@@ -833,13 +848,17 @@ export function RichEditor({
               <div className="bg-card rounded-lg p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
                 <h3 className="text-lg font-semibold mb-4">Insert Image</h3>
                 <div className="space-y-3">
+                  <label htmlFor="image-url-input" className="block text-sm font-medium">Image URL</label>
                   <Input
+                    id="image-url-input"
                     value={imageUrl}
                     onChange={(e) => setImageUrl(e.target.value)}
                     placeholder="https://example.com/image.png"
                     autoFocus
                   />
+                  <label htmlFor="image-alt-input" className="block text-sm font-medium">Alt text</label>
                   <Input
+                    id="image-alt-input"
                     value={imageAlt}
                     onChange={(e) => setImageAlt(e.target.value)}
                     placeholder="Alt text (optional)"

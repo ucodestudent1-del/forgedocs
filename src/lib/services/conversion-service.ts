@@ -218,8 +218,6 @@ export class ConversionService {
   }
 
   getAllFormats() {
-    return Object.values(FORMAT_REGISTRY)
-  }
 
   getAllConversionPairs() {
     return getAllConversionPairs()

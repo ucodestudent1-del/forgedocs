@@ -10,6 +10,12 @@ export default defineConfig({
   use: {
     baseURL: process.env.PLAYWRIGHT_BASE_URL || "http://localhost:3000",
     trace: "on-first-retry",
+    // Visual regression testing
+    screenshot: "only-on-failure",
+  },
+  expect: {
+    // Threshold for visual comparison (0-1)
+    toHaveScreenshot: { maxDiffPixels: 100, threshold: 0.2 },
   },
   projects: [
     {

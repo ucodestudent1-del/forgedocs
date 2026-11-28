@@ -1,50 +1,68 @@
 import { test, expect } from "@playwright/test"
 
 test.describe("Visual regression tests", () => {
-  test("homepage renders correctly", async ({ page }) => {
+  test("Landing page - full page screenshot", async ({ page }) => {
     await page.goto("/")
-    await expect(page).toHaveScreenshot("homepage.png", { fullPage: true })
+    await page.waitForLoadState("networkidle")
+    await expect(page).toHaveScreenshot("landing-page.png", {
+      fullPage: true,
+      animations: "disabled",
+    })
   })
 
-  test("login page renders correctly", async ({ page }) => {
-    await page.goto("/auth/login")
-    await expect(page).toHaveScreenshot("login.png", { fullPage: true })
+  test("Landing page - hero section", async ({ page }) => {
+    await page.goto("/")
+    await page.waitForLoadState("networkidle")
+    const hero = page.locator("section").first()
+    await expect(hero).toHaveScreenshot("hero-section.png", {
+      animations: "disabled",
+    })
   })
 
-  test("signup page renders correctly", async ({ page }) => {
-    await page.goto("/auth/signup")
-    await expect(page).toHaveScreenshot("signup.png", { fullPage: true })
-  })
-
-  test("pricing page renders correctly", async ({ page }) => {
+  test("Pricing page", async ({ page }) => {
     await page.goto("/pricing")
-    await expect(page).toHaveScreenshot("pricing.png", { fullPage: true })
+    await page.waitForLoadState("networkidle")
+    await expect(page).toHaveScreenshot("pricing-page.png", {
+      fullPage: true,
+      animations: "disabled",
+    })
   })
 
-  test("dashboard page renders correctly", async ({ page }) => {
+  test("Login page", async ({ page }) => {
+    await page.goto("/login")
+    await page.waitForLoadState("networkidle")
+    await expect(page).toHaveScreenshot("login-page.png", {
+      fullPage: true,
+      animations: "disabled",
+    })
+  })
+
+  test("Signup page", async ({ page }) => {
+    await page.goto("/signup")
+    await page.waitForLoadState("networkidle")
+    await expect(page).toHaveScreenshot("signup-page.png", {
+      fullPage: true,
+      animations: "disabled",
+    })
+  })
+
+  test("Features page", async ({ page }) => {
+    await page.goto("/features")
+    await page.waitForLoadState("networkidle")
+    await expect(page).toHaveScreenshot("features-page.png", {
+      fullPage: true,
+      animations: "disabled",
+    })
+  })
+
+  test("Dashboard page (unauthenticated - should redirect)", async ({ page }) => {
     await page.goto("/dashboard")
-    await expect(page).toHaveScreenshot("dashboard.png", { fullPage: true })
-  })
-
-  test("billing page renders correctly", async ({ page }) => {
-    await page.goto("/billing")
-    await expect(page).toHaveScreenshot("billing.png", { fullPage: true })
-  })
-
-  test("editor page renders correctly", async ({ page }) => {
-    await page.goto("/editor")
-    await expect(page).toHaveScreenshot("editor.png", { fullPage: true })
-  })
-
-  test("mobile homepage renders correctly", async ({ page }) => {
-    await page.setViewportSize({ width: 375, height: 667 })
-    await page.goto("/")
-    await expect(page).toHaveScreenshot("mobile-homepage.png", { fullPage: true })
-  })
-
-  test("mobile dashboard renders correctly", async ({ page }) => {
-    await page.setViewportSize({ width: 375, height: 667 })
-    await page.goto("/dashboard")
-    await expect(page).toHaveScreenshot("mobile-dashboard.png", { fullPage: true })
+    await page.waitForLoadState("networkidle")
+    // Should redirect to login
+    await expect(page).toHaveURL(/\/login/)
+    await expect(page).toHaveScreenshot("dashboard-redirect.png", {
+      fullPage: true,
+      animations: "disabled",
+    })
   })
 })

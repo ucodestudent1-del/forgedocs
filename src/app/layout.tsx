@@ -188,6 +188,21 @@ export default async function RootLayout({
         <link rel="alternate" href={`${appUrl}/ja`} hrefLang="ja" />
         <link rel="alternate" href={appUrl} hrefLang="x-default" />
         <JsonLdScript nonce={nonce || undefined} />
+        {/* Service worker registration */}
+        <script
+          id="sw-register"
+          dangerouslySetInnerHTML={{
+            __html: `
+              if ('serviceWorker' in navigator) {
+                window.addEventListener('load', () => {
+                  navigator.serviceWorker.register('/sw.js', { scope: '/' })
+                    .then((reg) => console.log('SW registered: ', reg))
+                    .catch((err) => console.log('SW registration failed: ', err))
+                })
+              }
+            `,
+          }}
+        />
       </head>
       <body className={`${inter.variable} font-sans antialiased bg-background text-foreground`}>
         <a href="#main-content" className="sr-only focus:not-sr-only focus-visible:absolute focus-visible:top-4 focus-visible:left-4 focus-visible:z-50 focus-visible:px-4 focus-visible:py-2 focus-visible:bg-primary focus-visible:text-primary-foreground focus-visible:rounded-md focus-visible:outline-none">

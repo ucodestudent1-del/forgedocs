@@ -94,8 +94,17 @@ export async function createRouteClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-  if (isBuild || !url || !key || url.includes("placeholder") || key.includes("placeholder")) {
+  // Build mock is opt-in only. Never silently return a mock during build —
+  // that masks missing env vars and causes runtime failures in production.
+  if (process.env.NEXT_BUILD_MOCK_SUPABASE === "true") {
     return createMockSupabaseClient()
+  }
+
+  if (!url || !key || url.includes("placeholder") || key.includes("placeholder")) {
+    throw new Error(
+      "Missing or invalid Supabase environment variables. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY. " +
+        "For builds without Supabase, set NEXT_BUILD_MOCK_SUPABASE=true explicitly.",
+    )
   }
 
   return createClientWithCookies(url, key, {
@@ -149,8 +158,14 @@ export async function createReadOnlyClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-  if (!url || !key || url.includes("placeholder") || key.includes("placeholder")) {
+  if (process.env.NEXT_BUILD_MOCK_SUPABASE === "true") {
     return createMockSupabaseClient()
+  }
+
+  if (!url || !key || url.includes("placeholder") || key.includes("placeholder")) {
+    throw new Error(
+      "Missing or invalid Supabase environment variables. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.",
+    )
   }
 
   return createServerClient<Database>(url, key, {
