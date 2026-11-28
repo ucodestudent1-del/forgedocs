@@ -75,7 +75,7 @@ export const POST = withErrorBoundary(async (req) => {
       subject: "Welcome to ForgeDocs - Your account is ready",
       html: getWelcomeEmailHtml(full_name || "User", `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/login`),
     }).catch((err) => {
-      logger.error("[AUTH SIGNUP] welcome email failed", { email: data.user.email, error: err instanceof Error ? err.message : String(err) })
+      logger.error("[AUTH SIGNUP] welcome email failed", { email: data.user?.email, error: err instanceof Error ? err.message : String(err) })
     })
   }
 

@@ -164,14 +164,14 @@ async function rotatePdf(file: File): Promise<Uint8Array> {
 async function protectPdf(file: File, password: string): Promise<Uint8Array> {
   const arrayBuffer = await file.arrayBuffer()
   const pdf = await PDFDocument.load(arrayBuffer)
-  pdf.lock()
+  ;(pdf as any).lock()
   return pdf.save()
 }
 
 async function unprotectPdf(file: File, password: string): Promise<Uint8Array> {
   const arrayBuffer = await file.arrayBuffer()
   const pdf = await PDFDocument.load(arrayBuffer)
-  pdf.unlock()
+  ;(pdf as any).unlock()
   return pdf.save()
 }
 
