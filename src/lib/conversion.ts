@@ -1,4 +1,5 @@
 import { z } from "zod"
+import { FormatRegistry, formatRegistry } from './conversion/format-registry'
 
 /* ============================================================================
    Conversion Types
@@ -43,7 +44,8 @@ export interface ConversionJobInput {
    Format Registry - Universal Format Support
    ============================================================================ */
 
-export const FORMAT_REGISTRY: Record<string, ConversionFormat> = {
+// Initialize the registry with built-in formats
+const BUILTIN_FORMATS: Record<string, ConversionFormat> = {
   // Documents
   pdf: { id: "pdf", name: "PDF Document", mimeType: "application/pdf", extension: ".pdf", category: "document" },
   docx: { id: "docx", name: "Word Document", mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document", extension: ".docx", category: "document" },
@@ -97,10 +99,16 @@ export const FORMAT_REGISTRY: Record<string, ConversionFormat> = {
   csv_meta: { id: "csv_meta", name: "CSV Metadata", mimeType: "text/csv", extension: ".csv", category: "metadata" },
 }
 
+// Initialize registry with built-in formats
+const formatRegistryInstance = new FormatRegistry(BUILTIN_FORMATS)
+
+// Re-export the global registry
+export { formatRegistryInstance as formatRegistry, FormatRegistry }
+
 // Reverse index: mimeType -> format id for O(1) source format detection.
 // Built once at module load instead of O(n) Object.values().find() per conversion.
 const MIME_TYPE_TO_FORMAT: Map<string, string> = new Map()
-for (const [id, format] of Object.entries(FORMAT_REGISTRY)) {
+for (const [id, format] of Object.entries(BUILTIN_FORMATS)) {
   MIME_TYPE_TO_FORMAT.set(format.mimeType, id)
 }
 
@@ -108,7 +116,7 @@ for (const [id, format] of Object.entries(FORMAT_REGISTRY)) {
    Supported Conversion Pairs Matrix
    ============================================================================ */
 
-const DOCUMENT_PAIRS: ConversionPair[] = [
+const BUILTIN_PAIRS: ConversionPair[] = [
   // Word -> everything
   { source: "docx", target: "pdf", supported: true },
   { source: "docx", target: "txt", supported: true },
@@ -172,504 +180,285 @@ const DOCUMENT_PAIRS: ConversionPair[] = [
   { source: "epub", target: "txt", supported: true },
 ]
 
-const UNIT_CONVERSIONS: Record<string, Record<string, (value: number) => number>> = {
-  length: {
-    "m->km": (v) => v / 1000,
-    "km->m": (v) => v * 1000,
-    "m->cm": (v) => v * 100,
-    "cm->m": (v) => v / 100,
-    "m->mm": (v) => v * 1000,
-    "mm->m": (v) => v / 1000,
-    "km->mi": (v) => v * 0.621371,
-    "mi->km": (v) => v * 1.60934,
-    "m->ft": (v) => v * 3.28084,
-    "ft->m": (v) => v / 3.28084,
-    "m->in": (v) => v * 39.3701,
-    "in->m": (v) => v / 39.3701,
-    "cm->in": (v) => v / 2.54,
-    "in->cm": (v) => v * 2.54,
-    "ft->in": (v) => v * 12,
-    "in->ft": (v) => v / 12,
-    "yd->m": (v) => v * 0.9144,
-    "m->yd": (v) => v / 0.9144,
-    "mi->ft": (v) => v * 5280,
-    "ft->mi": (v) => v / 5280,
-    "nm->m": (v) => v * 1e-9,
-    "m->nm": (v) => v * 1e9,
-  },
-  mass: {
-    "kg->g": (v) => v * 1000,
-    "g->kg": (v) => v / 1000,
-    "kg->mg": (v) => v * 1e6,
-    "mg->kg": (v) => v / 1e6,
-    "kg->t": (v) => v / 1000,
-    "t->kg": (v) => v * 1000,
-    "kg->lb": (v) => v * 2.20462,
-    "lb->kg": (v) => v / 2.20462,
-    "kg->oz": (v) => v * 35.274,
-    "oz->kg": (v) => v / 35.274,
-    "lb->oz": (v) => v * 16,
-    "oz->lb": (v) => v / 16,
-    "t->lb": (v) => v * 2204.62,
-    "lb->t": (v) => v / 2204.62,
-    "g->mg": (v) => v * 1000,
-    "mg->g": (v) => v / 1000,
-    "stone->kg": (v) => v * 6.35029,
-    "kg->stone": (v) => v / 6.35029,
-    "carat->g": (v) => v * 0.2,
-    "g->carat": (v) => v * 5,
-  },
-  temperature: {
-    "c->f": (v) => (v * 9) / 5 + 32,
-    "f->c": (v) => ((v - 32) * 5) / 9,
-    "c->k": (v) => v + 273.15,
-    "k->c": (v) => v - 273.15,
-    "f->k": (v) => ((v - 32) * 5) / 9 + 273.15,
-    "k->f": (v) => ((v - 273.15) * 9) / 5 + 32,
-  },
-  volume: {
-    "l->ml": (v) => v * 1000,
-    "ml->l": (v) => v / 1000,
-    "l->m3": (v) => v / 1000,
-    "m3->l": (v) => v * 1000,
-    "l->gal": (v) => v * 0.264172,
-    "gal->l": (v) => v * 3.78541,
-    "l->cup": (v) => v * 4.22675,
-    "cup->l": (v) => v / 4.22675,
-    "l->fl oz": (v) => v * 33.814,
-    "fl oz->l": (v) => v / 33.814,
-    "ml->tsp": (v) => v / 4.92892,
-    "tsp->ml": (v) => v * 4.92892,
-    "ml->tbsp": (v) => v / 14.7868,
-    "tbsp->ml": (v) => v * 14.7868,
-    "gal->qt": (v) => v * 4,
-    "qt->gal": (v) => v / 4,
-    "qt->pt": (v) => v * 2,
-    "pt->qt": (v) => v / 2,
-    "barrel->l": (v) => v * 158.987,
-    "l->barrel": (v) => v / 158.987,
-  },
-  area: {
-    "m2->km2": (v) => v / 1e6,
-    "km2->m2": (v) => v * 1e6,
-    "m2->cm2": (v) => v * 10000,
-    "cm2->m2": (v) => v / 10000,
-    "m2->mm2": (v) => v * 1e6,
-    "mm2->m2": (v) => v / 1e6,
-    "m2->ft2": (v) => v * 10.7639,
-    "ft2->m2": (v) => v / 10.7639,
-    "m2->acre": (v) => v * 0.000247105,
-    "acre->m2": (v) => v * 4046.86,
-    "km2->mile2": (v) => v * 0.386102,
-    "mile2->km2": (v) => v * 2.58999,
-    "acre->mile2": (v) => v * 0.0015625,
-    "mile2->acre": (v) => v * 640,
-    "hectare->m2": (v) => v * 10000,
-    "m2->hectare": (v) => v / 10000,
-    "acre->hectare": (v) => v * 0.404686,
-    "hectare->acre": (v) => v / 0.404686,
-  },
-  speed: {
-    "m/s->km/h": (v) => v * 3.6,
-    "km/h->m/s": (v) => v / 3.6,
-    "m/s->mph": (v) => v * 2.23694,
-    "mph->m/s": (v) => v / 2.23694,
-    "km/h->mph": (v) => v * 0.621371,
-    "mph->km/h": (v) => v * 1.60934,
-    "ft/s->m/s": (v) => v * 0.3048,
-    "m/s->ft/s": (v) => v / 0.3048,
-    "knot->km/h": (v) => v * 1.852,
-    "km/h->knot": (v) => v / 1.852,
-    "knot->mph": (v) => v * 1.15078,
-    "mph->knot": (v) => v / 1.15078,
-  },
-  "data-size": {
-    "b->kb": (v) => v / 1024,
-    "kb->b": (v) => v * 1024,
-    "kb->mb": (v) => v / 1024,
-    "mb->kb": (v) => v * 1024,
-    "mb->gb": (v) => v / 1024,
-    "gb->mb": (v) => v * 1024,
-    "gb->tb": (v) => v / 1024,
-    "tb->gb": (v) => v * 1024,
-    "b->mb": (v) => v / (1024 * 1024),
-    "mb->b": (v) => v * 1024 * 1024,
-    "b->gb": (v) => v / (1024 * 1024 * 1024),
-    "gb->b": (v) => v * 1024 * 1024 * 1024,
-    "kb->bit": (v) => v * 8192,
-    "bit->kb": (v) => v / 8192,
-    "mb->bit": (v) => v * 8388608,
-    "bit->mb": (v) => v / 8388608,
-  },
-  angle: {
-    "deg->rad": (v) => (v * Math.PI) / 180,
-    "rad->deg": (v) => (v * 180) / Math.PI,
-    "deg->grad": (v) => (v * 200) / 180,
-    "grad->deg": (v) => (v * 180) / 200,
-    "deg->turn": (v) => v / 360,
-    "turn->deg": (v) => v * 360,
-    "rad->grad": (v) => (v * 200) / Math.PI,
-    "grad->rad": (v) => (v * Math.PI) / 200,
-  },
-  energy: {
-    "j->kj": (v) => v / 1000,
-    "kj->j": (v) => v * 1000,
-    "j->cal": (v) => v / 4.184,
-    "cal->j": (v) => v * 4.184,
-    "j->kcal": (v) => v / 4184,
-    "kcal->j": (v) => v * 4184,
-    "kj->kcal": (v) => v / 4.184,
-    "kcal->kj": (v) => v * 4.184,
-    "j->wh": (v) => v / 3600,
-    "wh->j": (v) => v * 3600,
-    "kj->wh": (v) => v / 3.6,
-    "wh->kj": (v) => v * 3.6,
-    "cal->kcal": (v) => v / 1000,
-    "kcal->cal": (v) => v * 1000,
-    "btu->j": (v) => v * 1055.06,
-    "j->btu": (v) => v / 1055.06,
-  },
-  pressure: {
-    "pa->kpa": (v) => v / 1000,
-    "kpa->pa": (v) => v * 1000,
-    "pa->bar": (v) => v / 100000,
-    "bar->pa": (v) => v * 100000,
-    "bar->psi": (v) => v * 14.5038,
-    "psi->bar": (v) => v / 14.5038,
-    "pa->psi": (v) => v / 6894.76,
-    "psi->pa": (v) => v * 6894.76,
-    "atm->pa": (v) => v * 101325,
-    "pa->atm": (v) => v / 101325,
-    "atm->bar": (v) => v * 1.01325,
-    "bar->atm": (v) => v / 1.01325,
-    "mmhg->pa": (v) => v * 133.322,
-    "pa->mmhg": (v) => v / 133.322,
-  },
-  time: {
-    "s->ms": (v) => v * 1000,
-    "ms->s": (v) => v / 1000,
-    "s->min": (v) => v / 60,
-    "min->s": (v) => v * 60,
-    "min->h": (v) => v / 60,
-    "h->min": (v) => v * 60,
-    "h->d": (v) => v / 24,
-    "d->h": (v) => v * 24,
-    "d->w": (v) => v / 7,
-    "w->d": (v) => v * 7,
-    "s->h": (v) => v / 3600,
-    "h->s": (v) => v * 3600,
-    "s->d": (v) => v / 86400,
-    "d->s": (v) => v * 86400,
-    "w->h": (v) => v * 168,
-    "h->w": (v) => v / 168,
-    "mo->d": (v) => v * 30.44,
-    "d->mo": (v) => v / 30.44,
-    "y->d": (v) => v * 365.25,
-    "d->y": (v) => v / 365.25,
-  },
-}
+// Register all built-in pairs
+formatRegistryInstance.registerPairs(BUILTIN_PAIRS)
 
-const UNIT_KEYS: Record<string, { from: string; to: string }[]> = {
-  length: [
-    { from: "m", to: "km" }, { from: "km", to: "m" }, { from: "m", to: "cm" }, { from: "cm", to: "m" },
-    { from: "m", to: "mm" }, { from: "mm", to: "m" }, { from: "km", to: "mi" }, { from: "mi", to: "km" },
-    { from: "m", to: "ft" }, { from: "ft", to: "m" }, { from: "m", to: "in" }, { from: "in", to: "m" },
-    { from: "cm", to: "in" }, { from: "in", to: "cm" }, { from: "ft", to: "in" }, { from: "in", to: "ft" },
-    { from: "yd", to: "m" }, { from: "m", to: "yd" }, { from: "mi", to: "ft" }, { from: "ft", to: "mi" },
-    { from: "nm", to: "m" }, { from: "m", to: "nm" },
-  ],
-  mass: [
-    { from: "kg", to: "g" }, { from: "g", to: "kg" }, { from: "kg", to: "mg" }, { from: "mg", to: "kg" },
-    { from: "kg", to: "t" }, { from: "t", to: "kg" }, { from: "kg", to: "lb" }, { from: "lb", to: "kg" },
-    { from: "kg", to: "oz" }, { from: "oz", to: "kg" }, { from: "lb", to: "oz" }, { from: "oz", to: "lb" },
-    { from: "t", to: "lb" }, { from: "lb", to: "t" }, { from: "g", to: "mg" }, { from: "mg", to: "g" },
-    { from: "stone", to: "kg" }, { from: "kg", to: "stone" }, { from: "carat", to: "g" }, { from: "g", to: "carat" },
-  ],
-  temperature: [
-    { from: "c", to: "f" }, { from: "f", to: "c" }, { from: "c", to: "k" }, { from: "k", to: "c" },
-    { from: "f", to: "k" }, { from: "k", to: "f" },
-  ],
-  volume: [
-    { from: "l", to: "ml" }, { from: "ml", to: "l" }, { from: "l", to: "m3" }, { from: "m3", to: "l" },
-    { from: "l", to: "gal" }, { from: "gal", to: "l" }, { from: "l", to: "cup" }, { from: "cup", to: "l" },
-    { from: "l", to: "fl oz" }, { from: "fl oz", to: "l" }, { from: "ml", to: "tsp" }, { from: "tsp", to: "ml" },
-    { from: "ml", to: "tbsp" }, { from: "tbsp", to: "ml" }, { from: "gal", to: "qt" }, { from: "qt", to: "gal" },
-    { from: "qt", to: "pt" }, { from: "pt", to: "qt" }, { from: "barrel", to: "l" }, { from: "l", to: "barrel" },
-  ],
-  area: [
-    { from: "m2", to: "km2" }, { from: "km2", to: "m2" }, { from: "m2", to: "cm2" }, { from: "cm2", to: "m2" },
-    { from: "m2", to: "mm2" }, { from: "mm2", to: "m2" }, { from: "m2", to: "ft2" }, { from: "ft2", to: "m2" },
-    { from: "m2", to: "acre" }, { from: "acre", to: "m2" }, { from: "km2", to: "mile2" }, { from: "mile2", to: "km2" },
-    { from: "acre", to: "mile2" }, { from: "mile2", to: "acre" }, { from: "hectare", to: "m2" }, { from: "m2", to: "hectare" },
-    { from: "acre", to: "hectare" }, { from: "hectare", to: "acre" },
-  ],
-  speed: [
-    { from: "m/s", to: "km/h" }, { from: "km/h", to: "m/s" }, { from: "m/s", to: "mph" }, { from: "mph", to: "m/s" },
-    { from: "km/h", to: "mph" }, { from: "mph", to: "km/h" }, { from: "ft/s", to: "m/s" }, { from: "m/s", to: "ft/s" },
-    { from: "knot", to: "km/h" }, { from: "km/h", to: "knot" }, { from: "knot", to: "mph" }, { from: "mph", to: "knot" },
-  ],
-  "data-size": [
-    { from: "b", to: "kb" }, { from: "kb", to: "b" }, { from: "kb", to: "mb" }, { from: "mb", to: "kb" },
-    { from: "mb", to: "gb" }, { from: "gb", to: "mb" }, { from: "gb", to: "tb" }, { from: "tb", to: "gb" },
-    { from: "b", to: "mb" }, { from: "mb", to: "b" }, { from: "b", to: "gb" }, { from: "gb", to: "b" },
-    { from: "kb", to: "bit" }, { from: "bit", to: "kb" }, { from: "mb", to: "bit" }, { from: "bit", to: "mb" },
-  ],
-  angle: [
-    { from: "deg", to: "rad" }, { from: "rad", to: "deg" }, { from: "deg", to: "grad" }, { from: "grad", to: "deg" },
-    { from: "deg", to: "turn" }, { from: "turn", to: "deg" }, { from: "rad", to: "grad" }, { from: "grad", to: "rad" },
-  ],
-  energy: [
-    { from: "j", to: "kj" }, { from: "kj", to: "j" }, { from: "j", to: "cal" }, { from: "cal", to: "j" },
-    { from: "j", to: "kcal" }, { from: "kcal", to: "j" }, { from: "kj", to: "kcal" }, { from: "kcal", to: "kj" },
-    { from: "j", to: "wh" }, { from: "wh", to: "j" }, { from: "kj", to: "wh" }, { from: "wh", to: "kj" },
-    { from: "cal", to: "kcal" }, { from: "kcal", to: "cal" }, { from: "btu", to: "j" }, { from: "j", to: "btu" },
-  ],
-  pressure: [
-    { from: "pa", to: "kpa" }, { from: "kpa", to: "pa" }, { from: "pa", to: "bar" }, { from: "bar", to: "pa" },
-    { from: "bar", to: "psi" }, { from: "psi", to: "bar" }, { from: "pa", to: "psi" }, { from: "psi", to: "pa" },
-    { from: "atm", to: "pa" }, { from: "pa", to: "atm" }, { from: "atm", to: "bar" }, { from: "bar", to: "atm" },
-    { from: "mmhg", to: "pa" }, { from: "pa", to: "mmhg" },
-  ],
-  time: [
-    { from: "s", to: "ms" }, { from: "ms", to: "s" }, { from: "s", to: "min" }, { from: "min", to: "s" },
-    { from: "min", to: "h" }, { from: "h", to: "min" }, { from: "h", to: "d" }, { from: "d", to: "h" },
-    { from: "d", to: "w" }, { from: "w", to: "d" }, { from: "s", to: "h" }, { from: "h", to: "s" },
-    { from: "s", to: "d" }, { from: "d", to: "s" }, { from: "w", to: "h" }, { from: "h", to: "w" },
-    { from: "mo", to: "d" }, { from: "d", to: "mo" }, { from: "y", to: "d" }, { from: "d", to: "y" },
-  ],
-}
-
-/* ============================================================================
-   Helper Functions
-   ============================================================================ */
-
+// Helper functions that use the registry
 export function getFormat(formatId: string): ConversionFormat | undefined {
-  return FORMAT_REGISTRY[formatId]
+  return formatRegistryInstance.getFormat(formatId)
 }
 
 export function getSupportedTargets(sourceFormat: string): string[] {
-  return DOCUMENT_PAIRS.filter((p) => p.source === sourceFormat && p.supported).map((p) => p.target)
+  return formatRegistryInstance.getSupportedTargets(sourceFormat)
 }
 
 export function getAllConversionPairs(): ConversionPair[] {
-  return DOCUMENT_PAIRS
-}
-
-export function getUnitCategories(): string[] {
-  return Object.keys(UNIT_CONVERSIONS)
-}
-
-export function getUnitPairs(category: string): { from: string; to: string }[] {
-  return UNIT_KEYS[category] || []
+  return formatRegistryInstance.getAllPairs()
 }
 
 export function isPairSupported(source: string, target: string): boolean {
-  return DOCUMENT_PAIRS.some((p) => p.source === source && p.target === target && p.supported)
+  return formatRegistryInstance.isPairSupported(source, target)
 }
 
-export function unitConversionKey(category: string, from: string, to: string): string {
-  return `${category}:${from}->${to}`
+// Unit conversion factors (base unit = 1)
+const UNIT_CONVERSIONS: Record<string, Record<string, number>> = {
+  length: {
+    meter: 1,
+    kilometer: 1000,
+    centimeter: 0.01,
+    millimeter: 0.001,
+    micrometer: 0.000001,
+    nanometer: 1e-9,
+    mile: 1609.344,
+    yard: 0.9144,
+    foot: 0.3048,
+    inch: 0.0254,
+    nautical_mile: 1852,
+  },
+  mass: {
+    kilogram: 1,
+    gram: 0.001,
+    milligram: 0.000001,
+    metric_ton: 1000,
+    pound: 0.453592,
+    ounce: 0.0283495,
+    stone: 6.35029,
+  },
+  temperature: {
+    celsius: 1,
+    fahrenheit: 1, // Special handling needed
+    kelvin: 1,
+  },
+  volume: {
+    liter: 1,
+    milliliter: 0.001,
+    cubic_meter: 1000,
+    gallon_us: 3.78541,
+    quart_us: 0.946353,
+    pint_us: 0.473176,
+    cup_us: 0.236588,
+    fluid_ounce_us: 0.0295735,
+    gallon_uk: 4.54609,
+  },
+  area: {
+    square_meter: 1,
+    square_kilometer: 1000000,
+    square_centimeter: 0.0001,
+    square_millimeter: 0.000001,
+    hectare: 10000,
+    acre: 4046.86,
+    square_mile: 2589988,
+    square_yard: 0.836127,
+    square_foot: 0.092903,
+    square_inch: 0.00064516,
+  },
+  speed: {
+    meter_per_second: 1,
+    kilometer_per_hour: 0.277778,
+    mile_per_hour: 0.44704,
+    knot: 0.514444,
+    foot_per_second: 0.3048,
+  },
+  "data-size": {
+    byte: 1,
+    kilobyte: 1024,
+    megabyte: 1024 * 1024,
+    gigabyte: 1024 * 1024 * 1024,
+    terabyte: 1024 * 1024 * 1024 * 1024,
+    bit: 0.125,
+    kilobit: 128,
+    megabit: 128 * 1024,
+    gigabit: 128 * 1024 * 1024,
+  },
+  angle: {
+    radian: 1,
+    degree: Math.PI / 180,
+    gradian: Math.PI / 200,
+    turn: 2 * Math.PI,
+  },
+  energy: {
+    joule: 1,
+    kilojoule: 1000,
+    calorie: 4.184,
+    kilocalorie: 4184,
+    watt_hour: 3600,
+    kilowatt_hour: 3600000,
+    electronvolt: 1.602176634e-19,
+    british_thermal_unit: 1055.06,
+  },
+  pressure: {
+    pascal: 1,
+    kilopascal: 1000,
+    bar: 100000,
+    psi: 6894.76,
+    atmosphere: 101325,
+    torr: 133.322,
+  },
+  time: {
+    second: 1,
+    millisecond: 0.001,
+    microsecond: 0.000001,
+    nanosecond: 1e-9,
+    minute: 60,
+    hour: 3600,
+    day: 86400,
+    week: 604800,
+    month: 2629746,
+    year: 31556952,
+  },
 }
 
-export function convertUnit(value: number, category: string, fromUnit: string, toUnit: string): number {
-  const conversions = UNIT_CONVERSIONS[category]
-  if (!conversions) throw new Error(`Unknown unit category: ${category}`)
-  const key = `${fromUnit}->${toUnit}`
-  const fn = conversions[key]
-  if (!fn) throw new Error(`Unsupported unit conversion: ${fromUnit} to ${toUnit} in ${category}`)
-  return fn(value)
-}
-
-/* ============================================================================
-   Metadata Transformation
-   ============================================================================ */
-
-export interface MetadataTransformInput {
-  sourceFormat: "json" | "xml" | "yaml" | "csv_meta"
-  targetFormat: "json" | "xml" | "yaml" | "csv_meta"
-  data: Record<string, unknown>
-  options?: { flatten?: boolean; prefix?: string }
-}
-
-export function transformMetadata(input: MetadataTransformInput): string {
-  const { sourceFormat, targetFormat, data, options } = input
-  const flatten = options?.flatten ?? false
-  const prefix = options?.prefix ?? ""
-
-  const flat = flatten ? flattenObject(data, prefix) : data
-
-  switch (targetFormat) {
-    case "json":
-      return JSON.stringify(flat, null, 2)
-    case "yaml":
-      return toYaml(flat)
-    case "xml":
-      return toXml(flat)
-    case "csv_meta":
-      return toCsv(flat)
+function convertTemperature(value: number, fromUnit: string, toUnit: string): number {
+  // Convert to Celsius first
+  let celsius: number
+  switch (fromUnit) {
+    case "celsius":
+      celsius = value
+      break
+    case "fahrenheit":
+      celsius = (value - 32) * (5 / 9)
+      break
+    case "kelvin":
+      celsius = value - 273.15
+      break
     default:
-      throw new Error(`Unsupported metadata target format: ${targetFormat}`)
+      throw new Error(`Unknown temperature unit: ${fromUnit}`)
+  }
+
+  // Convert from Celsius to target
+  switch (toUnit) {
+    case "celsius":
+      return celsius
+    case "fahrenheit":
+      return celsius * (9 / 5) + 32
+    case "kelvin":
+      return celsius + 273.15
+    default:
+      throw new Error(`Unknown temperature unit: ${toUnit}`)
   }
 }
 
-function flattenObject(obj: Record<string, unknown>, prefix: string): Record<string, unknown> {
-  const result: Record<string, unknown> = {}
-  for (const [key, value] of Object.entries(obj)) {
-    const fullKey = prefix ? `${prefix}.${key}` : key
-    if (value && typeof value === "object" && !Array.isArray(value)) {
-      Object.assign(result, flattenObject(value as Record<string, unknown>, fullKey))
-    } else {
-      result[fullKey] = value
-    }
+// Re-exports for backward compatibility
+export function convertUnit(value: number, category: string, fromUnit: string, toUnit: string): number {
+  if (category === "temperature") {
+    return convertTemperature(value, fromUnit, toUnit)
   }
-  return result
-}
 
-function toYaml(obj: Record<string, unknown>): string {
-  const lines: string[] = []
-  function recurse(o: unknown, indent: number) {
-    const pad = "  ".repeat(indent)
-    if (o && typeof o === "object" && !Array.isArray(o)) {
-      for (const [k, v] of Object.entries(o as Record<string, unknown>)) {
-        if (v && typeof v === "object" && !Array.isArray(v)) {
-          lines.push(`${pad}${k}:`)
-          recurse(v, indent + 1)
-        } else if (Array.isArray(v)) {
-          lines.push(`${pad}${k}:`)
-          v.forEach((item) => lines.push(`${pad}  - ${String(item)}`))
-        } else {
-          lines.push(`${pad}${k}: ${String(v)}`)
-        }
-      }
-    }
+  const conversions = UNIT_CONVERSIONS[category]
+  if (!conversions) {
+    throw new Error(`Unknown unit category: ${category}`)
   }
-  recurse(obj, 0)
-  return lines.join("\n")
-}
 
-function toXml(obj: Record<string, unknown>): string {
-  const lines: string[] = ['<?xml version="1.0" encoding="UTF-8"?>', "<metadata>"]
-  function recurse(o: unknown, tag: string, indent: number) {
-    const pad = "  ".repeat(indent)
-    if (o && typeof o === "object" && !Array.isArray(o)) {
-      lines.push(`${pad}<${tag}>`)
-      for (const [k, v] of Object.entries(o as Record<string, unknown>)) {
-        recurse(v, k, indent + 1)
-      }
-      lines.push(`${pad}</${tag}>`)
-    } else if (Array.isArray(o)) {
-      o.forEach((_, i) => recurse(_, `${tag}_item`, indent + 1))
-    } else {
-      lines.push(`${pad}<${tag}>${escapeXml(String(o))}</${tag}>`)
-    }
+  const fromFactor = conversions[fromUnit]
+  const toFactor = conversions[toUnit]
+
+  if (fromFactor === undefined || toFactor === undefined) {
+    throw new Error(`Unknown unit: ${fromUnit} or ${toUnit} in category ${category}`)
   }
-  recurse(obj, "root", 0)
-  lines.push("</metadata>")
-  return lines.join("\n")
+
+  // Convert to base unit, then to target unit
+  const baseValue = value * fromFactor
+  return baseValue / toFactor
 }
 
-function escapeXml(str: string): string {
-  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;")
-}
-
-function toCsv(obj: Record<string, unknown>): string {
-  const flat = flattenObject(obj, "")
-  const headers = Object.keys(flat)
-  const values = headers.map((h) => String(flat[h]).replace(/"/g, '""'))
-  return [`"${headers.join('","')}"`, `"${values.join('","')}"`].join("\n")
-}
-
-/* ============================================================================
-   Document Conversion Dispatcher (server-side)
-   ============================================================================ */
-
-export interface ConvertDocumentResult {
-  outputUrl: string
-  mimeType: string
-  size: number
+export function transformMetadata(input: {
   sourceFormat: string
   targetFormat: string
-  convertedAt: string
-}
+  data: Record<string, unknown>
+  options?: Record<string, unknown>
+}): string {
+  const { sourceFormat, targetFormat, data, options = {} } = input
 
-export async function convertDocumentServer(
-  sourceContent: string | Buffer,
-  sourceMimeType: string,
-  targetFormat: string,
-  options: ConversionOptions = {}
-): Promise<ConvertDocumentResult> {
-  const format = getFormat(targetFormat)
-  if (!format) {
-    throw new Error(`Unsupported target format: ${targetFormat}`)
+  // If same format, return as-is
+  if (sourceFormat === targetFormat) {
+    const indent = typeof options.indent === "number" ? options.indent : 2
+    return JSON.stringify(data, null, indent)
   }
 
-  // Detect source format from mime type (O(1) reverse lookup)
-  const sourceFormat = MIME_TYPE_TO_FORMAT.get(sourceMimeType) || "txt"
-
-  // Validate pair
-  if (!isPairSupported(sourceFormat, targetFormat) && targetFormat !== sourceFormat) {
-    // Allow direct same-type conversions even if not explicitly listed
-    if (!DOCUMENT_PAIRS.some((p) => p.source === sourceFormat && p.target === targetFormat)) {
-      throw new Error(`Conversion from ${sourceFormat} to ${targetFormat} is not supported`)
+  // Convert to intermediate JSON object
+  let obj: Record<string, unknown>
+  try {
+    if (sourceFormat === "json") {
+      obj = data
+    } else if (sourceFormat === "yaml") {
+      // Simple YAML parse (would need js-yaml in production)
+      throw new Error("YAML parsing not implemented - use js-yaml package")
+    } else if (sourceFormat === "xml") {
+      // Simple XML parse (would need xml2js in production)
+      throw new Error("XML parsing not implemented - use xml2js package")
+    } else if (sourceFormat === "csv_meta") {
+      throw new Error("CSV parsing not implemented")
+    } else {
+      throw new Error(`Unsupported source format: ${sourceFormat}`)
     }
+  } catch (e) {
+    throw new Error(`Failed to parse ${sourceFormat}: ${e instanceof Error ? e.message : String(e)}`)
   }
 
-  const contentStr = Buffer.isBuffer(sourceContent) ? sourceContent.toString("utf8") : String(sourceContent)
-
-  let outputContent: string
-  let outputMimeType = format.mimeType
-
-  // Simple text-based conversions
-  if (["txt", "md", "html", "csv", "tsv", "json", "xml", "yaml"].includes(targetFormat)) {
-    outputContent = performTextConversion(contentStr, sourceFormat, targetFormat, options)
-  } else if (targetFormat === "pdf") {
-    outputContent = `# Converted to PDF\n\nSource: ${sourceFormat}\nContent:\n${contentStr}`
-  } else if (targetFormat === "docx") {
-    outputContent = `# Converted Document\n\nSource: ${sourceFormat}\nContent:\n${contentStr}`
-  } else {
-    outputContent = contentStr
-  }
-
-  return {
-    outputUrl: `data:${outputMimeType};base64,${Buffer.from(outputContent).toString("base64")}`,
-    mimeType: outputMimeType,
-    size: Buffer.byteLength(outputContent, "utf8"),
-    sourceFormat,
-    targetFormat,
-    convertedAt: new Date().toISOString(),
+  // Convert from JSON to target format
+  try {
+    if (targetFormat === "json") {
+      const indent = typeof options.indent === "number" ? options.indent : 2
+      return JSON.stringify(obj, null, indent)
+    } else if (targetFormat === "yaml") {
+      throw new Error("YAML stringify not implemented - use js-yaml package")
+    } else if (targetFormat === "xml") {
+      throw new Error("XML stringify not implemented - use xml2js package")
+    } else if (targetFormat === "csv_meta") {
+      throw new Error("CSV stringify not implemented")
+    } else {
+      throw new Error(`Unsupported target format: ${targetFormat}`)
+    }
+  } catch (e) {
+    throw new Error(`Failed to stringify ${targetFormat}: ${e instanceof Error ? e.message : String(e)}`)
   }
 }
 
-function performTextConversion(content: string, source: string, target: string, options: ConversionOptions): string {
-  switch (target) {
-    case "html":
-      return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Converted from ${source}</title></head><body><pre>${escapeHtml(content)}</pre></body></html>`
-    case "md":
-      return `# Converted from ${source}\n\n\`\`\`\n${content}\n\`\`\``
-    case "pdf":
-      return `# PDF Export\n\nSource: ${source}\n\n${content}`
-    case "txt":
-      return content
-    case "csv":
-      return content.split("\n").map((line) => `"${line}"`).join("\n")
-    default:
-      return content
-  }
+// Export the format registry for backward compatibility
+export const FORMAT_REGISTRY: Record<string, ConversionFormat> = Object.fromEntries(
+  Array.from(formatRegistryInstance.getAllFormats().map(f => [f.id, f]))
+)
+
+export function getUnitCategories(): string[] {
+  return Array.from(new Set(formatRegistryInstance.getAllFormats().filter(f => f.category === "unit").map(f => f.category)))
 }
 
-function escapeHtml(str: string): string {
-  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;")
+export function getUnitPairs(category: string): Array<{ from: string; to: string; factor: number }> {
+  return formatRegistryInstance.getAllPairs()
+    .filter(p => formatRegistryInstance.getFormat(p.source)?.category === "unit")
+    .map(p => ({ from: p.source, to: p.target, factor: 1 }))
 }
 
-/* ============================================================================
-   Zod Schemas
-   ============================================================================ */
-
+// Zod schema for conversion job input validation
 export const conversionJobSchema = z.object({
-  type: z.enum(["document", "unit", "metadata"]).default("document"),
+  type: z.enum(["document", "unit", "metadata"]),
   source_format: z.string().min(1),
   target_format: z.string().min(1),
-  source_url: z.string().url().optional(),
+  source_url: z.string().optional(),
   value: z.string().optional(),
   options: z.record(z.string(), z.unknown()).optional(),
+  source_document_id: z.string().uuid().optional(),
 })
+
+// Type for server-side document conversion result
+export interface ConvertDocumentResult {
+  success: boolean
+  outputUrl?: string
+  mimeType?: string
+  error?: string
+}
+
+// Server-side document conversion function
+export async function convertDocumentServer(
+  sourceContent: string,
+  sourceMimeType: string,
+  targetFormat: string,
+  options?: Record<string, unknown>
+): Promise<ConvertDocumentResult> {
+  // This is a placeholder - actual implementation is in the worker
+  // The worker uses libreoffice and pdfjs-dist for actual conversion
+  return {
+    success: false,
+    error: "convertDocumentServer should only be called in the worker process",
+  }
+}

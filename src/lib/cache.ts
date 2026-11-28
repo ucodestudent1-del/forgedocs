@@ -7,7 +7,10 @@ let connectionPromise: Promise<void> | null = null
 const isTestEnv = process.env.NODE_ENV === 'test' || process.env.JEST_WORKER_ID !== undefined
 
 // In-memory fallback store for tests and when Redis is unavailable
-const memoryStore = new Map<string, { value: string; expiresAt: number }>()
+const memoryStore = new Map<string, { value: string; expiresAt: number; lastAccess: number }>()
+
+// Maximum entries in memory store to prevent unbounded growth
+const MAX_MEMORY_ENTRIES = 10000
 
 export function getRedisClient(): Redis | null {
   if (isTestEnv) {
@@ -26,6 +29,13 @@ export function getRedisClient(): Redis | null {
       enableReadyCheck: true,
       lazyConnect: true,
       connectionName: "forgedocs-app",
+      retryStrategy: (times) => {
+        if (times > 5) {
+          logger.error("Redis max retry attempts reached, giving up")
+          return null // Stop retrying
+        }
+        return Math.min(times * 200, 2000)
+      },
     })
 
     redisClient.on("error", (err: Error) => {
@@ -36,14 +46,34 @@ export function getRedisClient(): Redis | null {
       logger.info("Redis connected")
     })
 
-    connectionPromise = redisClient.connect()
+    redisClient.on("close", () => {
+      logger.warn("Redis connection closed")
+    })
+
+    redisClient.on("reconnecting", () => {
+      logger.info("Redis reconnecting...")
+    })
+
+    connectionPromise = redisClient.connect().catch((err) => {
+      logger.error("Redis initial connection failed", { error: err.message })
+      redisClient = null // Reset on failure so we can retry
+      connectionPromise = null
+      throw err
+    })
   }
   return redisClient
 }
 
 async function ensureConnected(client: Redis): Promise<void> {
   if (connectionPromise) {
-    await connectionPromise
+    try {
+      await connectionPromise
+    } catch {
+      // Connection failed, reset so next call creates new connection
+      connectionPromise = null
+      redisClient = null
+      throw new Error("Redis connection failed")
+    }
   }
 }
 
@@ -60,10 +90,20 @@ function cleanExpired(): void {
   const now = Date.now()
   if (now - lastCleanup < CLEANUP_INTERVAL_MS) return
   lastCleanup = now
+  
+  // Remove expired entries
   for (const [key, entry] of memoryStore.entries()) {
     if (now > entry.expiresAt) {
       memoryStore.delete(key)
     }
+  }
+  
+  // LRU eviction if still over limit
+  if (memoryStore.size > MAX_MEMORY_ENTRIES) {
+    const entries = Array.from(memoryStore.entries())
+      .sort((a, b) => a[1].lastAccess - b[1].lastAccess)
+    const toDelete = entries.slice(0, memoryStore.size - MAX_MEMORY_ENTRIES)
+    toDelete.forEach(([key]) => memoryStore.delete(key))
   }
 }
 
@@ -75,6 +115,8 @@ export async function cacheGet<T>(key: string): Promise<T | null> {
       memoryStore.delete(key)
       return null
     }
+    // Update last access for LRU
+    entry.lastAccess = Date.now()
     try {
       return JSON.parse(entry.value) as T
     } catch {
@@ -99,7 +141,8 @@ export async function cacheSet(key: string, value: unknown, ttlSeconds: number):
   const serialized = JSON.stringify(value)
 
   if (isTestEnv) {
-    memoryStore.set(key, { value: serialized, expiresAt })
+    cleanExpired()
+    memoryStore.set(key, { value: serialized, expiresAt, lastAccess: Date.now() })
     return
   }
 
@@ -183,7 +226,7 @@ export async function cacheIncrement(key: string, ttlSeconds: number): Promise<n
     const entry = memoryStore.get(key)
     const current = entry ? parseInt(entry.value, 10) || 0 : 0
     const next = current + 1
-    memoryStore.set(key, { value: String(next), expiresAt: Date.now() + ttlSeconds * 1000 })
+    memoryStore.set(key, { value: String(next), expiresAt: Date.now() + ttlSeconds * 1000, lastAccess: Date.now() })
     return next
   }
 
@@ -220,7 +263,7 @@ export async function cacheEval(key: string, ttlSeconds: number, threshold: stri
     const entry = memoryStore.get(key)
     const current = entry ? parseInt(entry.value, 10) || 0 : 0
     const next = current + 1
-    memoryStore.set(key, { value: String(next), expiresAt: Date.now() + ttlSeconds * 1000 })
+    memoryStore.set(key, { value: String(next), expiresAt: Date.now() + ttlSeconds * 1000, lastAccess: Date.now() })
 
     // Mirror production Lua lockout behavior: when threshold is reached, set
     // the lockout timestamp so subsequent checkLoginAttempts calls fail-closed.
@@ -231,7 +274,7 @@ export async function cacheEval(key: string, ttlSeconds: number, threshold: stri
       const existingLockout = existing ? parseInt(existing.value, 10) : 0
       const lockoutUntil = parseInt(lockoutUntilMs, 10)
       if (!existing || existingLockout < lockoutUntil) {
-        memoryStore.set(lockoutKey, { value: String(lockoutUntil), expiresAt: Date.now() + ttlSeconds * 1000 })
+        memoryStore.set(lockoutKey, { value: String(lockoutUntil), expiresAt: Date.now() + ttlSeconds * 1000, lastAccess: Date.now() })
       }
     }
 

@@ -357,8 +357,15 @@ export class NextStepsSectionRenderer extends BaseSectionRenderer implements Sec
  * Table of Contents section renderer
  */
 export class TableOfContentsSectionRenderer extends BaseSectionRenderer implements SectionRenderer {
-  constructor(private template: any) {
-    super({});
+  private template?: any
+
+  constructor(template?: any) {
+    super({})
+    this.template = template
+  }
+
+  setTemplate(template: any): void {
+    this.template = template
   }
 
   canRender(sectionId: string): boolean {

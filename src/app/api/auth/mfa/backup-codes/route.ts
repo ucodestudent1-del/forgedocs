@@ -36,7 +36,12 @@ export const POST = withErrorBoundary(async (req) => {
     throw createAppError("MFA not enabled", 400, "MFA_NOT_ENABLED")
   }
 
-  const isValid = verifyToken(resolveStoredSecret(profile.mfa_secret)!, token)
+  const secretResult = resolveStoredSecret(profile.mfa_secret)
+  if (!secretResult.secret) {
+    throw createAppError("MFA secret not available", 500, "MFA_SECRET_UNAVAILABLE")
+  }
+
+  const isValid = verifyToken(secretResult.secret, token)
 
   if (!isValid) {
     throw createAppError("Invalid token", 400, "INVALID_TOKEN")

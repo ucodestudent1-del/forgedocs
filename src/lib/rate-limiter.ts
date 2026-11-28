@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { cacheIncrement } from "@/lib/cache"
+import { cacheIncrement, getRedisClient } from "@/lib/cache"
 import { getClientIdentifier } from "@/lib/client-identifier"
 import logger from "@/lib/logger"
 
@@ -65,64 +65,113 @@ export interface RateLimitInfo {
   total: number
 }
 
+// Sliding window log rate limiting using Redis sorted sets
+// Provides accurate limiting without boundary bursts
+const SLIDING_WINDOW_LUA = `
+  local now = tonumber(ARGV[1])
+  local windowStart = now - tonumber(ARGV[2])
+  local key = KEYS[1]
+  local limit = tonumber(ARGV[3])
+  local ttl = tonumber(ARGV[4])
+  
+  -- Remove expired entries
+  redis.call('ZREMRANGEBYSCORE', key, 0, windowStart)
+  
+  -- Count current requests
+  local count = redis.call('ZCARD', key)
+  
+  if count >= limit then
+    return {0, count}
+  end
+  
+  -- Add current request with unique member
+  local member = now .. ':' .. math.random(1000000)
+  redis.call('ZADD', key, now, member)
+  redis.call('EXPIRE', key, ttl)
+  return {1, count + 1}
+`
+
+// In-memory fallback for sliding window (test env)
+const slidingWindowMemoryStore = new Map<string, Array<{ timestamp: number; member: string }>>()
+
+function cleanSlidingWindowMemory(key: string, windowStart: number): void {
+  const entries = slidingWindowMemoryStore.get(key)
+  if (!entries) return
+  const valid = entries.filter(e => e.timestamp > windowStart)
+  slidingWindowMemoryStore.set(key, valid)
+}
+
 export async function checkRateLimit(identifier: string, config: RateLimitConfig): Promise<RateLimitInfo> {
   const now = Date.now()
-  const ttlSeconds = Math.ceil(config.windowMs / 1000)
-  const redisKey = `ratelimit:${config.keyPrefix}:${identifier}`
+  const windowMs = config.windowMs
+  const ttlSeconds = Math.ceil(windowMs / 1000) + 1
+  const redisKey = `ratelimit:sliding:${config.keyPrefix}:${identifier}`
+  const windowStart = now - windowMs
 
+  const isTestEnv = process.env.NODE_ENV === 'test' || process.env.JEST_WORKER_ID !== undefined
+
+  let allowed: boolean
   let count: number
-  try {
-    // Atomic INCR with TTL on first hit = fixed-window rate limiting in Redis.
-    // Single shared store across all replicas — no per-replica divergence.
-    count = await cacheIncrement(redisKey, ttlSeconds)
-  } catch {
-    // Redis unavailable — behavior depends on RATE_LIMIT_FAIL_OPEN
-    if (FAIL_OPEN) {
-      logger.warn("Redis unavailable — rate limiter fail-open, allowing request", {
+
+  if (isTestEnv) {
+    // In-memory sliding window for tests
+    cleanSlidingWindowMemory(redisKey, windowStart)
+    const entries = slidingWindowMemoryStore.get(redisKey) || []
+    count = entries.length
+    
+    if (count >= config.maxRequests) {
+      allowed = false
+    } else {
+      allowed = true
+      const member = `${now}:${Math.random()}`
+      entries.push({ timestamp: now, member })
+      slidingWindowMemoryStore.set(redisKey, entries)
+      count++
+    }
+  } else {
+    try {
+      const client = getRedisClient()
+      if (!client) throw new Error("Redis not available")
+      
+      const result = await client.eval(
+        SLIDING_WINDOW_LUA, 
+        1, 
+        redisKey, 
+        now, 
+        windowMs, 
+        config.maxRequests, 
+        ttlSeconds
+      ) as [number, number]
+      
+      allowed = result[0] === 1
+      count = result[1]
+    } catch {
+      // Redis unavailable — behavior depends on FAIL_OPEN
+      if (FAIL_OPEN) {
+        logger.warn("Redis unavailable — rate limiter fail-open, allowing request", {
+          redisKey,
+          identifier,
+        })
+        return {
+          limited: false,
+          remaining: config.maxRequests,
+          resetTime: now + config.windowMs,
+          total: config.maxRequests,
+        }
+      }
+      // Fail closed: reject all requests when the backing store is down.
+      logger.warn("Redis unavailable — rate limiter fail-closed, rejecting request", {
         redisKey,
         identifier,
       })
-      return {
-        limited: false,
-        remaining: config.maxRequests,
-        resetTime: now + config.windowMs,
-        total: config.maxRequests,
-      }
+      return { limited: true, remaining: 0, resetTime: now + config.windowMs, total: config.maxRequests }
     }
-    // Fail closed: reject all requests when the backing store is down.
-    logger.warn("Redis unavailable — rate limiter fail-closed, rejecting request", {
-      redisKey,
-      identifier,
-    })
-    return { limited: true, remaining: 0, resetTime: now + config.windowMs, total: config.maxRequests }
   }
 
-  // cacheIncrement returns 0 only when Redis is unavailable (INCR never returns 0).
-  if (count === 0) {
-    if (FAIL_OPEN) {
-      logger.warn("Redis returned empty count — rate limiter fail-open, allowing request", {
-        redisKey,
-        identifier,
-      })
-      return {
-        limited: false,
-        remaining: config.maxRequests,
-        resetTime: now + config.windowMs,
-        total: config.maxRequests,
-      }
-    }
-    // Fail closed: reject all requests when the backing store is down.
-    logger.warn("Redis returned empty count — rate limiter fail-closed, rejecting request", {
-      redisKey,
-      identifier,
-    })
-    return { limited: true, remaining: 0, resetTime: now + config.windowMs, total: config.maxRequests }
-  }
-
-  const limited = count > config.maxRequests
+  const limited = !allowed
   const remaining = Math.max(0, config.maxRequests - count)
-  // resetTime is when the current fixed window expires
-  const resetTime = now + config.windowMs
+  // resetTime is when the current window expires
+  const resetTime = now + windowMs
 
   return { limited, remaining, resetTime, total: config.maxRequests }
 }

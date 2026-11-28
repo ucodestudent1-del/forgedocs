@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { getPooledRouteClient } from "@/lib/supabase"
+import { createRouteAuthClient } from "@/lib/supabase"
 import { validateCSRF } from "@/lib/csrf"
 import { createAppError } from "@/lib/api-error"
 import logger from "@/lib/logger"
@@ -7,7 +7,7 @@ import { getGuestUserId, isGuestMode } from "@/lib/guest-session"
 
 export interface AuthContext {
   user: { id: string; email: string; [key: string]: unknown }
-  supabase: Awaited<ReturnType<typeof getPooledRouteClient>>
+  supabase: Awaited<ReturnType<typeof createRouteAuthClient>>
 }
 
 type AuthHandler = (req: Request, ctx: AuthContext, ...extra: any[]) => Promise<NextResponse>
@@ -19,7 +19,16 @@ export interface WithAuthOptions {
   csrfMethods?: Set<string>
   /** Allow unauthenticated access (default: false) */
   optional?: boolean
+  /** Specific GET paths that mutate state and require CSRF */
+  csrfOnGet?: string[]
 }
+
+// Known GET endpoints that mutate state and require CSRF protection
+const MUTATING_GET_PATHS = new Set([
+  "/api/auth/callback",
+  "/api/webhooks/verify",
+  "/api/stripe/webhook",
+])
 
 /**
  * Higher-order wrapper that standardizes authentication across API routes.
@@ -36,11 +45,12 @@ export function withAuth(
   handler: AuthHandler,
   options: WithAuthOptions = {}
 ) {
-  const { requireCsrf = true, optional = false, csrfMethods } = options
+  const { requireCsrf = true, optional = false, csrfMethods, csrfOnGet } = options
   const methodsRequiringCsrf = csrfMethods ?? new Set(["POST", "PUT", "PATCH", "DELETE"])
+  const getPathsRequiringCsrf = csrfOnGet ? new Set(csrfOnGet) : MUTATING_GET_PATHS
 
   return async (req: Request, ...args: any[]): Promise<NextResponse> => {
-    const supabase = await getPooledRouteClient()
+    const supabase = await createRouteAuthClient()
 
     const { data: { user }, error } = await supabase.auth.getUser()
 
@@ -57,8 +67,12 @@ export function withAuth(
       }
     }
 
-    // Validate CSRF for mutating methods
-    if (requireCsrf && methodsRequiringCsrf.has(req.method)) {
+    // Validate CSRF for mutating methods and specific GET paths
+    const url = new URL(req.url)
+    const needsCsrf = methodsRequiringCsrf.has(req.method) || 
+      (req.method === "GET" && getPathsRequiringCsrf.has(url.pathname))
+    
+    if (requireCsrf && needsCsrf) {
       try {
         await validateCSRF(req)
       } catch {

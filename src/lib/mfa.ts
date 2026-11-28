@@ -1,6 +1,7 @@
 import { generateSecret as otpGenerateSecret, generateURI, verifySync } from "otplib"
 import QRCode from "qrcode"
 import { randomBytes, createHash, timingSafeEqual, createCipheriv, createDecipheriv, createHmac } from "crypto"
+import logger from "@/lib/logger"
 
 export const MFA_ISSUER = "ForgeDocs"
 
@@ -98,13 +99,28 @@ export function isEncryptedSecret(value: string | null): boolean {
 /**
  * Resolve the active TOTP secret from a stored profile value, decrypting when needed.
  * Plaintext (legacy) values are returned as-is for backward compatibility.
+ * Returns an object with the secret and an error code if decryption failed.
  */
-export function resolveStoredSecret(stored: string | null): string | null {
-  if (!stored) return null
+export function resolveStoredSecret(stored: string | null): { secret: string | null; error?: string } {
+  if (!stored) return { secret: null }
   if (isEncryptedSecret(stored)) {
-    return decryptSecret(stored)
+    try {
+      return { secret: decryptSecret(stored) }
+    } catch (err) {
+      if (err instanceof DecryptionError) {
+        if (err.code === "MFA_DECRYPT_WRONG_KEY") {
+          logger.error("MFA key rotation needed - decryption key mismatch", { userId: "unknown" })
+          return { secret: null, error: "KEY_ROTATION_REQUIRED" }
+        }
+        if (err.code === "MFA_DECRYPT_CORRUPT_DATA") {
+          logger.error("MFA secret corrupted in database", { userId: "unknown" })
+          return { secret: null, error: "DATA_CORRUPT" }
+        }
+      }
+      return { secret: null, error: "DECRYPTION_FAILED" }
+    }
   }
-  return stored
+  return { secret: stored }
 }
 
 /**

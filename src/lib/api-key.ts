@@ -1,5 +1,5 @@
 import { createHash, createHmac, randomBytes, timingSafeEqual } from "crypto"
-import { getPooledRouteClient } from "@/lib/supabase"
+import { createRouteAuthClient } from "@/lib/supabase"
 import { checkRateLimit } from "@/lib/rate-limiter"
 
 export const API_KEY_PREFIX = "sk_live"
@@ -41,7 +41,7 @@ export interface ApiKeyRow {
 }
 
 export async function listApiKeys(userId: string): Promise<ApiKeyRow[]> {
-  const supabase = await getPooledRouteClient()
+  const supabase = await createRouteAuthClient()
   const { data } = await supabase
     .from("api_keys")
     .select("id, name, key_prefix, permissions, last_used_at, expires_at, revoked_at, created_at")
@@ -57,7 +57,7 @@ export async function createApiKey(
   permissions: Record<string, unknown> = {},
   expiresAt: string | null = null
 ): Promise<{ rawKey: string; key: ApiKeyRow } | { error: string }> {
-  const supabase = await getPooledRouteClient()
+  const supabase = await createRouteAuthClient()
   const { rawKey, keyPrefix, keyHash } = generateApiKey()
 
   const { data, error } = await supabase
@@ -81,7 +81,7 @@ export async function createApiKey(
 }
 
 export async function revokeApiKey(userId: string, keyId: string): Promise<{ success: boolean; error?: string }> {
-  const supabase = await getPooledRouteClient()
+  const supabase = await createRouteAuthClient()
   const { error } = await supabase
     .from("api_keys")
     .update({ revoked_at: new Date().toISOString() })
@@ -100,7 +100,7 @@ export async function validateApiKey(rawKey: string): Promise<{ userId: string; 
   // to prevent timing-based key format enumeration attacks.
   const keyHash = hashApiKey(rawKey)
 
-  const supabase = await getPooledRouteClient()
+  const supabase = await createRouteAuthClient()
 
   // Look up by key_hash directly (O(1)) instead of iterating all keys sharing
   // a plaintext prefix. This eliminates prefix-enumeration brute-force.
@@ -295,7 +295,7 @@ export async function getApiUserId(req: Request): Promise<string | null> {
   }
 
   // Session auth: fall back to Supabase
-  const supabase = await getPooledRouteClient()
+  const supabase = await createRouteAuthClient()
   const { data: { user } } = await supabase.auth.getUser()
   return user?.id ?? null
 }

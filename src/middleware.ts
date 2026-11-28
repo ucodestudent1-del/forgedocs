@@ -12,6 +12,7 @@ import { validateApiKey, checkApiKeyPermissions, requiresApiKeyPermission } from
 import { checkRateLimit, getRateLimitConfig, getAPIKeyRateLimitConfig } from "@/lib/rate-limiter"
 import { createRouteAuthClient } from "@/lib/supabase"
 import logger from "@/lib/logger"
+import { CONFIG } from "@/lib/constants"
 
 let envValidated = false
 
@@ -24,8 +25,6 @@ async function ensureEnvValidated(): Promise<void> {
     logger.error("Environment validation failed", {
       error: err instanceof Error ? err.message : String(err),
     })
-    // Don't block the request — server.js already validates at startup.
-    // This is a defense-in-depth check for middleware-only deployments.
     envValidated = true
   }
 }
@@ -70,392 +69,198 @@ function generateRequestId(): string {
   return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
 }
 
-export async function middleware(request: NextRequest) {
-  await ensureEnvValidated()
-  const requestId = request.headers.get("x-request-id") ?? generateRequestId()
+// Type for middleware functions
+type MiddlewareFn = (request: NextRequest, response: NextResponse) => Promise<NextResponse | void>
+
+// ============================================================================
+// Individual Middleware Functions
+// ============================================================================
+
+async function withCspNonce(request: NextRequest, response: NextResponse): Promise<NextResponse> {
   const cspNonce = generateCspNonce()
-  try {
-    const pathname = request.nextUrl?.pathname ?? "/"
+  response.headers.set("x-csp-nonce", cspNonce)
+  response.headers.set("Content-Security-Policy", buildCspHeader(cspNonce))
+  response.headers.set("Content-Security-Policy-Report-Only", buildCspReportOnlyHeader())
+  return response
+}
 
-    // REDIRECT LOOP PROTECTION — detect and break infinite redirect cycles
-    // Cookies are used instead of headers because browsers forward cookies
-    // (but not custom headers) across redirects.
-    const redirectCountCookie = request.cookies.get("redirect_count")
-    const redirectCount = redirectCountCookie ? parseInt(redirectCountCookie.value, 10) : 0
-    const isLooping = redirectCount > 3
-    if (isLooping) {
-      logger.error("Redirect loop detected, breaking cycle", {
-        url: request.url,
-        count: redirectCount,
-      })
-    }
-
-    // Skip non-page routes (static assets, internals, RSC payloads)
-    const isStaticRoute =
-      pathname.startsWith("/_next") ||
-      pathname.startsWith("/_vercel") ||
-      pathname.startsWith("/_not-found") ||
-      pathname.startsWith("/_rsc") ||
-      pathname.includes(".")
-
-    const response = NextResponse.next()
-    response.headers.set("x-request-id", requestId)
-    response.headers.set("x-csp-nonce", cspNonce)
-
-    // Skip auth callback route — handled by route handler directly
-    if (pathname === "/auth/callback" || pathname === "/callback") {
-      return response
-    }
-
-    if (isStaticRoute) {
-      return response
-    }
-
-    // ---- Body size limit for all POST/PUT/PATCH requests ----
-    if (request.method === "POST" || request.method === "PUT" || request.method === "PATCH") {
-      const contentLength = request.headers.get("content-length")
-      if (contentLength) {
-        const size = parseInt(contentLength, 10)
-        if (size > 10 * 1024 * 1024) { // 10MB max request body
-          return NextResponse.json(
-            { error: "Request body too large" },
-            { status: 413 }
-          )
-        }
-      }
-    }
-
-    // ---- Authentication check for page routes ----
-    if (!pathname.startsWith("/api/") && !pathname.startsWith("/auth/")) {
-      const supabase = await createRouteAuthClient()
-      const { data: { user }, error } = await supabase.auth.getUser()
-
-      // Protected routes that require authentication
-      const protectedRoutes = [
-        "/dashboard",
-        "/editor",
-        "/billing",
-        "/settings",
-      ]
-
-      const isProtectedRoute = protectedRoutes.some(route =>
-        pathname === route || pathname.startsWith(route + "/")
-      )
-
-      if (isProtectedRoute && (!user || error) && !isLooping) {
-        const loginUrl = new URL("/login", request.nextUrl)
-        loginUrl.searchParams.set("callbackUrl", pathname)
-        const redirectResponse = NextResponse.redirect(loginUrl)
-        redirectResponse.cookies.set("redirect_count", String(redirectCount + 1), {
-          path: "/",
-          maxAge: 60,
-        })
-        return redirectResponse
-      }
-
-      // Enforce email verification on protected routes.
-      // Unverified users are sent to the verification page instead of the app.
-      if (
-        isProtectedRoute &&
-        user &&
-        !error &&
-        !user.email_confirmed_at &&
-        !isLooping
-      ) {
-        const verifyUrl = new URL("/verify-email", request.nextUrl)
-        verifyUrl.searchParams.set("callbackUrl", pathname)
-        const redirectResponse = NextResponse.redirect(verifyUrl)
-        redirectResponse.cookies.set("redirect_count", String(redirectCount + 1), {
-          path: "/",
-          maxAge: 60,
-        })
-        return redirectResponse
-      }
-
-      // Enforce onboarding completion on protected routes.
-      // Users with verified email but incomplete onboarding go to onboarding.
-      if (
-        isProtectedRoute &&
-        user &&
-        !error &&
-        user.email_confirmed_at &&
-        !pathname.startsWith("/dashboard/onboarding") &&
-        !isLooping
-      ) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("onboarding_completed")
-          .eq("id", user.id)
-          .single()
-        if (!(profile?.onboarding_completed)) {
-          const onboardingUrl = new URL("/dashboard/onboarding", request.nextUrl)
-          onboardingUrl.searchParams.set("callbackUrl", pathname)
-          const redirectResponse = NextResponse.redirect(onboardingUrl)
-          redirectResponse.cookies.set("redirect_count", String(redirectCount + 1), {
-            path: "/",
-            maxAge: 60,
-          })
-          return redirectResponse
-        }
-      }
-    }
-
-    // Redirect authenticated users away from auth pages.
-    // Fully verified users go to the dashboard; unverified users stay on auth
-    // pages so they can complete verification / request a new code.
-    if (
-      (pathname.startsWith("/auth/") || pathname === "/login" || pathname === "/signup" || pathname === "/forgot-password" || pathname === "/reset-password" || pathname === "/verify-email") &&
-      !isLooping &&
-      !pathname.startsWith("/auth/callback") &&
-      pathname !== "/callback"
-    ) {
-      const supabase = await createRouteAuthClient()
-      const { data: { user }, error } = await supabase.auth.getUser()
-      if (user && !error) {
-        if (user.email_confirmed_at) {
-          const redirectResponse = NextResponse.redirect(new URL("/dashboard", request.nextUrl))
-          redirectResponse.cookies.set("redirect_count", String(redirectCount + 1), {
-            path: "/",
-            maxAge: 60,
-          })
-          return redirectResponse
-        }
-        if (
-          !pathname.startsWith("/auth/verify") &&
-          !pathname.startsWith("/login") &&
-          !pathname.startsWith("/signup") &&
-          !pathname.startsWith("/auth/resend-verification") &&
-          !pathname.startsWith("/auth/forgot-password") &&
-          !pathname.startsWith("/auth/reset-password") &&
-          pathname !== "/verify-email" &&
-          pathname !== "/login" &&
-          pathname !== "/signup" &&
-          pathname !== "/forgot-password" &&
-          pathname !== "/reset-password"
-        ) {
-          const redirectResponse = NextResponse.redirect(new URL("/verify-email", request.nextUrl))
-          redirectResponse.cookies.set("redirect_count", String(redirectCount + 1), {
-            path: "/",
-            maxAge: 60,
-          })
-          return redirectResponse
-        }
-      }
-    }
-
-    // Redirect authenticated users on the landing page to the dashboard.
-    if (pathname === "/" && !isLooping) {
-      const supabase = await createRouteAuthClient()
-      const { data: { user }, error } = await supabase.auth.getUser()
-      if (user && !error && user.email_confirmed_at) {
-        const redirectResponse = NextResponse.redirect(new URL("/dashboard", request.nextUrl))
-        redirectResponse.cookies.set("redirect_count", String(redirectCount + 1), {
-          path: "/",
-          maxAge: 60,
-        })
-        return redirectResponse
-      }
-    }
-    // ---- API key authentication & permission enforcement ----
-    if (pathname.startsWith("/api/")) {
-      const versionInfo = parseApiVersion(request.headers)
-
-      // Warn clients when api-version header is missing (will be required in v2)
-      const versionHeaderMissing = !request.headers.has("api-version")
-
-      if (!SUPPORTED_API_VERSIONS.includes(versionInfo.version)) {
-        const versionResponse = NextResponse.json(
-          {
-            error: `Unsupported API version: ${versionInfo.version}`,
-            supported_versions: SUPPORTED_API_VERSIONS,
-            default_version: DEFAULT_API_VERSION,
-          },
-          { status: 426 }
-        )
-        Object.entries(apiVersionHeaders(versionInfo.version)).forEach(([key, value]) => {
-          versionResponse.headers.set(key, value)
-        })
-        versionResponse.headers.set("x-request-id", requestId)
-        versionResponse.headers.set("x-csp-nonce", cspNonce)
-        versionResponse.headers.set("Content-Security-Policy", buildCspHeader(cspNonce))
-        versionResponse.headers.set("Content-Security-Policy-Report-Only", buildCspReportOnlyHeader())
-        versionResponse.headers.set("X-Content-Type-Options", "nosniff")
-        versionResponse.headers.set("X-Frame-Options", "DENY")
-        versionResponse.headers.set("Referrer-Policy", "strict-origin-when-cross-origin")
-        versionResponse.headers.set("Permissions-Policy", "geolocation=(), microphone=(), camera=()")
-        return versionResponse
-      }
-
-      // Add version headers to all API responses
-      Object.entries(apiVersionHeaders(versionInfo.version)).forEach(([key, value]) => {
-        response.headers.set(key, value)
-      })
-
-      if (versionHeaderMissing) {
-        response.headers.set("API-Version-Warning", "api-version header is required and will be enforced in API v2")
-      }
-
-      if (versionInfo.version !== DEFAULT_API_VERSION) {
-        response.headers.set("API-Version-Default", DEFAULT_API_VERSION)
-      }
-
-      // Set CSP header with nonce for API responses
-      response.headers.set("Content-Security-Policy", buildCspHeader(cspNonce))
-
-      // Add security headers to API responses
-      response.headers.set("X-Content-Type-Options", "nosniff")
-      response.headers.set("X-Frame-Options", "DENY")
-      response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin")
-      response.headers.set("Permissions-Policy", "geolocation=(), microphone=(), camera=()")
-
-      // Authenticate API key if present
-      const apiKey = request.headers.get("x-api-key")
-      if (apiKey) {
-        const keyResult = await validateApiKey(apiKey)
-        if (!keyResult) {
-          const unauthorized = NextResponse.json(
-            { error: "Invalid or revoked API key" },
-            { status: 401 }
-          )
-          unauthorized.headers.set("x-request-id", requestId)
-          unauthorized.headers.set("x-csp-nonce", cspNonce)
-          unauthorized.headers.set("Content-Security-Policy", buildCspHeader(cspNonce))
-          unauthorized.headers.set("Content-Security-Policy-Report-Only", buildCspReportOnlyHeader())
-          unauthorized.headers.set("X-Content-Type-Options", "nosniff")
-          unauthorized.headers.set("X-Frame-Options", "DENY")
-          unauthorized.headers.set("Referrer-Policy", "strict-origin-when-cross-origin")
-          unauthorized.headers.set("Permissions-Policy", "geolocation=(), microphone=(), camera=()")
-          return unauthorized
-        }
-
-        // Set x-api-user-id for downstream rate limiting
-        response.headers.set("x-api-user-id", keyResult.userId)
-
-        // Enforce permissions
-        const requiredPermissions = requiresApiKeyPermission(pathname)
-        if (requiredPermissions !== null) {
-          const permissionCheck = checkApiKeyPermissions(keyResult.key.permissions as Record<string, unknown>, requiredPermissions)
-          if (!permissionCheck.allowed) {
-            const forbidden = NextResponse.json(
-              {
-                error: "Insufficient API key permissions",
-                required: permissionCheck.required,
-                missing: permissionCheck.missing,
-              },
-              { status: 403 }
-            )
-            forbidden.headers.set("x-request-id", requestId)
-            forbidden.headers.set("x-csp-nonce", cspNonce)
-            forbidden.headers.set("Content-Security-Policy", buildCspHeader(cspNonce))
-            forbidden.headers.set("Content-Security-Policy-Report-Only", buildCspReportOnlyHeader())
-            forbidden.headers.set("X-Content-Type-Options", "nosniff")
-            forbidden.headers.set("X-Frame-Options", "DENY")
-            forbidden.headers.set("Referrer-Policy", "strict-origin-when-cross-origin")
-            forbidden.headers.set("Permissions-Policy", "geolocation=(), microphone=(), camera=()")
-            return forbidden
-          }
-        }
-
-        // Per-key rate limiting — uses shared config from rate-limiter.ts
-        const matchedConfig = getAPIKeyRateLimitConfig(pathname)
-
-        if (matchedConfig) {
-          const identifier = `apikey:${keyResult.key.id}`
-          const limitInfo = await checkRateLimit(identifier, matchedConfig)
-          if (limitInfo.limited) {
-            const rateLimited = NextResponse.json(
-              { error: "Rate limit exceeded", message: "Too many requests. Please try again later." },
-              { status: 429 }
-            )
-            rateLimited.headers.set("X-RateLimit-Limit", limitInfo.total.toString())
-            rateLimited.headers.set("X-RateLimit-Remaining", "0")
-            rateLimited.headers.set("X-RateLimit-Reset", Math.ceil(limitInfo.resetTime / 1000).toString())
-            rateLimited.headers.set("Retry-After", Math.ceil((limitInfo.resetTime - Date.now()) / 1000).toString())
-            rateLimited.headers.set("x-request-id", requestId)
-            rateLimited.headers.set("x-csp-nonce", cspNonce)
-            rateLimited.headers.set("Content-Security-Policy", buildCspHeader(cspNonce))
-            rateLimited.headers.set("Content-Security-Policy-Report-Only", buildCspReportOnlyHeader())
-            rateLimited.headers.set("X-Content-Type-Options", "nosniff")
-            rateLimited.headers.set("X-Frame-Options", "DENY")
-            rateLimited.headers.set("Referrer-Policy", "strict-origin-when-cross-origin")
-            rateLimited.headers.set("Permissions-Policy", "geolocation=(), microphone=(), camera=()")
-            return rateLimited
-          }
-          response.headers.set("X-RateLimit-Limit", limitInfo.total.toString())
-          response.headers.set("X-RateLimit-Remaining", limitInfo.remaining.toString())
-          response.headers.set("X-RateLimit-Reset", Math.ceil(limitInfo.resetTime / 1000).toString())
-        }
-      }
-
-      return response
-    }
-
-    // Session-based rate limiting for API requests without API keys
-    if (!request.headers.get("x-api-key")) {
-      const matchedConfig = getRateLimitConfig(pathname)
-      if (matchedConfig) {
-        // Use a stable session identifier (cookie-based or IP-based) for rate limiting
-        const sessionCookie = request.cookies.get("sb-session")?.value
-        const forwardedFor = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
-        const realIp = request.headers.get("x-real-ip")
-        const ipIdentifier = forwardedFor ?? realIp ?? "unknown"
-        const identifier = `session:${sessionCookie ?? ipIdentifier}`
-        const limitInfo = await checkRateLimit(identifier, matchedConfig)
-        if (limitInfo.limited) {
-          const rateLimited = NextResponse.json(
-            { error: "Rate limit exceeded", message: "Too many requests. Please try again later." },
-            { status: 429 }
-          )
-          rateLimited.headers.set("X-RateLimit-Limit", limitInfo.total.toString())
-          rateLimited.headers.set("X-RateLimit-Remaining", "0")
-          rateLimited.headers.set("X-RateLimit-Reset", Math.ceil(limitInfo.resetTime / 1000).toString())
-          rateLimited.headers.set("Retry-After", Math.ceil((limitInfo.resetTime - Date.now()) / 1000).toString())
-          rateLimited.headers.set("x-request-id", requestId)
-          rateLimited.headers.set("x-csp-nonce", cspNonce)
-          rateLimited.headers.set("Content-Security-Policy", buildCspHeader(cspNonce))
-          rateLimited.headers.set("X-Content-Type-Options", "nosniff")
-          rateLimited.headers.set("X-Frame-Options", "DENY")
-          rateLimited.headers.set("Referrer-Policy", "strict-origin-when-cross-origin")
-          rateLimited.headers.set("Permissions-Policy", "geolocation=(), microphone=(), camera=()")
-          return rateLimited
-        }
-        response.headers.set("X-RateLimit-Limit", limitInfo.total.toString())
-        response.headers.set("X-RateLimit-Remaining", limitInfo.remaining.toString())
-        response.headers.set("X-RateLimit-Reset", Math.ceil(limitInfo.resetTime / 1000).toString())
-      }
-    }
-
-    response.headers.set("Content-Security-Policy", buildCspHeader(cspNonce))
-    response.headers.set("Content-Security-Policy-Report-Only", buildCspReportOnlyHeader())
-
-    // Add security headers
-    response.headers.set("X-Content-Type-Options", "nosniff")
-    response.headers.set("X-Frame-Options", "DENY")
-    response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin")
-    response.headers.set("Permissions-Policy", "geolocation=(), microphone=(), camera=()")
-
-    // Clear redirect_count cookie on successful page load to reset loop counter
-    response.cookies.set("redirect_count", "", { path: "/", maxAge: 0 })
-
-    return response
-  } catch (error) {
-    logger.error("Middleware error", {
-      error: error instanceof Error ? error.message : String(error),
-      requestId,
-    })
-    const response = NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    )
-    response.headers.set("x-request-id", requestId)
-    response.headers.set("x-csp-nonce", cspNonce)
-    response.headers.set("Content-Security-Policy", buildCspHeader(cspNonce))
-    response.headers.set("Content-Security-Policy-Report-Only", buildCspReportOnlyHeader())
-    return response
+async function withRedirectLoopProtection(request: NextRequest, response: NextResponse): Promise<NextResponse | void> {
+  const redirectCount = parseInt(request.headers.get("x-redirect-count") || "0", 10)
+  if (redirectCount > 10) {
+    logger.warn("Redirect loop detected", { url: request.url, redirectCount })
+    return NextResponse.redirect(new URL("/error?code=redirect_loop", request.url))
+  }
+  if (redirectCount > 0) {
+    response.headers.set("x-redirect-count", String(redirectCount + 1))
   }
 }
 
+async function withBodySizeLimit(request: NextRequest, response: NextResponse): Promise<NextResponse | void> {
+  const contentLength = request.headers.get("content-length")
+  if (contentLength) {
+    const size = parseInt(contentLength, 10)
+    if (size > CONFIG.bodySize.maxApiRequest) {
+      return NextResponse.json(
+        { error: "Request body too large" },
+        { status: 413 }
+      )
+    }
+  }
+}
+
+async function withPageAuthRedirects(request: NextRequest, response: NextResponse): Promise<NextResponse | void> {
+  const pathname = request.nextUrl.pathname
+  const isProtectedPage = CONFIG.auth.protectedRoutes.some((route) => pathname.startsWith(route))
+  
+  if (isProtectedPage) {
+    const supabase = await createRouteAuthClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    
+    if (!user) {
+      const loginUrl = new URL("/login", request.url)
+      loginUrl.searchParams.set("redirect", pathname)
+      return NextResponse.redirect(loginUrl)
+    }
+  }
+}
+
+async function withApiVersioning(request: NextRequest, response: NextResponse): Promise<NextResponse> {
+  const { version, isDeprecated } = parseApiVersion(request)
+  Object.entries(apiVersionHeaders(version)).forEach(([key, value]) => {
+    response.headers.set(key, value)
+  })
+  if (isDeprecated) {
+    response.headers.set("Sunset", "Sat, 01 Jan 2026 00:00:00 GMT")
+    response.headers.set("Deprecation", "true")
+  }
+  return response
+}
+
+async function withApiKeyAuth(request: NextRequest, response: NextResponse): Promise<NextResponse | void> {
+  const apiKey = request.headers.get("x-api-key")
+  if (!apiKey) return
+
+  const validation = await validateApiKey(apiKey)
+  if (!validation) {
+    return NextResponse.json(
+      { error: "Invalid API key" },
+      { status: 401 }
+    )
+  }
+
+  response.headers.set("x-api-user-id", validation.userId)
+}
+
+async function withPermissionEnforcement(request: NextRequest, response: NextResponse): Promise<NextResponse | void> {
+  const pathname = request.nextUrl.pathname
+  const requiredPermission = requiresApiKeyPermission(pathname)
+  
+  if (!requiredPermission) return
+
+  const apiKey = request.headers.get("x-api-key")
+  if (!apiKey) {
+    return NextResponse.json(
+      { error: "API key required" },
+      { status: 401 }
+    )
+  }
+
+  const hasPermission = await checkApiKeyPermissions(apiKey, requiredPermission)
+  if (!hasPermission) {
+    return NextResponse.json(
+      { error: `Insufficient permissions: ${requiredPermission} required` },
+      { status: 403 }
+    )
+  }
+}
+
+async function withRateLimiting(request: NextRequest, response: NextResponse): Promise<NextResponse | void> {
+  const pathname = request.nextUrl.pathname
+  const isApiKey = request.headers.has("x-api-key")
+  
+  const config = isApiKey 
+    ? getAPIKeyRateLimitConfig(pathname)
+    : getRateLimitConfig(pathname)
+  
+  if (!config) return
+
+  const identifier = isApiKey 
+    ? `apikey:${request.headers.get("x-api-key")?.slice(0, 8)}`
+    : request.headers.get("x-forwarded-for") || request.ip || "anonymous"
+
+  const rateLimitInfo = await checkRateLimit(identifier, config)
+  
+  response.headers.set("X-RateLimit-Limit", String(rateLimitInfo.total))
+  response.headers.set("X-RateLimit-Remaining", String(rateLimitInfo.remaining))
+  response.headers.set("X-RateLimit-Reset", String(Math.ceil(rateLimitInfo.resetTime / 1000)))
+
+  if (rateLimitInfo.limited) {
+    return NextResponse.json(
+      { error: "Rate limit exceeded", retryAfter: Math.ceil((rateLimitInfo.resetTime - Date.now()) / 1000) },
+      { status: 429 }
+    )
+  }
+}
+
+async function withSecurityHeaders(request: NextRequest, response: NextResponse): Promise<NextResponse> {
+  Object.entries(CONFIG.security.headers).forEach(([key, value]) => {
+    response.headers.set(key, value)
+  })
+  return response
+}
+
+async function withErrorHandling(request: NextRequest, response: NextResponse): Promise<NextResponse> {
+  response.headers.set("x-request-id", request.headers.get("x-request-id") || generateRequestId())
+  response.headers.set("Cache-Control", "private, no-store")
+  return response
+}
+
+// ============================================================================
+// Middleware Pipeline
+// ============================================================================
+
+const middlewarePipeline: MiddlewareFn[] = [
+  withCspNonce,
+  withRedirectLoopProtection,
+  withBodySizeLimit,
+  withPageAuthRedirects,
+  withApiVersioning,
+  withApiKeyAuth,
+  withPermissionEnforcement,
+  withRateLimiting,
+  withSecurityHeaders,
+  withErrorHandling,
+]
+
+export async function middleware(request: NextRequest) {
+  await ensureEnvValidated()
+  const requestId = request.headers.get("x-request-id") ?? generateRequestId()
+  
+  let response = NextResponse.next()
+  response.headers.set("x-request-id", requestId)
+
+  for (const mw of middlewarePipeline) {
+    const result = await mw(request, response)
+    if (result instanceof NextResponse) {
+      return result
+    }
+    if (result) {
+      response = result
+    }
+  }
+
+  return response
+}
+
 export const config = {
-  matcher: ["/((?!_next|_vercel|_not-found|_rsc|.*\\..*).*)"],
-  runtime: "nodejs"
+  matcher: [
+    /*
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - public folder
+     */
+    "/((?!_next/static|_next/image|favicon.ico|public/).*)",
+  ],
 }

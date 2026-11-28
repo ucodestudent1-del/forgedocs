@@ -12,19 +12,62 @@ export interface ApiErrorResponse {
   }
 }
 
-export interface AppError extends Error {
-  statusCode?: number
-  code?: string
+/**
+ * Standardized application error class.
+ * All throwing errors should use this class for consistent error handling.
+ */
+export class AppError extends Error {
+  constructor(
+    public readonly code: string,
+    public readonly statusCode: number,
+    message: string,
+    public readonly details?: Record<string, unknown>
+  ) {
+    super(message)
+    this.name = "AppError"
+  }
+
+  static unauthorized(message = "Unauthorized", details?: Record<string, unknown>) {
+    return new AppError("UNAUTHORIZED", 401, message, details)
+  }
+
+  static forbidden(message = "Forbidden", details?: Record<string, unknown>) {
+    return new AppError("FORBIDDEN", 403, message, details)
+  }
+
+  static notFound(resource = "Resource", details?: Record<string, unknown>) {
+    return new AppError("NOT_FOUND", 404, `${resource} not found`, details)
+  }
+
+  static validation(message: string, details?: Record<string, unknown>) {
+    return new AppError("VALIDATION_ERROR", 400, message, details)
+  }
+
+  static rateLimited(message = "Rate limited", details?: Record<string, unknown>) {
+    return new AppError("RATE_LIMITED", 429, message, details)
+  }
+
+  static internal(message = "Internal error", details?: Record<string, unknown>) {
+    return new AppError("INTERNAL_ERROR", 500, message, details)
+  }
+
+  static unavailable(service: string, details?: Record<string, unknown>) {
+    return new AppError("SERVICE_UNAVAILABLE", 503, `${service} unavailable`, details)
+  }
+
+  static conflict(message: string, details?: Record<string, unknown>) {
+    return new AppError("CONFLICT", 409, message, details)
+  }
+
+  static timeout(message = "Request timeout", details?: Record<string, unknown>) {
+    return new AppError("TIMEOUT", 504, message, details)
+  }
 }
 
-export function createAppError(message: string, statusCode: number, code: string): AppError {
-  const err = new Error(message) as AppError
-  err.statusCode = statusCode
-  err.code = code
-  return err
-}
-
-// Pre-defined common errors to avoid object allocation on hot paths
+/**
+ * Pre-defined common errors for backward compatibility.
+ * @deprecated Use AppError static methods instead (e.g., AppError.unauthorized())
+ */
 export const ERRORS = {
   UNAUTHORIZED: createAppError("Unauthorized", 401, "UNAUTHORIZED"),
   FORBIDDEN: createAppError("Forbidden", 403, "FORBIDDEN"),
@@ -33,16 +76,20 @@ export const ERRORS = {
   INTERNAL_ERROR: createAppError("Internal server error", 500, "INTERNAL_ERROR"),
 } as const
 
-export function etagFor(data: unknown): string {
-  return crypto.createHash("md5").update(JSON.stringify(data)).digest("hex")
+/**
+ * Backward-compatible factory function for creating AppError instances.
+ * @deprecated Use AppError static methods instead (e.g., AppError.unauthorized())
+ */
+export function createAppError(message: string, statusCode: number, code: string): AppError {
+  return new AppError(code, statusCode, message)
 }
 
 export function isAppError(error: unknown): error is AppError {
-  return error instanceof Error && "statusCode" in error && "code" in error
+  return error instanceof AppError
 }
 
 export function getErrorStatusCode(error: unknown): number {
-  if (isAppError(error) && error.statusCode) {
+  if (isAppError(error)) {
     return error.statusCode
   }
   if (error instanceof Error) {
@@ -63,7 +110,7 @@ export function getErrorStatusCode(error: unknown): number {
 }
 
 export function getErrorCode(error: unknown): string {
-  if (isAppError(error) && error.code) {
+  if (isAppError(error)) {
     return error.code
   }
   return "INTERNAL_ERROR"
@@ -177,6 +224,13 @@ export function withErrorBoundary(handler: ApiHandler): ApiHandler {
 
       return response
     } catch (error) {
+      // Check if response already started (streaming)
+      const err = error as { body?: unknown } | Response
+      if (err instanceof Response || err.body !== undefined) {
+        // Can't send JSON error - log and terminate stream
+        logger.error("Error during streaming response", { requestId, error })
+        return NextResponse.json(null, { status: 500, headers: { "x-request-id": requestId } })
+      }
       return apiErrorResponse(error, requestId)
     }
   }

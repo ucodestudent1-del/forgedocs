@@ -131,8 +131,7 @@ const nextConfig = {
     }
 
     // Handle node: protocol modules (ioredis uses node:diagnostics_channel)
-    // Redirect node: built-ins and optional native modules to an empty stub
-    // for the client bundle only, so they are never required at runtime.
+    // For client bundle, redirect node: built-ins to empty stub
     if (!isServer) {
       config.resolve.alias = {
         ...config.resolve.alias,
@@ -148,11 +147,22 @@ const nextConfig = {
         path: "empty-module-stub",
         os: "empty-module-stub",
       }
+      // Also add fallback for node: modules
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        "node:diagnostics_channel": false,
+        "node:async_hooks": false,
+        "node:perf_hooks": false,
+        "node:util": false,
+      }
     }
     config.externals = [
       ...(Array.isArray(config.externals) ? config.externals : [config.externals].filter(Boolean)),
       (_context, request, callback) => {
         if (request.startsWith("@valkey/valkey-glide")) {
+          return callback(null, `commonjs ${request}`)
+        }
+        if (request.startsWith("node:")) {
           return callback(null, `commonjs ${request}`)
         }
         callback()

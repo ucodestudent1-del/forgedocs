@@ -1,40 +1,26 @@
-import { getPooledRouteClient } from "@/lib/supabase"
+import { createRouteAuthClient } from "@/lib/supabase"
 import { NextResponse } from "next/server"
 import { validateCSRF } from "@/lib/csrf"
 import { documentRateLimit } from "@/lib/rate-limiter"
 import { parsePagination } from "@/lib/pagination"
-import { checkTierLimit, trackUsage } from "@/lib/tierLimits"
-import {
-  conversionJobSchema,
-  FORMAT_REGISTRY,
-  getAllConversionPairs,
-  getFormat,
-  getSupportedTargets,
-  getUnitCategories,
-  getUnitPairs,
-  convertUnit,
-  isPairSupported,
-  transformMetadata,
-  convertDocumentServer,
-  type ConversionType,
-} from "@/lib/conversion"
+import { ConversionService } from "@/lib/services/conversion-service"
+import { conversionJobSchema, type ConversionType } from "@/lib/conversion"
 import { withErrorBoundary, createAppError } from "@/lib/api-error"
 
 export const maxDuration = 300
-
-const VALID_FORMATS = Object.keys(FORMAT_REGISTRY)
 
 export const GET = withErrorBoundary(async (req: Request): Promise<NextResponse> => {
   const rateLimitError = await documentRateLimit(req)
   if (rateLimitError) return rateLimitError
 
-  const supabase = await getPooledRouteClient()
+  const supabase = await createRouteAuthClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
     throw createAppError("Unauthorized", 401, "UNAUTHORIZED")
   }
 
+  const service = new ConversionService(supabase)
   const url = new URL(req.url)
   const { searchParams } = url
   const formats = searchParams.get("formats")
@@ -42,27 +28,27 @@ export const GET = withErrorBoundary(async (req: Request): Promise<NextResponse>
   const category = searchParams.get("category")
 
   if (formats === "true") {
-    const pairs = getAllConversionPairs()
+    const pairs = service.getAllConversionPairs()
     if (type) {
       return NextResponse.json({
-        formats: Object.values(FORMAT_REGISTRY),
+        formats: service.getAllFormats(),
         pairs: pairs.filter((p) => {
-          const sf = getFormat(p.source)
-          const tf = getFormat(p.target)
+          const sf = service.getFormat(p.source)
+          const tf = service.getFormat(p.target)
           return sf?.category === type && tf?.category === type
         }),
       })
     }
-    return NextResponse.json({ formats: Object.values(FORMAT_REGISTRY), pairs })
+    return NextResponse.json({ formats: service.getAllFormats(), pairs })
   }
 
   if (category) {
-    const pairs = getUnitPairs(category)
+    const pairs = service.getUnitPairs(category)
     return NextResponse.json({ category, pairs })
   }
 
   if (searchParams.get("unit-categories") === "true") {
-    return NextResponse.json({ categories: getUnitCategories() })
+    return NextResponse.json({ categories: service.getUnitCategories() })
   }
 
   const { page, limit, offset } = parsePagination(searchParams)
@@ -92,13 +78,14 @@ export const POST = withErrorBoundary(async (req: Request): Promise<NextResponse
 
   await validateCSRF(req)
 
-  const supabase = await getPooledRouteClient()
+  const supabase = await createRouteAuthClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
     throw createAppError("Unauthorized", 401, "UNAUTHORIZED")
   }
 
+  const service = new ConversionService(supabase)
   const body = await req.json()
   const parsed = conversionJobSchema.safeParse(body)
 
@@ -107,13 +94,6 @@ export const POST = withErrorBoundary(async (req: Request): Promise<NextResponse
   }
 
   const { type, source_format, target_format, source_url, value, options } = parsed.data
-
-  // Validate formats exist
-  const sourceFmt = getFormat(source_format)
-  const targetFmt = getFormat(target_format)
-  if (!sourceFmt || !targetFmt) {
-    throw createAppError("Invalid source or target format", 400, "INVALID_FORMAT")
-  }
 
   // Handle unit conversion (synchronous, no job needed)
   if (type === "unit") {
@@ -125,21 +105,14 @@ export const POST = withErrorBoundary(async (req: Request): Promise<NextResponse
       throw createAppError("Invalid numeric value", 400, "INVALID_NUMBER")
     }
     // Determine category from format IDs
-    const sourceFmtObj = Object.values(FORMAT_REGISTRY).find((f) => f.id === source_format)
+    const sourceFmtObj = service.getFormat(source_format)
     const category = sourceFmtObj?.category
     if (!category || category !== "unit") {
       throw createAppError("Source format must be a unit type", 400, "INVALID_FORMAT")
     }
     try {
-      const result = convertUnit(numValue, category, source_format, target_format)
-      return NextResponse.json({
-        type: "unit",
-        source_format,
-        target_format,
-        value: numValue,
-        result,
-        converted_at: new Date().toISOString(),
-      })
+      const result = await service.convertUnit(numValue, category, source_format, target_format)
+      return NextResponse.json(result)
     } catch (err) {
       throw createAppError(err instanceof Error ? err.message : "Unit conversion failed", 400, "CONVERSION_FAILED")
     }
@@ -161,99 +134,28 @@ export const POST = withErrorBoundary(async (req: Request): Promise<NextResponse
       if (!validMetaFormats.includes(source_format) || !validMetaFormats.includes(target_format)) {
         throw createAppError("Invalid metadata format", 400, "INVALID_FORMAT")
       }
-      const output = transformMetadata({
-        sourceFormat: source_format as "json" | "xml" | "yaml" | "csv_meta",
-        targetFormat: target_format as "json" | "xml" | "yaml" | "csv_meta",
+      const result = await service.convertMetadata(
+        source_format as "json" | "xml" | "yaml" | "csv_meta",
+        target_format as "json" | "xml" | "yaml" | "csv_meta",
         data,
-        options,
-      })
-      return NextResponse.json({
-        type: "metadata",
-        source_format,
-        target_format,
-        output,
-        converted_at: new Date().toISOString(),
-      })
+        options
+      )
+      return NextResponse.json(result)
     } catch (err) {
       throw createAppError(err instanceof Error ? err.message : "Metadata transformation failed", 400, "CONVERSION_FAILED")
     }
   }
 
   // Document conversion - create a job
-  // Validate pair support
-  if (!isPairSupported(source_format, target_format) && source_format !== target_format) {
-    throw createAppError(`Conversion from ${source_format} to ${target_format} is not supported`, 400, "UNSUPPORTED_CONVERSION")
-  }
-
-  // Check tier limits using centralized utility
-  const limitCheck = await checkTierLimit(user.id, "conversions", 1)
-  if (!limitCheck.allowed) {
-    throw createAppError(
-      `Monthly conversion limit reached (${limitCheck.current}/${limitCheck.limit}). Upgrade your plan to continue.`,
-      403,
-      "RATE_LIMIT_EXCEEDED"
-    )
-  }
-
-  // SSRF protection: validate source_url is a safe storage path, not an arbitrary URL
-  if (source_url) {
-    // Reject absolute URLs, protocols, path traversal, and leading slashes
-    if (
-      source_url.includes("://") ||
-      source_url.startsWith("/") ||
-      source_url.includes("..") ||
-      source_url.startsWith("\\\\")
-    ) {
-      throw createAppError("Invalid source_url path", 400, "INVALID_SOURCE_URL")
-    }
-
-    // Validate storage path format: userId/filename.extension
-    const pathParts = source_url.split("/")
-    if (pathParts.length < 2) {
-      throw createAppError("source_url must be a relative storage path", 400, "INVALID_SOURCE_URL")
-    }
-
-    // Verify the source file belongs to the authenticated user
-    if (!source_url.startsWith(`${user.id}/`)) {
-      throw createAppError("Source file does not belong to the authenticated user", 403, "FORBIDDEN")
-    }
-  }
-
-  // Verify source document if provided
-  let source_document_id = body.source_document_id
-  if (source_document_id) {
-    const { data: sourceDoc, error: docError } = await supabase
-      .from("documents")
-      .select("id, storage_path, mime_type")
-      .eq("id", source_document_id)
-      .eq("user_id", user.id)
-      .single()
-
-    if (docError || !sourceDoc) {
-      throw createAppError("Source document not found", 404, "NOT_FOUND")
-    }
-  }
-
-  const { data: job, error } = await supabase
-    .from("conversion_jobs")
-    .insert({
-      user_id: user.id,
-      source_document_id,
-      source_url: source_url || null,
-      source_format,
-      target_format,
-      options: options || {},
-      status: "pending",
-    })
-    .select()
-    .single()
-
-  if (error) {
-    throw createAppError(error.message, 500, "DATABASE_ERROR")
-  }
-
-  // Track usage
-  await trackUsage(user.id, "conversions", 1)
+  const job = await service.createDocumentConversionJob({
+    type,
+    source_format,
+    target_format,
+    source_url,
+    value,
+    options,
+    source_document_id: body.source_document_id,
+  }, user.id)
 
   return NextResponse.json({ job }, { status: 201 })
 })

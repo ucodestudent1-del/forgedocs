@@ -1,4 +1,4 @@
-import { getPooledRouteClient } from "@/lib/supabase"
+import { createRouteAuthClient } from "@/lib/supabase"
 import { NextResponse } from "next/server"
 import { validateCSRF } from "@/lib/csrf"
 import { documentRateLimit } from "@/lib/rate-limiter"
@@ -7,6 +7,7 @@ import { validateFileMagicBytes } from "@/lib/security"
 import { sanitizeFilename } from "@/lib/security"
 import { scanFile } from "@/lib/malware-scan"
 import { withErrorBoundary, createAppError } from "@/lib/api-error"
+import logger from "@/lib/logger"
 
 const ALLOWED_MIME_TYPES = [
   "application/pdf",
@@ -36,7 +37,7 @@ export const POST = withErrorBoundary(async (req) => {
 
   await validateCSRF(req)
 
-  const supabase = await getPooledRouteClient()
+  const supabase = await createRouteAuthClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
@@ -155,9 +156,32 @@ export const POST = withErrorBoundary(async (req) => {
     .single()
 
   if (docError) {
-    // Clean up storage on DB error
-    await supabase.storage.from("documents").remove([storagePath])
-    throw createAppError(docError.message, 500, "DATABASE_ERROR")
+    // Clean up storage on DB error - MUST succeed or alert
+    const { error: cleanupError } = await supabase.storage.from("documents").remove([storagePath])
+    if (cleanupError) {
+      logger.error("CRITICAL: Storage cleanup failed after DB error - MANUAL INTERVENTION REQUIRED", {
+        storagePath,
+        dbError: docError.message,
+        cleanupError: cleanupError.message,
+      })
+      // Alert on-call via PagerDuty/Slack webhook if configured
+      if (process.env.ALERT_WEBHOOK_URL) {
+        try {
+          await fetch(process.env.ALERT_WEBHOOK_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              level: "critical",
+              message: "Storage cleanup failed after DB error",
+              storagePath,
+              dbError: docError.message,
+              cleanupError: cleanupError.message,
+            }),
+          })
+        } catch {}
+      }
+    }
+    throw createAppError("Failed to create document record", 500, "DATABASE_ERROR")
   }
 
   // Track usage

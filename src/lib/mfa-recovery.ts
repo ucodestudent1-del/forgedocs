@@ -1,5 +1,5 @@
 import { randomBytes, createHmac, timingSafeEqual } from "crypto"
-import { getPooledRouteClient } from "@/lib/supabase"
+import { createRouteAuthClient } from "@/lib/supabase"
 import { sendEmail } from "@/lib/email"
 import logger from "@/lib/logger"
 
@@ -41,7 +41,7 @@ export function verifyRecoveryToken(plaintext: string, hash: string): boolean {
  * Rate-limited by the caller.
  */
 export async function createMfaRecoveryToken(userId: string, email: string): Promise<{ token: string }> {
-  const supabase = await getPooledRouteClient()
+  const supabase = await createRouteAuthClient()
 
   // Invalidate any existing unused recovery tokens for this user
   await supabase
@@ -97,7 +97,7 @@ export async function createMfaRecoveryToken(userId: string, email: string): Pro
  * Returns the userId if valid.
  */
 export async function consumeRecoveryToken(token: string): Promise<string | null> {
-  const supabase = await getPooledRouteClient()
+  const supabase = await createRouteAuthClient()
 
   const now = new Date().toISOString()
 
@@ -144,7 +144,7 @@ export async function consumeRecoveryToken(token: string): Promise<string | null
  * Logs the action for audit.
  */
 export async function adminResetMfa(userId: string, _adminUserId: string): Promise<void> {
-  const supabase = await getPooledRouteClient()
+  const supabase = await createRouteAuthClient()
 
   await supabase
     .from("profiles")

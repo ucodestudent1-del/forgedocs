@@ -96,7 +96,7 @@ export default function DocumentGeneratorForm() {
     setIsGenerating(true)
     try {
       const generator = new DocumentGenerator(selectedTemplateId, templateData)
-      const html = generator.generateHTML()
+      const html = await generator.generateHTML()
 
       const blob = new Blob([html], { type: "text/html" })
       const url = URL.createObjectURL(blob)

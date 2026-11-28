@@ -1,5 +1,4 @@
 import { createHmac, timingSafeEqual, randomBytes } from "crypto"
-import { getPooledRouteClient } from "@/lib/supabase"
 import { encryptDocument, decryptDocument } from "@/lib/encryption"
 
 export interface IntegrationDefinition {

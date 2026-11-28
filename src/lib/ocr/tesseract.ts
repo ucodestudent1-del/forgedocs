@@ -3,6 +3,8 @@ import logger from "@/lib/logger"
 
 let worker: Tesseract.Worker | null = null
 let isInitializing = false
+let workerJobCount = 0
+const MAX_JOBS_PER_WORKER = 100
 
 export async function initializeOCR(language = 'eng'): Promise<void> {
   if (worker || isInitializing) return
@@ -25,6 +27,7 @@ export async function initializeOCR(language = 'eng'): Promise<void> {
     })
     
     console.log('[OCR] Worker initialized')
+    workerJobCount = 0
   } catch (error) {
     logger.error('[OCR] Failed to initialize:', { error: error })
     worker = null
@@ -60,6 +63,13 @@ export async function performOCR(
 ): Promise<OCRResult> {
   const { language = 'eng', onProgress, signal } = options
   
+  // Recycle worker periodically to prevent memory leaks
+  if (workerJobCount >= MAX_JOBS_PER_WORKER) {
+    await terminateOCR()
+    worker = null
+    workerJobCount = 0
+  }
+  
   if (!worker) {
     await initializeOCR()
   }
@@ -80,6 +90,8 @@ export async function performOCR(
         }
       }
     } as any)
+
+    workerJobCount++
 
     return {
       text: (result as any).text,

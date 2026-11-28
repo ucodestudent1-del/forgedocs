@@ -141,18 +141,11 @@ export async function createServiceRoleClient() {
 }
 
 /**
- * Shared read-only pooled client. Reuses a single instance within the same
- * serverless invocation to reduce connection churn. Safe for read-only middleware
- * and public data that does not depend on per-request auth cookies. NOT safe for
- * per-user authenticated operations because the cookie jar is shared.
+ * Read-only client with no cookie handling. Safe for public data that does not
+ * depend on per-request auth cookies. Use for middleware and public reads only.
+ * NOT safe for per-user authenticated operations.
  */
-let pooledServerClient:
-  | ReturnType<typeof createServerClient<Database>>
-  | null = null
-
-export async function getPooledRouteClient() {
-  if (pooledServerClient) return pooledServerClient
-
+export async function createReadOnlyClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
@@ -160,30 +153,22 @@ export async function getPooledRouteClient() {
     return createMockSupabaseClient()
   }
 
-  pooledServerClient = createServerClient<Database>(url, key, {
+  return createServerClient<Database>(url, key, {
     cookies: {
-      async getAll() {
-        const cookieStore = await getCookieStore()
-        return cookieStore.getAll()
+      getAll() {
+        return []
       },
-      async setAll(cookiesToSet: { name: string; value: string; options: any }[]) {
-        try {
-          const cookieStore = await getCookieStore()
-          cookiesToSet.forEach(({ name, value, options }) =>
-            cookieStore.set(name, value, {
-              ...buildCookieOptions(),
-              ...options,
-              sameSite: options.sameSite ?? "strict",
-            })
-          )
-        } catch (err) {
-          logger.error("[SUPABASE POOLED] setAll cookie failed", {
-            error: err instanceof Error ? err.message : String(err),
-          })
-        }
+      setAll() {
+        // No-op - read-only client doesn't set cookies
       },
     },
   })
+}
 
-  return pooledServerClient
+/**
+ * @deprecated Use createRouteAuthClient() instead.
+ * Kept for backward compatibility with existing code.
+ */
+export async function getPooledRouteClient() {
+  return createRouteAuthClient()
 }

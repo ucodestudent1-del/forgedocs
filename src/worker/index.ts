@@ -23,14 +23,11 @@ if (process.env.NODE_ENV === "production" && process.env.SENTRY_DSN) {
 
 // Dead-letter queue for failed conversion jobs after all retries are exhausted.
 const dlq = new Queue("document-conversion-dlq", {
-  connection: {
-    host: process.env.REDIS_HOST || "localhost",
-    port: parseInt(process.env.REDIS_PORT || "6379", 10),
-  },
+  connection: redisConnection,
   defaultJobOptions: {
     attempts: 1,
-    removeOnComplete: 1000,
-    removeOnFail: 1000,
+    removeOnComplete: { count: 1000, age: 24 * 60 * 60 * 1000 }, // 24hr TTL
+    removeOnFail: { count: 1000, age: 7 * 24 * 60 * 60 * 1000 }, // 7 day TTL
   },
 })
 
@@ -78,7 +75,7 @@ function validateLibreOfficeFormat(format: string): string {
   return format
 }
 
-// Leader election via Redis lock with TTL
+// Leader election via Redis lock with TTL - using atomic Lua scripts for safety
 const LEADER_LOCK_KEY = "forge:worker:leader"
 const LEADER_LOCK_TTL_MS = 15000 // 15 second TTL
 const LEADER_RENEW_INTERVAL_MS = 5000 // Renew every 5 seconds
@@ -89,42 +86,87 @@ let leaderLockValue: string | null = null
 
 const redisClient = createRedisClient(redisConnection)
 
+// Atomic Lua script for renewing leader lock - prevents TOCTOU race
+const RENEW_LOCK_LUA = `
+  if redis.call("GET", KEYS[1]) == ARGV[1] then
+    return redis.call("PEXPIRE", KEYS[1], ARGV[2])
+  else
+    return 0
+  end
+`
+
+// Atomic Lua script for acquiring lock with fencing token
+const ACQUIRE_LOCK_LUA = `
+  local value = ARGV[1]
+  local ttl = tonumber(ARGV[2])
+  local result = redis.call("SET", KEYS[1], value, "PX", ttl, "NX")
+  if result then
+    return value
+  else
+    return redis.call("GET", KEYS[1])
+  end
+`
+
+// Atomic Lua script for releasing lock only if we own it
+const RELEASE_LOCK_LUA = `
+  if redis.call("GET", KEYS[1]) == ARGV[1] then
+    return redis.call("DEL", KEYS[1])
+  else
+    return 0
+  end
+`
+
+// Atomic Lua script for claiming a job with fencing token
+const CLAIM_JOB_LUA = `
+  local jobKey = KEYS[1]
+  local fenceToken = ARGV[1]
+  local startedAt = ARGV[2]
+  local job = redis.call("GET", jobKey)
+  if job then
+    local data = cjson.decode(job)
+    if data.locked_by == fenceToken and data.status == "pending" then
+      data.status = "processing"
+      data.locked_by = fenceToken
+      data.started_at = startedAt
+      redis.call("SET", jobKey, cjson.encode(data))
+      return 1
+    end
+  end
+  return 0
+`
+
 async function acquireLeaderLock(): Promise<boolean> {
   const value = `${process.pid}:${Date.now()}:${Math.random().toString(36).slice(2)}`
-  const result = await redisClient.set(LEADER_LOCK_KEY, value, "PX", LEADER_LOCK_TTL_MS, "NX")
-  if (result === "OK") {
+  const result = await redisClient.eval(ACQUIRE_LOCK_LUA, 1, LEADER_LOCK_KEY, value, LEADER_LOCK_TTL_MS)
+  if (result === value) {
     leaderLockValue = value
     isLeader = true
     console.log("Worker became leader")
     return true
   }
   isLeader = false
+  leaderLockValue = result as string
   return false
 }
 
 async function renewLeaderLock(): Promise<void> {
   if (!isLeader || !leaderLockValue) return
 
-  // Only renew if we still hold the lock
-  const current = await redisClient.get(LEADER_LOCK_KEY)
-  if (current === leaderLockValue) {
-    await redisClient.pexpire(LEADER_LOCK_KEY, LEADER_LOCK_TTL_MS)
-  } else {
-    // We lost leadership
+  // Atomic renew - only extends TTL if we still own the lock
+  const result = await redisClient.eval(RENEW_LOCK_LUA, 1, LEADER_LOCK_KEY, leaderLockValue, LEADER_LOCK_TTL_MS)
+  if (result === 0) {
     isLeader = false
     leaderLockValue = null
-    console.log("Worker lost leadership")
+    console.log("Worker lost leadership (atomic check failed)")
+    startLeaderElection()
   }
 }
 
 async function releaseLeaderLock(): Promise<void> {
   if (!isLeader || !leaderLockValue) return
 
-  // Only release if we still hold the lock
-  const current = await redisClient.get(LEADER_LOCK_KEY)
-  if (current === leaderLockValue) {
-    await redisClient.del(LEADER_LOCK_KEY)
-  }
+  // Atomic release - only deletes if we still own the lock
+  await redisClient.eval(RELEASE_LOCK_LUA, 1, LEADER_LOCK_KEY, leaderLockValue)
   isLeader = false
   leaderLockValue = null
 }
@@ -132,8 +174,9 @@ async function releaseLeaderLock(): Promise<void> {
 function startLeaderElection(): void {
   acquireLeaderLock().then((acquired) => {
     if (!acquired) {
-      // Watch for lock expiry to retry
-      setTimeout(startLeaderElection, 2000)
+      // Watch for lock expiry to retry with jitter to prevent thundering herd
+      const jitter = Math.random() * 1000
+      setTimeout(startLeaderElection, 2000 + jitter)
     }
     leaderLockInterval = setInterval(renewLeaderLock, LEADER_RENEW_INTERVAL_MS)
   })
@@ -162,8 +205,22 @@ async function reconstructFromPDF(sourcePath: string, targetFormat: string): Pro
     throw new Error(`PDF to ${targetFormat} reconstruction not yet implemented`)
   }
 
+  // Validate file size before loading to prevent memory exhaustion
+  const stats = await fs.stat(sourcePath)
+  if (stats.size > MAX_CONVERSION_FILE_SIZE) {
+    throw new Error(`PDF too large for reconstruction (max ${MAX_CONVERSION_FILE_SIZE / (1024 * 1024)}MB)`)
+  }
+
   const pdfBytes = await fs.readFile(sourcePath)
-  const loadingTask = getDocument({ data: pdfBytes })
+  
+  // Use streaming options to avoid loading entire document into memory
+  const loadingTask = getDocument({ 
+    data: pdfBytes,
+    disableAutoFetch: true,
+    disableStream: false,
+    disableRange: false,
+    chunkedViewerLoading: true,
+  })
   const pdf = await loadingTask.promise
   const numPages = pdf.numPages
   const textParts: string[] = []
@@ -251,6 +308,16 @@ async function verifyLeadership(): Promise<boolean> {
   }
 }
 
+async function claimJobWithFence(jobId: string, fenceToken: string): Promise<boolean> {
+  try {
+    const jobKey = `job:${jobId}`
+    const result = await redisClient.eval(CLAIM_JOB_LUA, 1, jobKey, fenceToken, new Date().toISOString())
+    return result === 1
+  } catch {
+    return false
+  }
+}
+
 const worker = new Worker<ConversionJobData, { success: boolean; outputUrl?: string; type?: string }>(
   "document-conversion",
   async (job) => {
@@ -264,7 +331,13 @@ const worker = new Worker<ConversionJobData, { success: boolean; outputUrl?: str
     // Fencing token: only the current leader can claim a job
     const fenceToken = leaderLockValue ?? ""
 
-    // Update job status to processing (only if still pending to avoid stale transitions)
+    // Atomic claim with fencing - prevents stale leader from processing
+    const claimed = await claimJobWithFence(jobId, fenceToken)
+    if (!claimed) {
+      throw new Error("Job claimed by another worker or not pending")
+    }
+
+    // Update job status to processing in Supabase (only if still pending to avoid stale transitions)
     const { error: statusError } = await supabase
       .from("conversion_jobs")
       .update({ status: "processing", started_at: new Date().toISOString(), locked_by: fenceToken })
@@ -305,9 +378,11 @@ const worker = new Worker<ConversionJobData, { success: boolean; outputUrl?: str
       }
 
       // ---- Document conversion ----
-      const sourcePath = `/tmp/${jobId}_source`
+      // Use consistent prefix for all temp files to enable proper cleanup
+      const TEMP_PREFIX = "forge-conversion-"
+      const sourcePath = `/tmp/${TEMP_PREFIX}${jobId}_source`
       const outputDir = `/tmp`
-      const outputPath = `/tmp/${jobId}_output.${targetFormat}`
+      const outputPath = `/tmp/${TEMP_PREFIX}${jobId}_output.${targetFormat}`
       let sourceFile: unknown = null
       let resultPath: string | null = null
 
@@ -370,8 +445,14 @@ const worker = new Worker<ConversionJobData, { success: boolean; outputUrl?: str
           .eq("id", jobId)
         throw err
       } finally {
-        try { if (sourcePath) await fs.unlink(sourcePath).catch(() => {}) } catch {}
-        try { if (resultPath) await fs.unlink(resultPath).catch(() => {}) } catch {}
+        // Guaranteed cleanup with proper error logging
+        const cleanupPromises = [
+          fs.unlink(sourcePath).catch(err => logger.warn("Source cleanup failed", { path: sourcePath, err })),
+        ]
+        if (resultPath) {
+          cleanupPromises.push(fs.unlink(resultPath).catch(err => logger.warn("Output cleanup failed", { path: resultPath, err })))
+        }
+        await Promise.allSettled(cleanupPromises)
       }
     } catch (err) {
       await supabase
@@ -394,13 +475,14 @@ const worker = new Worker<ConversionJobData, { success: boolean; outputUrl?: str
   }
 )
 
-const MAX_TMP_DISK_USAGE_MB = 1024 // 1GB max /tmp usage
+const TEMP_PREFIX = "forge-conversion-"
+const MAX_TMP_DISK_USAGE_MB = 512 // 512MB max /tmp usage (reduced from 1GB)
 
 async function cleanupTempFiles(): Promise<void> {
   try {
     const entries = await fs.readdir("/tmp", { withFileTypes: true })
     for (const entry of entries) {
-      if (entry.isFile() && entry.name.startsWith("forge")) {
+      if (entry.isFile() && entry.name.startsWith(TEMP_PREFIX)) {
         try { await fs.unlink(`/tmp/${entry.name}`).catch(() => {}) } catch {}
       }
     }
@@ -413,7 +495,7 @@ async function checkTmpDiskUsage(): Promise<void> {
     let totalBytes = 0
     const fileEntries: Array<{ name: string; mtime: number }> = []
     for (const entry of entries) {
-      if (entry.isFile()) {
+      if (entry.isFile() && entry.name.startsWith(TEMP_PREFIX)) {
         try {
           const stat = await fs.stat(`/tmp/${entry.name}`)
           totalBytes += stat.size
@@ -536,7 +618,17 @@ healthServer.on("listening", () => {
 // Initialize leader election
 startLeaderElection()
 void cleanupTempFiles()
-setInterval(() => void checkTmpDiskUsage(), 60 * 60 * 1000) // Check disk usage every hour
+setInterval(() => void checkTmpDiskUsage(), 5 * 60 * 1000) // Check disk usage every 5 minutes
+
+// Periodic queue cleanup - clean completed/failed jobs based on TTL
+setInterval(async () => {
+  try {
+    await dlq.clean(0, 1000, "completed")
+    await dlq.clean(0, 1000, "failed")
+  } catch (err) {
+    logger.warn("DLQ cleanup failed", { err })
+  }
+}, 60 * 60 * 1000) // Hourly
 
 async function gracefulShutdown(signal: string): Promise<void> {
   console.log(`Received ${signal}, shutting down worker gracefully...`)

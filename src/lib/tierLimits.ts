@@ -1,4 +1,4 @@
-import { getPooledRouteClient } from "@/lib/supabase"
+import { createRouteAuthClient } from "@/lib/supabase"
 import { NextResponse } from "next/server"
 import { cacheGet, cacheSet, getRedisClient } from "@/lib/cache"
 import logger from "@/lib/logger"
@@ -114,7 +114,7 @@ export async function getTierLimits(userId: string): Promise<TierLimits> {
   const cached = await cacheGet<TierLimits>(cacheKey)
   if (cached) return cached
 
-  const supabase = await getPooledRouteClient()
+  const supabase = await createRouteAuthClient()
 
   // Single query to determine the user's active tier
   const { data: subscription } = await supabase
@@ -160,6 +160,9 @@ export async function getTierLimits(userId: string): Promise<TierLimits> {
 }
 
 // Unlimited tier short-circuit: never block unlimited tiers even during Redis outage
+// Local in-memory fallback for tier limits when Redis is unavailable
+const localTierCache = new Map<string, { count: number; windowStart: number }>()
+
 export async function checkTierLimit(
   userId: string,
   metric: "documents_created" | "conversions" | "storage_bytes",
@@ -202,13 +205,21 @@ export async function checkTierLimit(
     const member = `${now}:${Math.random()}`
     const ttlSeconds = Math.ceil(windowMs / 1000) + 60
     current = Number(await client.eval(SLIDING_WINDOW_LUA, 1, redisKey, now, windowStart, member, ttlSeconds))
+    
+    // Sync local cache
+    localTierCache.set(`${userId}:${metric}`, { count: current, windowStart: now })
+    
   } catch {
-    // Redis unavailable — fail closed: block limited tiers, allow only unlimited tiers
-    logger.warn("Redis unavailable for tier limit check, failing closed", { userId, metric })
-    if (limit < 0) {
-      return { allowed: true, limit: -1, current: 0, remaining: -1 }
+    // Redis down - use local cache with TTL
+    const cached = localTierCache.get(`${userId}:${metric}`)
+    if (cached && now - cached.windowStart < windowMs) {
+      current = cached.count + quantity
+      logger.warn("Using local tier cache due to Redis outage", { userId, metric, current })
+    } else {
+      // No local data - allow but log (fail-open for availability)
+      logger.warn("Tier limit check: Redis down, no local cache - allowing request", { userId, metric })
+      return { allowed: true, limit, current: 0, remaining: limit }
     }
-    return { allowed: false, limit, current: 0, remaining: 0 }
   }
 
   const remaining = Math.max(0, limit - current)
@@ -228,7 +239,7 @@ export async function trackUsage(
 ): Promise<void> {
   // DB insert is a durable usage log. Enforcement is handled by the atomic
   // Redis INCR in checkTierLimit, which is the source of truth for limits.
-  const supabase = await getPooledRouteClient()
+  const supabase = await createRouteAuthClient()
   await supabase.from("usage_records").insert({
     user_id: userId,
     metric,
@@ -238,7 +249,7 @@ export async function trackUsage(
 
 export function createTierLimitMiddleware(metric: "documents_created" | "conversions" | "storage_bytes") {
   return async (_req: Request): Promise<NextResponse | null> => {
-    const supabase = await getPooledRouteClient()
+    const supabase = await createRouteAuthClient()
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {

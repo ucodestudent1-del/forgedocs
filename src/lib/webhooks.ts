@@ -1,8 +1,13 @@
 import { createHmac, timingSafeEqual } from "crypto"
-import { getPooledRouteClient } from "@/lib/supabase"
+import { createRouteAuthClient } from "@/lib/supabase"
 import { Queue, Worker } from "bullmq"
 import logger from "@/lib/logger"
 import { z } from "zod"
+
+const redisConnection = {
+  host: process.env.REDIS_HOST || "localhost",
+  port: parseInt(process.env.REDIS_PORT || "6379", 10),
+}
 
 const webhookDeliverySchema = z.object({
   endpoint_id: z.string(),
@@ -47,11 +52,18 @@ export async function deliverWebhook(
   payload: unknown,
   attempt: number = 1,
   deadlineMs: number = 30000,
-  startTime: number = Date.now()
+  startTime: number = Date.now(),
+  idempotencyKey?: string
 ): Promise<WebhookDeliveryResult> {
+  // Validate URL - must use HTTPS
+  const parsedUrl = new URL(url)
+  if (parsedUrl.protocol !== "https:") {
+    throw new Error("Webhook URLs must use HTTPS")
+  }
+  
   const body = JSON.stringify(payload)
   const signature = signWebhookPayload(body, secret)
-  const idempotencyKey = `wh:${endpointId}:${event}:${Date.now()}`
+  const effectiveIdempotencyKey = idempotencyKey ?? `wh:${endpointId}:${event}:${startTime}:${attempt}`
 
   // Enforce overall deadline across all retry attempts
   if (Date.now() - startTime > deadlineMs) {
@@ -61,48 +73,49 @@ export async function deliverWebhook(
   let status: number | null = null
   let responseBody: string | null = null
 
-  try {
-    const res = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-ForgeDocs-Signature": signature,
-        "X-ForgeDocs-Event": event,
-        "X-ForgeDocs-Idempotency-Key": idempotencyKey,
-      },
-      body,
-      signal: AbortSignal.timeout(10000),
-    })
-
-    status = res.status
-    responseBody = await res.text().catch(() => null)
-
-    // Record delivery
-    await recordDelivery(endpointId, event, payload, status, responseBody)
-
-    if (status >= 200 && status < 300) {
-      return { success: true, status, body: responseBody }
+  // Iterative retry - no recursion to prevent stack overflow
+  while (attempt <= 3) {
+    if (Date.now() - startTime > deadlineMs) {
+      return { success: false, status: null, body: "Overall delivery deadline exceeded" }
     }
 
-    // Non-2xx — retry with backoff
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-ForgeDocs-Signature": signature,
+          "X-ForgeDocs-Event": event,
+          "X-ForgeDocs-Idempotency-Key": effectiveIdempotencyKey,
+        },
+        body,
+        signal: AbortSignal.timeout(10000),
+      })
+
+      status = res.status
+      responseBody = await res.text().catch(() => null)
+
+      // Record delivery
+      await recordDelivery(endpointId, event, payload, status, responseBody)
+
+      if (status >= 200 && status < 300) {
+        return { success: true, status, body: responseBody }
+      }
+    } catch (err) {
+      await recordDelivery(endpointId, event, payload, null, err instanceof Error ? err.message : String(err))
+    }
+
+    // Exponential backoff with jitter
     if (attempt < 3) {
-      const backoffMs = Math.pow(2, attempt) * 1000
-      await new Promise((r) => setTimeout(r, backoffMs))
-      return deliverWebhook(endpointId, url, secret, event, payload, attempt + 1, deadlineMs, startTime)
+      const backoffMs = Math.min(Math.pow(2, attempt) * 1000 + Math.random() * 1000, 30000)
+      await new Promise(r => setTimeout(r, backoffMs))
+      attempt++
+    } else {
+      break
     }
-
-    return { success: false, status, body: responseBody }
-  } catch (err) {
-    await recordDelivery(endpointId, event, payload, null, err instanceof Error ? err.message : String(err))
-
-    if (attempt < 3) {
-      const backoffMs = Math.pow(2, attempt) * 1000
-      await new Promise((r) => setTimeout(r, backoffMs))
-      return deliverWebhook(endpointId, url, secret, event, payload, attempt + 1, deadlineMs, startTime)
-    }
-
-    return { success: false, status: null, body: err instanceof Error ? err.message : String(err) }
   }
+
+  return { success: false, status, body: responseBody ?? "Max retries exceeded" }
 }
 
 /**
@@ -116,7 +129,7 @@ async function recordDelivery(
   body: string | null
 ): Promise<void> {
   try {
-    const supabase = await getPooledRouteClient()
+    const supabase = await createRouteAuthClient()
     const validated = webhookDeliverySchema.parse({
       endpoint_id: endpointId,
       event,
@@ -152,34 +165,78 @@ export const SUPPORTED_WEBHOOK_EVENTS = [
 export type WebhookEvent = typeof SUPPORTED_WEBHOOK_EVENTS[number]
 
 const webhookQueue = new Queue("webhook-delivery", {
-  connection: {
-    host: process.env.REDIS_HOST || "localhost",
-    port: parseInt(process.env.REDIS_PORT || "6379", 10),
-  },
+  connection: redisConnection,
   defaultJobOptions: {
     attempts: 3,
     backoff: { type: "exponential", delay: 1000 },
-    removeOnComplete: 100,
-    removeOnFail: 50,
+    removeOnComplete: { count: 50, age: 60 * 60 * 1000 }, // 1hr TTL
+    removeOnFail: { count: 200, age: 24 * 60 * 60 * 1000 }, // 24hr TTL
   },
 })
 
 // Process webhook deliveries with bounded concurrency (10 concurrent)
-new Worker("webhook-delivery", async (job) => {
-  const { endpointId, url, secret, event, payload } = job.data as {
+const webhookWorker = new Worker("webhook-delivery", async (job) => {
+  const { endpointId, url, secret, event, payload, idempotencyKey } = job.data as {
     endpointId: string
     url: string
     secret: string
     event: string
     payload: unknown
+    idempotencyKey?: string
   }
-  return deliverWebhook(endpointId, url, secret, event, payload)
+  return deliverWebhook(endpointId, url, secret, event, payload, 1, 30000, Date.now(), idempotencyKey)
 }, {
-  connection: {
-    host: process.env.REDIS_HOST || "localhost",
-    port: parseInt(process.env.REDIS_PORT || "6379", 10),
-  },
+  connection: redisConnection,
   concurrency: 10,
+})
+
+// Event handlers for webhook worker
+webhookWorker.on("completed", (job) => {
+  if (job) {
+    logger.info("Webhook delivery completed", { jobId: job.id, endpointId: job.data.endpointId })
+  }
+})
+
+webhookWorker.on("failed", async (job, err) => {
+  if (job) {
+    logger.error("Webhook delivery failed", { 
+      jobId: job.id, 
+      endpointId: job.data.endpointId, 
+      error: err instanceof Error ? err.message : String(err),
+      attemptsMade: job.attemptsMade,
+    })
+
+    // Alert on repeated failures for same endpoint
+    const failureKey = `webhook_failures:${job.data.endpointId}`
+    const { cacheIncrement } = await import("@/lib/cache")
+    try {
+      const failures = await cacheIncrement(failureKey, 3600) // 1hr window
+      if (failures >= 10 && process.env.ALERT_WEBHOOK_URL) {
+        await fetch(process.env.ALERT_WEBHOOK_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            level: "critical",
+            message: "Webhook endpoint failing repeatedly",
+            endpointId: job.data.endpointId,
+            url: job.data.url,
+            failures,
+            lastError: err instanceof Error ? err.message : String(err),
+          }),
+        })
+      }
+    } catch {}
+  }
+})
+
+webhookWorker.on("stalled", (job) => {
+  if (job) {
+    logger.warn("Webhook delivery stalled", { jobId: job.id, endpointId: job.data.endpointId })
+  }
+})
+
+webhookWorker.on("error", (err) => {
+  logger.error("Webhook worker error", { error: err instanceof Error ? err.message : String(err) })
 })
 
 /**
@@ -192,7 +249,7 @@ export async function fireWebhookEvent(
   payload: unknown
 ): Promise<void> {
   try {
-    const supabase = await getPooledRouteClient()
+    const supabase = await createRouteAuthClient()
     const { data: endpoints } = await supabase
       .from("webhook_endpoints")
       .select("id, url, secret, events")
@@ -206,24 +263,66 @@ export async function fireWebhookEvent(
       return !events || events.length === 0 || events.includes(event) || events.includes("*")
     })
 
-    // Queue deliveries with bounded concurrency via BullMQ
-    for (const ep of matching) {
-      await webhookQueue.add("deliver", {
+    const startTime = Date.now()
+    // Batch add deliveries with bounded concurrency via BullMQ
+    const jobs = matching.map((ep) => ({
+      name: "deliver",
+      data: {
         endpointId: ep.id,
         url: ep.url,
         secret: ep.secret,
         event,
         payload,
-      }).catch((err) => {
-        logger.error("fireWebhookEvent: failed to queue delivery", {
-          userId,
-          event,
-          endpointId: ep.id,
-          error: err instanceof Error ? err.message : String(err),
-        })
+        idempotencyKey: `wh:${ep.id}:${event}:${startTime}`,
+      },
+      opts: { removeOnComplete: 50, removeOnFail: 20 },
+    }))
+
+    await webhookQueue.addBulk(jobs).catch((err) => {
+      logger.error("fireWebhookEvent: failed to queue deliveries", {
+        userId,
+        event,
+        count: jobs.length,
+        error: err instanceof Error ? err.message : String(err),
       })
-    }
+    })
   } catch {
     // best-effort
   }
 }
+
+// Periodic webhook queue cleanup - clean completed/failed jobs based on TTL
+setInterval(async () => {
+  try {
+    await webhookQueue.clean(0, 1000, "completed")
+    await webhookQueue.clean(0, 1000, "failed")
+  } catch (err) {
+    logger.warn("Webhook queue cleanup failed", { err })
+  }
+}, 60 * 60 * 1000) // Hourly
+
+// Queue depth monitoring for backpressure alerts
+setInterval(async () => {
+  try {
+    const counts = await webhookQueue.getJobCounts()
+    if (counts.waiting > 10000) {
+      logger.warn("Webhook queue backlog high", { waiting: counts.waiting, active: counts.active })
+      if (process.env.ALERT_WEBHOOK_URL) {
+        try {
+          await fetch(process.env.ALERT_WEBHOOK_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              level: "warning",
+              message: "Webhook queue backlog high",
+              waiting: counts.waiting,
+              active: counts.active,
+            }),
+          })
+        } catch {}
+      }
+    }
+  } catch (err) {
+    logger.warn("Webhook queue monitoring failed", { err })
+  }
+}, 60 * 1000) // Every minute
