@@ -14,7 +14,7 @@ export async function initializeOCR(language = 'eng'): Promise<void> {
     worker = await createWorker(language, OEM.LSTM_ONLY, {
       logger: (m) => {
         if (m.status === 'recognizing text') {
-          console.log(`[OCR] Progress: ${Math.round(m.progress * 100)}%`)
+          logger.debug(`[OCR] Progress: ${Math.round(m.progress * 100)}%`)
         }
       },
       cachePath: typeof window !== 'undefined' ? '/tesseract-cache' : undefined
@@ -26,7 +26,7 @@ export async function initializeOCR(language = 'eng'): Promise<void> {
       tessedit_do_invert: '0',
     })
     
-    console.log('[OCR] Worker initialized')
+    logger.info('[OCR] Worker initialized')
     workerJobCount = 0
   } catch (error) {
     logger.error('[OCR] Failed to initialize:', { error: error })
@@ -110,7 +110,7 @@ export async function terminateOCR(): Promise<void> {
   if (worker) {
     await worker.terminate()
     worker = null
-    console.log('[OCR] Worker terminated')
+    logger.info('[OCR] Worker terminated')
   }
 }
 

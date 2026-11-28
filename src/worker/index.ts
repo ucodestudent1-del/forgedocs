@@ -141,7 +141,7 @@ async function acquireLeaderLock(): Promise<boolean> {
   if (result === value) {
     leaderLockValue = value
     isLeader = true
-    console.log("Worker became leader")
+    logger.info("Worker became leader")
     return true
   }
   isLeader = false
@@ -157,7 +157,7 @@ async function renewLeaderLock(): Promise<void> {
   if (result === 0) {
     isLeader = false
     leaderLockValue = null
-    console.log("Worker lost leadership (atomic check failed)")
+    logger.warn("Worker lost leadership (atomic check failed)")
     startLeaderElection()
   }
 }
@@ -547,7 +547,7 @@ worker.on("completed", (job) => {
   if (job) {
     workerHealth.activeJobs = Math.max(0, workerHealth.activeJobs - 1)
     workerHealth.completedJobs++
-    console.log(`Job ${job.id} completed`)
+    logger.info(`Job ${job.id} completed`)
   }
 })
 
@@ -606,13 +606,13 @@ const healthServer = http.createServer((req: http.IncomingMessage, res: http.Ser
 const HEALTH_PORT = parseInt(process.env.WORKER_HEALTH_PORT || "3001", 10)
 healthServer.listen(HEALTH_PORT).on("error", (err: NodeJS.ErrnoException) => {
   if (err.code === "EADDRINUSE") {
-    console.warn(`Worker health port ${HEALTH_PORT} already in use — health endpoint disabled`)
+    logger.warn(`Worker health port ${HEALTH_PORT} already in use — health endpoint disabled`)
   } else {
     logger.error(`Worker health server error:`, err)
   }
 })
 healthServer.on("listening", () => {
-  console.log(`Worker health server listening on port ${HEALTH_PORT}`)
+    logger.info(`Worker health server listening on port ${HEALTH_PORT}`)
 })
 
 // Initialize leader election
@@ -631,13 +631,13 @@ setInterval(async () => {
 }, 60 * 60 * 1000) // Hourly
 
 async function gracefulShutdown(signal: string): Promise<void> {
-  console.log(`Received ${signal}, shutting down worker gracefully...`)
+    logger.info(`Received ${signal}, shutting down worker gracefully...`)
   try {
     await stopLeaderElection()
     await worker.close()
     healthServer.close()
     await redisClient.quit()
-    console.log("Worker shutdown complete")
+    logger.info("Worker shutdown complete")
     process.exit(0)
   } catch (err) {
     logger.error("Worker shutdown error", { error: err instanceof Error ? err.message : String(err) })

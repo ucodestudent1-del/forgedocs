@@ -3,6 +3,7 @@ import { createRouteAuthClient } from "@/lib/supabase"
 import { Queue, Worker } from "bullmq"
 import logger from "@/lib/logger"
 import { z } from "zod"
+import { decryptDocument } from "@/lib/encryption"
 
 const redisConnection = {
   host: process.env.REDIS_HOST || "localhost",
@@ -265,18 +266,27 @@ export async function fireWebhookEvent(
 
     const startTime = Date.now()
     // Batch add deliveries with bounded concurrency via BullMQ
-    const jobs = matching.map((ep) => ({
-      name: "deliver",
-      data: {
-        endpointId: ep.id,
-        url: ep.url,
-        secret: ep.secret,
-        event,
-        payload,
-        idempotencyKey: `wh:${ep.id}:${event}:${startTime}`,
-      },
-      opts: { removeOnComplete: 50, removeOnFail: 20 },
-    }))
+    const jobs = matching.map((ep: { id: string; url: string; secret: string; events: string[] | null }) => {
+      // Decrypt webhook secret at rest (with plaintext fallback for backward compatibility)
+      let secret = ep.secret
+      try {
+        secret = decryptDocument(ep.secret)
+      } catch {
+        // Not encrypted — use as-is
+      }
+      return ({
+        name: "deliver",
+        data: {
+          endpointId: ep.id,
+          url: ep.url,
+          secret,
+          event,
+          payload,
+          idempotencyKey: `wh:${ep.id}:${event}:${startTime}`,
+        },
+        opts: { removeOnComplete: 50, removeOnFail: 20 },
+      })
+    })
 
     await webhookQueue.addBulk(jobs).catch((err) => {
       logger.error("fireWebhookEvent: failed to queue deliveries", {

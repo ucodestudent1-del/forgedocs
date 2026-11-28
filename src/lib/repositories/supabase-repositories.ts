@@ -30,24 +30,24 @@ export class SupabaseSubscriptionRepository implements SubscriptionRepository {
   constructor(private supabase: SupabaseClient<Database>) {}
 
   async getActiveTier(userId: string): Promise<string> {
-    const { data: subscription } = await this.supabase
+    const { data: subscription } = await (this.supabase
       .from('subscriptions')
       .select('tier')
       .eq('user_id', userId)
       .eq('status', 'active')
       .order('created_at', { ascending: false })
       .limit(1)
-      .single()
+      .single() as any)
 
     return subscription?.tier || 'free'
   }
 
   async getTierLimits(tier: string): Promise<TierLimits | null> {
-    const { data: limits } = await this.supabase
+    const { data: limits } = await (this.supabase
       .from('tier_limits')
       .select('*')
       .eq('tier', tier)
-      .single()
+      .single() as any)
 
     if (!limits) return null
 
@@ -92,11 +92,11 @@ export class SupabaseUsageRepository implements UsageRepository {
   }
 
   async trackUsage(userId: string, metric: string, quantity: number): Promise<void> {
-    await this.supabase.from('usage_records').insert({
+    await (this.supabase.from('usage_records').insert({
       user_id: userId,
       metric,
       quantity,
-    })
+    }) as any)
   }
 }
 
@@ -104,14 +104,14 @@ export class SupabaseDocumentRepository implements DocumentRepository {
   constructor(private supabase: SupabaseClient<Database>) {}
 
   async create(userId: string, data: DocumentCreateData): Promise<Document> {
-    const { data: doc, error } = await this.supabase
+    const { data: doc, error } = await (this.supabase
       .from('documents')
       .insert({
         user_id: userId,
         ...data,
       })
       .select()
-      .single()
+      .single() as any)
 
     if (error) throw error
     return doc as Document
@@ -150,13 +150,13 @@ export class SupabaseDocumentRepository implements DocumentRepository {
   }
 
   async update(id: string, userId: string, data: Partial<Document>): Promise<Document> {
-    const { data: doc, error } = await this.supabase
+    const { data: doc, error } = await (this.supabase
       .from('documents')
       .update(data)
       .eq('id', id)
       .eq('user_id', userId)
       .select()
-      .single()
+      .single() as any)
 
     if (error) throw error
     return doc as Document

@@ -145,7 +145,7 @@ export async function performOCR(
     if (selectedProvider === 'tesseract' && fallbackToCloud) {
       const cloudProviders = (await getAvailableProviders()).filter(p => p.name !== 'Tesseract.js (Local)')
       if (cloudProviders.length > 0) {
-          console.log('[OCR] Falling back to cloud provider')
+          logger.info('[OCR] Falling back to cloud provider')
         const fallbackProvider = cloudProviders[0].name.toLowerCase().replace(/\s+/g, '')
         const { performCloudOCR } = await import('./cloud')
         const result = await performCloudOCR(file, fallbackProvider as 'aws' | 'google' | 'azure')

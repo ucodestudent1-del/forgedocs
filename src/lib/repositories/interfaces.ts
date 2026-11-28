@@ -1,5 +1,7 @@
 import type { TierLimits } from '@/lib/tierLimits'
 
+export type { TierLimits }
+
 export interface SubscriptionRepository {
   getActiveTier(userId: string): Promise<string>
   getTierLimits(tier: string): Promise<TierLimits | null>

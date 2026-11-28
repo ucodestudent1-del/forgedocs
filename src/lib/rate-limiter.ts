@@ -5,6 +5,17 @@ import logger from "@/lib/logger"
 
 const FAIL_OPEN = false
 
+const FAIL_OPEN_ENDPOINTS = new Set([
+  "/api/conversion",
+  "/api/conversion/",
+  "/api/pdf-tools/process",
+  "/api/ai/assistant",
+  "/api/ai/chat",
+  "/api/documents",
+  "/api/templates",
+  "/api/health",
+])
+
 export interface RateLimitConfig {
   windowMs: number
   maxRequests: number
@@ -101,7 +112,7 @@ function cleanSlidingWindowMemory(key: string, windowStart: number): void {
   slidingWindowMemoryStore.set(key, valid)
 }
 
-export async function checkRateLimit(identifier: string, config: RateLimitConfig): Promise<RateLimitInfo> {
+export async function checkRateLimit(identifier: string, config: RateLimitConfig, pathname: string = ""): Promise<RateLimitInfo> {
   const now = Date.now()
   const windowMs = config.windowMs
   const ttlSeconds = Math.ceil(windowMs / 1000) + 1
@@ -147,7 +158,12 @@ export async function checkRateLimit(identifier: string, config: RateLimitConfig
       count = result[1]
     } catch {
       // Redis unavailable — behavior depends on FAIL_OPEN
-      if (FAIL_OPEN) {
+      const isAuthEndpoint = pathname.includes("/api/auth/")
+      const shouldFailOpen =
+        FAIL_OPEN_ENDPOINTS.has(pathname) ||
+        (!isAuthEndpoint && process.env.RATE_LIMIT_FAIL_OPEN === "true")
+
+      if (shouldFailOpen) {
         logger.warn("Redis unavailable — rate limiter fail-open, allowing request", {
           redisKey,
           identifier,
@@ -239,7 +255,7 @@ export async function rateLimitMiddleware(request: NextRequest) {
   }
 
   const identifier = getClientIdentifier(request)
-  const limitInfo = await checkRateLimit(identifier, matchedConfig)
+  const limitInfo = await checkRateLimit(identifier, matchedConfig, path)
 
   if (limitInfo.limited) {
     return rateLimitResponse(limitInfo)

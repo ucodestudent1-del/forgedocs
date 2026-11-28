@@ -2,8 +2,11 @@ import "server-only"
 import Redis from "ioredis"
 import logger from "@/lib/logger"
 
-let redisClient: Redis | null = null
-let connectionPromise: Promise<void> | null = null
+const REDIS_POOL_SIZE = parseInt(process.env.REDIS_POOL_SIZE ?? "5", 10)
+
+let redisPool: Redis[] = []
+let poolIndex = 0
+let connectionPromises: Promise<void>[] = []
 const isTestEnv = process.env.NODE_ENV === 'test' || process.env.JEST_WORKER_ID !== undefined
 
 // In-memory fallback store for tests and when Redis is unavailable
@@ -23,55 +26,62 @@ export function getRedisClient(): Redis | null {
     return null
   }
 
-  if (!redisClient) {
-    redisClient = new Redis(redisUrl, {
-      maxRetriesPerRequest: 3,
-      enableReadyCheck: true,
-      lazyConnect: true,
-      connectionName: "forgedocs-app",
-      retryStrategy: (times) => {
-        if (times > 5) {
-          logger.error("Redis max retry attempts reached, giving up")
-          return null // Stop retrying
-        }
-        return Math.min(times * 200, 2000)
-      },
-    })
+  if (redisPool.length === 0) {
+    for (let i = 0; i < REDIS_POOL_SIZE; i++) {
+      const client = new Redis(redisUrl, {
+        maxRetriesPerRequest: 3,
+        enableReadyCheck: true,
+        lazyConnect: true,
+        connectionName: `forgedocs-app-${i}`,
+        retryStrategy: (times) => {
+          if (times > 5) {
+            logger.error("Redis max retry attempts reached, giving up")
+            return null // Stop retrying
+          }
+          return Math.min(times * 200, 2000)
+        },
+      })
 
-    redisClient.on("error", (err: Error) => {
-      logger.error("Redis connection error", { error: err.message, stack: err.stack })
-    })
+      client.on("error", (err: Error) => {
+        logger.error("Redis connection error", { error: err.message, stack: err.stack })
+      })
 
-    redisClient.on("connect", () => {
-      logger.info("Redis connected")
-    })
+      client.on("connect", () => {
+        logger.info("Redis connected", { clientIndex: i })
+      })
 
-    redisClient.on("close", () => {
-      logger.warn("Redis connection closed")
-    })
+      client.on("close", () => {
+        logger.warn("Redis connection closed", { clientIndex: i })
+      })
 
-    redisClient.on("reconnecting", () => {
-      logger.info("Redis reconnecting...")
-    })
+      client.on("reconnecting", () => {
+        logger.info("Redis reconnecting...", { clientIndex: i })
+      })
 
-    connectionPromise = redisClient.connect().catch((err) => {
-      logger.error("Redis initial connection failed", { error: err.message })
-      redisClient = null // Reset on failure so we can retry
-      connectionPromise = null
-      throw err
-    })
+      redisPool.push(client)
+      connectionPromises.push(
+        client.connect().catch((err) => {
+          logger.error("Redis initial connection failed", { error: err.message, clientIndex: i })
+          throw err
+        })
+      )
+    }
   }
-  return redisClient
+
+  // Round-robin client selection
+  const client = redisPool[poolIndex]
+  poolIndex = (poolIndex + 1) % redisPool.length
+  return client
 }
 
 async function ensureConnected(client: Redis): Promise<void> {
-  if (connectionPromise) {
+  const clientIndex = redisPool.indexOf(client)
+  const promise = connectionPromises[clientIndex]
+  if (promise) {
     try {
-      await connectionPromise
+      await promise
     } catch {
-      // Connection failed, reset so next call creates new connection
-      connectionPromise = null
-      redisClient = null
+      // Connection failed
       throw new Error("Redis connection failed")
     }
   }
@@ -293,11 +303,10 @@ export async function cacheEval(key: string, ttlSeconds: number, threshold: stri
 }
 
 export async function closeRedis(): Promise<void> {
-  if (redisClient) {
-    await redisClient.quit()
-    redisClient = null
-    connectionPromise = null
-  }
+  await Promise.all(redisPool.map((client) => client.quit().catch(() => {})))
+  redisPool = []
+  poolIndex = 0
+  connectionPromises = []
   memoryStore.clear()
 }
 
@@ -305,6 +314,7 @@ export async function closeRedis(): Promise<void> {
 export async function getRedisPoolStatus(): Promise<{
   status: string
   connected: boolean
+  poolSize: number
   memory?: string
   clients?: number
 }> {
@@ -312,13 +322,14 @@ export async function getRedisPoolStatus(): Promise<{
     return {
       status: "healthy",
       connected: false,
+      poolSize: 0,
     }
   }
 
   try {
     const client = getRedisClient()
     if (!client) {
-      return { status: "unhealthy", connected: false }
+      return { status: "unhealthy", connected: false, poolSize: redisPool.length }
     }
     await ensureConnected(client)
     const info = await client.info("memory")
@@ -326,6 +337,7 @@ export async function getRedisPoolStatus(): Promise<{
     return {
       status: "healthy",
       connected: true,
+      poolSize: redisPool.length,
       memory: info.match(/used_memory_human:(\S+)/)?.[1],
       clients: parseInt(clients.match(/connected_clients:(\d+)/)?.[1] || "0"),
     }
@@ -333,6 +345,7 @@ export async function getRedisPoolStatus(): Promise<{
     return {
       status: "unhealthy",
       connected: false,
+      poolSize: redisPool.length,
     }
   }
 }

@@ -188,7 +188,7 @@ async function withRateLimiting(request: NextRequest, response: NextResponse): P
     ? `apikey:${request.headers.get("x-api-key")?.slice(0, 8)}`
     : request.headers.get("x-forwarded-for") || request.ip || "anonymous"
 
-  const rateLimitInfo = await checkRateLimit(identifier, config)
+  const rateLimitInfo = await checkRateLimit(identifier, config, pathname)
   
   response.headers.set("X-RateLimit-Limit", String(rateLimitInfo.total))
   response.headers.set("X-RateLimit-Remaining", String(rateLimitInfo.remaining))

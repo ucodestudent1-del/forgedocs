@@ -1,5 +1,7 @@
 // Currency Conversion Module - Uses free exchange rate APIs
 
+import logger from "@/lib/logger"
+
 const CURRENCY_CACHE = new Map<string, { rates: Record<string, number>; timestamp: number }>()
 
 const SUPPORTED_CURRENCIES = [
@@ -55,7 +57,7 @@ async function fetchRatesFromAPI(base: string): Promise<Record<string, number> |
         return { [base]: 1, ...rates }
       }
     } catch (error) {
-      console.warn(`Currency API failed: ${api}`, error)
+      logger.warn(`Currency API failed: ${api}`, { error: error instanceof Error ? error.message : String(error) })
       continue
     }
   }

@@ -8,6 +8,18 @@ export function sanitizeFilename(filename: string): string {
     .slice(0, 255)
 }
 
+export const ALLOWED_FILE_EXTENSIONS = new Set([
+  ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx",
+  ".txt", ".csv", ".md", ".rtf",
+  ".jpg", ".jpeg", ".png", ".webp", ".svg", ".tiff", ".gif",
+  ".odt", ".ods", ".odp",
+])
+
+export function validateFileExtension(filename: string): boolean {
+  const ext = filename.toLowerCase().slice(filename.lastIndexOf("."))
+  return ALLOWED_FILE_EXTENSIONS.has(ext)
+}
+
 export function validateFileMagicBytes(fileBytes: Uint8Array | Buffer, mimeType: string): boolean {
   const bytes = Buffer.from(fileBytes)
   if (bytes.length < 4) return false

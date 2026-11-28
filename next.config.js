@@ -15,7 +15,7 @@ const nextConfig = {
   output: 'standalone',
   outputFileTracingRoot: __dirname,
   eslint: {
-    ignoreDuringBuilds: true,
+    ignoreDuringBuilds: false,
   },
   typescript: {
     ignoreBuildErrors: false,

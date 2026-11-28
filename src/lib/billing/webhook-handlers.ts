@@ -183,7 +183,7 @@ export async function handleCheckoutSessionExpired(
   const userId = session.metadata?.userId
 
   if (userId) {
-    console.log(`Checkout session expired for user ${userId}`)
+    logger.info(`Checkout session expired for user ${userId}`, { userId })
   }
 }
 

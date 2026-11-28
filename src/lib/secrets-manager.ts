@@ -186,6 +186,13 @@ export class SecretsManager {
 function buildConfigFromEnv(): SecretsManagerConfig {
   const provider = (process.env.SECRETS_MANAGER_PROVIDER as SecretProvider) ?? "env"
 
+  if (provider === "env" && process.env.NODE_ENV === "production") {
+    logger.warn(
+      "SECRETS_MANAGER_PROVIDER is set to 'env' in production — secrets are read from plaintext environment variables. " +
+        "Configure AWS Secrets Manager, Doppler, or Vault for production deployments."
+    )
+  }
+
   return {
     provider,
     region: process.env.AWS_REGION ?? "us-east-1",

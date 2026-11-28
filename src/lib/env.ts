@@ -10,6 +10,7 @@ const requiredEnvVars = [
   "REDIS_URL",
   "MFA_SECRET_ENCRYPTION_KEY",
   "MFA_BACKUP_CODE_PEPPER",
+  "API_KEY_PEPPER",
 ] as const
 
 const optionalEnvVars = [

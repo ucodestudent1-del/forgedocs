@@ -8,16 +8,25 @@ import { conversionJobSchema } from "@/lib/conversion"
    ============================================================================ */
 
 interface OpenApiSchema {
-  type: string
+  type?: string
   format?: string
   enum?: string[]
   items?: OpenApiSchema
   properties?: Record<string, OpenApiSchema>
+  additionalProperties?: OpenApiSchema | boolean
   required?: string[]
   description?: string
   example?: unknown
+  default?: unknown
   nullable?: boolean
   anyOf?: OpenApiSchema[]
+  allOf?: OpenApiSchema[]
+  oneOf?: OpenApiSchema[]
+  minimum?: number
+  maximum?: number
+  minLength?: number
+  maxLength?: number
+  $ref?: string
 }
 
 interface OpenApiParameter {
@@ -29,9 +38,12 @@ interface OpenApiParameter {
 }
 
 interface OpenApiResponse {
-  description: string
+  description?: string
+  type?: string
+  properties?: Record<string, OpenApiSchema>
   content?: Record<string, { schema: OpenApiSchema }>
   headers?: Record<string, { schema: OpenApiSchema }>
+  $ref?: string
 }
 
 interface OpenApiOperation {
@@ -62,7 +74,8 @@ interface OpenApiSpec {
   servers: { url: string; description?: string }[]
   components: {
     schemas: Record<string, OpenApiSchema>
-    securitySchemes: Record<string, { type: string; scheme?: string; bearerFormat?: string }>
+    securitySchemes: Record<string, { type: string; scheme?: string; bearerFormat?: string; in?: string; name?: string }>
+    responses: Record<string, OpenApiResponse>
   }
   paths: Record<string, OpenApiPath>
   security: Record<string, string[]>[]
@@ -133,7 +146,7 @@ function zodToOpenApi(schema: z.ZodTypeAny, schemas: Record<string, OpenApiSchem
     }
     case "ZodUnion": {
       const def = schema._def as any
-      return { anyOf: def.options.map((opt: z.ZodTypeAny) => zodToOpenApi(opt, schemas)) }
+      return { type: "object", anyOf: def.options.map((opt: z.ZodTypeAny) => zodToOpenApi(opt, schemas)) }
     }
     case "ZodEnum": {
       const def = schema._def as any

@@ -1,4 +1,5 @@
 import logger from "@/lib/logger"
+import { closeRedis } from "@/lib/cache"
 
 type CleanupFn = () => Promise<void> | void
 
@@ -9,11 +10,14 @@ export function registerShutdown(fn: CleanupFn) {
   cleanups.push(fn)
 }
 
+// Register Redis cleanup on shutdown
+registerShutdown(closeRedis)
+
 async function runShutdown(signal: string) {
   if (shuttingDown) return
   shuttingDown = true
 
-  console.log(`Received ${signal}, shutting down gracefully...`)
+  logger.info(`Received ${signal}, shutting down gracefully...`)
 
   const errors: string[] = []
   await Promise.all(
