@@ -123,12 +123,12 @@ export class ConversionService {
         `converted/${userId}/`,
         `uploads/${userId}/`,
       ]
-      const isAllowedPrefix = allowedPrefixes.some((prefix) => input.source_url.startsWith(prefix))
+      const isAllowedPrefix = allowedPrefixes.some((prefix) => input.source_url?.startsWith(prefix))
       if (!isAllowedPrefix) {
         throw createAppError("Source file path not in allowed user storage prefix", 403, "FORBIDDEN")
       }
 
-      if (!input.source_url.startsWith(`${userId}/`)) {
+      if (!input.source_url?.startsWith(`${userId}/`)) {
         throw createAppError("Source file does not belong to the authenticated user", 403, "FORBIDDEN")
       }
 
@@ -218,6 +218,8 @@ export class ConversionService {
   }
 
   getAllFormats() {
+    return Object.values(FORMAT_REGISTRY)
+  }
 
   getAllConversionPairs() {
     return getAllConversionPairs()

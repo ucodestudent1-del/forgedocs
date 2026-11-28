@@ -1,4 +1,4 @@
-import type { Stripe } from "stripe"
+﻿import type { Stripe } from "stripe"
 import { createServiceRoleClient } from "@/lib/supabase"
 import { stripeCircuitBreaker } from "@/lib/circuit-breaker"
 import { sendEmail } from "@/lib/email"
@@ -85,6 +85,7 @@ export async function handleCheckoutSessionCompleted(
         error: err instanceof Error ? err.message : String(err),
       })
     })
+  }
 }
 
 /**
