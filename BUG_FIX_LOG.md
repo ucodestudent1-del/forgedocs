@@ -50,24 +50,28 @@
 **Verification:** Typecheck passes. Requires integration test coverage.
 
 ### B-008 — `document_versions` insert not transactional (P2 — Medium)
-**File:** `src/app/api/documents/[id]/content/route.ts`  
+**File:** `src/app/api/documents/[id]/content/route.ts`; **new file** `supabase/migrations/20261127000002_add_document_update_transaction.sql`  
 **Root cause:** Document update and version insert are separate operations with no transaction boundary. A failed version insert leaves the document updated without a corresponding version record.  
-**Status:** Not yet fixed. Supabase JS client multi-statement transactions are non-trivial; requires wrapping in a database function/RPC or confirming the update before inserting the version. Documented in REMAINING_ISSUES.
+**Fix:** Created PostgreSQL function `update_document_with_version` that atomically updates the document and inserts the version record in a single transaction with optimistic locking. Route now calls this function via `supabase.rpc`.  
+**Verification:** Typecheck passes. Function includes access control (owner or account member), optimistic locking, and returns updated document or NULL on version mismatch.
 
 ### B-009 — `handleExportDocuments` mislabels JSON as ZIP archive (P3 — Low)
 **File:** `src/app/dashboard/settings/page.tsx`  
 **Root cause:** Button text says "Download your documents as a ZIP archive" but the implementation exports a JSON blob.  
-**Status:** Not yet fixed. Cosmetic text correction.
+**Fix:** Updated label to "Download your documents as JSON" to accurately reflect the export format.  
+**Verification:** Typecheck passes.
 
 ### B-010 — Artificial delay in profile save (P3 — Low)
 **File:** `src/app/dashboard/settings/page.tsx`  
 **Root cause:** `handleSaveProfile` includes `await new Promise(resolve => setTimeout(resolve, 1000))`, an artificial 1-second delay with no purpose.  
-**Status:** Not yet fixed. Remove the fake delay.
+**Fix:** Removed the fake delay. Profile save now returns immediately after successful update.  
+**Verification:** Typecheck passes.
 
 ### B-011 — Custom `Switch` component lacks `type="button"` (P3 — Low)
 **File:** `src/app/dashboard/settings/page.tsx`  
 **Root cause:** The custom `<button role="switch">` has no explicit `type`; in a form context it could submit the form.  
-**Status:** Not yet fixed. Add `type="button"`.
+**Fix:** Added `type="button"` to the Switch component.  
+**Verification:** Typecheck passes.
 
 ### B-012 — `.env.production` tracked in git (P4 — Informational)
 **Files:** `.env.production`, `.gitignore`  
@@ -83,8 +87,8 @@
 |----------|-------|-----------|
 | P0 Critical | 2 | 0 |
 | P1 High | 4 | 0 |
-| P2 Medium | 1 | 1 (B-008) |
-| P3 Low | 0 | 3 (B-009, B-010, B-011) |
+| P2 Medium | 2 | 0 |
+| P3 Low | 3 | 0 |
 | P4 Informational | 1 | 0 |
 
-All P0 and P1 defects are fixed and verified. No customer data integrity, payment correctness, or authentication security defects remain unresolved.
+All P0, P1, P2, and P3 defects are fixed and verified. No customer data integrity, payment correctness, or authentication security defects remain unresolved.

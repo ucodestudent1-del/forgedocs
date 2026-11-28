@@ -2,6 +2,15 @@ import { createHmac, timingSafeEqual } from "crypto"
 import { getPooledRouteClient } from "@/lib/supabase"
 import { Queue, Worker } from "bullmq"
 import logger from "@/lib/logger"
+import { z } from "zod"
+
+const webhookDeliverySchema = z.object({
+  endpoint_id: z.string(),
+  event: z.string(),
+  payload: z.unknown(),
+  response_status: z.number().nullable(),
+  response_body: z.string().nullable(),
+})
 
 export interface WebhookDeliveryResult {
   success: boolean
@@ -108,13 +117,14 @@ async function recordDelivery(
 ): Promise<void> {
   try {
     const supabase = await getPooledRouteClient()
-    await supabase.from("webhook_deliveries").insert({
+    const validated = webhookDeliverySchema.parse({
       endpoint_id: endpointId,
       event,
-      payload: payload as any,
+      payload,
       response_status: status,
       response_body: body,
     })
+    await supabase.from("webhook_deliveries").insert(validated)
   } catch {
     // best-effort
   }

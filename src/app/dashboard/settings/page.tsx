@@ -164,7 +164,6 @@ export default function SettingsPage() {
         toast({ title: result.error, variant: "destructive" })
         return
       }
-      await new Promise((resolve) => setTimeout(resolve, 1000))
       toast({ title: "Profile saved", variant: "success" })
     } catch (e) {
       toast({ title: "Failed to save", variant: "destructive" })
@@ -786,7 +785,7 @@ export default function SettingsPage() {
               <div className="flex items-center justify-between p-4 border rounded-lg">
                 <div>
                   <p className="font-medium">Export Documents</p>
-                  <p className="text-sm text-muted-foreground">Download your documents as a ZIP archive</p>
+                  <p className="text-sm text-muted-foreground">Download your documents as JSON</p>
                 </div>
                 <Button variant="outline" onClick={handleExportDocuments}>
                   <Download className="h-4 w-4 mr-2" />
@@ -851,6 +850,7 @@ export default function SettingsPage() {
 function Switch({ checked, onChange }: { checked: boolean; onChange: (checked: boolean) => void }) {
   return (
     <button
+      type="button"
       role="switch"
       aria-checked={checked}
       onClick={() => onChange(!checked)}

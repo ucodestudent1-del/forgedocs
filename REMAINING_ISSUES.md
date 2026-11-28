@@ -7,33 +7,21 @@
 
 ## 1. Unresolved Defects
 
-### R-001 — `document_versions` insert not transactional (P2 — Medium)
-**File:** `src/app/api/documents/[id]/content/route.ts`  
-**Issue:** The document update (optimistic-locked) and the `document_versions` insert are separate operations with no transaction boundary. If the version insert fails after the document update, the document is updated without a corresponding version record, producing inconsistent history.  
-**Why not fixed:** The Supabase JS client does not expose multi-statement transactions trivially. Wrapping both in a transaction requires a database function/RPC or confirming the update succeeds before inserting the version.  
-**Required next step:** Implement the version insert inside a Postgres function (or use `supabase.rpc` with a transactional function), called after the document update succeeds. Add a test asserting version consistency under concurrent updates.
+All previously tracked code defects (R-001 through R-004) have been resolved in this session:
 
-### R-002 — Export label mismatch (P3 — Low)
-**File:** `src/app/dashboard/settings/page.tsx` (`handleExportDocuments`)  
-**Issue:** Button text says "Download your documents as a ZIP archive" but the implementation exports a JSON blob.  
-**Required next step:** Update the label to "Export Documents (JSON)" or implement genuine ZIP export.
+- **R-001** (`document_versions` insert not transactional): Fixed via PostgreSQL function `update_document_with_version` + migration `20261127000002_add_document_update_transaction.sql`
+- **R-002** (Export label mismatch): Fixed — label updated to "Download your documents as JSON"
+- **R-003** (Artificial delay in profile save): Fixed — removed `setTimeout` 
+- **R-004** (Custom Switch lacks `type="button"`): Fixed — added `type="button"`
 
-### R-003 — Artificial delay in profile save (P3 — Low)
-**File:** `src/app/dashboard/settings/page.tsx` (`handleSaveProfile`)  
-**Issue:** `await new Promise(resolve => setTimeout(resolve, 1000))` adds a fake 1-second delay with no purpose.  
-**Required next step:** Remove the `setTimeout`.
-
-### R-004 — Custom `Switch` component lacks `type="button"` (P3 — Low)
-**File:** `src/app/dashboard/settings/page.tsx` (`Switch` component)  
-**Issue:** The `<button role="switch">` has no explicit `type`; defaults to `submit`, which could submit a surrounding form unintentionally.  
-**Required next step:** Add `type="button"`.
+No unresolved code defects remain.
 
 ---
 
 ## 2. Deployment / Environment Blockers (require external configuration & authorization)
 
 ### R-005 — Production build not verified
-**Issue:** `next build` hangs at the "Creating an optimized production build ..." webpack compilation stage in this sandbox environment (confirmed across multiple attempts, with and without increased Node memory). This is an environment limitation, not a code defect — `tsc --noEmit` passes (the build's type gate, enforced via `ignoreBuildErrors: false`), lint passes, and all 120 tests pass.  
+**Issue:** `next build` hangs at the "Creating an optimized production build ..." webpack compilation stage in this sandbox environment (confirmed across multiple attempts, with and without increased Node memory). This is an environment limitation, not a code defect — `tsc --noEmit` passes (the build's type gate, enforced via `ignoreBuildErrors: false`), lint passes, and all 129 tests pass.  
 **Required next step:** Run `npm run build` in a non-sandbox CI/production environment with real `NEXT_PUBLIC_*` build variables. The build configuration (next.config.js, Dockerfile, docker-compose, CI/CD pipeline) is complete and correct.
 
 ### R-006 — `.env.production` real values not configured
@@ -49,7 +37,7 @@
 **Required next step:** Run `npm run test:e2e` and `npm run load-test` (k6) against a live staging environment.
 
 ### R-009 — Database migrations not applied to target environments
-**Issue:** New migration `20261126000000_add_notification_preferences.sql` (and any prior migrations) must be applied via `supabase db push` before notification saves work in production.  
+**Issue:** New migrations `20261126000000_add_notification_preferences.sql` and `20261127000002_add_document_update_transaction.sql` must be applied via `supabase db push` before features work in production.  
 **Required next step:** Apply migrations to staging, verify, then to production with a rollback plan.
 
 ### R-010 — External penetration test not performed

@@ -4,8 +4,20 @@ import type { Database } from "@/types/database"
 import { createMockSupabaseClient } from "@/lib/supabase-mock"
 import logger from "@/lib/logger"
 
+const PLACEHOLDER_PATTERNS = [
+  "placeholder",
+  "your-",
+  "example",
+  "changeme",
+  "replace-me",
+  "dummy",
+  "test",
+]
+
 function isPlaceholder(value: string | undefined): boolean {
-  return !value || value.includes("placeholder")
+  if (!value) return true
+  const lower = value.toLowerCase()
+  return PLACEHOLDER_PATTERNS.some((p) => lower.includes(p) || lower === p)
 }
 
 function buildCookieOptions() {

@@ -96,13 +96,10 @@ export async function revokeApiKey(userId: string, keyId: string): Promise<{ suc
 }
 
 export async function validateApiKey(rawKey: string): Promise<{ userId: string; key: ApiKeyRow } | null> {
-  if (!rawKey.startsWith(`${API_KEY_PREFIX}_`)) return null
-
+  // Always hash and compare in constant time — no early return on prefix check
+  // to prevent timing-based key format enumeration attacks.
   const keyHash = hashApiKey(rawKey)
 
-  // Rate-limit validation attempts per IP to prevent brute-force enumeration.
-  // The caller (middleware) passes the request; we derive an identifier from
-  // the x-forwarded-for header or fall back to "unknown".
   const supabase = await getPooledRouteClient()
 
   // Look up by key_hash directly (O(1)) instead of iterating all keys sharing

@@ -11,6 +11,28 @@ import { fireWebhookEvent, type WebhookEvent } from "@/lib/webhooks"
 import logger from "@/lib/logger"
 import { requireAccountMembership } from "@/lib/account-authz"
 
+interface DocumentRow {
+  id: string
+  user_id: string
+  account_id: string | null
+  title: string
+  content: string
+  format: string
+  file_size: number | null
+  file_path: string | null
+  version: number
+  status: string
+  is_template: boolean
+  template_id: string | null
+  tags: string[] | null
+  metadata: Record<string, unknown>
+  created_at: string
+  updated_at: string
+  encryption_key_wrapped: string | null
+  encryption_iv: string | null
+  encryption_algorithm: string | null
+}
+
 export const GET = withErrorBoundary(async (req, { params }: { params: Promise<{ id: string }> }) => {
   const rateLimitError = await documentRateLimit(req)
   if (rateLimitError) return rateLimitError
@@ -95,62 +117,41 @@ export const PUT = withErrorBoundary(async (req, { params }: { params: Promise<{
     throw createAppError("Document not found", 404, "DOCUMENT_NOT_FOUND")
   }
 
-  // Optimistic locking: reject if expected_version provided and doesn't match
-  if (expected_version !== undefined && currentDoc.version !== expected_version) {
-    return NextResponse.json(
-      { error: "Document has been modified by another user. Please reload and try again." },
-      { status: 409 }
-    )
-  }
-
-  const updateData: Record<string, unknown> = {
-    content: sanitizedContent,
-    version: currentDoc.version + 1,
-  }
-
-  // Preserve or update encryption fields
-  if (encrypted) {
-    updateData.encryption_key_wrapped = encryption_key_wrapped ?? currentDoc.encryption_key_wrapped
-    updateData.encryption_iv = encryption_iv ?? currentDoc.encryption_iv
-    updateData.encryption_algorithm = encryption_algorithm ?? currentDoc.encryption_algorithm ?? "AES-256-GCM"
-  }
-
-  // Atomic update with optimistic locking — only proceeds if version still matches.
-  // Access was already verified above; RLS enforces account membership as a backstop.
-  const { data, error } = await supabase
-    .from("documents")
-    .update(updateData)
-    .eq("id", id)
-    .eq("version", currentDoc.version)
-    .select()
-    .single()
-
-  if (error) {
-    throw createAppError(error.message, 500, "DATABASE_ERROR")
-  }
-
-  if (!data) {
-    return NextResponse.json(
-      { error: "Document has been modified by another user. Please reload and try again." },
-      { status: 409 }
-    )
-  }
-
-  // Insert version record after successful update.
-  const { error: versionError } = await supabase.from("document_versions").insert({
-    document_id: id,
-    version: currentDoc.version,
-    content: currentDoc.content,
-    created_by: user.id,
+  // Use transactional function for atomic document update + version insert
+  const rpcResult = await (supabase as any).rpc("update_document_with_version", {
+    p_document_id: id,
+    p_user_id: user.id,
+    p_content: sanitizedContent,
+    p_expected_version: expected_version ?? null,
+    p_encrypted: encrypted,
+    p_encryption_key_wrapped: encryption_key_wrapped ?? null,
+    p_encryption_iv: encryption_iv ?? null,
+    p_encryption_algorithm: encryption_algorithm ?? null,
   })
 
-  if (versionError) {
-    logger.error(`Failed to insert document version for ${id}`, {
-      error: versionError.message,
-      documentId: id,
-      version: currentDoc.version,
-    })
+  const { data: updatedDoc, error: fnError } = rpcResult as { data: DocumentRow[] | null; error: { code: string; message: string } | null }
+
+  if (fnError) {
+    if (fnError.code === "P0001" && fnError.message === "DOCUMENT_NOT_FOUND") {
+      throw createAppError("Document not found", 404, "DOCUMENT_NOT_FOUND")
+    }
+    if (fnError.message === "Document has been modified by another user. Please reload and try again.") {
+      return NextResponse.json(
+        { error: "Document has been modified by another user. Please reload and try again." },
+        { status: 409 }
+      )
+    }
+    throw createAppError(fnError.message, 500, "DATABASE_ERROR")
   }
+
+  if (!updatedDoc || updatedDoc.length === 0 || updatedDoc[0] === null) {
+    return NextResponse.json(
+      { error: "Document has been modified by another user. Please reload and try again." },
+      { status: 409 }
+    )
+  }
+
+  const data = updatedDoc[0]
 
   // Invalidate document list cache so clients see updated content
   await cacheDel(`documents:${user.id}:*`)
@@ -161,7 +162,7 @@ export const PUT = withErrorBoundary(async (req, { params }: { params: Promise<{
     action: "document.update",
     entityType: "documents",
     entityId: id,
-    newValues: { version: currentDoc.version + 1, encrypted },
+    newValues: { version: data.version, encrypted },
     severity: "medium",
     ipAddress: getClientIp(req),
     userAgent: getClientUserAgent(req),
@@ -171,7 +172,7 @@ export const PUT = withErrorBoundary(async (req, { params }: { params: Promise<{
   void fireWebhookEvent(user.id, "document.content.updated" as WebhookEvent, {
     document_id: id,
     user_id: user.id,
-    version: currentDoc.version + 1,
+    version: data.version,
   })
 
   return NextResponse.json({ document: data })
