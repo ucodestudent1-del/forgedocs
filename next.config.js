@@ -6,6 +6,16 @@ const withBundleAnalyzer = require("@next/bundle-analyzer")({
   enabled: process.env.ANALYZE === "true",
 })
 
+// Bundle size budgets (in bytes) - CI will fail if exceeded
+const BUNDLE_BUDGETS = {
+  total: 300 * 1024,      // 300 KB total JS
+  pages: {
+    "/": 100 * 1024,      // 100 KB for landing page
+    "/dashboard": 200 * 1024, // 200 KB for dashboard
+    "/pricing": 100 * 1024,   // 100 KB for pricing
+  },
+}
+
 function generateNonce() {
   return crypto.randomUUID().replace(/-/g, "")
 }
