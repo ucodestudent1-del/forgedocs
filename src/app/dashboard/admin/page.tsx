@@ -1,7 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Users, CreditCard, FileText, AlertTriangle, TrendingUp, Clock, Download, Search, Shield, Mail, MoreHorizontal, UserPlus } from "lucide-react"
+import { Users, CreditCard, FileText, AlertTriangle, TrendingUp, Clock, Download, Search, Shield, Mail, MoreHorizontal, UserPlus, DollarSign } from "lucide-react"
 import Link from "next/link"
 import { getPooledRouteClient } from "@/lib/supabase"
 
@@ -15,6 +15,9 @@ interface SystemHealth {
   processing_conversions: number
   failed_conversions_24h: number
   active_subscriptions: number
+  mrr: number
+  arr: number
+  churn_rate: number
 }
 
 async function fetchAdminStats(): Promise<SystemHealth> {
@@ -24,7 +27,9 @@ async function fetchAdminStats(): Promise<SystemHealth> {
     supabase.from("profiles").select("id, created_at", { count: "exact", head: true }),
     supabase.from("documents").select("id, created_at", { count: "exact", head: true }),
     supabase.from("conversion_jobs").select("id, status, created_at", { count: "exact", head: true }),
-    supabase.from("subscriptions").select("id, status", { count: "exact", head: true }),
+    supabase
+      .from("subscriptions")
+      .select("id, status, plan, current_period_start, current_period_end, cancel_at_period_end"),
   ])
 
   const now = new Date()
@@ -36,6 +41,25 @@ async function fetchAdminStats(): Promise<SystemHealth> {
     supabase.from("conversion_jobs").select("id", { count: "exact", head: true }).eq("status", "failed").gte("created_at", dayAgo),
   ])
 
+  const subscriptions = subsResult.data || []
+
+  // Calculate MRR: sum of monthly active subscriptions
+  const monthlySubs = subscriptions.filter(
+    (s: any) => s.status === "active" && s.plan === "pro"
+  )
+  const businessSubs = subscriptions.filter(
+    (s: any) => s.status === "active" && s.plan === "business"
+  )
+
+  // Approximate pricing: Pro $15/mo, Business $49/mo
+  const mrr = monthlySubs.length * 15 + businessSubs.length * 49
+  const arr = mrr * 12
+
+  // Churn rate: canceled subscriptions / total subscriptions (ever)
+  const totalSubsEver = subscriptions.length
+  const canceledSubs = subscriptions.filter((s: any) => s.status === "canceled").length
+  const churnRate = totalSubsEver > 0 ? (canceledSubs / totalSubsEver) * 100 : 0
+
   return {
     status: "healthy",
     total_users: usersResult.count ?? 0,
@@ -46,6 +70,9 @@ async function fetchAdminStats(): Promise<SystemHealth> {
     processing_conversions: 0,
     failed_conversions_24h: failedConvsResult.count ?? 0,
     active_subscriptions: subsResult.count ?? 0,
+    mrr,
+    arr,
+    churn_rate: Math.round(churnRate * 10) / 10,
   }
 }
 
@@ -74,9 +101,9 @@ export default async function AdminDashboardPage() {
         {[
           { label: "Total Users", value: stats.total_users, icon: Users, color: "bg-primary/10 text-primary", change: `+${stats.new_users_24h} (24h)` },
           { label: "Active Subscriptions", value: stats.active_subscriptions, icon: CreditCard, color: "bg-primary/10 text-primary", change: "+8%" },
+          { label: "MRR", value: `$${stats.mrr}`, icon: DollarSign, color: "bg-success/10 text-success", change: `ARR: $${stats.arr}` },
           { label: "Total Documents", value: stats.new_documents_24h, icon: FileText, color: "bg-primary/10 text-primary", change: `+${stats.new_users_24h} (24h)` },
-          { label: "Pending Conversions", value: stats.pending_conversions, icon: Clock, color: "bg-warning/10 text-warning", change: "-5%" },
-          { label: "Failed (24h)", value: stats.failed_conversions_24h, icon: AlertTriangle, color: "bg-destructive/10 text-destructive", change: `+${stats.failed_conversions_24h}` },
+          { label: "Churn Rate", value: `${stats.churn_rate}%`, icon: AlertTriangle, color: "bg-destructive/10 text-destructive", change: "Last 30 days" },
           { label: "System Health", value: 0, icon: TrendingUp, color: "bg-success/10 text-success", change: stats.status },
         ].map((stat) => (
           <Card key={stat.label}>

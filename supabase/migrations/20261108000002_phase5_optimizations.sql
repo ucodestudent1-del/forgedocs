@@ -144,6 +144,7 @@ CREATE TABLE IF NOT EXISTS tier_limits (
 
 INSERT INTO tier_limits (tier, documents_per_month, conversions_per_month, storage_gb, max_file_size_mb, api_requests_per_minute, has_priority_support, has_audit_logs, has_advanced_templates)
 VALUES
+  ('free', 500, 100, 5, 10, 30, FALSE, FALSE, FALSE),
   ('pro', -1, -1, 100, 50, 100, TRUE, TRUE, TRUE),
   ('business', -1, -1, 500, 100, 500, TRUE, TRUE, TRUE)
 ON CONFLICT (tier) DO UPDATE SET

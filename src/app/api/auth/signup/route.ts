@@ -4,6 +4,8 @@ import { validateCSRF, rotateCSRFToken } from "@/lib/csrf"
 import { authRateLimit } from "@/lib/rate-limiter"
 import { validatePassword } from "@/lib/password"
 import { withErrorBoundary, createAppError } from "@/lib/api-error"
+import { sendEmail } from "@/lib/email"
+import { getWelcomeEmailHtml } from "@/lib/emailTemplates"
 import logger from "@/lib/logger"
 import { z } from "zod"
 
@@ -66,6 +68,15 @@ export const POST = withErrorBoundary(async (req) => {
     if (profileError) {
       logger.error("Failed to create profile:", { error: profileError })
     }
+
+    // Send welcome email (non-blocking — failure must not break signup)
+    void sendEmail({
+      to: data.user.email!,
+      subject: "Welcome to ForgeDocs - Your account is ready",
+      html: getWelcomeEmailHtml(full_name || "User", `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/login`),
+    }).catch((err) => {
+      logger.error("[AUTH SIGNUP] welcome email failed", { email: data.user.email, error: err instanceof Error ? err.message : String(err) })
+    })
   }
 
   await rotateCSRFToken()

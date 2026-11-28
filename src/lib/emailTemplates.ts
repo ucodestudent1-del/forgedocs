@@ -137,3 +137,18 @@ export function getUsageLimitHtml(userName: string, metric: string, limit: numbe
   `
   return getBaseTemplate(content, "ForgeDocs usage limit reached")
 }
+
+export function getSubscriptionConfirmedHtml(
+  userName: string,
+  planName: string,
+  billingPortalUrl: string
+): string {
+  const content = `
+    <h2 style="margin: 0 0 16px; color: #1f2937; font-size: 24px;">Your subscription is active</h2>
+    <p style="margin: 0 0 16px; color: #4b5563; font-size: 16px;">Hi ${escapeHtml(userName)}, thank you for subscribing to ForgeDocs!</p>
+    <p style="margin: 0 0 16px; color: #4b5563; font-size: 16px;">Your ${escapeHtml(planName)} plan is now active. You can manage your subscription anytime in the billing portal.</p>
+    ${getButtonHtml(billingPortalUrl, "Manage Subscription", "primary")}
+    <p style="margin: 24px 0 0; color: #9ca3af; font-size: 14px;">If you didn't sign up for this plan, please contact support immediately.</p>
+  `
+  return getBaseTemplate(content, "Your ForgeDocs subscription is active")
+}

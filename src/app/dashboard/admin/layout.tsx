@@ -2,7 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { Shield, Settings, TrendingUp, Users, CreditCard, FileText, AlertTriangle, Clock, Download, Search, Filter, Activity, Home } from "lucide-react"
+import { Shield, Settings, TrendingUp, Users, CreditCard, FileText, AlertTriangle, Clock, Download, Search, Filter, Activity, Home, Ticket } from "lucide-react"
 import Link from "next/link"
 import { format } from "date-fns"
 import { getPooledRouteClient } from "@/lib/supabase"
@@ -56,6 +56,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     { href: "/admin", label: "Dashboard", icon: TrendingUp },
     { href: "/admin/users", label: "Users", icon: Users },
     { href: "/admin/subscriptions", label: "Subscriptions", icon: CreditCard },
+    { href: "/admin/support", label: "Support", icon: Ticket },
     { href: "/admin/audit-logs", label: "Audit Logs", icon: FileText },
     { href: "/admin/system-health", label: "System Health", icon: Activity },
   ]

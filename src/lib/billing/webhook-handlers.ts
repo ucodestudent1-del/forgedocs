@@ -5,6 +5,7 @@ import { sendEmail } from "@/lib/email"
 import logger from "@/lib/logger"
 import {
   getPaymentFailedHtml,
+  getSubscriptionConfirmedHtml,
   getTrialEndingHtml,
   getSubscriptionCanceledHtml,
 } from "@/lib/emailTemplates"
@@ -59,6 +60,31 @@ export async function handleCheckoutSessionCompleted(
   if (error) {
     logger.error("Failed to upsert subscription:", { error: error })
   }
+
+  // Send subscription confirmation email (non-blocking)
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("email, full_name")
+    .eq("id", userId)
+    .single()
+
+  if (profile?.email) {
+    const planName = tier ? tier.charAt(0).toUpperCase() + tier.slice(1) : "Pro"
+    void sendEmail({
+      to: profile.email,
+      subject: "Your ForgeDocs subscription is active",
+      html: getSubscriptionConfirmedHtml(
+        profile.full_name || "User",
+        planName,
+        `${process.env.NEXT_PUBLIC_APP_URL}/billing`
+      ),
+    }).catch((err) => {
+      logger.error("Failed to send subscription confirmation email", {
+        userId,
+        email: profile.email,
+        error: err instanceof Error ? err.message : String(err),
+      })
+    })
 }
 
 /**

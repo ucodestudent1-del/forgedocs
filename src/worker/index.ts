@@ -504,6 +504,7 @@ async function checkTmpDiskUsage(): Promise<void> {
       }
     }
     const totalMB = totalBytes / (1024 * 1024)
+    workerHealth.tmpDiskUsageMB = totalMB
     if (totalMB > MAX_TMP_DISK_USAGE_MB) {
       logger.warn("/tmp disk usage high", { totalMB, maxMB: MAX_TMP_DISK_USAGE_MB })
       // Clean up oldest files first
@@ -524,6 +525,8 @@ interface WorkerHealth {
   lastJobAt: string | null
   startedAt: string
   isLeader: boolean
+  queueDepth: number
+  tmpDiskUsageMB: number
 }
 
 const workerHealth: WorkerHealth = {
@@ -534,6 +537,8 @@ const workerHealth: WorkerHealth = {
   lastJobAt: null,
   startedAt: new Date().toISOString(),
   isLeader: false,
+  queueDepth: 0,
+  tmpDiskUsageMB: 0,
 }
 
 worker.on("active", (job) => {
@@ -596,6 +601,8 @@ const healthServer = http.createServer((req: http.IncomingMessage, res: http.Ser
       lastJobAt: workerHealth.lastJobAt,
       startedAt: workerHealth.startedAt,
       concurrency: parseInt(process.env.WORKER_CONCURRENCY || "5", 10),
+      queueDepth: workerHealth.queueDepth,
+      tmpDiskUsageMB: Math.round(workerHealth.tmpDiskUsageMB * 100) / 100,
     }))
   } else {
     res.writeHead(404)
@@ -619,6 +626,16 @@ healthServer.on("listening", () => {
 startLeaderElection()
 void cleanupTempFiles()
 setInterval(() => void checkTmpDiskUsage(), 5 * 60 * 1000) // Check disk usage every 5 minutes
+
+// Update worker health with disk usage after each tmp check
+const originalCheckTmpDiskUsage = checkTmpDiskUsage
+// Periodic queue depth update for health monitoring
+setInterval(async () => {
+  try {
+    const counts = await queue.getJobCounts()
+    workerHealth.queueDepth = (counts.waiting || 0) + (counts.active || 0) + (counts.delayed || 0)
+  } catch {}
+}, 30 * 1000) // Every 30 seconds
 
 // Periodic queue cleanup - clean completed/failed jobs based on TTL
 setInterval(async () => {
